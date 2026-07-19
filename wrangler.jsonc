@@ -31,6 +31,37 @@
     "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "INGESTION_SECRET"]
   },
   "env": {
+    "preview": {
+      "name": "robopartpicker-preview",
+      "workers_dev": true,
+      "preview_urls": true,
+      "assets": {
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application",
+        "run_worker_first": ["/api/*", "/files/*"]
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "robopartpicker-preview",
+          "database_id": "af9e3aaa-4e74-4083-8317-a642bf0e07a6",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES",
+          "bucket_name": "robopartpicker-preview-files"
+        }
+      ],
+      "vars": {
+        "APP_ENV": "preview",
+        "APP_NAME": "RoboPartPicker"
+      },
+      "secrets": {
+        "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "INGESTION_SECRET"]
+      }
+    },
     "production": {
       "assets": {
         "binding": "ASSETS",
@@ -62,6 +93,7 @@
   },
   "observability": {
     "enabled": true,
+    "head_sampling_rate": 1,
     "logs": {
       "enabled": true,
       "invocation_logs": true

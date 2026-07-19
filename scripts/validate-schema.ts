@@ -6,6 +6,12 @@ type D1Result<Row> = Array<{
   error?: string;
 }>;
 
+const cliArguments = process.argv.slice(2);
+const remote = cliArguments.includes("--remote");
+const environmentIndex = cliArguments.indexOf("--env");
+const environment = environmentIndex >= 0 ? cliArguments[environmentIndex + 1] : undefined;
+if (remote && !environment) throw new Error("Remote schema validation requires an explicit --env value.");
+
 const requiredTables = [
   "account",
   "ai_conversations",
@@ -36,8 +42,9 @@ function query<Row>(sql: string): Row[] {
   const response = captureWranglerJson<D1Result<Row>>([
     "d1",
     "execute",
-    "robopartpicker",
-    "--local",
+    remote ? "DB" : "robopartpicker",
+    remote ? "--remote" : "--local",
+    ...(environment ? ["--env", environment] : []),
     "--command",
     sql,
   ]);
@@ -81,6 +88,7 @@ console.log(
   JSON.stringify(
     {
       ok: true,
+      environment: remote ? environment : "local",
       tables: tables.length,
       migrations: migrationCount,
       demoRecords: {
