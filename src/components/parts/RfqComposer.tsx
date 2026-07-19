@@ -4,8 +4,7 @@ import {
   validateRfqInput, saveRfqDraft, deleteRfqDraft, rfqDraftToText, copyText,
   type RfqDraft, type RfqInput,
 } from "@/lib/catalogWorkspace";
-import { partById, parts as allParts } from "@/data/parts";
-import { suppliers } from "@/data/suppliers";
+import { useComponents, useSuppliers } from "@/lib/api/catalog";
 import { Copy, Save, Trash2 } from "lucide-react";
 
 type Props = {
@@ -25,6 +24,9 @@ type Props = {
 };
 
 export function RfqComposer({ draftId, prefill, lockSupplierId, supplierProductPartIds, onSaved, onDeleted, compact, anchorId }: Props) {
+  const suppliersQuery = useSuppliers();
+  const partsQuery = useComponents({ supplier: lockSupplierId ? [lockSupplierId] : undefined, limit: 100 }, Boolean(supplierProductPartIds?.length));
+  const suppliers = suppliersQuery.data?.items ?? [];
   const initial: RfqInput = useMemo(() => ({
     partId: prefill?.partId ?? null,
     manualPartName: prefill?.manualPartName ?? (prefill?.partId ? null : null),
@@ -43,10 +45,10 @@ export function RfqComposer({ draftId, prefill, lockSupplierId, supplierProductP
 
   const partOptions = useMemo(() => {
     if (supplierProductPartIds && supplierProductPartIds.length) {
-      return allParts.filter(p => supplierProductPartIds.includes(p.id));
+      return (partsQuery.data?.items ?? []).filter(p => supplierProductPartIds.includes(p.id));
     }
-    return [] as typeof allParts;
-  }, [supplierProductPartIds]);
+    return [];
+  }, [partsQuery.data?.items, supplierProductPartIds]);
 
   const set = <K extends keyof RfqInput>(k: K, v: RfqInput[K]) => setState(prev => ({ ...prev, [k]: v }));
 

@@ -1,0 +1,75 @@
+import { Hono } from "hono";
+import { createAuth } from "./auth";
+import type { AppBindings } from "./env";
+import { AppError, jsonError } from "./http";
+import { requestId } from "./middleware/request-id";
+import { apiSecurityHeaders } from "./middleware/security";
+import { apiRequestSizeLimit } from "./middleware/request-limits";
+import { requireSameOriginMutation } from "./middleware/same-origin";
+import { healthRoutes } from "./routes/health";
+import { catalogRoutes } from "./routes/catalog";
+import { userRoutes } from "./routes/users";
+import { organizationRoutes } from "./routes/organizations";
+import { projectRoutes } from "./routes/projects";
+import { communityRoutes } from "./routes/community";
+import { marketplaceRoutes } from "./routes/marketplace";
+import { buildRoutes } from "./routes/builds";
+import { bomRoutes } from "./routes/boms";
+import { fileRoutes } from "./routes/files";
+import { importRoutes } from "./routes/imports";
+import { searchRoutes } from "./routes/search";
+import { aiRoutes } from "./routes/ai";
+import { discoveryRoutes } from "./routes/discovery";
+import { notificationRoutes } from "./routes/notifications";
+import { adminRoutes } from "./routes/admin";
+import { apiRateLimit } from "./middleware/rate-limit";
+
+export const app = new Hono<AppBindings>();
+
+app.use("/api/*", requestId);
+app.use("/api/*", apiSecurityHeaders);
+app.use("/api/v1/*", apiRequestSizeLimit);
+app.use("/api/v1/*", apiRateLimit);
+app.use("/api/v1/*", requireSameOriginMutation);
+
+app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
+app.route("/api", healthRoutes);
+app.route("/api/v1", userRoutes);
+app.route("/api/v1", organizationRoutes);
+app.route("/api/v1", projectRoutes);
+app.route("/api/v1", communityRoutes);
+app.route("/api/v1", marketplaceRoutes);
+app.route("/api/v1", buildRoutes);
+app.route("/api/v1", bomRoutes);
+app.route("/api/v1", fileRoutes);
+app.route("/api/v1", importRoutes);
+app.route("/api/v1", searchRoutes);
+app.route("/api/v1", aiRoutes);
+app.route("/api/v1", discoveryRoutes);
+app.route("/api/v1", notificationRoutes);
+app.route("/api/v1", adminRoutes);
+app.route("/api/v1", catalogRoutes);
+
+app.notFound((c) => {
+  if (c.req.path.startsWith("/api/")) {
+    return jsonError(c, new AppError(404, "NOT_FOUND", "The requested API resource does not exist."));
+  }
+  return c.env.ASSETS.fetch(c.req.raw);
+});
+
+app.onError((error, c) => {
+  if (error instanceof AppError) return jsonError(c, error);
+
+  console.error(
+    JSON.stringify({
+      level: "error",
+      requestId: c.get("requestId"),
+      method: c.req.method,
+      path: c.req.path,
+      error: error.name,
+      message: error.message,
+    }),
+  );
+
+  return jsonError(c, new AppError(500, "INTERNAL_ERROR", "The request could not be completed."));
+});

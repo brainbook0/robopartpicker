@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { partById, lowestPrice, priceDelta30, categoryLabel, type Part, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer, type PartCategory } from "@/data/parts";
-import { suppliers } from "@/data/suppliers";
+import { useQueries } from "@tanstack/react-query";
+import { lowestPrice, priceDelta30, categoryLabel, type Part, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer, type PartCategory, type CatalogPart } from "@/shared/catalog";
+import { api } from "@/lib/api/client";
 import { COMPARE_CAP, removeFromCompare, clearCompare, copyText } from "@/lib/catalogWorkspace";
 import { CatalogDataNotice } from "@/components/parts/CatalogDataNotice";
 import { toast } from "@/hooks/use-toast";
@@ -35,7 +36,7 @@ function baseRows(parts: Part[]): Row[] {
     { key: "incidents", label: "Reported incidents (fixture)", values: parts.map(p => p.failures), best: "lower", mono: true, hint: "Count of fixture incident records — not a validated failure rate." },
     { key: "compat", label: "Usage/integration tags", values: parts.map(p => p.compatibility.join(", ") || "—"), hint: "Not a compatibility guarantee." },
     { key: "supplierNames", label: "Fixture suppliers", values: parts.map(p =>
-        p.offers.map(o => suppliers.find(s => s.id === o.supplierId)?.name ?? o.supplierId).join(", ") || "—") },
+        p.offers.map(o => o.supplierName).join(", ") || "—") },
   ];
   return rows;
 }
@@ -141,9 +142,18 @@ export default function PartCompare() {
   const idList: string[] = [];
   for (const id of rawIds) { if (!seen.has(id)) { seen.add(id); idList.push(id); } if (idList.length >= COMPARE_CAP) break; }
 
-  const resolved = idList.map(id => ({ id, part: partById(id) }));
-  const missing = resolved.filter(r => !r.part).map(r => r.id);
-  const foundParts = resolved.map(r => r.part).filter((p): p is Part => !!p);
+  const componentQueries = useQueries({
+    queries: idList.map((id) => ({
+      queryKey: ["catalog-component", id],
+      queryFn: ({ signal }: { signal: AbortSignal }) => api.get<{ item: CatalogPart }>(`/api/v1/components/${encodeURIComponent(id)}`, { signal }),
+      retry: false,
+      staleTime: 30_000,
+    })),
+  });
+  const resolved = idList.map((id, index) => ({ id, part: componentQueries[index]?.data?.item as Part | undefined }));
+  const missing = resolved.filter((row, index) => componentQueries[index]?.isError && !row.part).map(row => row.id);
+  const foundParts = resolved.map(r => r.part).filter((p): p is Part => Boolean(p));
+  const loading = componentQueries.some((query) => query.isPending);
 
   // Determine dominant category from first valid part; drop other-category picks.
   const primaryCat: PartCategory | null = foundParts[0]?.category ?? null;
@@ -211,7 +221,11 @@ export default function PartCompare() {
         </div>
       )}
 
-      {!compatible.length ? (
+      {loading ? (
+        <div className="mt-4 surface-card p-6 text-center text-[13px] text-muted-foreground" role="status">
+          Loading selected components from the API…
+        </div>
+      ) : !compatible.length ? (
         <div className="mt-4 surface-card p-6 text-center text-[13px] text-muted-foreground">
           No components selected. Add components from the <Link to="/parts/actuator" className="text-primary hover:underline">catalog</Link>.
         </div>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { supplierBySlug } from "@/data/suppliers";
-import { parts, partById } from "@/data/parts";
+import { useComponents, useSuppliers } from "@/lib/api/catalog";
 import { ExpandableImage } from "@/components/common/ExpandableImage";
 import { ExpandableField } from "@/components/common/ExpandableField";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
@@ -19,13 +18,15 @@ const Row = ({ k, v }: { k: string; v: React.ReactNode }) => <ExpandableField k=
 export default function SupplierDetail() {
   const { slug } = useParams();
   const [sp, setSp] = useSearchParams();
-  const s = supplierBySlug(slug ?? "");
+  const supplierQuery = useSuppliers();
+  const s = supplierQuery.data?.items.find((supplier) => supplier.slug === slug);
+  const componentsQuery = useComponents({ supplier: s ? [s.id] : [], limit: 100 }, Boolean(s));
   const [tick, setTick] = useState(0);
   const [prefillPartId, setPrefillPartId] = useState<string | null>(null);
   const [prefillQty, setPrefillQty] = useState<number>(1);
   const rfqRef = useRef<HTMLDivElement>(null);
 
-  const offered = useMemo(() => s ? parts.filter(p => p.offers.some(o => o.supplierId === s.id)) : [], [s]);
+  const offered = useMemo(() => componentsQuery.data?.items ?? [], [componentsQuery.data?.items]);
 
   useEffect(() => {
     if (!s) return;
@@ -34,7 +35,7 @@ export default function SupplierDetail() {
     if (!partId && !qtyRaw) return;
     let changed = false;
     if (partId) {
-      const p = partById(partId);
+      const p = offered.find((part) => part.id === partId);
       if (p && offered.some(x => x.id === p.id)) { setPrefillPartId(p.id); changed = true; }
       else if (p) toast({ title: "Part not offered by this supplier", description: `${p.name} isn't in ${s.name}'s fixture catalog. Enter it manually if needed.`, variant: "destructive" });
       else toast({ title: "Unknown part id", description: `"${partId}" was not found.`, variant: "destructive" });
@@ -49,6 +50,11 @@ export default function SupplierDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sp.get("part"), sp.get("qty"), s?.id]);
 
+  if (supplierQuery.isPending || (s && componentsQuery.isPending)) return <div className="p-8" role="status">Loading supplier from the API…</div>;
+  if (supplierQuery.isError || componentsQuery.isError) {
+    const error = supplierQuery.error ?? componentsQuery.error;
+    return <div className="p-8" role="alert"><div className="font-medium text-negative">Supplier data could not be loaded.</div><div className="text-[12px] text-muted-foreground mt-1">{error?.message}</div></div>;
+  }
   if (!s) return <div className="p-8">Supplier not found.</div>;
 
   void tick;

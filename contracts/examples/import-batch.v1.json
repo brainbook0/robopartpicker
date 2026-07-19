@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "batchId": "supplier-catalog-2026-07-19-001",
+  "idempotencyKey": "supplier-catalog-2026-07-19-001",
+  "retrievalTimestamp": "2026-07-19T14:00:00.000Z",
+  "source": {
+    "name": "Example Robotics Catalog",
+    "type": "supplier_catalog",
+    "baseUrl": "https://example.com/robotics",
+    "priority": 100,
+    "trustWeight": 0.7
+  },
+  "records": [
+    {
+      "externalRecordId": "servo-123",
+      "recordType": "component",
+      "sourceUrl": "https://example.com/robotics/servo-123",
+      "rawPayload": {
+        "title": "Example Servo",
+        "sku": "SERVO-123"
+      },
+      "parsedData": {
+        "name": "Example Servo",
+        "category": "actuator",
+        "manufacturerName": "Example Robotics",
+        "manufacturerPartNumber": "SERVO-123",
+        "specs": {
+          "ratedVoltageV": 12,
+          "stallTorqueNm": 4.2
+        }
+      },
+      "confidence": 0.94,
+      "action": "upsert"
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+import { env, exports } from "cloudflare:workers";
+import { beforeAll, describe, expect, it } from "vitest";
+
+const origin = "https://example.com";
+const ingestionSecret = "test-only-ingestion-secret-32-characters-minimum";
+let ownerCookie = "";
+let otherCookie = "";
+let ownerId = "";
+let otherId = "";
+let buildId = "";
+
+async function call(path: string, init: RequestInit = {}, cookie?: string) {
+  const headers = new Headers(init.headers);
+  if (init.body && !headers.has("content-type")) headers.set("content-type", "application/json");
+  if (init.method && !["GET", "HEAD", "OPTIONS"].includes(init.method)) headers.set("origin", origin);
+  if (cookie) headers.set("cookie", cookie);
+  return exports.default.fetch(new Request(`${origin}${path}`, { ...init, headers }));
+}
+function jsonBody(value: unknown): string { return JSON.stringify(value); }
+async function body<T>(response: Response): Promise<T> { return response.json() as Promise<T>; }
+function cookies(response: Response): string {
+  const values = (response.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie?.() ?? [response.headers.get("set-cookie") ?? ""];
+  return values.filter(Boolean).map((value) => value.split(";", 1)[0]).join("; ");
+}
+
+beforeAll(async () => {
+  const now = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO forum_categories (id, slug, name, description, sort_order, created_at)
+      VALUES ('cat-general', 'general', 'General engineering', 'Structured technical questions', 1, ?1)`).bind(now),
+    env.DB.prepare(`INSERT INTO manufacturers (id, slug, name, status, is_demo, created_at, updated_at)
+      VALUES ('m-test', 'test-motors', 'Test Motors', 'active', 0, ?1, ?1)`).bind(now),
+    env.DB.prepare(`INSERT INTO components
+      (id, slug, manufacturer_id, manufacturer_part_number, name, category, summary, lifecycle_status,
+       provenance_label, freshness_at, is_demo, version, created_at, updated_at)
+      VALUES ('c-test', 'tm-42-motor', 'm-test', 'TM-42', 'TM-42 Motor', 'actuator', 'A test actuator',
+       'active', 'worker integration test', ?1, 0, 1, ?1, ?1)`).bind(now),
+  ]);
+  const owner = await call("/api/auth/sign-up/email", { method: "POST", body: jsonBody({ name: "Owner User", email: "owner@example.com", password: "correct-horse-battery" }) });
+  expect(owner.status).toBe(200); ownerCookie = cookies(owner); const ownerData = await body<{ user: { id: string } }>(owner); ownerId = ownerData.user.id;
+  const other = await call("/api/auth/sign-up/email", { method: "POST", body: jsonBody({ name: "Other User", email: "other@example.com", password: "correct-horse-battery" }) });
+  expect(other.status).toBe(200); otherCookie = cookies(other); const otherData = await body<{ user: { id: string } }>(other); otherId = otherData.user.id;
+});
+
+describe("Worker, D1, R2, authentication, and domain invariants", () => {
+  it("applies the complete schema and searches the D1 FTS index", async () => {
+    const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
+    expect(Number(migrations?.value)).toBe(9);
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect((await body<{ database: string }>(health)).database).toBe("d1");
+    const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
+    expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
+    const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
+    const integrations = await call("/api/v1/integrations"); expect(integrations.status).toBe(200);
+  });
+
+  it("creates a persistent build and isolates it from another user", async () => {
+    const created = await call("/api/v1/builds", { method: "POST", body: jsonBody({ name: "Private test robot", visibility: "private" }) }, ownerCookie);
+    expect(created.status).toBe(201); buildId = (await body<{ item: { id: string } }>(created)).item.id;
+    const added = await call(`/api/v1/builds/${buildId}/items`, { method: "POST", body: jsonBody({ componentId: "c-test", description: "TM-42 Motor", quantity: 2 }) }, ownerCookie);
+    expect(added.status).toBe(201);
+    const denied = await call(`/api/v1/builds/${buildId}`, {}, otherCookie); expect(denied.status).toBe(403);
+    const csv = await call(`/api/v1/builds/${buildId}/export?format=csv`, {}, ownerCookie); expect(csv.status).toBe(200); expect(await csv.text()).toContain("TM-42 Motor");
+  });
+
+  it("enforces accepted-answer ownership and reopens a question after reply deletion", async () => {
+    const threadResponse = await call("/api/v1/community/threads", { method: "POST", body: jsonBody({ categoryId: "cat-general", title: "How should this test actuator be calibrated?", slug: "test-actuator-calibration", body: "I need a repeatable calibration method for this actuator before integration.", tags: ["calibration"], threadType: "question", structuredData: {} }) }, ownerCookie);
+    expect(threadResponse.status).toBe(201); const threadId = (await body<{ item: { id: string } }>(threadResponse)).item.id;
+    const replyResponse = await call(`/api/v1/community/threads/${threadId}/posts`, { method: "POST", body: jsonBody({ body: "Use a fixed reference load, record encoder zero, and repeat three times." }) }, otherCookie);
+    expect(replyResponse.status).toBe(201); const postId = (await body<{ item: { id: string } }>(replyResponse)).item.id;
+    const forbidden = await call(`/api/v1/community/threads/${threadId}/accepted-answer`, { method: "PUT", body: jsonBody({ postId }) }, otherCookie); expect(forbidden.status).toBe(403);
+    await forbidden.text();
+    const ownership = await env.DB.prepare("SELECT user_id, thread_type FROM forum_threads WHERE id = ?1").bind(threadId).first<{ user_id: string; thread_type: string }>();
+    expect(ownership).toEqual({ user_id: ownerId, thread_type: "question" });
+    const accepted = await call(`/api/v1/community/threads/${threadId}/accepted-answer`, { method: "PUT", body: jsonBody({ postId }) }, ownerCookie);
+    const acceptedText = await accepted.text(); expect(accepted.status, acceptedText).toBe(200);
+    const removed = await call(`/api/v1/community/posts/${postId}`, { method: "DELETE" }, otherCookie); expect(removed.status).toBe(204);
+    const row = await env.DB.prepare("SELECT status, accepted_post_id FROM forum_threads WHERE id = ?1").bind(threadId).first<{ status: string; accepted_post_id: string | null }>();
+    expect(row).toEqual({ status: "open", accepted_post_id: null });
+  });
+
+  it("stages partial ingestion batches, rejects malformed records, and is idempotent", async () => {
+    const payload = { schemaVersion: "1.0", batchId: "batch-integration-1", idempotencyKey: "idempotency-integration-1", retrievalTimestamp: new Date().toISOString(), source: { name: "Integration Scraper", type: "test" }, records: [
+      { externalRecordId: "maker-1", recordType: "manufacturer", sourceUrl: "https://example.net/maker", rawPayload: { name: "Imported Motors" }, parsedData: { name: "Imported Motors", websiteUrl: "https://example.net" }, confidence: 0.9 },
+      { externalRecordId: "bad-component", recordType: "component", rawPayload: {}, parsedData: { category: "actuator" }, confidence: 0.2 },
+    ] };
+    const first = await call("/api/v1/imports/batches", { method: "POST", headers: { authorization: `Bearer ${ingestionSecret}`, "idempotency-key": payload.idempotencyKey }, body: jsonBody(payload) });
+    expect(first.status).toBe(202); const result = await body<{ job: { status: string; acceptedCount: number; rejectedCount: number } }>(first); expect(result.job).toMatchObject({ status: "partial", acceptedCount: 1, rejectedCount: 1 });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM staging_manufacturers").first<{ value: number }>())?.value)).toBe(1);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM manufacturers WHERE name = 'Imported Motors'").first<{ value: number }>())?.value)).toBe(0);
+    const duplicate = await call("/api/v1/imports/batches", { method: "POST", headers: { authorization: `Bearer ${ingestionSecret}`, "idempotency-key": payload.idempotencyKey }, body: jsonBody(payload) });
+    expect(duplicate.status).toBe(200); expect((await body<{ duplicate: boolean }>(duplicate)).duplicate).toBe(true);
+  });
+
+  it("stores a private file in R2, attaches it, and enforces content authorization", async () => {
+    const initialized = await call("/api/v1/files/uploads", { method: "POST", body: jsonBody({ originalName: "evidence.txt", mediaType: "text/plain", sizeBytes: 5, kind: "document", visibility: "private" }) }, ownerCookie);
+    expect(initialized.status).toBe(201); const upload = await body<{ file: { id: string }; upload: { url: string; token: string } }>(initialized);
+    const stored = await call(upload.upload.url, { method: "PUT", headers: { "content-type": "text/plain", "content-length": "5", "x-upload-token": upload.upload.token }, body: "hello" }, ownerCookie);
+    expect(stored.status).toBe(201); expect((await body<{ status: string }>(stored)).status).toBe("ready");
+    const attached = await call(`/api/v1/files/${upload.file.id}/attachments`, { method: "POST", body: jsonBody({ entityType: "build", entityId: buildId, purpose: "test_evidence" }) }, ownerCookie); expect(attached.status).toBe(201);
+    const denied = await call(`/api/v1/files/${upload.file.id}/content`, {}, otherCookie); expect(denied.status).toBe(403); await denied.text();
+    const content = await call(`/api/v1/files/${upload.file.id}/content`, {}, ownerCookie); expect(content.status).toBe(200); expect(await content.text()).toBe("hello");
+  });
+
+  it("enforces organization roles on server-side mutations", async () => {
+    const created = await call("/api/v1/organizations", { method: "POST", body: jsonBody({ name: "Test Robotics Group", slug: "test-robotics-group" }) }, ownerCookie);
+    expect(created.status).toBe(201); const organization = (await body<{ item: { id: string; version: number } }>(created)).item;
+    const added = await call(`/api/v1/organizations/${organization.id}/members`, { method: "POST", body: jsonBody({ email: "other@example.com", role: "viewer" }) }, ownerCookie);
+    expect(added.status).toBe(201);
+    const denied = await call(`/api/v1/organizations/${organization.id}`, { method: "PATCH", body: jsonBody({ name: "Unauthorized rename", version: organization.version }) }, otherCookie);
+    expect(denied.status).toBe(403);
+    const updated = await call(`/api/v1/organizations/${organization.id}`, { method: "PATCH", body: jsonBody({ name: "Authorized Robotics Group", version: organization.version }) }, ownerCookie);
+    expect(updated.status).toBe(200);
+  });
+
+  it("persists Marketplace inquiry records without claiming payment processing", async () => {
+    const draft = await call("/api/v1/marketplace", { method: "POST", body: jsonBody({ listingType: "sell", title: "TM-42 actuator test unit", description: "Used for integration testing with measured encoder output.", category: "actuator", conditionGrade: "B", currency: "USD", price: 125, quantity: 1, region: "US", visibility: "public" }) }, ownerCookie);
+    expect(draft.status).toBe(201); const listing = (await body<{ item: { id: string; version: number } }>(draft)).item;
+    const published = await call(`/api/v1/marketplace/${listing.id}/status`, { method: "PUT", body: jsonBody({ status: "published" }) }, ownerCookie); expect(published.status).toBe(200);
+    const inquiry = await call(`/api/v1/marketplace/${listing.id}/inquiries`, { method: "POST", body: jsonBody({ subject: "Encoder evidence", message: "Can you share the encoder test conditions and calibration log?" }) }, otherCookie);
+    expect(inquiry.status).toBe(201); expect((await body<{ paymentProcessed: boolean }>(inquiry)).paymentProcessed).toBe(false);
+  });
+
+  it("fails AI requests honestly when no provider secret is configured", async () => {
+    const conversation = await call("/api/v1/ai/conversations", { method: "POST", body: jsonBody({ title: "New chat" }) }, ownerCookie);
+    expect(conversation.status).toBe(201); const id = (await body<{ item: { id: string } }>(conversation)).item.id;
+    const response = await call("/api/v1/ai/chat", { method: "POST", body: jsonBody({ threadId: id, messages: [{ id: crypto.randomUUID(), role: "user", parts: [{ type: "text", text: "Find an actuator" }] }] }) }, ownerCookie);
+    expect(response.status).toBe(503); expect((await body<{ error: { code: string } }>(response)).error.code).toBe("AI_PROVIDER_NOT_CONFIGURED");
+  });
+
+  it("persists and revokes Better Auth sessions across sign-out and sign-in", async () => {
+    const email = "session-test@example.com";
+    const password = "correct-horse-battery";
+    const signup = await call("/api/auth/sign-up/email", { method: "POST", body: jsonBody({ name: "Session Test", email, password }) });
+    expect(signup.status).toBe(200); const initialCookie = cookies(signup);
+    const before = await call("/api/v1/me", {}, initialCookie); expect(before.status).toBe(200);
+    const signout = await call("/api/auth/sign-out", { method: "POST" }, initialCookie); expect(signout.status).toBe(200);
+    const revoked = await call("/api/v1/me", {}, initialCookie); expect(revoked.status).toBe(401);
+    const signin = await call("/api/auth/sign-in/email", { method: "POST", body: jsonBody({ email, password }) });
+    expect(signin.status).toBe(200); const renewedCookie = cookies(signin);
+    const after = await call("/api/v1/me", {}, renewedCookie); expect(after.status).toBe(200);
+  });
+});

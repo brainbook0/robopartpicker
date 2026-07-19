@@ -1,0 +1,17 @@
+# Generate a unique local value with: npx auth@1.6.23 secret
+BETTER_AUTH_SECRET=replace-with-at-least-32-random-characters
+BETTER_AUTH_URL=http://127.0.0.1:8080
+
+# Dedicated credential for POST /api/v1/imports/batches.
+INGESTION_SECRET=replace-with-a-separate-random-service-secret
+
+# Optional integration boundaries. Leave blank to report the capability as unavailable.
+EMAIL_PROVIDER_URL=
+EMAIL_PROVIDER_TOKEN=
+EMAIL_FROM=RoboPartPicker <no-reply@example.invalid>
+GITHUB_TOKEN=
+AI_PROVIDER_URL=
+AI_PROVIDER_KEY=
+AI_MODEL=
+MALWARE_SCAN_URL=
+MALWARE_SCAN_TOKEN=

@@ -1,6 +1,15 @@
 import { Link } from "react-router-dom";
-import type { Part, Actuator, Hand, Sensor, Compute, Driver, Reducer } from "@/data/parts";
-import { lowestPrice, priceDelta30 } from "@/data/parts";
+import {
+  lowestPrice,
+  priceDelta30,
+  type Part,
+  type Actuator,
+  type Hand,
+  type Sensor,
+  type Compute,
+  type Driver,
+  type Reducer,
+} from "@/shared/catalog";
 import { PriceDeltaPill } from "@/components/common/PriceDeltaPill";
 import { ExpandableImage } from "@/components/common/ExpandableImage";
 import { gallery } from "@/lib/media";

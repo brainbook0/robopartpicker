@@ -12,7 +12,6 @@ import { Message, MessageContent } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputTextarea, PromptInputSubmit, PromptInputFooter } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import {
   chatEndpoint,
   createThread,
@@ -225,18 +224,7 @@ function ChatWindow({
     () =>
       new DefaultChatTransport({
         api: chatEndpoint(),
-        prepareSendMessagesRequest: async ({ messages, id, body }) => {
-          const { data } = await supabase.auth.getSession();
-          const token = data.session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          return {
-            body: { messages, threadId: id, ...body },
-            headers: {
-              Authorization: `Bearer ${token}`,
-              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              "Content-Type": "application/json",
-            },
-          };
-        },
+        prepareSendMessagesRequest: async ({ messages, id, body }) => ({ body: { messages, threadId: id, ...body } }),
       }),
     [],
   );
@@ -357,9 +345,10 @@ function MessageBubble({ message }: { message: UIMessage }) {
                 <ReactMarkdown
                   components={{
                     a: ({ href, children, ...p }) => {
-                      const isInternal = typeof href === "string" && href.startsWith("/");
+                      const isInternal = typeof href === "string" && /^\/(?!\/)[a-zA-Z0-9/_?=&%#.-]*$/u.test(href);
+                      const isExternal = typeof href === "string" && /^https:\/\//u.test(href);
                       return (
-                        <a href={href} target={isInternal ? undefined : "_blank"} rel="noreferrer" {...p}>
+                        <a href={isInternal || isExternal ? href : undefined} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noreferrer" : undefined} {...p}>
                           {children}
                         </a>
                       );

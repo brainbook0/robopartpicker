@@ -2,7 +2,7 @@
 // Nothing here is sent, monitored, published, or synchronized with any server.
 // All data lives in this browser's localStorage.
 
-import type { PartCategory } from "@/data/parts";
+import type { PartCategory } from "@/shared/catalog";
 
 const SAVED_PARTS_KEY = "rpp:cat:saved-parts:v1";
 const COMPARE_KEY = "rpp:cat:compare:v1";

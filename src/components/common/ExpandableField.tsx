@@ -16,7 +16,7 @@ export function ExpandableField({ k, v, raw, detail, source }: Props) {
 
   const copy = async () => {
     const text = raw !== undefined && raw !== null ? String(raw) : typeof v === "string" || typeof v === "number" ? String(v) : k;
-    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1200); } catch {}
+    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1200); } catch { setCopied(false); }
   };
 
   return (

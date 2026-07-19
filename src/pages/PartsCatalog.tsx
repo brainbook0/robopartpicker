@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
-  categoryLabel, partsByCategory, lowestPrice,
+  categoryLabel, lowestPrice,
   type PartCategory, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer, type Part,
-} from "@/data/parts";
-import { suppliers } from "@/data/suppliers";
+} from "@/shared/catalog";
+import { useComponents } from "@/lib/api/catalog";
 import { PartsTable } from "@/components/parts/PartsTable";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CatalogDataNotice } from "@/components/parts/CatalogDataNotice";
@@ -104,30 +104,34 @@ export default function PartsCatalog() {
   const rawSort = (sp.get("sort") ?? "price-asc") as SortKey;
   const sort: SortKey = ALL_SORTS.includes(rawSort) ? rawSort : "price-asc";
 
-  const all = partsByCategory(cat);
-  const makerOptions = useMemo(() => Array.from(new Set(all.map(p => p.maker))).sort(), [all]);
+  const facetQuery = useComponents({ category: cat, limit: 100 });
+  const componentQuery = useComponents({
+    category: cat,
+    q,
+    manufacturerRegion: region,
+    supplierRegion: supplyRegion,
+    manufacturer: makers,
+    minPrice: priceMin,
+    maxPrice: priceMax,
+    inStock,
+    limit: 100,
+  });
+  const all = (componentQuery.data?.items ?? []) as Part[];
+  const catalogAll = (facetQuery.data?.items ?? []) as Part[];
+  const makerOptions = useMemo(() => Array.from(new Set(catalogAll.map(p => p.maker))).sort(), [catalogAll]);
   const supplierRegionOptions = useMemo(() => {
     const set = new Set<string>();
-    all.forEach(p => p.offers.forEach(o => {
-      const s = suppliers.find(x => x.id === o.supplierId);
-      if (s) set.add(s.region);
+    catalogAll.forEach(p => p.offers.forEach(o => {
+      if (o.supplierRegion) set.add(o.supplierRegion);
     }));
     return Array.from(set).sort();
-  }, [all]);
+  }, [catalogAll]);
 
   const filtered = useMemo(() => {
     let list = all.slice();
-    if (q) list = list.filter(p => (p.name + " " + p.maker + " " + p.tags.join(" ") + " " + p.blurb).toLowerCase().includes(q.toLowerCase()));
     if (ros) list = list.filter(p => p.rosSupport !== "none");
     if (opensrc) list = list.filter(p => p.openSource);
     if (cad) list = list.filter(p => p.cadAvailable);
-    if (inStock) list = list.filter(p => p.offers.some(o => o.stock > 0));
-    if (region.length) list = list.filter(p => region.includes(p.region as string));
-    if (supplyRegion.length) list = list.filter(p => p.offers.some(o => {
-      const s = suppliers.find(x => x.id === o.supplierId);
-      return s ? supplyRegion.includes(s.region) : false;
-    }));
-    if (makers.length) list = list.filter(p => makers.includes(p.maker));
     if (warMin !== null) list = list.filter(p => p.warrantyMonths >= warMin);
     if (leadMax !== null) list = list.filter(p => p.offers.some(o => o.leadDays <= leadMax));
     if (priceMin !== null) list = list.filter(p => lowestPrice(p) >= priceMin);
@@ -178,18 +182,18 @@ export default function PartsCatalog() {
     if (sort === "weight-asc" && cat === "actuator") list.sort((a,b) => (a as Actuator).weightKg - (b as Actuator).weightKg);
     if (sort === "torque-desc" && cat === "actuator") list.sort((a,b) => (b as Actuator).peakNm - (a as Actuator).peakNm);
     return list;
-  }, [all, q, ros, opensrc, cad, inStock, region, supplyRegion, makers, warMin, leadMax, priceMin, priceMax, joint, protocol, wMax, tMin, vMin, sort, cat, dofMin, payloadMin, gripMin, tactileOnly, iface, sensorType, rangeMin, hzMin, topsMin, ramMin, powerMax, currMin, voltMinAll, redType, rtMin, backlashMax]);
+  }, [all, ros, opensrc, cad, warMin, leadMax, priceMin, priceMax, joint, protocol, wMax, tMin, vMin, sort, cat, dofMin, payloadMin, gripMin, tactileOnly, iface, sensorType, rangeMin, hzMin, topsMin, ramMin, powerMax, currMin, voltMinAll, redType, rtMin, backlashMax]);
 
   // Category-scoped fixture overview (honest labels — nothing here is a live signal).
   const overview = useMemo(() => {
-    const makerCount = new Set(all.map(p => p.maker)).size;
-    const knownOffers = all.reduce((n, p) => n + p.offers.length, 0);
-    const multiSource = all.filter(p => p.offers.length >= 2).length;
-    const stockedOffers = all.reduce((n, p) => n + p.offers.filter(o => o.stock > 0).length, 0);
-    const prices = all.filter(p => p.offers.length).map(p => lowestPrice(p));
-    const shortestLeads = all.filter(p => p.offers.length).map(p => Math.min(...p.offers.map(o => o.leadDays)));
-    return { count: all.length, makers: makerCount, knownOffers, multiSource, stockedOffers, medianPrice: median(prices), medianLead: median(shortestLeads) };
-  }, [all]);
+    const makerCount = new Set(catalogAll.map(p => p.maker)).size;
+    const knownOffers = catalogAll.reduce((n, p) => n + p.offers.length, 0);
+    const multiSource = catalogAll.filter(p => p.offers.length >= 2).length;
+    const stockedOffers = catalogAll.reduce((n, p) => n + p.offers.filter(o => o.stock > 0).length, 0);
+    const prices = catalogAll.filter(p => p.offers.length).map(p => lowestPrice(p));
+    const shortestLeads = catalogAll.filter(p => p.offers.length).map(p => Math.min(...p.offers.map(o => o.leadDays)));
+    return { count: facetQuery.data?.total ?? catalogAll.length, makers: makerCount, knownOffers, multiSource, stockedOffers, medianPrice: median(prices), medianLead: median(shortestLeads) };
+  }, [catalogAll, facetQuery.data?.total]);
 
   const setParam = (k: string, v: string | null) => {
     const next = new URLSearchParams(sp);
@@ -429,7 +433,7 @@ export default function PartsCatalog() {
                 ))}
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
-                <span><span className="mono text-foreground">{filtered.length}</span> / <span className="mono">{all.length}</span> matches</span>
+                <span><span className="mono text-foreground">{filtered.length}</span> / <span className="mono">{facetQuery.data?.total ?? catalogAll.length}</span> matches</span>
                 <span className="h-3 w-px bg-border" />
                 <label>Sort
                   <select className="ml-1 input-bare inline-block w-auto" value={sort} onChange={(e) => setParam("sort", e.target.value === "price-asc" ? null : e.target.value)}>
@@ -471,7 +475,18 @@ export default function PartsCatalog() {
                 {tactileOnly && <button className="pill pill-yellow" onClick={() => setParam("tactile", null)}>tactile ×</button>}
               </div>
             )}
-            {filtered.length ? (
+            {componentQuery.isPending || facetQuery.isPending ? (
+              <div className="surface-card p-8 text-center" role="status">
+                <div className="text-[13px] font-medium">Loading components from the local API…</div>
+                <div className="text-[11.5px] text-muted-foreground mt-1">Querying D1 through the Worker.</div>
+              </div>
+            ) : componentQuery.isError || facetQuery.isError ? (
+              <div className="surface-card p-8 text-center" role="alert">
+                <div className="text-[13px] font-medium text-negative">Component data could not be loaded.</div>
+                <div className="text-[11.5px] text-muted-foreground mt-1">{(componentQuery.error ?? facetQuery.error)?.message}</div>
+                <button onClick={() => { void componentQuery.refetch(); void facetQuery.refetch(); }} className="btn-primary btn-sm mt-2">Retry</button>
+              </div>
+            ) : filtered.length ? (
               <PartsTable parts={filtered} onWorkspaceChange={() => setWsTick(t => t + 1)} />
             ) : (
               <div className="surface-card p-8 text-center">
