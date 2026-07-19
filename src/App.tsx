@@ -32,6 +32,8 @@ import Assistant from "./pages/Assistant.tsx";
 import PartCompare from "./pages/PartCompare.tsx";
 import Search from "./pages/Search.tsx";
 import Notifications from "./pages/Notifications.tsx";
+import Organizations from "./pages/Organizations.tsx";
+import OrganizationDetail from "./pages/OrganizationDetail.tsx";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -50,6 +52,8 @@ const App = () => (
             <Route path="/parts/compare" element={<PartCompare />} />
             <Route path="/search" element={<Search />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/organizations" element={<Organizations />} />
+            <Route path="/organizations/:id" element={<OrganizationDetail />} />
             <Route path="/parts/:category" element={<PartsCatalog />} />
             <Route path="/parts/:category/:slug" element={<PartDetail />} />
             <Route path="/projects" element={<ProjectsIndex />} />

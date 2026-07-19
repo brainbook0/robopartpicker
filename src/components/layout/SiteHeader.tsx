@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Moon, Sun, Search, Bell, GitPullRequest, Activity, LogOut, User as UserIcon, Sparkles, ChevronDown } from "lucide-react";
+import { Moon, Sun, Search, Bell, GitPullRequest, Activity, LogOut, User as UserIcon, Sparkles, ChevronDown, Building2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { profileInitials, profileName } from "@/lib/profile-display";
 import logoUrl from "@/assets/logo.png";
@@ -129,6 +129,7 @@ export const SiteHeader = () => {
                       <div className="text-muted-foreground truncate text-[10.5px]">{user.email}</div>
                     </div>
                     <Link to="/community" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><UserIcon className="h-3.5 w-3.5" /> Forum</Link>
+                    <Link to="/organizations" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><Building2 className="h-3.5 w-3.5" /> Organizations</Link>
                     <Link to="/notifications" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><Bell className="h-3.5 w-3.5" /> Notifications{Boolean(notificationCount.data?.unreadCount) && <span className="ml-auto badge-neutral mono">{notificationCount.data?.unreadCount}</span>}</Link>
                     <button onClick={() => { setMenuOpen(false); signOut(); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-muted text-destructive"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
                   </div>
