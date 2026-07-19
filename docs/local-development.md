@@ -1,0 +1,41 @@
+# Local development
+
+Local development uses the Cloudflare Vite plugin with local Wrangler bindings. D1 and R2 state is persisted beneath `.wrangler/` and is ignored by Git. No production binding is accessed by default.
+
+## Expected setup
+
+```powershell
+npm install
+Copy-Item .dev.vars.example .dev.vars
+npm run db:migrate:local
+npm run db:seed
+npm run dev
+```
+
+The frontend and API share one origin. Authentication cookies therefore require no local cross-origin exception.
+
+## Database commands
+
+```powershell
+npm run db:migration:create -- add_feature_name
+npm run db:migrations:list
+npm run db:migrate:local
+npm run db:reset
+npm run db:seed
+npm run db:inspect
+npm run db:export
+npm run db:validate
+```
+
+`db:migrate:remote` is deliberately separate and includes Wrangler's `--remote` flag. Do not use it for ordinary development. The repository does not require `better-sqlite3`, a sidecar database process, or a manually opened `.sqlite` file.
+
+`db:export` writes application-table data to ignored `exports/`. Apply the migrations before restoring that file. The export intentionally omits schema, Wrangler metadata, and FTS5 virtual/shadow tables because Wrangler's local exporter cannot dump a database containing virtual tables; the migrations recreate the FTS schema and triggers rebuild its index as rows are restored.
+
+## Local secrets
+
+`.dev.vars.example` documents required names without values. `.dev.vars` must contain a unique local `BETTER_AUTH_SECRET`, local `BETTER_AUTH_URL`, an ingestion credential, and optional email/OAuth/AI provider credentials. It is ignored by Git.
+
+Wrangler local D1 and R2 behavior is documented at:
+
+- <https://developers.cloudflare.com/workers/local-development/>
+- <https://developers.cloudflare.com/r2/api/workers/workers-api-usage/>

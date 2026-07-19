@@ -1,14 +1,11 @@
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Moon, Sun, Search, Bell, GitPullRequest, Activity, LogOut, User as UserIcon, Sparkles, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { authorInitials, authorName } from "@/lib/forum";
+import { profileInitials, profileName } from "@/lib/profile-display";
 import logoUrl from "@/assets/logo.png";
-import { categoryLabel, type PartCategory } from "@/data/parts";
-import { parts, lowestPrice, priceDelta30 } from "@/data/parts";
-import { suppliers } from "@/data/suppliers";
-import { boms } from "@/data/boms";
-import { listings, wanted } from "@/data/listings";
+import { categoryLabel, lowestPrice, priceDelta30, type PartCategory } from "@/shared/catalog";
+import { useComponents, useSuppliers } from "@/lib/api/catalog";
 
 const navItems: { label: string; to: string }[] = [
   { label: "Discover", to: "/" },
@@ -30,18 +27,21 @@ const moreItems: { label: string; to: string }[] = [
 
 const partCats: PartCategory[] = ["actuator","hand","sensor","compute","driver","reducer"];
 
-const kpis = (() => {
-  const avgLead = Math.round(suppliers.reduce((s, x) => s + x.leadDays, 0) / suppliers.length);
-  const deltas = parts.map(priceDelta30);
-  const medDelta = deltas.sort((a,b)=>a-b)[Math.floor(deltas.length/2)] ?? 0;
-  const totalListed = listings.reduce((s,l)=>s+l.price, 0);
-  const medPrice = (() => { const arr = parts.map(lowestPrice).sort((a,b)=>a-b); return arr[Math.floor(arr.length/2)] ?? 0; })();
-  return { avgLead, medDelta, totalListed, medPrice };
-})();
-
 const fmtUsd = (n: number) => n >= 1e6 ? `$${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(1)}k` : `$${n}`;
 
 export const SiteHeader = () => {
+  const catalogQuery = useComponents({ limit: 100 });
+  const suppliersQuery = useSuppliers();
+  const parts = catalogQuery.data?.items ?? [];
+  const suppliers = suppliersQuery.data?.items ?? [];
+  const kpis = useMemo(() => {
+    const avgLead = suppliers.length ? Math.round(suppliers.reduce((sum, supplier) => sum + supplier.leadDays, 0) / suppliers.length) : 0;
+    const deltas = parts.map(priceDelta30).sort((a, b) => a - b);
+    const medDelta = deltas[Math.floor(deltas.length / 2)] ?? 0;
+    const prices = parts.filter((part) => part.offers.length > 0).map(lowestPrice).sort((a, b) => a - b);
+    const medPrice = prices[Math.floor(prices.length / 2)] ?? 0;
+    return { avgLead, medDelta, medPrice };
+  }, [parts, suppliers]);
   const [dark, setDark] = useState<boolean>(() => typeof window !== "undefined" && document.documentElement.classList.contains("dark"));
   const [q, setQ] = useState("");
   const nav = useNavigate();
@@ -63,7 +63,7 @@ export const SiteHeader = () => {
           <span className="text-[13px] font-bold tracking-tight">robopartpicker</span>
         </Link>
 
-        <form onSubmit={(e) => { e.preventDefault(); if (q.trim()) nav(`/projects?q=${encodeURIComponent(q)}`); }}
+        <form onSubmit={(e) => { e.preventDefault(); if (q.trim()) nav(`/search?q=${encodeURIComponent(q)}`); }}
           className="hidden md:flex flex-1 max-w-[380px] items-center gap-2 rounded border border-input bg-surface px-2">
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
           <input value={q} onChange={(e) => setQ(e.target.value)}
@@ -109,15 +109,15 @@ export const SiteHeader = () => {
               <button onClick={() => setMenuOpen(v => !v)} className="flex items-center gap-1.5 rounded border border-border bg-background pl-1 pr-2 py-0.5 hover:bg-muted">
                 {profile?.avatar_url
                   ? <img src={profile.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
-                  : <span className="h-5 w-5 rounded-full bg-primary/15 text-primary border border-primary/30 grid place-items-center text-[9px] font-semibold">{authorInitials(profile)}</span>}
-                <span className="hidden sm:inline text-[11px] max-w-[100px] truncate">{authorName(profile) || user.email}</span>
+                  : <span className="h-5 w-5 rounded-full bg-primary/15 text-primary border border-primary/30 grid place-items-center text-[9px] font-semibold">{profileInitials(profile)}</span>}
+                <span className="hidden sm:inline text-[11px] max-w-[100px] truncate">{profileName(profile) || user.email}</span>
               </button>
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                   <div className="absolute right-0 z-50 mt-1 w-44 rounded border border-border bg-popover shadow-md text-[12px]">
                     <div className="px-3 py-2 border-b border-border/60">
-                      <div className="font-medium truncate">{authorName(profile)}</div>
+                      <div className="font-medium truncate">{profileName(profile)}</div>
                       <div className="text-muted-foreground truncate text-[10.5px]">{user.email}</div>
                     </div>
                     <Link to="/community" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><UserIcon className="h-3.5 w-3.5" /> Forum</Link>
@@ -151,25 +151,21 @@ export const SiteHeader = () => {
           <Link to="/marketplace" className="shrink-0 text-muted-foreground hover:text-foreground">Used deals</Link>
           <Link to="/suppliers" className="shrink-0 text-muted-foreground hover:text-foreground">Suppliers</Link>
           <Link to="/teardowns" className="shrink-0 text-muted-foreground hover:text-foreground">Teardowns</Link>
-          <span className="ml-auto hidden md:inline shrink-0 mono text-[10px] text-muted-foreground">v0.4 · preview build · sample data</span>
+          <span className="ml-auto hidden md:inline shrink-0 mono text-[10px] text-muted-foreground">v0.2 · Worker + D1 · demo data</span>
         </div>
       </div>
 
-      {/* Tertiary KPI ticker — live market signals */}
+      {/* Tertiary KPI ticker — explicitly labelled persisted demo data until live imports are approved. */}
       <div className="border-t border-border bg-background">
         <div className="mx-auto flex max-w-[1400px] items-center overflow-x-auto no-scrollbar px-4 text-[11px]">
           <span className="flex items-center gap-1 shrink-0 pr-3 text-muted-foreground">
-            <Activity className="h-3 w-3 text-primary" /> <span className="mono">LIVE</span>
+            <Activity className="h-3 w-3 text-primary" /> <span className="mono">D1 DEMO</span>
           </span>
-          <div className="stat-tile"><span className="k">parts</span><span className="v">{parts.length}</span></div>
-          <div className="stat-tile"><span className="k">suppliers</span><span className="v">{suppliers.length}</span></div>
-          <div className="stat-tile"><span className="k">boms</span><span className="v">{boms.length}</span></div>
-          <div className="stat-tile"><span className="k">listings</span><span className="v">{listings.length}</span></div>
-          <div className="stat-tile"><span className="k">wanted</span><span className="v">{wanted.length}</span></div>
+          <div className="stat-tile"><span className="k">parts</span><span className="v">{catalogQuery.data?.total ?? "—"}</span></div>
+          <div className="stat-tile"><span className="k">suppliers</span><span className="v">{suppliersQuery.data?.total ?? "—"}</span></div>
           <div className="stat-tile"><span className="k">avg lead</span><span className="v mono">{kpis.avgLead}d</span></div>
           <div className="stat-tile"><span className="k">median Δ30d</span><span className={`v mono ${kpis.medDelta>0?"text-negative":"text-positive"}`}>{kpis.medDelta>0?"+":""}{kpis.medDelta.toFixed(1)}%</span></div>
           <div className="stat-tile"><span className="k">median $</span><span className="v mono">{fmtUsd(kpis.medPrice)}</span></div>
-          <div className="stat-tile"><span className="k">GMV listed</span><span className="v mono">{fmtUsd(kpis.totalListed)}</span></div>
           <Link to="/finder/actuator" className="ml-auto shrink-0 text-[11px] text-muted-foreground hover:text-primary pl-3">Guided finder →</Link>
         </div>
       </div>

@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  getThread, getThreadPosts,
+  getThreadBundle, createThreadPost, deleteThreadPost, toggleThreadReaction,
+  getCommunityBookmarks, setCommunityBookmark,
   type ForumThreadRow, type ForumPost, type ProfileMini,
   authorName, authorInitials, timeAgo,
   threadTypeLabel, resolveRelated, type ResolvedRelated,
@@ -55,48 +55,27 @@ export default function ForumThreadPage() {
   const [contribStats, setContribStats] = useState<Map<string, { threads: number; replies: number; reactions: number; accepted: number }>>(new Map());
   const [bookmarks, setBookmarks] = useState<string[]>([]);
 
-  useEffect(() => { setBookmarks(readBookmarks()); }, []);
+  useEffect(() => {
+    if (user) getCommunityBookmarks().then(setBookmarks).catch(() => setBookmarks([]));
+    else setBookmarks(readBookmarks());
+  }, [user]);
 
   const refresh = useCallback(async () => {
     if (!id) return;
-    const t = await getThread(id);
+    const bundle = await getThreadBundle(id);
+    const t = bundle.item;
     setThread(t);
-    if (!t) return;
-    // OP author explicitly
-    const { data: opProfile } = await supabase
-      .from("profiles").select("id, display_name, username, avatar_url")
-      .eq("id", t.user_id).maybeSingle();
-    setOpAuthor((opProfile as ProfileMini) ?? null);
-    // Category
-    const { data: catRow } = await supabase
-      .from("forum_categories").select("id, slug, name, color")
-      .eq("id", t.category_id).maybeSingle();
-    setCategory((catRow as any) ?? null);
+    setOpAuthor(t.author);
+    setCategory(t.category ? { id: t.category.id, slug: t.category.slug, name: t.category.name, color: t.category.color } : null);
     // Related
     setRelated(await resolveRelated(t.related_entity_type, t.related_entity_id));
     // Posts
-    const p = await getThreadPosts(t.id);
+    const p = bundle.posts;
     setPosts(p);
-    // Reactions
-    const postIdsList = p.map(x => x.id);
-    const orParts: string[] = [`thread_id.eq.${t.id}`];
-    if (postIdsList.length) orParts.push(`post_id.in.(${postIdsList.join(",")})`);
-    const { data: rx } = await supabase.from("forum_reactions").select("*").or(orParts.join(","));
-    const c: Record<string, Record<string, number>> = {};
-    const mine: Record<string, string[]> = {};
-    (rx ?? []).forEach((r: any) => {
-      const tid = r.post_id ?? r.thread_id;
-      c[tid] = c[tid] || {};
-      c[tid][r.emoji] = (c[tid][r.emoji] || 0) + 1;
-      if (user && r.user_id === user.id) {
-        mine[tid] = mine[tid] || [];
-        mine[tid].push(r.emoji);
-      }
-    });
-    setCounts(c);
-    setMyReactions(mine);
+    setCounts(bundle.reactions.counts);
+    setMyReactions(bundle.reactions.mine);
     // Contributor stats for OP + reply authors
-    const uids = [t.user_id, ...p.map(x => x.user_id)];
+    const uids = [t.user_id, ...p.map(x => x.user_id)].filter((value): value is string => Boolean(value));
     setContribStats(await contributorStatsFor(uids));
   }, [id, user]);
 
@@ -111,35 +90,32 @@ export default function ForumThreadPage() {
     if (!user) { nav("/auth", { state: { from: `/community/t/${id}` } }); return; }
     if (!reply.trim() || !thread) return;
     setBusy(true);
-    const { error } = await supabase.from("forum_posts").insert({ thread_id: thread.id, user_id: user.id, body: reply.trim() });
-    setBusy(false);
-    if (error) { toast({ title: "Could not post", description: error.message, variant: "destructive" }); return; }
-    setReply("");
-    refresh();
+    try {
+      await createThreadPost(thread.id, reply.trim());
+      setReply("");
+      await refresh();
+    } catch (error) {
+      toast({ title: "Could not post", description: error instanceof Error ? error.message : String(error), variant: "destructive" });
+    } finally { setBusy(false); }
   };
 
   const toggleReaction = async (target: { thread_id?: string; post_id?: string; id: string }, emoji: string) => {
     if (!user) { nav("/auth", { state: { from: `/community/t/${id}` } }); return; }
-    const has = (myReactions[target.id] ?? []).includes(emoji);
-    if (has) {
-      const q = supabase.from("forum_reactions").delete().eq("user_id", user.id).eq("emoji", emoji);
-      const { error } = target.post_id ? await q.eq("post_id", target.post_id) : await q.eq("thread_id", target.thread_id!);
-      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    } else {
-      const { error } = await supabase.from("forum_reactions").insert({ user_id: user.id, emoji, post_id: target.post_id ?? null, thread_id: target.thread_id ?? null });
-      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    }
-    refresh();
+    try {
+      await toggleThreadReaction({ postId: target.post_id, threadId: target.thread_id }, emoji);
+      await refresh();
+    } catch (error) { toast({ title: "Error", description: error instanceof Error ? error.message : String(error), variant: "destructive" }); }
   };
 
   const deletePost = async (postId: string) => {
     if (deleteBusy) return;
     if (!confirm("Delete this reply?")) return;
     setDeleteBusy(postId);
-    const { error } = await supabase.from("forum_posts").delete().eq("id", postId);
-    setDeleteBusy(null);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    refresh();
+    try {
+      await deleteThreadPost(postId);
+      await refresh();
+    } catch (error) { toast({ title: "Error", description: error instanceof Error ? error.message : String(error), variant: "destructive" }); }
+    finally { setDeleteBusy(null); }
   };
 
   const acceptToggle = async (postId: string) => {
@@ -168,11 +144,16 @@ export default function ForumThreadPage() {
     }
   };
 
-  const toggleBookmark = () => {
+  const toggleBookmark = async () => {
     if (!thread) return;
     const next = isBookmarked ? bookmarks.filter(b => b !== thread.id) : [...bookmarks, thread.id];
-    writeBookmarks(next); setBookmarks(next);
-    toast({ title: isBookmarked ? "Bookmark removed" : "Saved locally", description: "Bookmarks are stored only in this browser." });
+    if (user) {
+      try { await setCommunityBookmark(thread.id, !isBookmarked); setBookmarks(next); toast({ title: isBookmarked ? "Bookmark removed" : "Thread bookmarked" }); }
+      catch (error) { toast({ title: "Bookmark failed", description: error instanceof Error ? error.message : String(error), variant: "destructive" }); }
+    } else {
+      writeBookmarks(next); setBookmarks(next);
+      toast({ title: isBookmarked ? "Bookmark removed" : "Saved locally", description: "Sign in to sync bookmarks across devices." });
+    }
   };
 
   const copyLink = async (url?: string) => {

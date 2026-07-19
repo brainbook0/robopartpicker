@@ -1,17 +1,19 @@
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api/client";
 import { emptyRpps, RPPS_VERSION, slugify, validateRpps, type RppsPackage } from "@/lib/rpps/schema";
 
 export type ProjectRow = {
   id: string;
-  owner_id: string;
+  owner_id: string | null;
+  organization_id?: string | null;
   slug: string;
   name: string;
   summary: string | null;
   description: string | null;
   license: string | null;
   version: string;
-  status: "draft" | "published" | "archived";
-  visibility: "public" | "unlisted" | "private";
+  record_version?: number;
+  status: "draft" | "review" | "published" | "archived";
+  visibility: "public" | "organization" | "unlisted" | "private";
   repo_url: string | null;
   docs_url: string | null;
   cover_image_url: string | null;
@@ -26,34 +28,21 @@ export type ProjectRow = {
 };
 
 export async function listPublicProjects(): Promise<ProjectRow[]> {
-  const { data, error } = await supabase
-    .from("projects" as any)
-    .select("*")
-    .eq("visibility", "public")
-    .order("updated_at", { ascending: false })
-    .limit(100);
-  if (error) throw error;
-  return (data ?? []) as unknown as ProjectRow[];
+  return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?limit=100")).items;
 }
 
 export async function listMyProjects(userId: string): Promise<ProjectRow[]> {
-  const { data, error } = await supabase
-    .from("projects" as any)
-    .select("*")
-    .eq("owner_id", userId)
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as unknown as ProjectRow[];
+  void userId;
+  return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?mine=true&limit=100", { retry: false })).items;
 }
 
 export async function getProjectBySlug(slug: string): Promise<ProjectRow | null> {
-  const { data, error } = await supabase
-    .from("projects" as any)
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error) throw error;
-  return (data as unknown as ProjectRow) ?? null;
+  try {
+    return (await api.get<{ item: ProjectRow }>(`/api/v1/projects/${encodeURIComponent(slug)}`)).item;
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "status" in error && error.status === 404) return null;
+    throw error;
+  }
 }
 
 export type NewProjectInput = {
@@ -110,24 +99,18 @@ export async function createProject(userId: string, input: NewProjectInput): Pro
     rpps_version: RPPS_VERSION,
     rpps: check.data as any,
   };
-  const { data, error } = await supabase.from("projects" as any).insert(row).select("*").single();
-  if (error) throw error;
-  return data as unknown as ProjectRow;
+  void userId;
+  return (await api.post<{ item: ProjectRow }>("/api/v1/projects", { visibility: row.visibility, rpps: check.data })).item;
 }
 
 export async function updateProjectRpps(projectId: string, rpps: RppsPackage): Promise<void> {
   const check = validateRpps(rpps);
   if (check.ok === false) throw new Error("Invalid RPPS package: " + check.errors.join("; "));
-  const { error } = await supabase
-    .from("projects" as any)
-    .update({ rpps: check.data as any, name: check.data.name, summary: check.data.summary ?? null, version: check.data.version })
-    .eq("id", projectId);
-  if (error) throw error;
+  await api.put(`/api/v1/projects/${encodeURIComponent(projectId)}/rpps`, { rpps: check.data });
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
-  const { error } = await supabase.from("projects" as any).delete().eq("id", projectId);
-  if (error) throw error;
+  await api.delete(`/api/v1/projects/${encodeURIComponent(projectId)}`);
 }
 
 // ---------- GitHub import ----------
@@ -145,35 +128,7 @@ export type GithubDraft = {
 };
 
 export async function draftFromGithub(repoUrl: string): Promise<GithubDraft> {
-  const m = repoUrl.match(/github\.com\/([^/\s]+)\/([^/\s#?]+)/i);
-  if (!m) throw new Error("Not a GitHub repository URL");
-  const owner = m[1];
-  const repo = m[2].replace(/\.git$/, "");
-  const meta = await fetch(`https://api.github.com/repos/${owner}/${repo}`).then(r => {
-    if (!r.ok) throw new Error(`GitHub API ${r.status}`);
-    return r.json();
-  });
-  let readme = "";
-  try {
-    const rd = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
-      headers: { Accept: "application/vnd.github.raw" },
-    });
-    if (rd.ok) readme = await rd.text();
-  } catch { /* readme is optional */ }
-
-  const description: string = readme.slice(0, 8000) || meta.description || "";
-  const summary: string = (meta.description || readme.split(/\n/).find((l: string) => l.trim())?.trim() || "").slice(0, 280);
-  const tags: string[] = Array.isArray(meta.topics) ? meta.topics.slice(0, 20) : [];
-  return {
-    name: meta.name || repo,
-    slug: slugify(`${owner}-${repo}`),
-    summary,
-    description,
-    repo_url: meta.html_url || repoUrl,
-    license: meta.license?.spdx_id || undefined,
-    tags,
-    cover_image_url: meta.owner?.avatar_url,
-  };
+  return (await api.post<{ draft: GithubDraft }>("/api/v1/projects/import/repository", { repositoryUrl: repoUrl })).draft;
 }
 
 // ---------- Export helpers ----------

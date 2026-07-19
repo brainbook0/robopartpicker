@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   listCategories, slugify, type ForumCategory,
   THREAD_TYPES, threadTypeLabel, threadTypeHint,
   RELATED_ENTITY_TYPES, type RelatedEntityType, relatedEntityLabel,
   type ThreadType, resolveRelated, type ResolvedRelated,
-  isInternalPath, normalizeTags, type ForumThreadInsert,
+  isInternalPath, normalizeTags, type ForumThreadInsert, createThread,
 } from "@/lib/forum";
-import { parts as allParts } from "@/data/parts";
-import { listings as allListings } from "@/data/listings";
-import { suppliers as allSuppliers } from "@/data/suppliers";
+import { useComponents, useSuppliers } from "@/lib/api/catalog";
+import { listPublicProjects } from "@/lib/projects";
+import { useMarketplace } from "@/lib/api/marketplace";
 import { toast } from "@/hooks/use-toast";
 import { Info } from "lucide-react";
 
@@ -106,6 +105,9 @@ const tagSuggestions: Record<ThreadType, string[]> = {
 };
 
 export default function ForumNewThread() {
+  const componentQuery = useComponents({ limit: 100 });
+  const supplierQuery = useSuppliers();
+  const marketplaceQuery = useMarketplace({ type: "sell" });
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const [sp] = useSearchParams();
@@ -158,9 +160,7 @@ export default function ForumNewThread() {
 
   useEffect(() => {
     if (relatedType === "project") {
-      supabase.from("projects").select("id, name, slug, version")
-        .eq("visibility", "public").order("updated_at", { ascending: false }).limit(200)
-        .then(({ data }) => setProjects(data ?? []));
+      listPublicProjects().then((items) => setProjects(items.map(({ id, name, slug, version }) => ({ id, name, slug, version }))));
     }
   }, [relatedType]);
 
@@ -174,23 +174,23 @@ export default function ForumNewThread() {
   const relatedOptions = useMemo(() => {
     const s = relatedSearch.trim().toLowerCase();
     if (relatedType === "component") {
-      return allParts.filter(p => !s || p.name.toLowerCase().includes(s) || p.maker.toLowerCase().includes(s)).slice(0, 40)
+      return (componentQuery.data?.items ?? []).filter(p => !s || p.name.toLowerCase().includes(s) || p.maker.toLowerCase().includes(s)).slice(0, 40)
         .map(p => ({ id: p.id, label: p.name, sub: `${p.maker} · ${p.category}` }));
     }
     if (relatedType === "marketplace_listing") {
-      return allListings.filter(l => !s || l.title.toLowerCase().includes(s)).slice(0, 40)
-        .map(l => ({ id: l.id, label: l.title, sub: `Grade ${l.grade} · $${l.price.toLocaleString()}` }));
+      return (marketplaceQuery.data?.items ?? []).filter((listing) => !s || listing.title.toLowerCase().includes(s)).slice(0, 40)
+        .map((listing) => ({ id: listing.id, label: listing.title, sub: `${listing.conditionGrade ?? "n/a"} · ${listing.price == null ? "quote" : `$${listing.price.toLocaleString()}`}` }));
     }
     if (relatedType === "project") {
       return projects.filter(p => !s || p.name.toLowerCase().includes(s)).slice(0, 40)
         .map(p => ({ id: p.id, label: p.name, sub: `v${p.version}` }));
     }
     if (relatedType === "supplier") {
-      return allSuppliers.filter(sp2 => !s || sp2.name.toLowerCase().includes(s)).slice(0, 40)
+      return (supplierQuery.data?.items ?? []).filter(sp2 => !s || sp2.name.toLowerCase().includes(s)).slice(0, 40)
         .map(sp2 => ({ id: sp2.id, label: sp2.name, sub: `${sp2.region} · ${sp2.categories.join(", ")}` }));
     }
     return [];
-  }, [relatedType, relatedSearch, projects]);
+  }, [relatedType, relatedSearch, projects, componentQuery.data?.items, supplierQuery.data?.items, marketplaceQuery.data?.items]);
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -249,10 +249,12 @@ export default function ForumNewThread() {
       linked_entity_path: linkedPath.trim() || null,
       structured_data: structured as ForumThreadInsert["structured_data"],
     };
-    const { data, error } = await supabase.from("forum_threads").insert(payload).select("id").single();
-    setBusy(false);
-    if (error || !data) { toast({ title: "Could not create", description: error?.message ?? "Unknown error", variant: "destructive" }); return; }
-    nav(`/community/t/${data.id}`);
+    try {
+      const created = await createThread(payload);
+      nav(`/community/t/${created.id}`);
+    } catch (error) {
+      toast({ title: "Could not create", description: error instanceof Error ? error.message : String(error), variant: "destructive" });
+    } finally { setBusy(false); }
   };
 
   return (

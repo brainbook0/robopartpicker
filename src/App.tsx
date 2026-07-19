@@ -6,18 +6,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import Robots from "./pages/Robots.tsx";
-import RobotDetail from "./pages/RobotDetail.tsx";
 import PartsCatalog from "./pages/PartsCatalog.tsx";
 import PartDetail from "./pages/PartDetail.tsx";
 import Finder from "./pages/Finder.tsx";
 import Builder from "./pages/Builder.tsx";
 import BomsIndex from "./pages/BomsIndex.tsx";
 import BomDetail from "./pages/BomDetail.tsx";
-import Marketplace from "./pages/Marketplace.tsx";
-import ListingDetail from "./pages/ListingDetail.tsx";
-import WantedNew from "./pages/WantedNew.tsx";
-import ListingNew from "./pages/ListingNew.tsx";
+import Marketplace from "./pages/marketplace/MarketplaceD1.tsx";
+import ListingDetail from "./pages/marketplace/ListingDetailD1.tsx";
+import WantedNew from "./pages/marketplace/WantedEditorD1.tsx";
+import ListingNew from "./pages/marketplace/ListingEditorD1.tsx";
 import Suppliers from "./pages/Suppliers.tsx";
 import SupplierDetail from "./pages/SupplierDetail.tsx";
 import Teardowns from "./pages/Teardowns.tsx";
@@ -32,6 +30,7 @@ import ProjectDetail from "./pages/ProjectDetail.tsx";
 import RppsSpec from "./pages/RppsSpec.tsx";
 import Assistant from "./pages/Assistant.tsx";
 import PartCompare from "./pages/PartCompare.tsx";
+import Search from "./pages/Search.tsx";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -48,6 +47,7 @@ const App = () => (
             <Route element={<SiteLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/parts/compare" element={<PartCompare />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/parts/:category" element={<PartsCatalog />} />
             <Route path="/parts/:category/:slug" element={<PartDetail />} />
             <Route path="/projects" element={<ProjectsIndex />} />
@@ -66,8 +66,8 @@ const App = () => (
             <Route path="/marketplace/:id" element={<ListingDetail />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/suppliers/:slug" element={<SupplierDetail />} />
-            <Route path="/robots" element={<Robots />} />
-            <Route path="/robots/:slug" element={<RobotDetail />} />
+            <Route path="/robots" element={<ProjectsIndex />} />
+            <Route path="/robots/:slug" element={<ProjectDetail />} />
             <Route path="/teardowns" element={<Teardowns />} />
             <Route path="/community" element={<Community />} />
             <Route path="/community/new" element={<ForumNewThread />} />

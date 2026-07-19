@@ -50,7 +50,7 @@ export default function ProjectsIndex() {
   };
   const toggleQuick = (key: string) => {
     const nq = new Set(quick);
-    nq.has(key) ? nq.delete(key) : nq.add(key);
+    if (nq.has(key)) nq.delete(key); else nq.add(key);
     setParam("f", nq.size ? Array.from(nq).join(",") : null);
   };
   const clearFilters = () => setParams(new URLSearchParams(), { replace: false });

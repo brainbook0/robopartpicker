@@ -1,0 +1,65 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "robopartpicker",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-07-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/files/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "robopartpicker",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "FILES",
+      "bucket_name": "robopartpicker-files"
+    }
+  ],
+  "vars": {
+    "APP_ENV": "development",
+    "APP_NAME": "RoboPartPicker"
+  },
+  "env": {
+    "production": {
+      "assets": {
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application",
+        "run_worker_first": ["/api/*", "/files/*"]
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "robopartpicker-production",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES",
+          "bucket_name": "robopartpicker-files"
+        }
+      ],
+      "vars": {
+        "APP_ENV": "production",
+        "APP_NAME": "RoboPartPicker"
+      }
+    }
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
+  "upload_source_maps": true
+}

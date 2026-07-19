@@ -1,10 +1,20 @@
-import { supabase } from "@/integrations/supabase/client";
-import { partById } from "@/data/parts";
-import { listingById } from "@/data/listings";
-import { suppliers } from "@/data/suppliers";
-import type { TablesInsert } from "@/integrations/supabase/types";
+import { api } from "@/lib/api/client";
 
-export type ForumThreadInsert = TablesInsert<"forum_threads">;
+export type ForumThreadInsert = {
+  user_id?: string;
+  category_id: string;
+  title: string;
+  slug: string;
+  body: string;
+  tags: string[];
+  thread_type: ThreadType;
+  status?: ThreadStatus;
+  related_entity_type?: RelatedEntityType | null;
+  related_entity_id?: string | null;
+  linked_entity_label?: string | null;
+  linked_entity_path?: string | null;
+  structured_data: Record<string, unknown>;
+};
 
 export const THREAD_TYPES = [
   "question",
@@ -79,7 +89,7 @@ export type ForumCategory = {
 export type ForumThreadRow = {
   id: string;
   category_id: string;
-  user_id: string;
+  user_id: string | null;
   title: string;
   slug: string;
   body: string;
@@ -152,13 +162,7 @@ export const timeAgo = (iso: string) => {
 };
 
 export async function listCategories(): Promise<ForumCategory[]> {
-  const { data, error } = await supabase
-    .from("forum_categories")
-    .select("*")
-    .order("sort_order")
-    .order("name");
-  if (error) throw error;
-  return (data ?? []) as ForumCategory[];
+  return (await api.get<{ items: ForumCategory[] }>("/api/v1/community/categories")).items;
 }
 
 export async function listThreads(opts: {
@@ -172,52 +176,23 @@ export async function listThreads(opts: {
   relatedType?: RelatedEntityType;
   relatedId?: string;
 } = {}): Promise<ThreadWithMeta[]> {
-  let q = supabase.from("forum_threads").select("*");
-  if (opts.categoryId) q = q.eq("category_id", opts.categoryId);
-  if (opts.threadType) q = q.eq("thread_type", opts.threadType);
-  if (opts.status) q = q.eq("status", opts.status);
-  if (opts.tag) q = q.contains("tags", [opts.tag]);
-  if (opts.relatedType) q = q.eq("related_entity_type", opts.relatedType);
-  if (opts.relatedId) q = q.eq("related_entity_id", opts.relatedId);
-  if (opts.search && opts.search.trim()) {
-    const s = opts.search.trim().replace(/[,%()]/g, " ");
-    q = q.or(`title.ilike.%${s}%,body.ilike.%${s}%`);
-  }
-  switch (opts.sort) {
-    case "top":
-      q = q.order("reaction_count", { ascending: false }).order("reply_count", { ascending: false });
-      break;
-    case "active":
-      q = q.order("reply_count", { ascending: false }).order("last_activity_at", { ascending: false });
-      break;
-    case "unanswered":
-      q = q.eq("thread_type", "question").eq("status", "open").order("last_activity_at", { ascending: false });
-      break;
-    case "solved":
-      q = q.eq("status", "solved").order("last_activity_at", { ascending: false });
-      break;
-    case "recent":
-    default:
-      q = q.order("pinned", { ascending: false }).order("last_activity_at", { ascending: false });
-  }
-  if (opts.limit) q = q.limit(opts.limit);
-  const { data: threads, error } = await q;
-  if (error) throw error;
-  const t = (threads ?? []) as ForumThreadRow[];
-  if (!t.length) return [];
-  const [{ data: profiles }, { data: cats }] = await Promise.all([
-    supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", Array.from(new Set(t.map(x => x.user_id)))),
-    supabase.from("forum_categories").select("*").in("id", Array.from(new Set(t.map(x => x.category_id)))),
-  ]);
-  const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p as ProfileMini]));
-  const cMap = new Map((cats ?? []).map((c: any) => [c.id, c as ForumCategory]));
-  return t.map(x => ({ ...x, author: pMap.get(x.user_id) ?? null, category: cMap.get(x.category_id) ?? null }));
+  const search = new URLSearchParams();
+  if (opts.categoryId) search.set("categoryId", opts.categoryId);
+  if (opts.threadType) search.set("threadType", opts.threadType);
+  if (opts.status) search.set("status", opts.status);
+  if (opts.tag) search.set("tag", opts.tag);
+  if (opts.relatedType) search.set("relatedType", opts.relatedType);
+  if (opts.relatedId) search.set("relatedId", opts.relatedId);
+  if (opts.search?.trim()) search.set("search", opts.search.trim());
+  if (opts.sort) search.set("sort", opts.sort);
+  search.set("limit", String(opts.limit ?? 50));
+  return (await api.get<{ items: ThreadWithMeta[] }>(`/api/v1/community/threads?${search}`)).items;
 }
 
 export type ForumPost = {
   id: string;
   thread_id: string;
-  user_id: string;
+  user_id: string | null;
   body: string;
   parent_id: string | null;
   reaction_count: number;
@@ -227,26 +202,26 @@ export type ForumPost = {
 };
 
 export async function getThread(id: string) {
-  const { data, error } = await supabase.from("forum_threads").select("*").eq("id", id).maybeSingle();
-  if (error) throw error;
-  return data as ForumThreadRow | null;
+  try {
+    return (await getThreadBundle(id)).item;
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "status" in error && error.status === 404) return null;
+    throw error;
+  }
 }
 
 export async function getThreadPosts(threadId: string): Promise<ForumPost[]> {
-  const { data, error } = await supabase
-    .from("forum_posts")
-    .select("*")
-    .eq("thread_id", threadId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  const posts = (data ?? []) as Omit<ForumPost, "author">[];
-  if (!posts.length) return [];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, display_name, username, avatar_url")
-    .in("id", Array.from(new Set(posts.map(p => p.user_id))));
-  const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p as ProfileMini]));
-  return posts.map(p => ({ ...p, author: pMap.get(p.user_id) ?? null }));
+  return (await getThreadBundle(threadId)).posts;
+}
+
+export type ThreadBundle = {
+  item: ThreadWithMeta;
+  posts: ForumPost[];
+  reactions: { counts: Record<string, Record<string, number>>; mine: Record<string, string[]> };
+};
+
+export function getThreadBundle(threadId: string): Promise<ThreadBundle> {
+  return api.get<ThreadBundle>(`/api/v1/community/threads/${encodeURIComponent(threadId)}`, { retry: false });
 }
 
 export const authorName = (p: ProfileMini | null) =>
@@ -267,41 +242,7 @@ export async function resolveRelated(
   id: string | null
 ): Promise<ResolvedRelated | null> {
   if (!kind || !id) return null;
-  if (kind === "component") {
-    const p = partById(id);
-    return p
-      ? { kind, ok: true, label: p.name, sub: `${p.maker} · ${p.category}`, href: `/parts/${p.category}/${p.slug}` }
-      : { kind, ok: false, label: `Component ${id} (unavailable)`, href: null };
-  }
-  if (kind === "marketplace_listing") {
-    const l = listingById(id);
-    return l
-      ? { kind, ok: true, label: l.title, sub: `Grade ${l.grade} · $${l.price.toLocaleString()}`, href: `/marketplace/${l.id}` }
-      : { kind, ok: false, label: `Listing ${id} (unavailable)`, href: null };
-  }
-  if (kind === "project") {
-    const { data } = await supabase
-      .from("projects")
-      .select("slug, name, version")
-      .eq("id", id)
-      .maybeSingle();
-    return data
-      ? { kind, ok: true, label: data.name, sub: `v${data.version}`, href: `/projects/${data.slug}` }
-      : { kind, ok: false, label: "Project (unavailable)", href: null };
-  }
-  if (kind === "build") {
-    const { data } = await supabase.from("builds").select("slug, name, user_id").eq("id", id).maybeSingle();
-    return data
-      ? { kind, ok: true, label: data.name, href: `/builder?build=${data.slug}` }
-      : { kind, ok: false, label: "Build (unavailable)", href: null };
-  }
-  if (kind === "supplier") {
-    const s = suppliers.find(x => x.id === id || x.slug === id);
-    return s
-      ? { kind, ok: true, label: s.name, sub: `${s.region} · ${s.categories.join(", ")}`, href: `/suppliers/${s.slug}` }
-      : { kind, ok: false, label: `Supplier ${id} (unavailable)`, href: null };
-  }
-  return null;
+  return (await api.get<{ item: ResolvedRelated }>(`/api/v1/community/related/${kind}/${encodeURIComponent(id)}`)).item;
 }
 
 export async function resolveManyRelated(items: Array<{ kind: RelatedEntityType | null; id: string | null }>): Promise<Array<ResolvedRelated | null>> {
@@ -310,19 +251,48 @@ export async function resolveManyRelated(items: Array<{ kind: RelatedEntityType 
 
 // ---------- Thread actions ----------
 export async function updateThreadStatus(threadId: string, status: ThreadStatus) {
-  const { error } = await supabase.from("forum_threads").update({ status }).eq("id", threadId);
-  if (error) throw error;
+  await api.patch(`/api/v1/community/threads/${encodeURIComponent(threadId)}/status`, { status });
 }
 
 export async function setAcceptedAnswer(threadId: string, postId: string | null) {
-  // Uses SECURITY DEFINER RPC to enforce owner-only, belongs-to-thread, and
-  // question-only checks. `_post_id` defaults to NULL in Postgres, and the
-  // generated Supabase types make it optional/nullable — no cast needed.
-  const { error } = await supabase.rpc("set_accepted_answer", {
-    _thread_id: threadId,
-    _post_id: postId ?? undefined,
-  });
-  if (error) throw error;
+  await api.put(`/api/v1/community/threads/${encodeURIComponent(threadId)}/accepted-answer`, { postId });
+}
+
+export async function createThread(input: ForumThreadInsert): Promise<ThreadWithMeta> {
+  return (await api.post<{ item: ThreadWithMeta }>("/api/v1/community/threads", {
+    categoryId: input.category_id,
+    title: input.title,
+    slug: input.slug,
+    body: input.body,
+    tags: input.tags,
+    threadType: input.thread_type,
+    relatedEntityType: input.related_entity_type ?? null,
+    relatedEntityId: input.related_entity_id ?? null,
+    linkedEntityLabel: input.linked_entity_label ?? null,
+    linkedEntityPath: input.linked_entity_path ?? null,
+    structuredData: input.structured_data,
+  })).item;
+}
+
+export async function createThreadPost(threadId: string, body: string, parentId?: string | null): Promise<ForumPost> {
+  return (await api.post<{ item: ForumPost }>(`/api/v1/community/threads/${encodeURIComponent(threadId)}/posts`, { body, parentId: parentId ?? null })).item;
+}
+
+export function deleteThreadPost(postId: string): Promise<void> {
+  return api.delete(`/api/v1/community/posts/${encodeURIComponent(postId)}`);
+}
+
+export async function toggleThreadReaction(target: { threadId?: string; postId?: string }, emoji: string): Promise<boolean> {
+  return (await api.post<{ active: boolean }>("/api/v1/community/reactions/toggle", { ...target, emoji })).active;
+}
+
+export async function getCommunityBookmarks(): Promise<string[]> {
+  return (await api.get<{ threadIds: string[] }>("/api/v1/community/bookmarks", { retry: false })).threadIds;
+}
+
+export async function setCommunityBookmark(threadId: string, active: boolean): Promise<void> {
+  if (active) await api.put(`/api/v1/community/bookmarks/${encodeURIComponent(threadId)}`);
+  else await api.delete(`/api/v1/community/bookmarks/${encodeURIComponent(threadId)}`);
 }
 
 // ---------- Contributor stats ----------
@@ -330,26 +300,7 @@ export type ContributorStats = { threads: number; replies: number; reactions: nu
 
 export async function contributorStatsFor(userIds: string[]): Promise<Map<string, ContributorStats>> {
   const ids = Array.from(new Set(userIds.filter(Boolean)));
-  const out = new Map<string, ContributorStats>();
-  if (!ids.length) return out;
-  for (const id of ids) out.set(id, { threads: 0, replies: 0, reactions: 0, accepted: 0 });
-  const [threadsRes, postsRes, acceptedRes] = await Promise.all([
-    supabase.from("forum_threads").select("user_id, id").in("user_id", ids),
-    supabase.from("forum_posts").select("user_id, id, reaction_count").in("user_id", ids),
-    supabase.from("forum_threads").select("accepted_post_id").not("accepted_post_id", "is", null),
-  ]);
-  (threadsRes.data ?? []).forEach((r: any) => {
-    const s = out.get(r.user_id); if (s) s.threads++;
-  });
-  const postIdToOwner = new Map<string, string>();
-  (postsRes.data ?? []).forEach((r: any) => {
-    const s = out.get(r.user_id);
-    if (s) { s.replies++; s.reactions += r.reaction_count ?? 0; }
-    postIdToOwner.set(r.id, r.user_id);
-  });
-  (acceptedRes.data ?? []).forEach((r: any) => {
-    const owner = postIdToOwner.get(r.accepted_post_id);
-    if (owner && out.has(owner)) out.get(owner)!.accepted++;
-  });
-  return out;
+  if (!ids.length) return new Map();
+  const response = await api.post<{ stats: Record<string, ContributorStats> }>("/api/v1/community/contributor-stats", { userIds: ids });
+  return new Map(Object.entries(response.stats));
 }

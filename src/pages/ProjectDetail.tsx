@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu,
@@ -36,15 +36,15 @@ export default function ProjectDetail() {
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
 
-  const bomCost = useMemo(() => bom.reduce((s, i) => s + (i.unit_cost_usd ?? 0) * i.qty, 0), [bom]);
-  const bomQty = useMemo(() => bom.reduce((s, i) => s + i.qty, 0), [bom]);
+  const bomCost = bom.reduce((s, i) => s + (i.unit_cost_usd ?? 0) * i.qty, 0);
+  const bomQty = bom.reduce((s, i) => s + i.qty, 0);
   const bomPricedCount = bom.filter(i => i.unit_cost_usd != null).length;
-  const totalBuildMin = useMemo(() => assembly.reduce((s, a) => s + (a.duration_min ?? 0), 0), [assembly]);
-  const integrationCounts = useMemo(() => {
+  const totalBuildMin = assembly.reduce((s, a) => s + (a.duration_min ?? 0), 0);
+  const integrationCounts = (() => {
     const c: Record<string, number> = {};
     for (const it of integrations) c[it.status] = (c[it.status] ?? 0) + 1;
     return c;
-  }, [integrations]);
+  })();
 
   const estCost = p.estimated_cost_usd ?? p.rpps.build?.estimated_cost_usd ?? null;
   const estTime = p.rpps.build?.estimated_time_hours ?? (totalBuildMin > 0 ? totalBuildMin / 60 : null);

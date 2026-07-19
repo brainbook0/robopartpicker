@@ -1,0 +1,249 @@
+import { AppError } from "../../http";
+
+export type BuildRow = {
+  id: string; slug: string; name: string; owner_user_id: string | null; organization_id: string | null;
+  source_project_id: string | null; source_project_version_id: string | null;
+  visibility: "private" | "organization" | "unlisted" | "public";
+  status: "planning" | "sourcing" | "building" | "testing" | "complete" | "paused" | "archived";
+  progress_percent: number; currency: string; current_version_id: string | null; forked_from_build_id: string | null;
+  version: number; created_at: string; updated_at: string;
+};
+
+export type BuildDetail = BuildRow & {
+  items: Array<Record<string, unknown>>;
+  steps: Array<Record<string, unknown>>;
+  dependencies: Array<{ buildStepId: string; dependsOnStepId: string }>;
+  configurations: Array<Record<string, unknown>>;
+  firmware: Array<Record<string, unknown>>;
+  calibrations: Array<Record<string, unknown>>;
+  tests: Array<Record<string, unknown>>;
+  problems: Array<Record<string, unknown>>;
+  decisions: Array<Record<string, unknown>>;
+  activity: Array<Record<string, unknown>>;
+  files: Array<Record<string, unknown>>;
+};
+
+export class BuildsRepository {
+  constructor(private readonly db: D1Database) {}
+
+  async list(userId: string | null, mine: boolean): Promise<BuildRow[]> {
+    const access = mine
+      ? `(b.owner_user_id = ?1 OR EXISTS (SELECT 1 FROM build_members bm WHERE bm.build_id = b.id AND bm.user_id = ?1)
+         OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = b.organization_id AND om.user_id = ?1 AND om.status = 'active'))`
+      : `((b.visibility = 'public') OR (b.visibility = 'unlisted') OR b.owner_user_id = ?1
+         OR EXISTS (SELECT 1 FROM build_members bm WHERE bm.build_id = b.id AND bm.user_id = ?1)
+         OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = b.organization_id AND om.user_id = ?1 AND om.status = 'active'))`;
+    if (!userId && mine) return [];
+    const rows = userId
+      ? await this.db.prepare(`SELECT b.* FROM builds b WHERE b.deleted_at IS NULL AND ${access} ORDER BY b.updated_at DESC`).bind(userId).all<BuildRow>()
+      : await this.db.prepare(`SELECT b.* FROM builds b WHERE b.deleted_at IS NULL AND b.visibility = 'public' ORDER BY b.updated_at DESC`).all<BuildRow>();
+    return rows.results;
+  }
+
+  async find(idOrSlug: string): Promise<BuildRow | null> {
+    return this.db.prepare("SELECT * FROM builds WHERE deleted_at IS NULL AND (id = ?1 OR slug = ?1)").bind(idOrSlug).first<BuildRow>();
+  }
+
+  async detail(idOrSlug: string): Promise<BuildDetail | null> {
+    const build = await this.find(idOrSlug);
+    if (!build) return null;
+    const [items, offers, steps, dependencies, configurations, firmware, calibrations, tests, problems, decisions, activity, files] = await this.db.batch([
+      this.db.prepare(`SELECT bi.id, bi.component_id AS componentId, c.slug AS componentSlug, c.name AS componentName,
+        c.category AS componentCategory, bi.selected_supplier_offer_id AS selectedSupplierOfferId,
+        so.supplier_id AS selectedSupplierId, s.name AS selectedSupplierName, bi.description, bi.quantity,
+        bi.unit, bi.unit_cost_minor AS unitCostMinor, bi.status, bi.substituted_for_item_id AS substitutedForItemId,
+        bi.notes, bi.created_at AS createdAt, bi.updated_at AS updatedAt
+        FROM build_items bi LEFT JOIN components c ON c.id = bi.component_id
+        LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id
+        LEFT JOIN suppliers s ON s.id = so.supplier_id WHERE bi.build_id = ?1 ORDER BY bi.created_at`).bind(build.id),
+      this.db.prepare(`SELECT bi.id AS buildItemId, so.id, so.supplier_id AS supplierId, s.name AS supplierName,
+        so.unit_price_minor AS unitPriceMinor, so.currency, so.stock_quantity AS stockQuantity,
+        so.lead_time_days AS leadTimeDays, so.minimum_quantity AS minimumOrderQuantity,
+        so.observed_at AS observedAt, so.is_demo AS isDemo
+        FROM build_items bi JOIN supplier_offers so ON so.component_id = bi.component_id
+        JOIN suppliers s ON s.id = so.supplier_id WHERE bi.build_id = ?1
+        ORDER BY bi.id, so.unit_price_minor, so.lead_time_days`).bind(build.id),
+      this.db.prepare(`SELECT id, source_project_step_id AS sourceProjectStepId, title, body, status, sort_order AS sortOrder,
+        completed_by_user_id AS completedByUserId, completed_at AS completedAt, created_at AS createdAt, updated_at AS updatedAt
+        FROM build_steps WHERE build_id = ?1 ORDER BY sort_order, created_at`).bind(build.id),
+      this.db.prepare(`SELECT build_step_id AS buildStepId, depends_on_step_id AS dependsOnStepId
+        FROM build_step_dependencies WHERE build_step_id IN (SELECT id FROM build_steps WHERE build_id = ?1)`).bind(build.id),
+      this.db.prepare(`SELECT id, name, format, content_text AS contentText, file_id AS fileId, version, created_at AS createdAt, updated_at AS updatedAt
+        FROM build_configurations WHERE build_id = ?1 ORDER BY name`).bind(build.id),
+      this.db.prepare(`SELECT id, name, repository_url AS repositoryUrl, revision, file_id AS fileId, license_spdx AS licenseSpdx,
+        notes, created_at AS createdAt, updated_at AS updatedAt FROM build_firmware WHERE build_id = ?1 ORDER BY name`).bind(build.id),
+      this.db.prepare(`SELECT id, name, procedure_text AS procedureText, result_json AS resultJson, status,
+        performed_by_user_id AS performedByUserId, performed_at AS performedAt, created_at AS createdAt
+        FROM build_calibrations WHERE build_id = ?1 ORDER BY created_at`).bind(build.id),
+      this.db.prepare(`SELECT id, name, method_text AS methodText, expected_text AS expectedText, observed_text AS observedText,
+        result, evidence_file_id AS evidenceFileId, performed_by_user_id AS performedByUserId, performed_at AS performedAt,
+        created_at AS createdAt FROM build_tests WHERE build_id = ?1 ORDER BY created_at`).bind(build.id),
+      this.db.prepare(`SELECT bp.id, bp.title, bp.description, bp.severity, bp.status, bp.reported_by_user_id AS reportedByUserId,
+        bp.created_at AS createdAt, bp.updated_at AS updatedAt,
+        (SELECT json_group_array(json_object('id', br.id, 'summary', br.summary, 'rootCause', br.root_cause, 'createdAt', br.created_at)) FROM build_resolutions br WHERE br.build_problem_id = bp.id) AS resolutionsJson
+        FROM build_problems bp WHERE bp.build_id = ?1 ORDER BY bp.created_at DESC`).bind(build.id),
+      this.db.prepare(`SELECT id, title, context, decision, consequences, decided_by_user_id AS decidedByUserId,
+        decided_at AS decidedAt, created_at AS createdAt FROM build_decisions WHERE build_id = ?1 ORDER BY decided_at DESC`).bind(build.id),
+      this.db.prepare(`SELECT id, actor_user_id AS actorUserId, event_type AS eventType, entity_type AS entityType,
+        entity_id AS entityId, summary, metadata_json AS metadataJson, created_at AS createdAt
+        FROM build_activity WHERE build_id = ?1 ORDER BY created_at DESC LIMIT 100`).bind(build.id),
+      this.db.prepare(`SELECT f.id, f.original_name AS originalName, f.media_type AS mediaType, f.size_bytes AS sizeBytes,
+        f.visibility, f.status, f.kind, bf.purpose, bf.build_step_id AS buildStepId, f.created_at AS createdAt
+        FROM build_files bf JOIN files f ON f.id = bf.file_id WHERE bf.build_id = ?1 AND f.deleted_at IS NULL
+        ORDER BY f.created_at DESC`).bind(build.id),
+    ]);
+    const offersByItem = new Map<string, Array<Record<string, unknown>>>();
+    for (const offer of offers.results as Array<Record<string, unknown>>) {
+      const buildItemId = String(offer.buildItemId);
+      const grouped = offersByItem.get(buildItemId) ?? [];
+      grouped.push(offer);
+      offersByItem.set(buildItemId, grouped);
+    }
+    const hydratedItems = (items.results as Array<Record<string, unknown>>).map((item) => ({
+      ...item,
+      availableOffers: offersByItem.get(String(item.id)) ?? [],
+    }));
+    return { ...build, items: hydratedItems, steps: steps.results as Array<Record<string, unknown>>,
+      dependencies: dependencies.results as BuildDetail["dependencies"], configurations: configurations.results as Array<Record<string, unknown>>,
+      firmware: firmware.results as Array<Record<string, unknown>>, calibrations: calibrations.results as Array<Record<string, unknown>>,
+      tests: tests.results as Array<Record<string, unknown>>, problems: problems.results as Array<Record<string, unknown>>,
+      decisions: decisions.results as Array<Record<string, unknown>>, activity: activity.results as Array<Record<string, unknown>>,
+      files: files.results as Array<Record<string, unknown>> };
+  }
+
+  async create(userId: string, input: { name: string; organizationId?: string | null; sourceProjectId?: string | null; visibility: BuildRow["visibility"] }): Promise<BuildDetail> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const slug = `${slugify(input.name)}-${id.slice(0, 8)}`;
+    const versionId = crypto.randomUUID();
+    const statements: D1PreparedStatement[] = [
+      this.db.prepare(`INSERT INTO builds
+        (id, slug, name, owner_user_id, organization_id, source_project_id, source_project_version_id,
+         visibility, status, progress_percent, currency, current_version_id, version, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6,
+          (SELECT current_version_id FROM projects WHERE id = ?6), ?7, 'planning', 0, 'USD', ?8, 1, ?9, ?9)`)
+        .bind(id, slug, input.name, userId, input.organizationId ?? null, input.sourceProjectId ?? null, input.visibility, versionId, now),
+      this.db.prepare(`INSERT INTO build_members (build_id, user_id, role, created_at) VALUES (?1, ?2, 'owner', ?3)`).bind(id, userId, now),
+      this.db.prepare(`INSERT INTO build_versions (id, build_id, version_number, summary, snapshot_json, created_by_user_id, created_at)
+        VALUES (?1, ?2, 1, 'Build created', '{}', ?3, ?4)`).bind(versionId, id, userId, now),
+      activityStatement(this.db, id, userId, "build.created", "build", id, `Created build ${input.name}`, {}, now),
+    ];
+    if (input.sourceProjectId) {
+      const bomItems = await this.db.prepare(`SELECT bi.component_id, bi.description, bi.quantity, bi.unit,
+        bi.selected_supplier_offer_id, bi.target_unit_price_minor, bi.notes
+        FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+        WHERE b.project_id = ?1`).bind(input.sourceProjectId).all<{ component_id: string | null; description: string; quantity: number; unit: string; selected_supplier_offer_id: string | null; target_unit_price_minor: number | null; notes: string | null }>();
+      bomItems.results.forEach((item) => statements.push(this.db.prepare(`INSERT INTO build_items
+        (id, build_id, component_id, selected_supplier_offer_id, description, quantity, unit, unit_cost_minor, status, notes, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'needed', ?9, ?10, ?10)`)
+        .bind(crypto.randomUUID(), id, item.component_id, item.selected_supplier_offer_id, item.description, item.quantity, item.unit, item.target_unit_price_minor, item.notes, now)));
+      const projectSteps = await this.db.prepare(`SELECT ps.id, ps.title, ps.body, ps.sort_order
+        FROM projects p JOIN project_steps ps ON ps.project_version_id = p.current_version_id WHERE p.id = ?1 ORDER BY ps.sort_order`)
+        .bind(input.sourceProjectId).all<{ id: string; title: string; body: string; sort_order: number }>();
+      projectSteps.results.forEach((step) => statements.push(this.db.prepare(`INSERT INTO build_steps
+        (id, build_id, source_project_step_id, title, body, status, sort_order, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?7)`)
+        .bind(crypto.randomUUID(), id, step.id, step.title, step.body, step.sort_order, now)));
+    }
+    await this.db.batch(statements);
+    return (await this.detail(id))!;
+  }
+
+  async updateBuild(id: string, expectedVersion: number, input: { name?: string; visibility?: BuildRow["visibility"]; status?: BuildRow["status"]; progressPercent?: number }): Promise<BuildDetail> {
+    const current = await this.find(id);
+    if (!current) throw new AppError(404, "BUILD_NOT_FOUND", "Build not found.");
+    const result = await this.db.prepare(`UPDATE builds SET name = ?1, visibility = ?2, status = ?3,
+      progress_percent = ?4, version = version + 1, updated_at = ?5 WHERE id = ?6 AND version = ?7`)
+      .bind(input.name ?? current.name, input.visibility ?? current.visibility, input.status ?? current.status,
+        input.progressPercent ?? current.progress_percent, new Date().toISOString(), id, expectedVersion).run();
+    if (result.meta.changes !== 1) throw new AppError(409, "BUILD_VERSION_CONFLICT", "The build changed; refresh and retry.");
+    return (await this.detail(id))!;
+  }
+
+  async addItem(buildId: string, userId: string, input: { componentId?: string | null; description: string; quantity: number; unit?: string; selectedSupplierOfferId?: string | null; unitCostMinor?: number | null; notes?: string | null; substitutedForItemId?: string | null }): Promise<Record<string, unknown>> {
+    if (input.componentId) {
+      const component = await this.db.prepare("SELECT name FROM components WHERE id = ?1 AND deleted_at IS NULL").bind(input.componentId).first();
+      if (!component) throw new AppError(422, "COMPONENT_NOT_FOUND", "Component not found.");
+    }
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare(`INSERT INTO build_items
+        (id, build_id, component_id, selected_supplier_offer_id, description, quantity, unit, unit_cost_minor,
+         status, substituted_for_item_id, notes, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'needed', ?9, ?10, ?11, ?11)`)
+        .bind(id, buildId, input.componentId ?? null, input.selectedSupplierOfferId ?? null, input.description, input.quantity,
+          input.unit ?? "each", input.unitCostMinor ?? null, input.substitutedForItemId ?? null, input.notes ?? null, now),
+      activityStatement(this.db, buildId, userId, "build.item.added", "build_item", id, `Added ${input.description}`, input, now),
+    ]);
+    return (await this.detail(buildId))!.items.find((item) => item.id === id)!;
+  }
+
+  async updateItem(buildId: string, itemId: string, userId: string, input: { quantity?: number; selectedSupplierOfferId?: string | null; unitCostMinor?: number | null; status?: string; notes?: string | null }): Promise<Record<string, unknown>> {
+    const current = await this.db.prepare("SELECT * FROM build_items WHERE id = ?1 AND build_id = ?2").bind(itemId, buildId).first<Record<string, unknown>>();
+    if (!current) throw new AppError(404, "BUILD_ITEM_NOT_FOUND", "Build item not found.");
+    const now = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare(`UPDATE build_items SET quantity = ?1, selected_supplier_offer_id = ?2, unit_cost_minor = ?3,
+        status = ?4, notes = ?5, updated_at = ?6 WHERE id = ?7 AND build_id = ?8`)
+        .bind(input.quantity ?? current.quantity, input.selectedSupplierOfferId === undefined ? current.selected_supplier_offer_id : input.selectedSupplierOfferId,
+          input.unitCostMinor === undefined ? current.unit_cost_minor : input.unitCostMinor, input.status ?? current.status,
+          input.notes === undefined ? current.notes : input.notes, now, itemId, buildId),
+      activityStatement(this.db, buildId, userId, "build.item.updated", "build_item", itemId, "Updated build item", input, now),
+    ]);
+    return (await this.detail(buildId))!.items.find((item) => item.id === itemId)!;
+  }
+
+  async addStep(buildId: string, userId: string, input: { title: string; body?: string | null; dependsOn?: string[] }): Promise<Record<string, unknown>> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const max = await this.db.prepare("SELECT COALESCE(MAX(sort_order), -1) AS value FROM build_steps WHERE build_id = ?1").bind(buildId).first<{ value: number }>();
+    const statements = [this.db.prepare(`INSERT INTO build_steps
+      (id, build_id, title, body, status, sort_order, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 'pending', ?5, ?6, ?6)`)
+      .bind(id, buildId, input.title, input.body ?? null, Number(max?.value ?? -1) + 1, now)];
+    for (const dependencyId of input.dependsOn ?? []) statements.push(this.db.prepare(`INSERT INTO build_step_dependencies
+      (build_step_id, depends_on_step_id) SELECT ?1, id FROM build_steps WHERE id = ?2 AND build_id = ?3`).bind(id, dependencyId, buildId));
+    statements.push(activityStatement(this.db, buildId, userId, "build.step.added", "build_step", id, `Added step ${input.title}`, {}, now));
+    await this.db.batch(statements);
+    return (await this.detail(buildId))!.steps.find((step) => step.id === id)!;
+  }
+
+  async updateStep(buildId: string, stepId: string, userId: string, input: { title?: string; body?: string | null; status?: string }): Promise<Record<string, unknown>> {
+    const current = await this.db.prepare("SELECT * FROM build_steps WHERE id = ?1 AND build_id = ?2").bind(stepId, buildId).first<Record<string, unknown>>();
+    if (!current) throw new AppError(404, "BUILD_STEP_NOT_FOUND", "Build step not found.");
+    const now = new Date().toISOString();
+    const completed = input.status === "complete";
+    await this.db.batch([
+      this.db.prepare(`UPDATE build_steps SET title = ?1, body = ?2, status = ?3,
+        completed_by_user_id = CASE WHEN ?3 = 'complete' THEN ?4 ELSE NULL END,
+        completed_at = CASE WHEN ?3 = 'complete' THEN ?5 ELSE NULL END, updated_at = ?5 WHERE id = ?6 AND build_id = ?7`)
+        .bind(input.title ?? current.title, input.body === undefined ? current.body : input.body, input.status ?? current.status, completed ? userId : null, now, stepId, buildId),
+      activityStatement(this.db, buildId, userId, "build.step.updated", "build_step", stepId, "Updated build step", input, now),
+    ]);
+    return (await this.detail(buildId))!.steps.find((step) => step.id === stepId)!;
+  }
+
+  async createSnapshot(buildId: string, userId: string, summary: string): Promise<void> {
+    const detail = await this.detail(buildId);
+    if (!detail) throw new AppError(404, "BUILD_NOT_FOUND", "Build not found.");
+    const count = await this.db.prepare("SELECT COALESCE(MAX(version_number), 0) AS value FROM build_versions WHERE build_id = ?1").bind(buildId).first<{ value: number }>();
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare(`INSERT INTO build_versions (id, build_id, version_number, summary, snapshot_json, created_by_user_id, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`).bind(id, buildId, Number(count?.value ?? 0) + 1, summary, JSON.stringify(detail), userId, now),
+      this.db.prepare("UPDATE builds SET current_version_id = ?1, updated_at = ?2, version = version + 1 WHERE id = ?3").bind(id, now, buildId),
+    ]);
+  }
+}
+
+function activityStatement(db: D1Database, buildId: string, userId: string, eventType: string, entityType: string, entityId: string, summary: string, metadata: unknown, now: string) {
+  return db.prepare(`INSERT INTO build_activity
+    (id, build_id, actor_user_id, event_type, entity_type, entity_id, summary, metadata_json, created_at)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`)
+    .bind(crypto.randomUUID(), buildId, userId, eventType, entityType, entityId, summary, JSON.stringify(metadata), now);
+}
+
+function slugify(value: string): string {
+  return value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9\s-]/gu, "").trim().replace(/\s+/gu, "-").replace(/-+/gu, "-").slice(0, 70) || "build";
+}

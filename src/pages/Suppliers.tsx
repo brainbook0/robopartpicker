@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { suppliers } from "@/data/suppliers";
-import { parts } from "@/data/parts";
+import { useSuppliers } from "@/lib/api/catalog";
 import { rfqDrafts } from "@/lib/catalogWorkspace";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ExpandableImage } from "@/components/common/ExpandableImage";
@@ -22,6 +21,8 @@ const Stat = ({ label, value }: { label: string; value: string | number }) => (
 );
 
 export default function Suppliers() {
+  const supplierQuery = useSuppliers();
+  const suppliers = supplierQuery.data?.items ?? [];
   const [sp, setSp] = useSearchParams();
   const cat = sp.get("cat") ?? "all";
   const region = sp.get("region") ?? "all";
@@ -36,22 +37,17 @@ export default function Suppliers() {
     setSp(next, { replace: true });
   };
 
-  const allCats = useMemo(() => Array.from(new Set(suppliers.flatMap(s => s.categories))).sort(), []);
+  const allCats = useMemo(() => Array.from(new Set(suppliers.flatMap(s => s.categories))).sort(), [suppliers]);
   const drafts = rfqDrafts();
   const draftsBySupplier = useMemo(() => {
     const map = new Map<string, number>();
     drafts.forEach(d => { if (d.supplierId) map.set(d.supplierId, (map.get(d.supplierId) ?? 0) + 1); });
     return map;
   }, [drafts]);
-  const productsBySupplier = useMemo(() => {
-    const map = new Map<string, number>();
-    parts.forEach(p => p.offers.forEach(o => map.set(o.supplierId, (map.get(o.supplierId) ?? 0) + 1)));
-    return map;
-  }, []);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    let list = suppliers.filter(s => {
+    const list = suppliers.filter(s => {
       if (cat !== "all" && !s.categories.includes(cat)) return false;
       if (region !== "all" && s.region !== region) return false;
       if (verifiedOnly && !s.verified) return false;
@@ -64,16 +60,16 @@ export default function Suppliers() {
     if (sort === "doc-desc") list.sort((a,b) => b.docScore - a.docScore);
     if (sort === "reviews-desc") list.sort((a,b) => b.reviews.rating - a.reviews.rating);
     return list;
-  }, [cat, region, verifiedOnly, q, sort]);
+  }, [cat, region, verifiedOnly, q, sort, suppliers]);
 
   const overview = useMemo(() => {
     const regions = new Set(suppliers.map(s => s.region));
     const cats = new Set(suppliers.flatMap(s => s.categories));
     const avgLead = suppliers.length ? Math.round(suppliers.reduce((n, s) => n + s.leadDays, 0) / suppliers.length) : 0;
     const avgDoc = suppliers.length ? Math.round(suppliers.reduce((n, s) => n + s.docScore, 0) / suppliers.length) : 0;
-    const totalOffers = parts.reduce((n, p) => n + p.offers.length, 0);
+    const totalOffers = suppliers.reduce((n, supplier) => n + supplier.knownOfferCount, 0);
     return { suppliers: suppliers.length, regions: regions.size, cats: cats.size, avgLead, avgDoc, totalOffers, activeDrafts: drafts.length };
-  }, [drafts.length]);
+  }, [drafts.length, suppliers]);
 
   const hasActive = cat !== "all" || region !== "all" || verifiedOnly || q !== "" || sort !== "name";
   const clearAll = () => setSp(new URLSearchParams(), { replace: true });
@@ -121,7 +117,15 @@ export default function Suppliers() {
           </div>
         </div>
 
-        {filtered.length ? (
+        {supplierQuery.isPending ? (
+          <div className="surface-card p-8 text-center text-[13px]" role="status">Loading suppliers from the API…</div>
+        ) : supplierQuery.isError ? (
+          <div className="surface-card p-8 text-center" role="alert">
+            <div className="text-[13px] font-medium text-negative">Supplier data could not be loaded.</div>
+            <div className="text-[11.5px] text-muted-foreground mt-1">{supplierQuery.error.message}</div>
+            <button onClick={() => void supplierQuery.refetch()} className="btn-primary btn-sm mt-2">Retry</button>
+          </div>
+        ) : filtered.length ? (
           <div className="surface-card overflow-x-auto">
             <table className="data-table">
               <thead><tr>
@@ -137,7 +141,7 @@ export default function Suppliers() {
               <tbody>
                 {filtered.map(s => {
                   const g = gallery("supplier", s.id, 3);
-                  const productCount = productsBySupplier.get(s.id) ?? 0;
+                  const productCount = s.knownComponentCount;
                   const draftCount = draftsBySupplier.get(s.id) ?? 0;
                   return (
                     <tr key={s.id}>

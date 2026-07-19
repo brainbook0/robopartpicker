@@ -1,10 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { partBySlug, lowestPrice, priceDelta30, type Part, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer, partsByCategory } from "@/data/parts";
-import { suppliers } from "@/data/suppliers";
-import { listingsByPart, sellers } from "@/data/listings";
-import { failuresByPart } from "@/data/failures";
-import { boms } from "@/data/boms";
+import { lowestPrice, priceDelta30, type Part, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer } from "@/shared/catalog";
+import { useComponent, useComponents, useSuppliers } from "@/lib/api/catalog";
 import { PriceChart } from "@/components/robots/PriceChart";
 import { PriceDeltaPill } from "@/components/common/PriceDeltaPill";
 import { ExpandableImage } from "@/components/common/ExpandableImage";
@@ -128,14 +125,27 @@ function Specs({ p }: { p: Part }) {
 
 export default function PartDetail() {
   const { category, slug } = useParams();
-  const p = partBySlug(slug ?? "");
+  const componentQuery = useComponent(slug);
+  const alternativesQuery = useComponents({ category: category as Part["category"], limit: 100 });
+  const suppliersQuery = useSuppliers();
+  const p = componentQuery.data?.item as Part | undefined;
+  const suppliers = suppliersQuery.data?.items ?? [];
   const [tick, setTick] = useState(0);
-  const [alertPrice, setAlertPrice] = useState<string>(() => {
-    if (!p) return "";
-    const a = priceAlertForPart(p.id);
-    return a?.targetPrice != null ? String(a.targetPrice) : "";
-  });
+  const [alertPrice, setAlertPrice] = useState("");
 
+  useEffect(() => {
+    if (!p) return;
+    const a = priceAlertForPart(p.id);
+    setAlertPrice(a?.targetPrice != null ? String(a.targetPrice) : "");
+  }, [p?.id]);
+
+  if (componentQuery.isPending || alternativesQuery.isPending || suppliersQuery.isPending) {
+    return <div className="p-8 text-[13px]" role="status">Loading component from the API…</div>;
+  }
+  if (componentQuery.isError || alternativesQuery.isError || suppliersQuery.isError) {
+    const error = componentQuery.error ?? alternativesQuery.error ?? suppliersQuery.error;
+    return <div className="p-8" role="alert"><div className="font-medium text-negative">Component data could not be loaded.</div><div className="text-muted-foreground text-[12px] mt-1">{error?.message}</div></div>;
+  }
   if (!p || p.category !== category) return <div className="p-8">Part not found.</div>;
   void tick; // force re-read of local workspace values below on tick changes
 
@@ -153,10 +163,7 @@ export default function PartDetail() {
   const minLead = p.offers.length ? p.offers.reduce((m, o) => Math.min(m, o.leadDays), Infinity) : null;
   const totalStock = p.offers.reduce((n, o) => n + o.stock, 0);
   const inStockOffers = p.offers.filter(o => o.stock > 0).length;
-  const lis = listingsByPart(p.id);
-  const fails = failuresByPart(p.id);
-  const alts = partsByCategory(p.category).filter(a => a.id !== p.id).slice(0, 5);
-  const usedIn = boms.filter(b => b.slots.some(s => s.partId === p.id));
+  const alts = (alternativesQuery.data?.items ?? []).filter(a => a.id !== p.id).slice(0, 5) as Part[];
   const g = gallery("part-" + p.category, p.id, 5);
 
   const doSave = () => {
@@ -293,38 +300,6 @@ export default function PartDetail() {
             </div>
           </Panel>
 
-          <Panel title="Used listings (fixture)" count={lis.length} right={<Link to="/marketplace" className="text-[11px] text-muted-foreground hover:text-primary">All listings →</Link>}>
-            <div className="overflow-x-auto">
-            {lis.length ? (
-              <table className="data-table">
-                <thead><tr><th>Listing</th><th>Grade</th><th>Hours</th><th>Seller</th><th>Trust</th><th>vs new</th><th>Price</th></tr></thead>
-                <tbody>
-                  {lis.map(l => (
-                    <tr key={l.id}>
-                      <td><Link to={`/marketplace/${l.id}`} className="hover:text-primary">{l.title}</Link></td>
-                      <td><span className={`pill ${l.grade==="A"?"pill-good":l.grade==="ForParts"?"pill-bad":"pill-warn"}`}>{l.grade}</span></td>
-                      <td className="mono">{l.runtimeHours ?? "—"}</td>
-                      <td>{sellers[l.sellerId].name}</td>
-                      <td className="text-[11px] text-muted-foreground">{[l.identityVerified && "ID", l.serialVerified && "S/N", l.hasTestReport && "test", l.hasVideo && "video"].filter(Boolean).join(" · ")}</td>
-                      <td className="mono">{l.priceVsNewPct}%</td>
-                      <td className="mono font-semibold">${l.price.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : <div className="p-3 text-[12px] text-muted-foreground">No fixture listings for this component.</div>}
-            </div>
-          </Panel>
-
-          <Panel title="Used in fixture BOMs" count={usedIn.length} defaultOpen={false}>
-            <ul className="p-3 space-y-1 text-[13px]">
-              {usedIn.map(b => (
-                <li key={b.id}><Link to={`/boms/${b.slug}`} className="hover:text-primary">{b.name}</Link> <span className="text-muted-foreground">— {b.subsystem}</span></li>
-              ))}
-              {!usedIn.length && <li className="text-muted-foreground">No fixture BOMs reference this component.</li>}
-            </ul>
-          </Panel>
-
           <Panel title="Same-category candidates" count={alts.length} defaultOpen={false} right={<span className="text-[10.5px] uppercase tracking-wide text-warning">Verify actual fit</span>}>
             <div className="overflow-x-auto"><table className="data-table">
               <thead><tr><th>Candidate</th><th>Maker</th><th>Fixture $ Δ</th><th>Offers</th><th>Fixture reports</th><th>ROS</th><th></th></tr></thead>
@@ -347,27 +322,6 @@ export default function PartDetail() {
             </table></div>
           </Panel>
 
-          <Panel title="Reported incidents (fixture)" count={fails.length} defaultOpen={false}>
-            <div className="overflow-x-auto">
-            {fails.length ? (
-              <table className="data-table">
-                <thead><tr><th>Symptom</th><th>Runtime hr</th><th>Load %</th><th>Resolution</th><th>Supplier response</th><th>Reporter</th></tr></thead>
-                <tbody>
-                  {fails.map(f => (
-                    <tr key={f.id}>
-                      <td>{f.symptom}</td>
-                      <td className="mono">{f.runtimeHours}</td>
-                      <td className="mono">{f.loadPctOfCont}%</td>
-                      <td><span className={`pill ${f.resolution==="RMA approved"?"pill-good":f.resolution==="No response"||f.resolution==="RMA denied"?"pill-bad":"pill-warn"}`}>{f.resolution}</span></td>
-                      <td className="mono">{f.supplierResponseDays != null ? `${f.supplierResponseDays}d` : "—"}</td>
-                      <td className="text-[12px]">{f.author}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : <div className="p-3 text-[12px] text-muted-foreground">No fixture incidents recorded.</div>}
-            </div>
-          </Panel>
         </section>
 
         <aside className="space-y-4">

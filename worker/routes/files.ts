@@ -1,0 +1,230 @@
+import { Hono } from "hono";
+import { z } from "zod";
+import type { AppBindings } from "../env";
+import { FilesRepository } from "../db/repositories/files";
+import { AppError } from "../http";
+import { loadAuthSession, requireAuth } from "../middleware/authentication";
+import { assertOrganizationPermission, assertScopedWrite, authenticatedUserId, organizationRole } from "../middleware/authorization";
+import { BuildsRepository } from "../db/repositories/builds";
+import { ProjectsRepository } from "../db/repositories/projects";
+import { parseJson } from "../validation";
+import { recordAuditEvent } from "../services/audit";
+
+const kinds = ["image", "cad", "urdf", "mjcf", "bom", "document", "firmware", "configuration", "test_evidence", "attachment", "other"] as const;
+const visibility = ["private", "organization", "public"] as const;
+const initSchema = z.object({
+  originalName: z.string().trim().min(1).max(255), mediaType: z.string().trim().min(1).max(150),
+  sizeBytes: z.number().int().positive(), kind: z.enum(kinds), visibility: z.enum(visibility).default("private"),
+  organizationId: z.string().uuid().nullable().optional(), checksumSha256: z.string().regex(/^[a-f0-9]{64}$/u).nullable().optional(),
+}).strict();
+const attachSchema = z.object({
+  entityType: z.enum(["build", "project", "marketplace_listing"]), entityId: z.string().min(1).max(200),
+  purpose: z.string().trim().min(1).max(100), buildStepId: z.string().uuid().nullable().optional(),
+  relativePath: z.string().trim().max(500).nullable().optional(), altText: z.string().trim().max(500).nullable().optional(),
+}).strict();
+
+const KIND_LIMITS: Record<(typeof kinds)[number], number> = {
+  image: 10 * 1024 * 1024, cad: 50 * 1024 * 1024, urdf: 10 * 1024 * 1024, mjcf: 10 * 1024 * 1024,
+  bom: 10 * 1024 * 1024, document: 25 * 1024 * 1024, firmware: 25 * 1024 * 1024,
+  configuration: 5 * 1024 * 1024, test_evidence: 25 * 1024 * 1024, attachment: 25 * 1024 * 1024, other: 10 * 1024 * 1024,
+};
+const MIME_BY_KIND: Record<(typeof kinds)[number], RegExp> = {
+  image: /^image\/(png|jpeg|webp|gif)$/u,
+  cad: /^(application\/(octet-stream|step|iges|zip)|model\/(step|iges|stl)|text\/plain)$/u,
+  urdf: /^(application\/xml|text\/(xml|plain))$/u,
+  mjcf: /^(application\/xml|text\/(xml|plain))$/u,
+  bom: /^(text\/(csv|plain)|application\/(json|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|octet-stream))$/u,
+  document: /^(application\/(pdf|json)|text\/(plain|markdown|csv))$/u,
+  firmware: /^(application\/(octet-stream|zip)|text\/plain)$/u,
+  configuration: /^(application\/(json|yaml|xml)|text\/(plain|yaml|xml))$/u,
+  test_evidence: /^(image\/(png|jpeg|webp)|application\/(pdf|json)|text\/(plain|csv))$/u,
+  attachment: /^(image\/(png|jpeg|webp|gif)|application\/(pdf|json|zip)|text\/(plain|markdown|csv))$/u,
+  other: /^(application\/octet-stream|text\/plain)$/u,
+};
+
+export const fileRoutes = new Hono<AppBindings>();
+
+fileRoutes.get("/files", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  const items = (await new FilesRepository(c.env.DB).listForUser(userId)).map(publicFile);
+  return c.json({ items, total: items.length });
+});
+
+fileRoutes.post("/files/uploads", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  const body = await parseJson(c, initSchema);
+  if (body.sizeBytes > KIND_LIMITS[body.kind]) throw new AppError(413, "FILE_TOO_LARGE", `${body.kind} uploads are limited to ${Math.floor(KIND_LIMITS[body.kind] / 1024 / 1024)} MiB.`);
+  if (!MIME_BY_KIND[body.kind].test(body.mediaType.toLowerCase())) throw new AppError(422, "FILE_TYPE_NOT_ALLOWED", "That media type is not allowed for the selected file kind.");
+  if (body.organizationId) await assertOrganizationPermission(c.env.DB, userId, body.organizationId, "engineer");
+  if (body.visibility === "organization" && !body.organizationId) throw new AppError(422, "ORGANIZATION_REQUIRED", "Organization visibility requires an organization.");
+  const id = crypto.randomUUID();
+  const intentId = crypto.randomUUID();
+  const uploadToken = randomToken();
+  const now = new Date();
+  const expires = new Date(now.getTime() + 15 * 60_000).toISOString();
+  const safeName = sanitizeName(body.originalName);
+  const objectKey = `users/${userId}/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}/${id}-${safeName}`;
+  await c.env.DB.batch([
+    c.env.DB.prepare(`INSERT INTO files
+      (id, object_key, original_name, media_type, size_bytes, checksum_sha256, owner_user_id, organization_id,
+       visibility, status, kind, metadata_json, created_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10, ?11, ?12, ?12)`)
+      .bind(id, objectKey, body.originalName, body.mediaType.toLowerCase(), body.sizeBytes, body.checksumSha256 ?? null,
+        userId, body.organizationId ?? null, body.visibility, body.kind, JSON.stringify({ scanStatus: "pending", originalNameSanitized: safeName }), now.toISOString()),
+    c.env.DB.prepare(`INSERT INTO file_upload_intents
+      (id, file_id, owner_user_id, upload_token_hash, expected_size_bytes, expected_media_type, expires_at, created_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`)
+      .bind(intentId, id, userId, await sha256(uploadToken), body.sizeBytes, body.mediaType.toLowerCase(), expires, now.toISOString()),
+  ]);
+  return c.json({ file: { id, originalName: body.originalName, mediaType: body.mediaType, sizeBytes: body.sizeBytes, kind: body.kind, status: "pending" }, upload: { method: "PUT", url: `/api/v1/files/uploads/${intentId}`, token: uploadToken, expiresAt: expires, requiredHeaders: { "Content-Type": body.mediaType, "X-Upload-Token": uploadToken } } }, 201);
+});
+
+fileRoutes.put("/files/uploads/:intentId", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  const token = c.req.header("x-upload-token");
+  if (!token) throw new AppError(401, "UPLOAD_TOKEN_REQUIRED", "The upload token is required.");
+  const intent = await c.env.DB.prepare(`SELECT fui.*, f.object_key, f.original_name, f.kind, f.visibility
+    FROM file_upload_intents fui JOIN files f ON f.id = fui.file_id WHERE fui.id = ?1`).bind(c.req.param("intentId")).first<{
+      id: string; file_id: string; owner_user_id: string; upload_token_hash: string; expected_size_bytes: number;
+      expected_media_type: string; expires_at: string; consumed_at: string | null; object_key: string; original_name: string; kind: string; visibility: string;
+    }>();
+  if (!intent || intent.owner_user_id !== userId || !timingSafeEqual(intent.upload_token_hash, await sha256(token))) throw new AppError(404, "UPLOAD_INTENT_NOT_FOUND", "Upload intent not found.");
+  if (intent.consumed_at) throw new AppError(409, "UPLOAD_ALREADY_CONSUMED", "This upload intent has already been used.");
+  if (Date.parse(intent.expires_at) <= Date.now()) throw new AppError(410, "UPLOAD_EXPIRED", "This upload intent has expired.");
+  const contentType = (c.req.header("content-type") ?? "").toLowerCase();
+  const contentLength = Number(c.req.header("content-length") ?? -1);
+  if (contentType !== intent.expected_media_type || contentLength !== intent.expected_size_bytes) throw new AppError(422, "UPLOAD_METADATA_MISMATCH", "Upload size and media type must match the initialization request.");
+  if (!c.req.raw.body) throw new AppError(422, "UPLOAD_BODY_REQUIRED", "The file body is required.");
+  const object = await c.env.FILES.put(intent.object_key, c.req.raw.body, {
+    httpMetadata: { contentType, contentDisposition: disposition(intent.original_name, contentType), cacheControl: intent.visibility === "public" ? "public, max-age=3600" : "private, no-store" },
+    customMetadata: { fileId: intent.file_id, ownerUserId: userId, kind: intent.kind },
+  });
+  if (!object || object.size !== intent.expected_size_bytes) {
+    await c.env.FILES.delete(intent.object_key);
+    await c.env.DB.prepare("UPDATE files SET status = 'rejected', metadata_json = ?1, updated_at = ?2 WHERE id = ?3")
+      .bind(JSON.stringify({ rejection: "size_mismatch" }), new Date().toISOString(), intent.file_id).run();
+    throw new AppError(422, "UPLOAD_SIZE_MISMATCH", "The stored file size did not match the declared size.");
+  }
+  const scan = await scanBoundary(c.env, intent.file_id, intent.object_key);
+  const now = new Date().toISOString();
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE file_upload_intents SET consumed_at = ?1 WHERE id = ?2 AND consumed_at IS NULL").bind(now, intent.id),
+    c.env.DB.prepare("UPDATE files SET status = ?1, metadata_json = ?2, updated_at = ?3 WHERE id = ?4")
+      .bind(scan.status, JSON.stringify({ scanStatus: scan.scanStatus, r2Etag: object.etag, uploadedAt: object.uploaded.toISOString() }), now, intent.file_id),
+  ]);
+  await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "file.upload", entityType: "file", entityId: intent.file_id, requestId: c.get("requestId"), after: { status: scan.status, scanStatus: scan.scanStatus, sizeBytes: object.size } });
+  return c.json({ fileId: intent.file_id, status: scan.status, scanStatus: scan.scanStatus, accessUrl: `/api/v1/files/${intent.file_id}/content` }, 201);
+});
+
+fileRoutes.get("/files/:id", loadAuthSession, async (c) => {
+  const file = await authorizedFile(c.env.DB, c.get("authSession")?.user?.id ?? null, c.req.param("id"));
+  return c.json({ item: publicFile(file) });
+});
+
+fileRoutes.post("/files/:id/attachments", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c); const body = await parseJson(c, attachSchema);
+  const file = await new FilesRepository(c.env.DB).find(c.req.param("id"));
+  if (!file || file.deleted_at || file.status !== "ready") throw new AppError(422, "FILE_NOT_READY", "Only ready files can be attached.");
+  if (file.owner_user_id !== userId) {
+    if (!file.organization_id) throw new AppError(403, "FILE_ACCESS_DENIED", "You cannot attach this file.");
+    await assertOrganizationPermission(c.env.DB, userId, file.organization_id, "engineer");
+  }
+  const now = new Date().toISOString();
+  if (body.entityType === "build") {
+    const build = await new BuildsRepository(c.env.DB).find(body.entityId); if (!build) throw new AppError(404, "BUILD_NOT_FOUND", "Build not found.");
+    await assertScopedWrite(c.env.DB, userId, build, "build");
+    if (body.buildStepId) {
+      const step = await c.env.DB.prepare("SELECT id FROM build_steps WHERE id = ?1 AND build_id = ?2").bind(body.buildStepId, build.id).first();
+      if (!step) throw new AppError(422, "BUILD_STEP_NOT_FOUND", "The build step does not belong to this build.");
+    }
+    await c.env.DB.prepare(`INSERT INTO build_files (build_id, file_id, purpose, build_step_id, created_at)
+      VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(build_id, file_id) DO UPDATE SET purpose = excluded.purpose, build_step_id = excluded.build_step_id`)
+      .bind(build.id, file.id, body.purpose, body.buildStepId ?? null, now).run();
+  } else if (body.entityType === "project") {
+    const project = await new ProjectsRepository(c.env.DB).find(body.entityId); if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+    await assertScopedWrite(c.env.DB, userId, project.row, "engineer");
+    await c.env.DB.prepare(`INSERT INTO project_files (project_id, project_version_id, file_id, purpose, relative_path, created_at)
+      VALUES (?1, (SELECT current_version_id FROM projects WHERE id = ?1), ?2, ?3, ?4, ?5)
+      ON CONFLICT(project_id, file_id) DO UPDATE SET purpose = excluded.purpose, relative_path = excluded.relative_path`)
+      .bind(project.row.id, file.id, body.purpose, body.relativePath ?? null, now).run();
+  } else {
+    const listing = await c.env.DB.prepare("SELECT id, seller_user_id, organization_id FROM marketplace_listings WHERE id = ?1 AND deleted_at IS NULL").bind(body.entityId).first<{ id: string; seller_user_id: string | null; organization_id: string | null }>();
+    if (!listing) throw new AppError(404, "LISTING_NOT_FOUND", "Marketplace listing not found.");
+    if (listing.seller_user_id !== userId) {
+      if (!listing.organization_id) throw new AppError(403, "LISTING_ACCESS_DENIED", "You cannot modify this listing.");
+      await assertOrganizationPermission(c.env.DB, userId, listing.organization_id, "procure");
+    }
+    const max = await c.env.DB.prepare("SELECT COALESCE(MAX(sort_order), -1) AS value FROM marketplace_listing_images WHERE listing_id = ?1").bind(listing.id).first<{ value: number }>();
+    await c.env.DB.prepare(`INSERT INTO marketplace_listing_images (listing_id, file_id, alt_text, sort_order)
+      VALUES (?1, ?2, ?3, ?4) ON CONFLICT(listing_id, file_id) DO UPDATE SET alt_text = excluded.alt_text`)
+      .bind(listing.id, file.id, body.altText ?? null, Number(max?.value ?? -1) + 1).run();
+  }
+  await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "file.attach", entityType: body.entityType, entityId: body.entityId, requestId: c.get("requestId"), after: { fileId: file.id, purpose: body.purpose } });
+  return c.json({ attached: true }, 201);
+});
+
+fileRoutes.get("/files/:id/content", loadAuthSession, async (c) => {
+  const file = await authorizedFile(c.env.DB, c.get("authSession")?.user?.id ?? null, c.req.param("id"));
+  if (file.status !== "ready") throw new AppError(423, "FILE_NOT_READY", "The file is not available while safety review is pending.");
+  const object = await c.env.FILES.get(file.object_key, { onlyIf: c.req.raw.headers, range: c.req.raw.headers });
+  if (!object) throw new AppError(404, "FILE_OBJECT_NOT_FOUND", "The file object is missing from storage.");
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  headers.set("x-content-type-options", "nosniff");
+  headers.set("content-security-policy", "default-src 'none'; sandbox");
+  headers.set("cache-control", file.visibility === "public" ? "public, max-age=3600" : "private, no-store");
+  return new Response("body" in object ? object.body : undefined, { status: "body" in object ? 200 : 412, headers });
+});
+
+fileRoutes.delete("/files/:id", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  const file = await new FilesRepository(c.env.DB).find(c.req.param("id"));
+  if (!file || file.deleted_at) throw new AppError(404, "FILE_NOT_FOUND", "File not found.");
+  if (file.owner_user_id !== userId) {
+    if (!file.organization_id) throw new AppError(403, "FILE_ACCESS_DENIED", "You cannot delete this file.");
+    await assertOrganizationPermission(c.env.DB, userId, file.organization_id, "engineer");
+  }
+  await c.env.FILES.delete(file.object_key);
+  const now = new Date().toISOString();
+  await c.env.DB.prepare("UPDATE files SET status = 'deleted', deleted_at = ?1, updated_at = ?1 WHERE id = ?2").bind(now, file.id).run();
+  await recordAuditEvent(c.env.DB, { actorUserId: userId, organizationId: file.organization_id, action: "file.delete", entityType: "file", entityId: file.id, requestId: c.get("requestId") });
+  return c.body(null, 204);
+});
+
+async function authorizedFile(db: D1Database, userId: string | null, id: string) {
+  const file = await new FilesRepository(db).find(id);
+  if (!file || file.deleted_at || file.status === "deleted") throw new AppError(404, "FILE_NOT_FOUND", "File not found.");
+  if (file.visibility === "public" && file.status === "ready") return file;
+  if (!userId) throw new AppError(401, "AUTHENTICATION_REQUIRED", "Sign in to access this file.");
+  if (file.owner_user_id === userId) return file;
+  if (file.organization_id && await organizationRole(db, userId, file.organization_id)) return file;
+  throw new AppError(403, "FILE_ACCESS_DENIED", "You cannot access this file.");
+}
+
+function publicFile(file: Awaited<ReturnType<FilesRepository["find"]>> & {} | Record<string, unknown>) {
+  const row = file as Record<string, unknown>;
+  return { id: row.id, originalName: row.original_name, mediaType: row.media_type, sizeBytes: row.size_bytes, visibility: row.visibility, status: row.status, kind: row.kind, createdAt: row.created_at, updatedAt: row.updated_at, contentUrl: `/api/v1/files/${row.id}/content` };
+}
+
+async function scanBoundary(env: AppBindings["Bindings"], fileId: string, objectKey: string): Promise<{ status: "ready" | "quarantined" | "rejected"; scanStatus: string }> {
+  if (!env.MALWARE_SCAN_URL || !env.MALWARE_SCAN_TOKEN) return env.APP_ENV === "production" ? { status: "quarantined", scanStatus: "provider_not_configured" } : { status: "ready", scanStatus: "development_bypass" };
+  try {
+    const response = await fetch(env.MALWARE_SCAN_URL, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${env.MALWARE_SCAN_TOKEN}` }, body: JSON.stringify({ fileId, objectKey, bucketBinding: "FILES" }) });
+    if (!response.ok) return { status: "quarantined", scanStatus: "provider_error" };
+    const result = await response.json<{ verdict?: string }>();
+    if (result.verdict === "clean") return { status: "ready", scanStatus: "clean" };
+    if (result.verdict === "malicious") return { status: "rejected", scanStatus: "malicious" };
+    return { status: "quarantined", scanStatus: "unknown" };
+  } catch { return { status: "quarantined", scanStatus: "provider_unreachable" }; }
+}
+
+function sanitizeName(value: string): string {
+  const base = value.split(/[\\/]/u).at(-1) ?? "file";
+  const cleaned = base.normalize("NFKC").replace(/[^a-zA-Z0-9._-]/gu, "-").replace(/-+/gu, "-").replace(/^\.+/u, "").slice(0, 120);
+  return cleaned || "file";
+}
+function disposition(name: string, mediaType: string): string { return `${mediaType.startsWith("image/") ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(name)}`; }
+function randomToken(): string { const bytes = crypto.getRandomValues(new Uint8Array(32)); return btoa(String.fromCharCode(...bytes)).replace(/\+/gu, "-").replace(/\//gu, "_").replace(/=+$/gu, ""); }
+async function sha256(value: string): Promise<string> { return [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))].map((byte) => byte.toString(16).padStart(2, "0")).join(""); }
+function timingSafeEqual(left: string, right: string): boolean { if (left.length !== right.length) return false; let result = 0; for (let index = 0; index < left.length; index += 1) result |= left.charCodeAt(index) ^ right.charCodeAt(index); return result === 0; }
