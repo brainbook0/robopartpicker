@@ -1,6 +1,31 @@
 # Cloudflare deployment
 
-Deployment is prepared here but must be explicitly approved and verified against the resulting endpoint.
+The isolated preview has been deployed and verified. Production deployment remains explicit and must be verified against its resulting endpoint.
+
+## Live preview environment
+
+The `preview` Wrangler environment is a full-stack Worker deployment with isolated Cloudflare resources:
+
+- Worker: `robopartpicker-preview`
+- D1: `robopartpicker-preview`
+- R2: `robopartpicker-preview-files`
+- URL: <https://robopartpicker-preview.ludomi2502.workers.dev>
+- Verified checkpoint Worker version: `1d94decc-66cf-4b12-8037-be8392a8ee31`
+
+It serves the React assets and `/api/*` from one origin. Apply and seed the preview database explicitly, then deploy:
+
+```powershell
+npm run db:migrate:preview
+npm run db:seed:preview
+npm run db:validate:preview
+npm run deploy:preview
+```
+
+Preview secrets are environment-specific and must be configured with `--env preview`. Fixture seeding is intentional in preview only; production remains unseeded by default.
+
+The preview deploy script passes `--env preview` explicitly. It cannot silently deploy the base or production configuration.
+
+The migration command includes the guarded remote-D1 compatibility bootstrap documented in `docs/database-schema.md`; it does not edit previously applied migration files.
 
 ## One-time production resources
 

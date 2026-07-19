@@ -246,4 +246,16 @@ const outputFile = path.join(outputDirectory, "seed.generated.sql");
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(outputFile, statements.join("\n"), "utf8");
 console.log(`Generated ${statements.length} idempotent fixture statements from ${parts.length} components, ${suppliers.length} suppliers, and ${boms.length} BOMs.`);
-runWrangler(["d1", "execute", "robopartpicker", "--local", "--file", outputFile]);
+const cliArguments = process.argv.slice(2);
+const remote = cliArguments.includes("--remote");
+const environmentIndex = cliArguments.indexOf("--env");
+const environment = environmentIndex >= 0 ? cliArguments[environmentIndex + 1] : undefined;
+if (remote && environment !== "preview") {
+  throw new Error("Remote fixture seeding is restricted to the isolated preview environment.");
+}
+runWrangler([
+  "d1", "execute", remote ? "DB" : "robopartpicker",
+  remote ? "--remote" : "--local",
+  ...(environment ? ["--env", environment] : []),
+  "--file", outputFile,
+]);

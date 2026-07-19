@@ -51,6 +51,7 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 - [x] CI performs clean install, type-check, lint, contract validation, unit/Worker tests, clean D1 migrate/seed/schema validation, and production build.
 - [x] Supabase/Lovable runtime code, packages, variables, migrations, generated types, stale Bun lockfile, and platform metadata were removed. The sanitized baseline archive/tag remains the rollback source.
 - [x] Production `vite build` and `wrangler deploy --dry-run` pass with a flattened `robopartpicker-production` configuration and D1/R2/assets bindings; no publish occurred.
+- [x] An isolated live preview is deployed at <https://robopartpicker-preview.ludomi2502.workers.dev> with a dedicated Worker, remote D1, R2, environment secrets, all nine migrations, labeled demo seed, and live auth/private-resource checks.
 - [ ] In-app browser control was unavailable in this session, so desktop/mobile visual inspection, accessibility automation, and browser-driven end-to-end flows remain unverified.
 - [ ] Production D1/R2 resources, real provider secrets, remote migrations, deployment, custom domain, and deployed health/auth/isolation checks require explicit production access and approval.
 - [x] Record validated local states in annotated checkpoint tags through `v0.2.4-organization-management`; production deployment remains separate.

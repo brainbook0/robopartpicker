@@ -33,13 +33,17 @@ Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL
 | `npm run db:migrations:list` | List local migration state |
 | `npm run db:migrate:local` | Apply migrations to Wrangler's local D1 |
 | `npm run db:migrate:remote` | Explicitly apply migrations to production D1 |
+| `npm run db:migrate:preview` | Explicitly apply migrations to the isolated Cloudflare preview D1 |
 | `npm run db:reset` | Remove only local Wrangler D1 state, migrate, and seed |
 | `npm run db:seed` | Idempotently import labeled demo fixtures |
+| `npm run db:seed:preview` | Intentionally seed labeled demo fixtures into the preview D1 |
 | `npm run db:inspect` | List local tables and indexes |
 | `npm run db:export` | Export local application-table data; restore after migrations |
 | `npm run db:validate` | Check migrations, required tables, demo seed, and foreign keys |
+| `npm run db:validate:preview` | Validate the migrated and seeded preview D1 remotely |
 | `npm run deploy:dry-run` | Build and validate the deployment bundle without publishing |
 | `npm run deploy` | Deploy after production resources, secrets, and remote migrations are ready |
+| `npm run deploy:preview` | Build and deploy the full-stack preview Worker |
 
 ## Architecture
 
@@ -51,6 +55,10 @@ Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL
 - `tests/worker/` executes against isolated local D1 and R2 bindings.
 
 Detailed references: [backend architecture](docs/backend-architecture.md), [database schema](docs/database-schema.md), [ingestion contract](docs/data-ingestion-contract.md), [local development](docs/local-development.md), and [deployment](docs/deployment.md).
+
+## Live preview
+
+The live preview is available at <https://robopartpicker-preview.ludomi2502.workers.dev>. It is a single Cloudflare Worker serving the React SPA and the same-origin `/api/*` backend. It uses dedicated `robopartpicker-preview` D1 and `robopartpicker-preview-files` R2 resources, never the Attentify or production resources. Preview data is intentionally seeded from the clearly labeled demo fixtures.
 
 ## Production deployment
 

@@ -2,6 +2,8 @@
 
 The SQL migrations in `migrations/` are authoritative. This document explains the domain model and conventions.
 
+Remote D1 bootstrap preserves the immutable migration files. Cloudflare's remote SQL parser rejects the `SELECT CASE … RAISE()` trigger form in the already-applied `0003` migration, while accepting the equivalent `SELECT RAISE() WHERE …` form. `scripts/apply-remote-migration-compat.ts` performs that one exact guarded substitution only when a fresh remote database has exactly migrations `0001–0002`; it executes and records `0003` atomically, after which normal Wrangler migrations resume. Any unexpected migration or table state fails closed.
+
 ## Conventions
 
 - IDs are application-generated text UUIDs.

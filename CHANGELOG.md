@@ -2,6 +2,15 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.5] - 2026-07-19
+
+### Added
+
+- Isolated Cloudflare preview environment using a dedicated Worker, D1 database, and R2 bucket.
+- Public full-stack preview at <https://robopartpicker-preview.ludomi2502.workers.dev>.
+- Explicit preview migration, demo-seed, build, and deployment commands for repeatable live previews.
+- Guarded remote-D1 bootstrap for the equivalent trigger syntax required by Cloudflare, without rewriting an applied migration.
+
 ## [0.2.4] - 2026-07-19
 
 ### Added

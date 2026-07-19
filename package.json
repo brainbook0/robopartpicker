@@ -1,11 +1,12 @@
 {
   "name": "robopartpicker",
   "private": true,
-  "version": "0.2.4",
+  "version": "0.2.5",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
     "build": "cross-env CLOUDFLARE_ENV=production vite build",
+    "build:preview": "cross-env CLOUDFLARE_ENV=preview vite build",
     "build:dev": "vite build --mode development",
     "cf:types": "wrangler types",
     "typecheck": "tsc -b --pretty false",
@@ -20,16 +21,21 @@
     "db:migration:create": "wrangler d1 migrations create robopartpicker",
     "db:migrations:list": "wrangler d1 migrations list robopartpicker --local",
     "db:migrations:list:remote": "wrangler d1 migrations list robopartpicker --env production --remote",
+    "db:migrations:list:preview": "wrangler d1 migrations list DB --env preview --remote",
     "db:migrate:local": "wrangler d1 migrations apply robopartpicker --local",
-    "db:migrate:remote": "wrangler d1 migrations apply robopartpicker --env production --remote",
+    "db:migrate:remote": "tsx scripts/apply-remote-migration-compat.ts --env production && wrangler d1 migrations apply DB --env production --remote",
+    "db:migrate:preview": "tsx scripts/apply-remote-migration-compat.ts --env preview && wrangler d1 migrations apply DB --env preview --remote",
     "db:init": "npm run db:migrate:local && npm run db:seed && npm run db:validate",
     "db:reset": "tsx scripts/reset-local-db.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed:preview": "tsx scripts/seed.ts --remote --env preview",
     "db:inspect": "wrangler d1 execute robopartpicker --local --command=\"SELECT name, type FROM sqlite_schema WHERE type IN ('table','index') ORDER BY type, name\"",
     "db:export": "tsx scripts/export-local-db.ts",
     "db:validate": "tsx scripts/validate-schema.ts",
-    "deploy": "npm run build && wrangler deploy",
-    "deploy:dry-run": "npm run build && wrangler deploy --dry-run"
+    "db:validate:preview": "tsx scripts/validate-schema.ts --remote --env preview",
+    "deploy": "npm run build && wrangler deploy --env production",
+    "deploy:preview": "npm run build:preview && wrangler deploy --env preview",
+    "deploy:dry-run": "npm run build && wrangler deploy --env production --dry-run"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "1.0.46",
