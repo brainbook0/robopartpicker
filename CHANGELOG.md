@@ -2,6 +2,19 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.6] - 2026-07-19
+
+### Added
+
+- Organization ownership and visibility controls for project creation, project access settings, build creation, and build settings.
+- Server-authorized project/build scope transfers with organization-admin checks and optimistic concurrency protection.
+- Build name, lifecycle status, and progress editing in the persistent build workspace.
+
+### Fixed
+
+- Generated project BOMs now inherit and retain the project owner, organization, and visibility scope.
+- Optimistic update checks now allow D1 search-index trigger changes while still rejecting stale versions.
+
 ## [0.2.5] - 2026-07-19
 
 ### Added

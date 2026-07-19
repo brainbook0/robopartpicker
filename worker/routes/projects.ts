@@ -15,6 +15,13 @@ const createSchema = z.object({
   rpps: RppsPackage,
 }).strict();
 const rppsUpdateSchema = z.object({ rpps: RppsPackage }).strict();
+const scopeUpdateSchema = z.object({
+  version: z.number().int().positive(),
+  organizationId: z.string().uuid().nullable().optional(),
+  visibility: z.enum(["private", "organization", "unlisted", "public"]).optional(),
+}).strict().refine((value) => value.organizationId !== undefined || value.visibility !== undefined, {
+  message: "An organization or visibility change is required.",
+});
 const repositoryImportSchema = z.object({ repositoryUrl: z.string().url().max(2_048) }).strict();
 
 export const projectRoutes = new Hono<AppBindings>();
@@ -113,6 +120,41 @@ projectRoutes.post("/projects", loadAuthSession, requireAuth, async (c) => {
   return c.json({ item }, 201);
 });
 
+projectRoutes.patch("/projects/:id", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  const repository = new ProjectsRepository(c.env.DB);
+  const project = await repository.find(c.req.param("id"));
+  if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+  const body = await parseJson(c, scopeUpdateSchema);
+  const organizationId = body.organizationId === undefined ? project.row.organization_id : body.organizationId;
+  const visibility = body.visibility ?? project.row.visibility;
+
+  if (project.row.organization_id) {
+    await assertOrganizationPermission(c.env.DB, userId, project.row.organization_id, "admin");
+  } else {
+    await assertScopedWrite(c.env.DB, userId, project.row);
+  }
+  if (organizationId && organizationId !== project.row.organization_id) {
+    await assertOrganizationPermission(c.env.DB, userId, organizationId, "admin");
+  }
+  if (visibility === "organization" && !organizationId) {
+    throw new AppError(422, "ORGANIZATION_REQUIRED", "Organization visibility requires an organization.");
+  }
+
+  const item = await repository.updateScope(project.row.id, body.version, organizationId, visibility);
+  await recordAuditEvent(c.env.DB, {
+    actorUserId: userId,
+    organizationId: organizationId ?? project.row.organization_id,
+    action: "project.scope.update",
+    entityType: "project",
+    entityId: item.id,
+    requestId: c.get("requestId"),
+    before: { organizationId: project.row.organization_id, visibility: project.row.visibility },
+    after: { organizationId, visibility },
+  });
+  return c.json({ item });
+});
+
 projectRoutes.put("/projects/:id/rpps", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const repository = new ProjectsRepository(c.env.DB);
@@ -130,7 +172,8 @@ projectRoutes.delete("/projects/:id", loadAuthSession, requireAuth, async (c) =>
   const repository = new ProjectsRepository(c.env.DB);
   const project = await repository.find(c.req.param("id"));
   if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
-  await assertScopedWrite(c.env.DB, userId, project.row, "admin");
+  if (project.row.organization_id) await assertOrganizationPermission(c.env.DB, userId, project.row.organization_id, "admin");
+  else await assertScopedWrite(c.env.DB, userId, project.row, "admin");
   await repository.softDelete(project.row.id);
   await recordAuditEvent(c.env.DB, { actorUserId: userId, organizationId: project.row.organization_id, action: "project.archive", entityType: "project", entityId: project.row.id, requestId: c.get("requestId"), before: project.item });
   return c.body(null, 204);

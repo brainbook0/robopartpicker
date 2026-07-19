@@ -153,14 +153,15 @@ export class BuildsRepository {
     return (await this.detail(id))!;
   }
 
-  async updateBuild(id: string, expectedVersion: number, input: { name?: string; visibility?: BuildRow["visibility"]; status?: BuildRow["status"]; progressPercent?: number }): Promise<BuildDetail> {
+  async updateBuild(id: string, expectedVersion: number, input: { name?: string; organizationId?: string | null; visibility?: BuildRow["visibility"]; status?: BuildRow["status"]; progressPercent?: number }): Promise<BuildDetail> {
     const current = await this.find(id);
     if (!current) throw new AppError(404, "BUILD_NOT_FOUND", "Build not found.");
-    const result = await this.db.prepare(`UPDATE builds SET name = ?1, visibility = ?2, status = ?3,
-      progress_percent = ?4, version = version + 1, updated_at = ?5 WHERE id = ?6 AND version = ?7`)
-      .bind(input.name ?? current.name, input.visibility ?? current.visibility, input.status ?? current.status,
+    const result = await this.db.prepare(`UPDATE builds SET name = ?1, organization_id = ?2, visibility = ?3, status = ?4,
+      progress_percent = ?5, version = version + 1, updated_at = ?6 WHERE id = ?7 AND version = ?8`)
+      .bind(input.name ?? current.name, input.organizationId === undefined ? current.organization_id : input.organizationId,
+        input.visibility ?? current.visibility, input.status ?? current.status,
         input.progressPercent ?? current.progress_percent, new Date().toISOString(), id, expectedVersion).run();
-    if (result.meta.changes !== 1) throw new AppError(409, "BUILD_VERSION_CONFLICT", "The build changed; refresh and retry.");
+    if (Number(result.meta.changes) < 1) throw new AppError(409, "BUILD_VERSION_CONFLICT", "The build changed; refresh and retry.");
     return (await this.detail(id))!;
   }
 

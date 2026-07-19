@@ -80,6 +80,8 @@ Notifications are user-scoped D1 records. Community replies and Marketplace inqu
 
 Organization settings and membership are managed through `/api/v1/organizations/*`. The Worker enforces owner/admin/engineer/builder/procurement/viewer permissions, optimistic organization versions, owner-only ownership grants, and a final-active-owner invariant. The frontend organization workspace only reflects these policies; hiding a control is never the authorization boundary.
 
+Projects and builds may be created in an organization by members with the relevant engineering/build permission. Changing an existing organization owner scope or its visibility is a separate administrative action: the Worker requires administrator permission in the current organization and in any destination organization. Project scope updates synchronize the generated BOM owner, organization, and visibility in the same D1 batch.
+
 ## Cloudflare sources
 
 - <https://developers.cloudflare.com/workers/vite-plugin/reference/static-assets/>

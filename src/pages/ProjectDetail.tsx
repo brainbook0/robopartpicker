@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { deleteProject, downloadRpps, getProjectBySlug, type ProjectRow } from "@/lib/projects";
+import { deleteProject, downloadRpps, getProjectBySlug, updateProjectScope, type ProjectRow } from "@/lib/projects";
+import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 
 export default function ProjectDetail() {
@@ -16,6 +17,7 @@ export default function ProjectDetail() {
   const [p, setP] = useState<ProjectRow | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -23,11 +25,22 @@ export default function ProjectDetail() {
     getProjectBySlug(slug).then(r => { setP(r); setLoading(false); }).catch(e => { setErr(e.message); setLoading(false); });
   }, [slug]);
 
+  useEffect(() => {
+    if (!user) { setOrganizations([]); return; }
+    const controller = new AbortController();
+    organizationsApi.list(controller.signal).then((result) => setOrganizations(result.items)).catch(() => undefined);
+    return () => controller.abort();
+  }, [user]);
+
   if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
   if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
   if (!p) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[13px]">Project not found. <Link to="/projects" className="text-primary hover:underline">Back to projects</Link></div>;
 
   const isOwner = user?.id === p.owner_id;
+  const currentOrganization = organizations.find((organization) => organization.id === p.organization_id);
+  const canManageScope = p.organization_id
+    ? currentOrganization?.member_role === "owner" || currentOrganization?.member_role === "admin"
+    : isOwner;
   const bom = p.rpps.bom ?? [];
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
@@ -114,7 +127,7 @@ export default function ProjectDetail() {
                   <button onClick={copyLink} aria-label="Copy project link" className="btn-ghost btn-sm"><Link2 className="h-3.5 w-3.5" /> Copy link</button>
                   <button onClick={() => downloadRpps(p.rpps)} aria-label="Export RPPS package" className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> Export RPPS</button>
                 </div>
-                {isOwner && (
+                {canManageScope && (
                   <div className="mt-1 border-t border-border/60 pt-1.5 w-full flex justify-end">
                     <button onClick={remove} aria-label="Delete project" className="btn-ghost btn-sm text-destructive"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
                   </div>
@@ -372,6 +385,8 @@ export default function ProjectDetail() {
             ]} />
           </Section>
 
+          {canManageScope && <ProjectScopeSettings project={p} organizations={organizations} onSaved={setP} />}
+
           {authors.length > 0 && (
             <Section title={`Authors · ${authors.length}`}>
               <ul className="space-y-1 text-[12px]">
@@ -423,6 +438,64 @@ const Section = ({ title, right, children }: { title: string; right?: React.Reac
     {children}
   </section>
 );
+
+function ProjectScopeSettings({ project, organizations, onSaved }: {
+  project: ProjectRow;
+  organizations: Organization[];
+  onSaved: (project: ProjectRow) => void;
+}) {
+  const [organizationId, setOrganizationId] = useState(project.organization_id ?? "");
+  const [visibility, setVisibility] = useState<ProjectRow["visibility"]>(project.visibility);
+  const [saving, setSaving] = useState(false);
+  const eligibleOrganizations = organizations.filter((organization) => ["owner", "admin"].includes(organization.member_role));
+
+  useEffect(() => {
+    setOrganizationId(project.organization_id ?? "");
+    setVisibility(project.visibility);
+  }, [project.id, project.organization_id, project.visibility, project.record_version]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await updateProjectScope(project.id, {
+        version: project.record_version ?? 1,
+        organizationId: organizationId || null,
+        visibility,
+      });
+      onSaved(updated);
+      toast({ title: "Project access updated", description: "Organization ownership and the generated BOM scope are synchronized in D1." });
+    } catch (cause) {
+      toast({ title: "Could not update project access", description: cause instanceof Error ? cause.message : "Unknown error", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Section title="Access & ownership">
+      <label className="block text-[11px] text-muted-foreground">Owner scope
+        <select value={organizationId} onChange={(event) => {
+          const next = event.target.value;
+          setOrganizationId(next);
+          if (!next && visibility === "organization") setVisibility("private");
+        }} className="input-bare mt-1 w-full">
+          <option value="">Personal</option>
+          {eligibleOrganizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} · {organization.member_role}</option>)}
+        </select>
+      </label>
+      <label className="mt-2 block text-[11px] text-muted-foreground">Visibility
+        <select value={visibility} onChange={(event) => setVisibility(event.target.value as ProjectRow["visibility"])} className="input-bare mt-1 w-full">
+          <option value="private">Private</option>
+          <option value="organization" disabled={!organizationId}>Organization members</option>
+          <option value="unlisted">Unlisted</option>
+          <option value="public">Public</option>
+        </select>
+      </label>
+      <button type="button" disabled={saving} onClick={() => void save()} className="btn-primary btn-sm mt-2 w-full disabled:opacity-50">{saving ? "Saving…" : "Save access"}</button>
+      <p className="mt-2 text-[10px] text-muted-foreground">Organization transfers require administrator access in both scopes. The Worker enforces the change.</p>
+    </Section>
+  );
+}
 
 const Meta = ({ k, v }: { k: string; v: React.ReactNode }) => (
   <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">

@@ -1,5 +1,6 @@
 import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
+import { emptyRpps } from "../../src/lib/rpps/schema";
 
 const origin = "https://example.com";
 const ingestionSecret = "test-only-ingestion-secret-32-characters-minimum";
@@ -48,7 +49,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
     expect(Number(migrations?.value)).toBe(9);
-    const health = await call("/api/health"); expect(health.status).toBe(200); expect((await body<{ database: string }>(health)).database).toBe("d1");
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.2.6" });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
     const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
@@ -177,6 +178,49 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(lastOwner.status).toBe(409); expect((await body<{ error: { code: string } }>(lastOwner)).error.code).toBe("LAST_OWNER_REQUIRED");
     const updated = await call(`/api/v1/organizations/${organization.id}`, { method: "PATCH", body: jsonBody({ name: "Authorized Robotics Group", version: organization.version }) }, ownerCookie);
     expect(updated.status).toBe(200);
+  });
+
+  it("keeps organization-owned project and build scope changes behind admin authorization", async () => {
+    const created = await call("/api/v1/organizations", { method: "POST", body: jsonBody({ name: "Scoped Robotics Group", slug: "scoped-robotics-group" }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const organizationId = (await body<{ item: { id: string } }>(created)).item.id;
+    const added = await call(`/api/v1/organizations/${organizationId}/members`, { method: "POST", body: jsonBody({ email: "other@example.com", role: "engineer" }) }, ownerCookie);
+    expect(added.status).toBe(201);
+
+    const projectCreated = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      organizationId,
+      visibility: "organization",
+      rpps: emptyRpps({ name: "Scoped Robot Project", slug: "scoped-robot-project", bom: [{ name: "TM-42 Motor", qty: 2 }] }),
+    }) }, otherCookie);
+    expect(projectCreated.status).toBe(201);
+    const project = (await body<{ item: { id: string; organization_id: string; visibility: string; record_version: number } }>(projectCreated)).item;
+    expect(project).toMatchObject({ organization_id: organizationId, visibility: "organization" });
+    expect(await env.DB.prepare("SELECT owner_user_id, organization_id, visibility FROM boms WHERE project_id = ?1").bind(project.id).first()).toEqual({
+      owner_user_id: otherId,
+      organization_id: organizationId,
+      visibility: "organization",
+    });
+
+    const engineerProjectDetach = await call(`/api/v1/projects/${project.id}`, { method: "PATCH", body: jsonBody({ version: project.record_version, organizationId: null, visibility: "private" }) }, otherCookie);
+    expect(engineerProjectDetach.status).toBe(403);
+    const adminProjectDetach = await call(`/api/v1/projects/${project.id}`, { method: "PATCH", body: jsonBody({ version: project.record_version, organizationId: null, visibility: "private" }) }, ownerCookie);
+    expect(adminProjectDetach.status).toBe(200);
+    expect((await body<{ item: { organization_id: string | null; visibility: string } }>(adminProjectDetach)).item).toMatchObject({ organization_id: null, visibility: "private" });
+    expect(await env.DB.prepare("SELECT owner_user_id, organization_id, visibility FROM boms WHERE project_id = ?1").bind(project.id).first()).toEqual({
+      owner_user_id: otherId,
+      organization_id: null,
+      visibility: "private",
+    });
+
+    const buildCreated = await call("/api/v1/builds", { method: "POST", body: jsonBody({ name: "Scoped Robot Build", organizationId, visibility: "organization" }) }, otherCookie);
+    expect(buildCreated.status).toBe(201);
+    const build = (await body<{ item: { id: string; organization_id: string; visibility: string; version: number } }>(buildCreated)).item;
+    expect(build).toMatchObject({ organization_id: organizationId, visibility: "organization" });
+    const engineerBuildDetach = await call(`/api/v1/builds/${build.id}`, { method: "PATCH", body: jsonBody({ version: build.version, organizationId: null, visibility: "private" }) }, otherCookie);
+    expect(engineerBuildDetach.status).toBe(403);
+    const adminBuildDetach = await call(`/api/v1/builds/${build.id}`, { method: "PATCH", body: jsonBody({ version: build.version, organizationId: null, visibility: "private" }) }, ownerCookie);
+    expect(adminBuildDetach.status).toBe(200);
+    expect((await body<{ item: { organization_id: string | null; visibility: string } }>(adminBuildDetach)).item).toMatchObject({ organization_id: null, visibility: "private" });
   });
 
   it("persists Marketplace inquiry records without claiming payment processing", async () => {

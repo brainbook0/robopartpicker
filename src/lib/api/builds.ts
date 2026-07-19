@@ -6,7 +6,7 @@ export const buildsApi = {
   get: (id: string, signal?: AbortSignal) => api.get<{ item: BuildDetail }>(`/api/v1/builds/${encodeURIComponent(id)}`, { signal }),
   create: (input: { name: string; sourceProjectId?: string | null; organizationId?: string | null; visibility?: ResourceVisibility }) =>
     api.post<{ item: BuildDetail }>("/api/v1/builds", input),
-  update: (id: string, input: { version: number; name?: string; visibility?: ResourceVisibility; status?: string; progressPercent?: number }) =>
+  update: (id: string, input: { version: number; name?: string; organizationId?: string | null; visibility?: ResourceVisibility; status?: string; progressPercent?: number }) =>
     api.patch<{ item: BuildDetail }>(`/api/v1/builds/${encodeURIComponent(id)}`, input),
   addItem: (id: string, input: { componentId?: string | null; description: string; quantity: number; unit?: string; selectedSupplierOfferId?: string | null; unitCostMinor?: number | null; notes?: string | null; substitutedForItemId?: string | null }) =>
     api.post<{ item: BuildDetail["items"][number] }>(`/api/v1/builds/${encodeURIComponent(id)}/items`, input),
