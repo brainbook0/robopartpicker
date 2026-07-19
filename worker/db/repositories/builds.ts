@@ -103,9 +103,13 @@ export class BuildsRepository {
       ...item,
       availableOffers: offersByItem.get(String(item.id)) ?? [],
     }));
+    const hydratedCalibrations = (calibrations.results as Array<Record<string, unknown>>).map(({ resultJson, ...calibration }) => ({
+      ...calibration,
+      resultData: parseJsonObject(resultJson),
+    }));
     return { ...build, items: hydratedItems, steps: steps.results as Array<Record<string, unknown>>,
       dependencies: dependencies.results as BuildDetail["dependencies"], configurations: configurations.results as Array<Record<string, unknown>>,
-      firmware: firmware.results as Array<Record<string, unknown>>, calibrations: calibrations.results as Array<Record<string, unknown>>,
+      firmware: firmware.results as Array<Record<string, unknown>>, calibrations: hydratedCalibrations,
       tests: tests.results as Array<Record<string, unknown>>, problems: problems.results as Array<Record<string, unknown>>,
       decisions: decisions.results as Array<Record<string, unknown>>, activity: activity.results as Array<Record<string, unknown>>,
       files: files.results as Array<Record<string, unknown>> };
@@ -223,6 +227,83 @@ export class BuildsRepository {
     return (await this.detail(buildId))!.steps.find((step) => step.id === stepId)!;
   }
 
+  async addConfiguration(buildId: string, userId: string, input: { name: string; format: string; contentText?: string | null; fileId?: string | null }): Promise<Record<string, unknown>> {
+    if (input.fileId) await this.assertAttachedFile(buildId, input.fileId);
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare(`INSERT INTO build_configurations
+        (id, build_id, name, format, content_text, file_id, version, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)`)
+        .bind(id, buildId, input.name, input.format, input.contentText ?? null, input.fileId ?? null, now),
+      activityStatement(this.db, buildId, userId, "build.configuration.added", "build_configuration", id, `Added configuration ${input.name}`, { format: input.format, fileId: input.fileId ?? null }, now),
+    ]);
+    return (await this.detail(buildId))!.configurations.find((item) => item.id === id)!;
+  }
+
+  async addFirmware(buildId: string, userId: string, input: { name: string; repositoryUrl?: string | null; revision?: string | null; fileId?: string | null; licenseSpdx?: string | null; notes?: string | null }): Promise<Record<string, unknown>> {
+    if (input.fileId) await this.assertAttachedFile(buildId, input.fileId);
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare(`INSERT INTO build_firmware
+        (id, build_id, name, repository_url, revision, file_id, license_spdx, notes, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)`)
+        .bind(id, buildId, input.name, input.repositoryUrl ?? null, input.revision ?? null, input.fileId ?? null, input.licenseSpdx ?? null, input.notes ?? null, now),
+      activityStatement(this.db, buildId, userId, "build.firmware.added", "build_firmware", id, `Added firmware ${input.name}`, { revision: input.revision ?? null, fileId: input.fileId ?? null }, now),
+    ]);
+    return (await this.detail(buildId))!.firmware.find((item) => item.id === id)!;
+  }
+
+  async addCalibration(buildId: string, userId: string, input: { name: string; procedureText?: string | null; resultData: Record<string, unknown>; status: string }): Promise<Record<string, unknown>> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const performedAt = input.status === "pending" ? null : now;
+    await this.db.batch([
+      this.db.prepare(`INSERT INTO build_calibrations
+        (id, build_id, name, procedure_text, result_json, status, performed_by_user_id, performed_at, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`)
+        .bind(id, buildId, input.name, input.procedureText ?? null, JSON.stringify(input.resultData), input.status, performedAt ? userId : null, performedAt, now),
+      activityStatement(this.db, buildId, userId, "build.calibration.added", "build_calibration", id, `Recorded calibration ${input.name}`, { status: input.status }, now),
+    ]);
+    return (await this.detail(buildId))!.calibrations.find((item) => item.id === id)!;
+  }
+
+  async addTest(buildId: string, userId: string, input: { name: string; methodText: string; expectedText?: string | null; observedText?: string | null; result: string; evidenceFileId?: string | null }): Promise<Record<string, unknown>> {
+    if (input.evidenceFileId) await this.assertAttachedFile(buildId, input.evidenceFileId);
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const performedAt = input.result === "pending" ? null : now;
+    await this.db.batch([
+      this.db.prepare(`INSERT INTO build_tests
+        (id, build_id, name, method_text, expected_text, observed_text, result, evidence_file_id,
+         performed_by_user_id, performed_at, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`)
+        .bind(id, buildId, input.name, input.methodText, input.expectedText ?? null, input.observedText ?? null,
+          input.result, input.evidenceFileId ?? null, performedAt ? userId : null, performedAt, now),
+      activityStatement(this.db, buildId, userId, "build.test.added", "build_test", id, `Recorded test ${input.name}`, { result: input.result, evidenceFileId: input.evidenceFileId ?? null }, now),
+    ]);
+    return (await this.detail(buildId))!.tests.find((item) => item.id === id)!;
+  }
+
+  async deleteTechnicalRecord(buildId: string, userId: string, type: "configuration" | "firmware" | "calibration" | "test", id: string): Promise<void> {
+    const tables = { configuration: "build_configurations", firmware: "build_firmware", calibration: "build_calibrations", test: "build_tests" } as const;
+    const table = tables[type];
+    const existing = await this.db.prepare(`SELECT name FROM ${table} WHERE id = ?1 AND build_id = ?2`).bind(id, buildId).first<{ name: string }>();
+    if (!existing) throw new AppError(404, "BUILD_RECORD_NOT_FOUND", "Build technical record not found.");
+    const now = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare(`DELETE FROM ${table} WHERE id = ?1 AND build_id = ?2`).bind(id, buildId),
+      activityStatement(this.db, buildId, userId, `build.${type}.deleted`, `build_${type}`, id, `Deleted ${type} ${existing.name}`, {}, now),
+    ]);
+  }
+
+  private async assertAttachedFile(buildId: string, fileId: string): Promise<void> {
+    const file = await this.db.prepare(`SELECT 1 FROM build_files bf JOIN files f ON f.id = bf.file_id
+      WHERE bf.build_id = ?1 AND bf.file_id = ?2 AND f.status = 'ready' AND f.deleted_at IS NULL`).bind(buildId, fileId).first();
+    if (!file) throw new AppError(422, "BUILD_FILE_REQUIRED", "The file must be ready and attached to this build first.");
+  }
+
   async createSnapshot(buildId: string, userId: string, summary: string): Promise<void> {
     const detail = await this.detail(buildId);
     if (!detail) throw new AppError(404, "BUILD_NOT_FOUND", "Build not found.");
@@ -246,4 +327,14 @@ function activityStatement(db: D1Database, buildId: string, userId: string, even
 
 function slugify(value: string): string {
   return value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9\s-]/gu, "").trim().replace(/\s+/gu, "-").replace(/-+/gu, "-").slice(0, 70) || "build";
+}
+
+function parseJsonObject(value: unknown): Record<string, unknown> {
+  if (typeof value !== "string") return {};
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
 }

@@ -31,7 +31,7 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 
 - [x] Components/manufacturers/suppliers/offers: D1 repositories/APIs, filters, numeric validation, region/manufacturer filters, save/compare (four same-category maximum), URL state, CSV/share/BOM actions, evidence/freshness, and honest demo labels.
 - [~] Projects/RPPS/BOMs: versioned RPPS schema/import/export, normalized persistence, publication, BOM versions/items/export/fork, repository-import boundary, and review staging are implemented. Rich maintainer/media/evidence/known-issue editing screens remain limited.
-- [~] Builds: D1 persistence, privacy, start-from-project, items/quantities/offers/status/cost, steps, problems/resolutions/decisions, version snapshots, files, and export are implemented. Dedicated firmware/configuration/calibration/test editors and broader organization collaboration UX remain limited.
+- [~] Builds: D1 persistence, privacy, start-from-project, items/quantities/offers/status/cost, steps, problems/resolutions/decisions, version snapshots, files, export, and dedicated firmware/configuration/calibration/test editors are implemented. Broader organization collaboration and member-management UX remains limited.
 - [x] Community: D1 threads, structured types/data, linked entities, posts, reactions, bookmarks, reports, contributor stats, safe paths, reply anchors, and accepted-answer invariants are implemented and tested.
 - [~] Marketplace: persistent drafts/editing/publishing, seller/listing records, saves, wanted types, inquiries/messages/offers/reports/moderation schema, build/component prefills, and honest no-payment claims are implemented. Transaction-provider, expiration automation, and full moderation UI are intentionally absent.
 - [~] Notifications/preferences have protected APIs and schema; a dedicated notification center UI is not yet implemented.
@@ -47,7 +47,7 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 ## 5. Release quality
 
 - [x] Unit tests cover comparison, RFQ normalization/storage safety, safe Community links, tags, and slugs.
-- [x] Worker tests run all migrations against isolated D1/R2 and cover health/FTS, auth sessions, authorization/isolation, builds/BOM export, organization roles, Community accepted answers, ingestion validation/idempotency, R2 authorization, Marketplace inquiry honesty, and AI provider failure.
+- [x] Worker tests run all migrations against isolated D1/R2 and cover health/FTS, auth sessions, authorization/isolation, builds/BOM export, build engineering records and attached-file checks, organization roles, Community accepted answers, ingestion validation/idempotency, R2 authorization, Marketplace inquiry honesty, and AI provider failure.
 - [x] CI performs clean install, type-check, lint, contract validation, unit/Worker tests, clean D1 migrate/seed/schema validation, and production build.
 - [x] Supabase/Lovable runtime code, packages, variables, migrations, generated types, stale Bun lockfile, and platform metadata were removed. The sanitized baseline archive/tag remains the rollback source.
 - [x] Production `vite build` and `wrangler deploy --dry-run` pass with a flattened `robopartpicker-production` configuration and D1/R2/assets bindings; no publish occurred.

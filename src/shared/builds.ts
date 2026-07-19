@@ -49,14 +49,36 @@ export type BuildItem = {
 
 export type BuildStep = { id: string; title: string; body: string | null; status: string; sortOrder: number };
 
+export type BuildConfiguration = {
+  id: string; name: string; format: string; contentText: string | null; fileId: string | null;
+  version: number; createdAt: string; updatedAt: string;
+};
+
+export type BuildFirmware = {
+  id: string; name: string; repositoryUrl: string | null; revision: string | null; fileId: string | null;
+  licenseSpdx: string | null; notes: string | null; createdAt: string; updatedAt: string;
+};
+
+export type BuildCalibration = {
+  id: string; name: string; procedureText: string | null; resultData: Record<string, unknown>;
+  status: "pending" | "passed" | "failed" | "superseded"; performedByUserId: string | null;
+  performedAt: string | null; createdAt: string;
+};
+
+export type BuildTest = {
+  id: string; name: string; methodText: string; expectedText: string | null; observedText: string | null;
+  result: "pending" | "passed" | "failed" | "inconclusive"; evidenceFileId: string | null;
+  performedByUserId: string | null; performedAt: string | null; createdAt: string;
+};
+
 export type BuildDetail = BuildSummary & {
   items: BuildItem[];
   steps: BuildStep[];
   dependencies: Array<{ buildStepId: string; dependsOnStepId: string }>;
-  configurations: Array<Record<string, unknown>>;
-  firmware: Array<Record<string, unknown>>;
-  calibrations: Array<Record<string, unknown>>;
-  tests: Array<Record<string, unknown>>;
+  configurations: BuildConfiguration[];
+  firmware: BuildFirmware[];
+  calibrations: BuildCalibration[];
+  tests: BuildTest[];
   problems: Array<Record<string, unknown>>;
   decisions: Array<Record<string, unknown>>;
   activity: Array<Record<string, unknown>>;

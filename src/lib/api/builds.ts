@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { BomDetail, BomSummary, BuildDetail, BuildSummary, ResourceVisibility } from "@/shared/builds";
+import type { BomDetail, BomSummary, BuildCalibration, BuildConfiguration, BuildDetail, BuildFirmware, BuildSummary, BuildTest, ResourceVisibility } from "@/shared/builds";
 
 export const buildsApi = {
   list: (mine = false, signal?: AbortSignal) => api.get<{ items: BuildSummary[] }>(`/api/v1/builds?mine=${mine}`, { signal }),
@@ -13,6 +13,18 @@ export const buildsApi = {
   updateItem: (id: string, itemId: string, input: { quantity?: number; selectedSupplierOfferId?: string | null; unitCostMinor?: number | null; status?: string; notes?: string | null }) =>
     api.patch<{ item: BuildDetail["items"][number] }>(`/api/v1/builds/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`, input),
   deleteItem: (id: string, itemId: string) => api.delete<void>(`/api/v1/builds/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`),
+  addConfiguration: (id: string, input: { name: string; format: string; contentText?: string | null; fileId?: string | null }) =>
+    api.post<{ item: BuildConfiguration }>(`/api/v1/builds/${encodeURIComponent(id)}/configurations`, input),
+  deleteConfiguration: (id: string, recordId: string) => api.delete<void>(`/api/v1/builds/${encodeURIComponent(id)}/configurations/${encodeURIComponent(recordId)}`),
+  addFirmware: (id: string, input: { name: string; repositoryUrl?: string | null; revision?: string | null; fileId?: string | null; licenseSpdx?: string | null; notes?: string | null }) =>
+    api.post<{ item: BuildFirmware }>(`/api/v1/builds/${encodeURIComponent(id)}/firmware`, input),
+  deleteFirmware: (id: string, recordId: string) => api.delete<void>(`/api/v1/builds/${encodeURIComponent(id)}/firmware/${encodeURIComponent(recordId)}`),
+  addCalibration: (id: string, input: { name: string; procedureText?: string | null; resultData?: Record<string, unknown>; status?: BuildCalibration["status"] }) =>
+    api.post<{ item: BuildCalibration }>(`/api/v1/builds/${encodeURIComponent(id)}/calibrations`, input),
+  deleteCalibration: (id: string, recordId: string) => api.delete<void>(`/api/v1/builds/${encodeURIComponent(id)}/calibrations/${encodeURIComponent(recordId)}`),
+  addTest: (id: string, input: { name: string; methodText: string; expectedText?: string | null; observedText?: string | null; result?: BuildTest["result"]; evidenceFileId?: string | null }) =>
+    api.post<{ item: BuildTest }>(`/api/v1/builds/${encodeURIComponent(id)}/tests`, input),
+  deleteTest: (id: string, recordId: string) => api.delete<void>(`/api/v1/builds/${encodeURIComponent(id)}/tests/${encodeURIComponent(recordId)}`),
 };
 
 export const bomsApi = {

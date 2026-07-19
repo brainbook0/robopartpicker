@@ -23,6 +23,24 @@ const snapshotSchema = z.object({ summary: z.string().trim().min(2).max(500) }).
 const problemSchema = z.object({ title: z.string().trim().min(2).max(300), description: z.string().trim().min(2).max(20_000), severity: z.enum(["low", "medium", "high", "critical"]) }).strict();
 const resolutionSchema = z.object({ summary: z.string().trim().min(2).max(5_000), rootCause: z.string().trim().max(10_000).nullable().optional(), evidenceId: z.string().uuid().nullable().optional() }).strict();
 const decisionSchema = z.object({ title: z.string().trim().min(2).max(300), context: z.string().trim().max(10_000).nullable().optional(), decision: z.string().trim().min(2).max(10_000), consequences: z.string().trim().max(10_000).nullable().optional() }).strict();
+const httpUrl = z.string().url().max(2_048).refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Only HTTP(S) URLs are allowed.");
+const configurationSchema = z.object({
+  name: z.string().trim().min(1).max(200), format: z.string().trim().min(1).max(50),
+  contentText: z.string().max(200_000).nullable().optional(), fileId: z.string().uuid().nullable().optional(),
+}).strict().refine((value) => Boolean(value.contentText?.trim() || value.fileId), { message: "Configuration content or an attached file is required." });
+const firmwareSchema = z.object({
+  name: z.string().trim().min(1).max(200), repositoryUrl: httpUrl.nullable().optional(), revision: z.string().trim().max(200).nullable().optional(),
+  fileId: z.string().uuid().nullable().optional(), licenseSpdx: z.string().trim().max(100).nullable().optional(), notes: z.string().trim().max(10_000).nullable().optional(),
+}).strict().refine((value) => Boolean(value.repositoryUrl || value.fileId), { message: "A firmware repository or attached file is required." });
+const calibrationSchema = z.object({
+  name: z.string().trim().min(1).max(200), procedureText: z.string().trim().max(20_000).nullable().optional(),
+  resultData: z.record(z.string(), z.unknown()).default({}), status: z.enum(["pending", "passed", "failed", "superseded"]).default("pending"),
+}).strict().refine((value) => JSON.stringify(value.resultData).length <= 100_000, { message: "Calibration result data is too large." });
+const testSchema = z.object({
+  name: z.string().trim().min(1).max(200), methodText: z.string().trim().min(1).max(20_000), expectedText: z.string().trim().max(20_000).nullable().optional(),
+  observedText: z.string().trim().max(20_000).nullable().optional(), result: z.enum(["pending", "passed", "failed", "inconclusive"]).default("pending"),
+  evidenceFileId: z.string().uuid().nullable().optional(),
+}).strict();
 
 export const buildRoutes = new Hono<AppBindings>();
 
@@ -112,6 +130,66 @@ buildRoutes.patch("/builds/:id/steps/:stepId", loadAuthSession, requireAuth, asy
   return c.json({ item: await new BuildsRepository(c.env.DB).updateStep(build.id, c.req.param("stepId"), userId, await parseJson(c, stepUpdateSchema)) });
 });
 
+buildRoutes.post("/builds/:id/configurations", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  const body = await parseJson(c, configurationSchema);
+  const item = await new BuildsRepository(c.env.DB).addConfiguration(build.id, userId, body);
+  await auditTechnicalMutation(c, userId, build, "build.configuration.create", String(item.id), { name: body.name, format: body.format, fileId: body.fileId ?? null });
+  return c.json({ item }, 201);
+});
+
+buildRoutes.delete("/builds/:id/configurations/:recordId", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  await new BuildsRepository(c.env.DB).deleteTechnicalRecord(build.id, userId, "configuration", c.req.param("recordId"));
+  await auditTechnicalMutation(c, userId, build, "build.configuration.delete", c.req.param("recordId"));
+  return c.body(null, 204);
+});
+
+buildRoutes.post("/builds/:id/firmware", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  const body = await parseJson(c, firmwareSchema);
+  const item = await new BuildsRepository(c.env.DB).addFirmware(build.id, userId, body);
+  await auditTechnicalMutation(c, userId, build, "build.firmware.create", String(item.id), { name: body.name, revision: body.revision ?? null, fileId: body.fileId ?? null });
+  return c.json({ item }, 201);
+});
+
+buildRoutes.delete("/builds/:id/firmware/:recordId", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  await new BuildsRepository(c.env.DB).deleteTechnicalRecord(build.id, userId, "firmware", c.req.param("recordId"));
+  await auditTechnicalMutation(c, userId, build, "build.firmware.delete", c.req.param("recordId"));
+  return c.body(null, 204);
+});
+
+buildRoutes.post("/builds/:id/calibrations", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  const body = await parseJson(c, calibrationSchema);
+  const item = await new BuildsRepository(c.env.DB).addCalibration(build.id, userId, body);
+  await auditTechnicalMutation(c, userId, build, "build.calibration.create", String(item.id), { name: body.name, status: body.status });
+  return c.json({ item }, 201);
+});
+
+buildRoutes.delete("/builds/:id/calibrations/:recordId", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  await new BuildsRepository(c.env.DB).deleteTechnicalRecord(build.id, userId, "calibration", c.req.param("recordId"));
+  await auditTechnicalMutation(c, userId, build, "build.calibration.delete", c.req.param("recordId"));
+  return c.body(null, 204);
+});
+
+buildRoutes.post("/builds/:id/tests", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  const body = await parseJson(c, testSchema);
+  const item = await new BuildsRepository(c.env.DB).addTest(build.id, userId, body);
+  await auditTechnicalMutation(c, userId, build, "build.test.create", String(item.id), { name: body.name, result: body.result, evidenceFileId: body.evidenceFileId ?? null });
+  return c.json({ item }, 201);
+});
+
+buildRoutes.delete("/builds/:id/tests/:recordId", loadAuthSession, requireAuth, async (c) => {
+  const { userId, build } = await writableBuild(c, c.req.param("id"));
+  await new BuildsRepository(c.env.DB).deleteTechnicalRecord(build.id, userId, "test", c.req.param("recordId"));
+  await auditTechnicalMutation(c, userId, build, "build.test.delete", c.req.param("recordId"));
+  return c.body(null, 204);
+});
+
 buildRoutes.post("/builds/:id/versions", loadAuthSession, requireAuth, async (c) => {
   const { userId, build } = await writableBuild(c, c.req.param("id"));
   const body = await parseJson(c, snapshotSchema);
@@ -164,6 +242,10 @@ async function writableBuild(c: Context<AppBindings>, id: string) {
   if (!build) throw new AppError(404, "BUILD_NOT_FOUND", "Build not found.");
   await assertScopedWrite(c.env.DB, userId, build, "build");
   return { build, userId };
+}
+
+async function auditTechnicalMutation(c: Context<AppBindings>, userId: string, build: BuildRow, action: string, entityId: string, after?: unknown) {
+  await recordAuditEvent(c.env.DB, { actorUserId: userId, organizationId: build.organization_id, action, entityType: "build", entityId, requestId: c.get("requestId"), after });
 }
 
 function csv(value: unknown): string { const text = value == null ? "" : String(value); return /[",\n]/u.test(text) ? `"${text.replace(/"/gu, '""')}"` : text; }
