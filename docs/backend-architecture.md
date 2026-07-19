@@ -82,6 +82,8 @@ Organization settings and membership are managed through `/api/v1/organizations/
 
 Projects and builds may be created in an organization by members with the relevant engineering/build permission. Changing an existing organization owner scope or its visibility is a separate administrative action: the Worker requires administrator permission in the current organization and in any destination organization. Project scope updates synchronize the generated BOM owner, organization, and visibility in the same D1 batch.
 
+RPPS technical-record publication is versioned and optimistic: the client submits the current project record version, the Worker rejects stale writes, and a successful publication creates a new immutable `project_versions` row. Required tools and skills are projected into `project_requirements`; RPPS evidence is projected into `evidence` and `evidence_claims` while the complete validated package remains the portable source record.
+
 ## Cloudflare sources
 
 - <https://developers.cloudflare.com/workers/vite-plugin/reference/static-assets/>

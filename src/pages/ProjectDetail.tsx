@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { deleteProject, downloadRpps, getProjectBySlug, updateProjectScope, type ProjectRow } from "@/lib/projects";
+import { deleteProject, downloadRpps, getProjectBySlug, updateProjectRpps, updateProjectScope, type ProjectRow } from "@/lib/projects";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 
@@ -40,6 +40,9 @@ export default function ProjectDetail() {
   const currentOrganization = organizations.find((organization) => organization.id === p.organization_id);
   const canManageScope = p.organization_id
     ? currentOrganization?.member_role === "owner" || currentOrganization?.member_role === "admin"
+    : isOwner;
+  const canEditRpps = p.organization_id
+    ? ["owner", "admin", "engineer"].includes(currentOrganization?.member_role ?? "")
     : isOwner;
   const bom = p.rpps.bom ?? [];
   const assembly = p.rpps.assembly ?? [];
@@ -161,6 +164,8 @@ export default function ProjectDetail() {
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3">
         <div className="space-y-3 min-w-0">
+          {canEditRpps && <ProjectTechnicalEditor project={p} onSaved={setP} />}
+
           <Section title="Description">
             {p.description
               ? <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed">{p.description}</pre>
@@ -427,6 +432,138 @@ export default function ProjectDetail() {
       </div>
     </div>
   );
+}
+
+type ProjectAuthor = NonNullable<ProjectRow["rpps"]["authors"]>[number];
+type ProjectKnownIssue = NonNullable<ProjectRow["rpps"]["known_issues"]>[number];
+type ProjectEvidence = NonNullable<ProjectRow["rpps"]["evidence"]>[number];
+
+const evidenceSourceTypes: ProjectEvidence["source_type"][] = ["datasheet", "repo", "docs", "paper", "user-build", "test", "teardown", "supplier", "listing", "inference"];
+
+function ProjectTechnicalEditor({ project, onSaved }: { project: ProjectRow; onSaved: (project: ProjectRow) => void }) {
+  const [releaseVersion, setReleaseVersion] = useState(() => nextRppsVersion(project.rpps.version));
+  const [tools, setTools] = useState((project.rpps.build?.required_tools ?? []).join("\n"));
+  const [skills, setSkills] = useState((project.rpps.build?.required_skills ?? []).join("\n"));
+  const [authors, setAuthors] = useState<ProjectAuthor[]>(() => structuredClone(project.rpps.authors ?? []));
+  const [knownIssues, setKnownIssues] = useState<ProjectKnownIssue[]>(() => structuredClone(project.rpps.known_issues ?? []));
+  const [evidence, setEvidence] = useState<ProjectEvidence[]>(() => structuredClone(project.rpps.evidence ?? []));
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setReleaseVersion(nextRppsVersion(project.rpps.version));
+    setTools((project.rpps.build?.required_tools ?? []).join("\n"));
+    setSkills((project.rpps.build?.required_skills ?? []).join("\n"));
+    setAuthors(structuredClone(project.rpps.authors ?? []));
+    setKnownIssues(structuredClone(project.rpps.known_issues ?? []));
+    setEvidence(structuredClone(project.rpps.evidence ?? []));
+  }, [project.id, project.record_version, project.rpps]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const cleanAuthors = authors.map((author) => ({
+        name: author.name.trim(),
+        ...(author.role?.trim() ? { role: author.role.trim() } : {}),
+        ...(author.url?.trim() ? { url: author.url.trim() } : {}),
+      })).filter((author) => author.name);
+      const cleanIssues = knownIssues.map((issue) => ({
+        title: issue.title.trim(),
+        ...(issue.body?.trim() ? { body: issue.body.trim() } : {}),
+      })).filter((issue) => issue.title);
+      const cleanEvidence = evidence.map((item) => ({
+        ...item,
+        claim: item.claim.trim(),
+        ...(item.source_url?.trim() ? { source_url: item.source_url.trim() } : { source_url: undefined }),
+      })).filter((item) => item.claim);
+      const updated = await updateProjectRpps(project.id, project.record_version ?? 1, {
+        ...project.rpps,
+        version: releaseVersion.trim(),
+        authors: cleanAuthors.length ? cleanAuthors : undefined,
+        build: {
+          ...(project.rpps.build ?? {}),
+          required_tools: splitLines(tools),
+          required_skills: splitLines(skills),
+        },
+        known_issues: cleanIssues.length ? cleanIssues : undefined,
+        evidence: cleanEvidence.length ? cleanEvidence : undefined,
+      });
+      onSaved(updated);
+      toast({ title: "Project records published", description: `RPPS ${updated.version} is now the current D1-backed project version.` });
+    } catch (cause) {
+      toast({ title: "Could not publish project records", description: cause instanceof Error ? cause.message : "Unknown error", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <details className="surface-card group">
+      <summary className="cursor-pointer list-none px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        Edit versioned technical records <span className="normal-case tracking-normal">· current RPPS {project.rpps.version}</span>
+      </summary>
+      <div className="space-y-3 border-t border-border p-3">
+        <div className="grid gap-2 md:grid-cols-3">
+          <label className="text-[10px] uppercase text-muted-foreground">New RPPS version<input value={releaseVersion} maxLength={40} onChange={(event) => setReleaseVersion(event.target.value)} className="input-bare mt-1 h-9 w-full normal-case" /></label>
+          <label className="text-[10px] uppercase text-muted-foreground">Required tools<textarea value={tools} onChange={(event) => setTools(event.target.value)} placeholder="One tool per line" className="input-bare mt-1 min-h-20 w-full normal-case" /></label>
+          <label className="text-[10px] uppercase text-muted-foreground">Required skills<textarea value={skills} onChange={(event) => setSkills(event.target.value)} placeholder="One skill per line" className="input-bare mt-1 min-h-20 w-full normal-case" /></label>
+        </div>
+
+        <RecordEditor title="Authors" addLabel="Add author" onAdd={() => setAuthors([...authors, { name: "" }])}>
+          {authors.map((author, index) => <div key={index} className="grid gap-2 md:grid-cols-[1fr_1fr_1.5fr_auto]">
+            <input aria-label={`Author ${index + 1} name`} placeholder="Name" value={author.name} onChange={(event) => setAuthors(replaceAt(authors, index, { ...author, name: event.target.value }))} className="input-bare h-9" />
+            <input aria-label={`Author ${index + 1} role`} placeholder="Role" value={author.role ?? ""} onChange={(event) => setAuthors(replaceAt(authors, index, { ...author, role: event.target.value }))} className="input-bare h-9" />
+            <input aria-label={`Author ${index + 1} URL`} type="url" placeholder="https://…" value={author.url ?? ""} onChange={(event) => setAuthors(replaceAt(authors, index, { ...author, url: event.target.value }))} className="input-bare h-9" />
+            <RemoveButton label={`Remove author ${index + 1}`} onClick={() => setAuthors(authors.filter((_, itemIndex) => itemIndex !== index))} />
+          </div>)}
+        </RecordEditor>
+
+        <RecordEditor title="Known issues" addLabel="Add issue" onAdd={() => setKnownIssues([...knownIssues, { title: "", body: "" }])}>
+          {knownIssues.map((issue, index) => <div key={index} className="grid gap-2 md:grid-cols-[1fr_2fr_auto]">
+            <input aria-label={`Issue ${index + 1} title`} placeholder="Issue title" value={issue.title} onChange={(event) => setKnownIssues(replaceAt(knownIssues, index, { ...issue, title: event.target.value }))} className="input-bare h-9" />
+            <input aria-label={`Issue ${index + 1} description`} placeholder="Symptoms, constraints, or workaround" value={issue.body ?? ""} onChange={(event) => setKnownIssues(replaceAt(knownIssues, index, { ...issue, body: event.target.value }))} className="input-bare h-9" />
+            <RemoveButton label={`Remove issue ${index + 1}`} onClick={() => setKnownIssues(knownIssues.filter((_, itemIndex) => itemIndex !== index))} />
+          </div>)}
+        </RecordEditor>
+
+        <RecordEditor title="Evidence" addLabel="Add evidence" onAdd={() => setEvidence([...evidence, { claim: "", source_type: "test", confidence: 0.5 }])}>
+          {evidence.map((item, index) => <div key={index} className="grid gap-2 md:grid-cols-[2fr_1fr_1.5fr_90px_auto]">
+            <input aria-label={`Evidence ${index + 1} claim`} placeholder="Technical claim" value={item.claim} onChange={(event) => setEvidence(replaceAt(evidence, index, { ...item, claim: event.target.value }))} className="input-bare h-9" />
+            <select aria-label={`Evidence ${index + 1} source type`} value={item.source_type} onChange={(event) => setEvidence(replaceAt(evidence, index, { ...item, source_type: event.target.value as ProjectEvidence["source_type"] }))} className="input-bare h-9">{evidenceSourceTypes.map((sourceType) => <option key={sourceType} value={sourceType}>{sourceType}</option>)}</select>
+            <input aria-label={`Evidence ${index + 1} source URL`} type="url" placeholder="https://…" value={item.source_url ?? ""} onChange={(event) => setEvidence(replaceAt(evidence, index, { ...item, source_url: event.target.value }))} className="input-bare h-9" />
+            <input aria-label={`Evidence ${index + 1} confidence`} type="number" min={0} max={1} step={0.05} value={item.confidence ?? 0.5} onChange={(event) => setEvidence(replaceAt(evidence, index, { ...item, confidence: Number(event.target.value) }))} className="input-bare h-9" />
+            <RemoveButton label={`Remove evidence ${index + 1}`} onClick={() => setEvidence(evidence.filter((_, itemIndex) => itemIndex !== index))} />
+          </div>)}
+        </RecordEditor>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+          <p className="text-[10.5px] text-muted-foreground">Publishing creates an immutable RPPS version; stale browser state is rejected by the Worker.</p>
+          <button type="button" disabled={saving || !releaseVersion.trim()} onClick={() => void save()} className="btn-primary btn-sm disabled:opacity-50">{saving ? "Publishing…" : "Publish records"}</button>
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function RecordEditor({ title, addLabel, onAdd, children }: { title: string; addLabel: string; onAdd: () => void; children: React.ReactNode }) {
+  return <div className="space-y-2"><div className="flex items-center justify-between"><div className="section-title">{title}</div><button type="button" onClick={onAdd} className="btn-ghost btn-sm">{addLabel}</button></div>{children}</div>;
+}
+
+function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return <button type="button" aria-label={label} onClick={onClick} className="btn-ghost btn-sm h-9 text-destructive">Remove</button>;
+}
+
+function replaceAt<T>(items: T[], index: number, value: T): T[] {
+  return items.map((item, itemIndex) => itemIndex === index ? value : item);
+}
+
+function splitLines(value: string): string[] {
+  return Array.from(new Set(value.split(/\r?\n|,/u).map((item) => item.trim()).filter(Boolean)));
+}
+
+function nextRppsVersion(version: string): string {
+  const semanticVersion = /^(\d+)\.(\d+)\.(\d+)$/u.exec(version);
+  if (semanticVersion) return `${semanticVersion[1]}.${semanticVersion[2]}.${Number(semanticVersion[3]) + 1}`;
+  return `${version.slice(0, 32)}-revision`;
 }
 
 const Section = ({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) => (

@@ -49,7 +49,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
     expect(Number(migrations?.value)).toBe(9);
-    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.2.6" });
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.2.7" });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
     const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
@@ -221,6 +221,41 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const adminBuildDetach = await call(`/api/v1/builds/${build.id}`, { method: "PATCH", body: jsonBody({ version: build.version, organizationId: null, visibility: "private" }) }, ownerCookie);
     expect(adminBuildDetach.status).toBe(200);
     expect((await body<{ item: { organization_id: string | null; visibility: string } }>(adminBuildDetach)).item).toMatchObject({ organization_id: null, visibility: "private" });
+  });
+
+  it("versions project technical records with normalized requirements and evidence", async () => {
+    const initialRpps = emptyRpps({
+      name: "Technical Record Robot",
+      slug: "technical-record-robot",
+      version: "0.1.0",
+      build: { required_tools: ["Torque wrench"], required_skills: ["Soldering"] },
+      known_issues: [{ title: "Encoder drift", body: "Recalibrate after transport." }],
+      evidence: [{ claim: "Joint repeatability measured at 0.2 degrees.", source_type: "test", source_url: "https://example.com/repeatability", confidence: 0.9 }],
+    });
+    const created = await call("/api/v1/projects", { method: "POST", body: jsonBody({ visibility: "private", rpps: initialRpps }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const project = (await body<{ item: { id: string; record_version: number } }>(created)).item;
+
+    expect(Number((await env.DB.prepare(`SELECT COUNT(*) AS value FROM project_requirements pr
+      JOIN projects p ON p.current_version_id = pr.project_version_id WHERE p.id = ?1`).bind(project.id).first<{ value: number }>())?.value)).toBe(2);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM evidence_claims WHERE entity_type = 'project' AND entity_id = ?1").bind(project.id).first<{ value: number }>())?.value)).toBe(1);
+
+    const revisedRpps = { ...initialRpps, version: "0.1.1", build: { required_tools: ["Torque wrench", "Multimeter"], required_skills: ["Soldering"] } };
+    const denied = await call(`/api/v1/projects/${project.id}/rpps`, { method: "PUT", body: jsonBody({ version: project.record_version, rpps: revisedRpps }) }, otherCookie);
+    expect(denied.status).toBe(403);
+    const updated = await call(`/api/v1/projects/${project.id}/rpps`, { method: "PUT", body: jsonBody({ version: project.record_version, rpps: revisedRpps }) }, ownerCookie);
+    expect(updated.status).toBe(200);
+    expect((await body<{ item: { record_version: number; rpps: { version: string } } }>(updated)).item).toMatchObject({ record_version: 2, rpps: { version: "0.1.1" } });
+
+    const stale = await call(`/api/v1/projects/${project.id}/rpps`, { method: "PUT", body: jsonBody({ version: project.record_version, rpps: { ...revisedRpps, version: "0.1.2" } }) }, ownerCookie);
+    expect(stale.status).toBe(409);
+    const currentRequirements = await env.DB.prepare(`SELECT requirement_type, label FROM project_requirements pr
+      JOIN projects p ON p.current_version_id = pr.project_version_id WHERE p.id = ?1 ORDER BY requirement_type, label`).bind(project.id).all();
+    expect(currentRequirements.results).toEqual([
+      { requirement_type: "skill", label: "Soldering" },
+      { requirement_type: "tool", label: "Multimeter" },
+      { requirement_type: "tool", label: "Torque wrench" },
+    ]);
   });
 
   it("persists Marketplace inquiry records without claiming payment processing", async () => {
