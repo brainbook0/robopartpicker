@@ -76,6 +76,10 @@ Provider keys and calls stay in the Worker. Tools expose narrow, authorized doma
 
 Notifications are user-scoped D1 records. Community replies and Marketplace inquiries call a shared service that checks the recipient's per-type in-app preference before inserting. Reads, unread counts, and mutations are authenticated and constrained by `user_id`; the React notification center accepts navigation only through the existing safe-internal-path validator. Email preferences store the user's intent but do not claim delivery unless the Worker email-provider boundary is configured.
 
+## Organization collaboration
+
+Organization settings and membership are managed through `/api/v1/organizations/*`. The Worker enforces owner/admin/engineer/builder/procurement/viewer permissions, optimistic organization versions, owner-only ownership grants, and a final-active-owner invariant. The frontend organization workspace only reflects these policies; hiding a control is never the authorization boundary.
+
 ## Cloudflare sources
 
 - <https://developers.cloudflare.com/workers/vite-plugin/reference/static-assets/>

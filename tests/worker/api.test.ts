@@ -171,6 +171,10 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(added.status).toBe(201);
     const denied = await call(`/api/v1/organizations/${organization.id}`, { method: "PATCH", body: jsonBody({ name: "Unauthorized rename", version: organization.version }) }, otherCookie);
     expect(denied.status).toBe(403);
+    const roleChanged = await call(`/api/v1/organizations/${organization.id}/members/${otherId}`, { method: "PATCH", body: jsonBody({ role: "engineer", status: "active" }) }, ownerCookie);
+    expect(roleChanged.status).toBe(200); expect(await body(roleChanged)).toMatchObject({ item: { user_id: otherId, role: "engineer", status: "active" } });
+    const lastOwner = await call(`/api/v1/organizations/${organization.id}/members/${ownerId}`, { method: "DELETE" }, ownerCookie);
+    expect(lastOwner.status).toBe(409); expect((await body<{ error: { code: string } }>(lastOwner)).error.code).toBe("LAST_OWNER_REQUIRED");
     const updated = await call(`/api/v1/organizations/${organization.id}`, { method: "PATCH", body: jsonBody({ name: "Authorized Robotics Group", version: organization.version }) }, ownerCookie);
     expect(updated.status).toBe(200);
   });

@@ -2,6 +2,13 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.4] - 2026-07-19
+
+### Added
+
+- Organization workspace for creation, settings, member addition, role/status changes, and removals through the Worker API.
+- Organization authorization regression coverage for privileged role changes and final-owner protection.
+
 ## [0.2.3] - 2026-07-19
 
 ### Added
