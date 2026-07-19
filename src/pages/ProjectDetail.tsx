@@ -1,0 +1,515 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import {
+  Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu,
+  Clock, DollarSign, Package, ListChecks, ShieldCheck, BookOpen, AlertTriangle,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { deleteProject, downloadRpps, getProjectBySlug, type ProjectRow } from "@/lib/projects";
+import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
+
+export default function ProjectDetail() {
+  const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const [p, setP] = useState<ProjectRow | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!slug) return;
+    setLoading(true);
+    getProjectBySlug(slug).then(r => { setP(r); setLoading(false); }).catch(e => { setErr(e.message); setLoading(false); });
+  }, [slug]);
+
+  if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
+  if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
+  if (!p) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[13px]">Project not found. <Link to="/projects" className="text-primary hover:underline">Back to projects</Link></div>;
+
+  const isOwner = user?.id === p.owner_id;
+  const bom = p.rpps.bom ?? [];
+  const assembly = p.rpps.assembly ?? [];
+  const integrations = p.rpps.integrations ?? [];
+  const files = p.rpps.files ?? [];
+  const evidence = p.rpps.evidence ?? [];
+  const knownIssues = p.rpps.known_issues ?? [];
+  const authors = p.rpps.authors ?? [];
+
+  const bomCost = useMemo(() => bom.reduce((s, i) => s + (i.unit_cost_usd ?? 0) * i.qty, 0), [bom]);
+  const bomQty = useMemo(() => bom.reduce((s, i) => s + i.qty, 0), [bom]);
+  const bomPricedCount = bom.filter(i => i.unit_cost_usd != null).length;
+  const totalBuildMin = useMemo(() => assembly.reduce((s, a) => s + (a.duration_min ?? 0), 0), [assembly]);
+  const integrationCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const it of integrations) c[it.status] = (c[it.status] ?? 0) + 1;
+    return c;
+  }, [integrations]);
+
+  const estCost = p.estimated_cost_usd ?? p.rpps.build?.estimated_cost_usd ?? null;
+  const estTime = p.rpps.build?.estimated_time_hours ?? (totalBuildMin > 0 ? totalBuildMin / 60 : null);
+
+  const remove = async () => {
+    if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    try { await deleteProject(p.id); nav("/projects"); }
+    catch (e: any) { toast({ title: "Delete failed", description: e.message, variant: "destructive" }); }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({ title: "Link copied", description: "Project URL copied to clipboard." });
+    } catch (e: any) {
+      toast({ title: "Copy failed", description: e?.message ?? "Clipboard unavailable.", variant: "destructive" });
+    }
+  };
+
+  const cover = p.cover_image_url ?? p.rpps.cover_image_url ?? null;
+  const updated = new Date(p.updated_at);
+
+  return (
+    <div className="mx-auto max-w-[1240px] px-4 py-4">
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-2">
+        <Link to="/projects" className="hover:text-foreground">Projects</Link>
+        <span>/</span>
+        <span className="mono">{p.slug}</span>
+        {p.visibility !== "public" && (
+          <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase">
+            <Lock className="h-3 w-3" /> {p.visibility}
+          </span>
+        )}
+      </div>
+
+      {/* Header */}
+      <div className="surface-card p-3 mb-3">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="md:w-[220px] shrink-0">
+            {cover ? (
+              <img
+                src={cover}
+                alt={`${p.name} cover image`}
+                className="w-full h-[140px] md:h-[150px] rounded border border-border object-cover bg-muted"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-[140px] md:h-[150px] rounded border border-dashed border-border bg-muted/40 grid place-items-center text-muted-foreground">
+                <div className="flex flex-col items-center gap-1">
+                  <Cpu className="h-6 w-6 opacity-60" aria-hidden />
+                  <span className="text-[10px] uppercase tracking-wider">No cover</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="text-[22px] font-bold tracking-tight leading-tight">{p.name}</h1>
+                {p.summary && <p className="text-[13px] text-muted-foreground mt-1 max-w-[720px]">{p.summary}</p>}
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <div className="flex flex-wrap items-center justify-end gap-1.5">
+                  {p.repo_url && <a href={p.repo_url} target="_blank" rel="noreferrer" aria-label="Open source repository" className="btn-ghost btn-sm"><Github className="h-3.5 w-3.5" /> Repo <ExternalLink className="h-3 w-3" /></a>}
+                  {p.docs_url && <a href={p.docs_url} target="_blank" rel="noreferrer" aria-label="Open documentation" className="btn-ghost btn-sm"><BookOpen className="h-3.5 w-3.5" /> Docs <ExternalLink className="h-3 w-3" /></a>}
+                  <button onClick={copyLink} aria-label="Copy project link" className="btn-ghost btn-sm"><Link2 className="h-3.5 w-3.5" /> Copy link</button>
+                  <button onClick={() => downloadRpps(p.rpps)} aria-label="Export RPPS package" className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> Export RPPS</button>
+                </div>
+                {isOwner && (
+                  <div className="mt-1 border-t border-border/60 pt-1.5 w-full flex justify-end">
+                    <button onClick={remove} aria-label="Delete project" className="btn-ghost btn-sm text-destructive"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[11px]">
+              <Meta k="version" v={`v${p.version}`} />
+              <Meta k="rpps" v={p.rpps_version} />
+              <StatusPill kind={p.status === "published" ? "ok" : p.status === "archived" ? "muted" : "warn"} label={p.status} />
+              {p.difficulty && <Meta k="difficulty" v={p.difficulty} />}
+              {p.license && <Meta k="license" v={p.license} />}
+              <Meta k="updated" v={updated.toLocaleDateString()} />
+              {p.tags.map(t => <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10.5px]">{t}</span>)}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI strip */}
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 border-t border-border pt-3">
+          <Kpi icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Reproducibility" value={p.reproducibility_score != null ? `${Math.round(p.reproducibility_score)}%` : "—"} />
+          <Kpi icon={<DollarSign className="h-3.5 w-3.5" />} label="Est. cost" value={estCost != null ? `$${estCost.toLocaleString()}` : "—"} />
+          <Kpi icon={<Clock className="h-3.5 w-3.5" />} label="Est. time" value={estTime != null ? `${Number(estTime).toFixed(estTime >= 10 ? 0 : 1)} h` : "—"} />
+          <Kpi icon={<Package className="h-3.5 w-3.5" />} label="BOM" value={bom.length > 0 ? `${bom.length} lines · ${bomQty} pcs` : "—"} />
+          <Kpi icon={<ListChecks className="h-3.5 w-3.5" />} label="Assembly" value={assembly.length > 0 ? `${assembly.length} steps` : "—"} />
+          <Kpi icon={<Link2 className="h-3.5 w-3.5" />} label="Integrations" value={integrations.length > 0 ? `${integrations.length} · ${integrationCounts["verified"] ?? 0} verified` : "—"} />
+          <Kpi icon={<FileJson className="h-3.5 w-3.5" />} label="Evidence" value={evidence.length > 0 ? `${evidence.length} src` : "—"} />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3">
+        <div className="space-y-3 min-w-0">
+          <Section title="Description">
+            {p.description
+              ? <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed">{p.description}</pre>
+              : <Empty>No long-form description provided.</Empty>}
+          </Section>
+
+          <Section
+            title={`Bill of materials${bom.length ? ` · ${bom.length}` : ""}`}
+            right={bom.length > 0 && (
+              <span className="mono text-[11px] text-muted-foreground">
+                {bomQty} pcs · {bomPricedCount}/{bom.length} priced · total <span className="text-foreground">${bomCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </span>
+            )}
+          >
+            {bom.length === 0
+              ? <Empty>No BOM items recorded. Add them by editing the RPPS package.</Empty>
+              : (
+                <div className="overflow-x-auto -mx-3 px-3">
+                  <table className="w-full text-[12px] min-w-[720px]">
+                    <thead className="text-left text-muted-foreground border-b border-border">
+                      <tr>
+                        <th className="py-1 pr-2 font-medium">Ref</th>
+                        <th className="pr-2 font-medium">Part</th>
+                        <th className="pr-2 font-medium">Maker / MPN</th>
+                        <th className="pr-2 font-medium">Class</th>
+                        <th className="pr-2 font-medium text-right">Qty</th>
+                        <th className="pr-2 font-medium text-right">Unit $</th>
+                        <th className="pr-2 font-medium text-right">Ext $</th>
+                        <th className="font-medium">Supplier</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bom.map((i, ix) => (
+                        <tr key={ix} className="border-b border-border/60 align-top">
+                          <td className="py-1 pr-2 mono text-[11px]">{i.ref ?? "—"}</td>
+                          <td className="pr-2">
+                            <div className="font-medium">{i.name}</div>
+                            {i.notes && <div className="text-muted-foreground text-[11px] mt-0.5">{i.notes}</div>}
+                          </td>
+                          <td className="pr-2">
+                            <div>{i.manufacturer ?? "—"}</div>
+                            {i.mpn && <div className="mono text-[11px] text-muted-foreground">{i.mpn}</div>}
+                          </td>
+                          <td className="pr-2">
+                            <div className="flex flex-wrap gap-1">
+                              {i.category && <span className="rounded bg-muted px-1.5 py-0.5 text-[10.5px]">{i.category}</span>}
+                              {i.fabricated && <StatusPill kind="info" label="fabricated" />}
+                              {i.optional && <StatusPill kind="muted" label="optional" />}
+                              {!i.category && !i.fabricated && !i.optional && <span className="text-muted-foreground">—</span>}
+                            </div>
+                          </td>
+                          <td className="pr-2 mono text-right">{i.qty}</td>
+                          <td className="pr-2 mono text-right">{i.unit_cost_usd != null ? `$${i.unit_cost_usd.toFixed(2)}` : "—"}</td>
+                          <td className="pr-2 mono text-right">{i.unit_cost_usd != null ? `$${(i.unit_cost_usd * i.qty).toFixed(2)}` : "—"}</td>
+                          <td>
+                            {i.supplier_url
+                              ? <a href={i.supplier_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">link <ExternalLink className="h-3 w-3" /></a>
+                              : <span className="text-muted-foreground">—</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-border">
+                        <td colSpan={4} className="py-1 pr-2 text-[11px] text-muted-foreground">Totals</td>
+                        <td className="pr-2 mono text-right">{bomQty}</td>
+                        <td className="pr-2" />
+                        <td className="pr-2 mono text-right font-medium">${bomCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+          </Section>
+
+          <Section
+            title={`Assembly${assembly.length ? ` · ${assembly.length} steps` : ""}`}
+            right={totalBuildMin > 0 && <span className="mono text-[11px] text-muted-foreground">{(totalBuildMin / 60).toFixed(1)} h total</span>}
+          >
+            {assembly.length === 0
+              ? <Empty>No assembly steps documented.</Empty>
+              : (
+                <ol className="space-y-2 text-[12px]">
+                  {assembly.map((s, ix) => (
+                    <li key={s.id} className="border-l-2 border-primary/40 pl-3">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <div className="font-medium">{ix + 1}. {s.title}</div>
+                        <span className="mono text-[10.5px] text-muted-foreground">#{s.id}</span>
+                        {s.duration_min != null && <span className="text-[10.5px] text-muted-foreground">· {s.duration_min} min</span>}
+                      </div>
+                      {s.body && <div className="text-muted-foreground whitespace-pre-wrap mt-0.5">{s.body}</div>}
+                      {(s.tools?.length || s.depends_on?.length) && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {s.tools?.map(t => <span key={`t-${t}`} className="rounded bg-muted px-1.5 py-0.5 text-[10.5px]">tool: {t}</span>)}
+                          {s.depends_on?.map(d => <span key={`d-${d}`} className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] mono">after: {d}</span>)}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+          </Section>
+
+          <Section
+            title={`Integrations${integrations.length ? ` · ${integrations.length}` : ""}`}
+            right={integrations.length > 0 && (
+              <span className="mono text-[11px] text-muted-foreground">
+                {Object.entries(integrationCounts).map(([k, v]) => `${v} ${k}`).join(" · ")}
+              </span>
+            )}
+          >
+            {integrations.length === 0
+              ? <Empty>No component-to-component integrations recorded.</Empty>
+              : (
+                <div className="overflow-x-auto -mx-3 px-3">
+                  <table className="w-full text-[12px] min-w-[560px]">
+                    <thead className="text-left text-muted-foreground border-b border-border">
+                      <tr>
+                        <th className="py-1 pr-2 font-medium">A</th>
+                        <th className="pr-2 font-medium">B</th>
+                        <th className="pr-2 font-medium">Status</th>
+                        <th className="pr-2 font-medium">Notes</th>
+                        <th className="font-medium">Evidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {integrations.map((it, ix) => (
+                        <tr key={ix} className="border-b border-border/60 align-top">
+                          <td className="py-1 pr-2 mono text-[11px]">{it.a}</td>
+                          <td className="pr-2 mono text-[11px]">{it.b}</td>
+                          <td className="pr-2"><IntegrationPill status={it.status} /></td>
+                          <td className="pr-2 text-muted-foreground">{it.notes ?? "—"}</td>
+                          <td>
+                            {it.evidence_url
+                              ? <a href={it.evidence_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">source <ExternalLink className="h-3 w-3" /></a>
+                              : <span className="text-muted-foreground">—</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+          </Section>
+
+          <Section title={`Evidence${evidence.length ? ` · ${evidence.length}` : ""}`}>
+            {evidence.length === 0
+              ? <Empty>No claims sourced yet.</Empty>
+              : (
+                <ul className="space-y-1.5 text-[12px]">
+                  {evidence.map((e, ix) => (
+                    <li key={ix} className="flex items-start gap-2 border-b border-border/60 pb-1.5 last:border-0">
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] mono shrink-0 mt-0.5">{e.source_type}</span>
+                      <div className="min-w-0 flex-1">
+                        <div>{e.claim}</div>
+                        <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground mt-0.5">
+                          {e.confidence != null && <span>confidence {Math.round(e.confidence * 100)}%</span>}
+                          {e.retrieved_at && <span>· {new Date(e.retrieved_at).toLocaleDateString()}</span>}
+                          {e.source_url && (
+                            <a href={e.source_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">source <ExternalLink className="h-3 w-3" /></a>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+          </Section>
+
+          <Section title={`Known issues${knownIssues.length ? ` · ${knownIssues.length}` : ""}`}>
+            {knownIssues.length === 0
+              ? <Empty>No known issues reported.</Empty>
+              : (
+                <ul className="space-y-2 text-[12px]">
+                  {knownIssues.map((k, ix) => (
+                    <li key={ix} className="flex items-start gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" aria-hidden />
+                      <div>
+                        <div className="font-medium">{k.title}</div>
+                        {k.body && <div className="text-muted-foreground whitespace-pre-wrap">{k.body}</div>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+          </Section>
+        </div>
+
+        {/* Sticky technical summary */}
+        <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
+          <Section title="Hardware">
+            <KV rows={[
+              ["DoF", p.rpps.hardware?.dof],
+              ["Payload", p.rpps.hardware?.payload_kg && `${p.rpps.hardware.payload_kg} kg`],
+              ["Weight", p.rpps.hardware?.weight_kg && `${p.rpps.hardware.weight_kg} kg`],
+              ["Height", p.rpps.hardware?.height_cm && `${p.rpps.hardware.height_cm} cm`],
+              ["Compute", p.rpps.hardware?.compute],
+            ]} />
+          </Section>
+
+          <Section title="Software">
+            <KV rows={[
+              ["OS", p.rpps.software?.os],
+              ["Middleware", p.rpps.software?.middleware],
+              ["ROS", p.rpps.software?.ros_support ? <RosPill v={p.rpps.software.ros_support} /> : undefined],
+              ["Languages", p.rpps.software?.languages?.join(", ")],
+              ["Simulators", p.rpps.software?.simulators?.join(", ")],
+            ]} />
+          </Section>
+
+          <Section title="Build">
+            <KV rows={[
+              ["Difficulty", p.rpps.build?.difficulty],
+              ["Est. time", p.rpps.build?.estimated_time_hours && `${p.rpps.build.estimated_time_hours} h`],
+              ["Est. cost", p.rpps.build?.estimated_cost_usd && `$${p.rpps.build.estimated_cost_usd.toLocaleString()}`],
+              ["Fabrication", p.rpps.build?.fabrication?.length
+                ? <span className="flex flex-wrap gap-1">{p.rpps.build.fabrication.map(f => <StatusPill key={f} kind="info" label={f} />)}</span>
+                : undefined],
+              ["Tools", p.rpps.build?.required_tools?.join(", ")],
+              ["Skills", p.rpps.build?.required_skills?.join(", ")],
+            ]} />
+          </Section>
+
+          {authors.length > 0 && (
+            <Section title={`Authors · ${authors.length}`}>
+              <ul className="space-y-1 text-[12px]">
+                {authors.map((a, ix) => (
+                  <li key={ix} className="flex items-baseline justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{a.name}</div>
+                      {a.role && <div className="text-[10.5px] text-muted-foreground">{a.role}</div>}
+                    </div>
+                    {a.url && <a href={a.url} target="_blank" rel="noreferrer" className="text-primary hover:underline text-[11px] inline-flex items-center gap-1 shrink-0">link <ExternalLink className="h-3 w-3" /></a>}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          <Section title={`Files${files.length ? ` · ${files.length}` : ""}`}>
+            {files.length === 0
+              ? <Empty>No files attached.</Empty>
+              : (
+                <FilesGrouped files={files} />
+              )}
+          </Section>
+
+          <div className="surface-card p-3">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1">
+              <FileJson className="h-3 w-3" /> RPPS package
+            </div>
+            <button onClick={() => downloadRpps(p.rpps)} className="btn-ghost btn-sm w-full justify-center">
+              <Download className="h-3.5 w-3.5" /> Download .rpps.json
+            </button>
+            <p className="text-[10.5px] text-muted-foreground mt-2">
+              Portable, versioned JSON per the <Link to="/rpps" className="text-primary hover:underline">RPPS spec</Link>. Import or diff externally.
+            </p>
+          </div>
+          <RelatedDiscussionList relatedType="project" relatedId={p.id} title="Community discussions" />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+const Section = ({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) => (
+  <section className="surface-card p-3">
+    <div className="flex items-center justify-between gap-2 mb-2">
+      <h2 className="text-[11px] uppercase tracking-wider text-muted-foreground">{title}</h2>
+      {right}
+    </div>
+    {children}
+  </section>
+);
+
+const Meta = ({ k, v }: { k: string; v: React.ReactNode }) => (
+  <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+    <span className="text-muted-foreground">{k}</span>
+    <span className="mono font-medium">{v}</span>
+  </span>
+);
+
+const Kpi = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
+  <div className="rounded border border-border bg-surface px-2 py-1.5">
+    <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+      <span className="text-primary/80">{icon}</span>{label}
+    </div>
+    <div className="mono text-[13px] font-medium mt-0.5 truncate">{value}</div>
+  </div>
+);
+
+const Empty = ({ children }: { children: React.ReactNode }) => (
+  <div className="rounded border border-dashed border-border bg-muted/30 px-2.5 py-2 text-[11.5px] text-muted-foreground">{children}</div>
+);
+
+type PillKind = "ok" | "warn" | "err" | "info" | "muted";
+const pillClass: Record<PillKind, string> = {
+  ok: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+  warn: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
+  err: "bg-destructive/10 text-destructive border-destructive/30",
+  info: "bg-primary/10 text-primary border-primary/30",
+  muted: "bg-muted text-muted-foreground border-border",
+};
+const StatusPill = ({ kind, label }: { kind: PillKind; label: string }) => (
+  <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10.5px] uppercase tracking-wide ${pillClass[kind]}`}>{label}</span>
+);
+
+const IntegrationPill = ({ status }: { status: string }) => {
+  const map: Record<string, PillKind> = {
+    verified: "ok",
+    documented: "info",
+    compatible: "info",
+    "adaptation-required": "warn",
+    unverified: "muted",
+    incompatible: "err",
+  };
+  return <StatusPill kind={map[status] ?? "muted"} label={status} />;
+};
+
+const RosPill = ({ v }: { v: "native" | "community" | "none" }) => {
+  const kind: PillKind = v === "native" ? "ok" : v === "community" ? "info" : "muted";
+  return <StatusPill kind={kind} label={`ros: ${v}`} />;
+};
+
+const KV = ({ rows }: { rows: [string, any][] }) => {
+  const shown = rows.filter(([, v]) => v !== undefined && v !== null && v !== "");
+  if (shown.length === 0) return <Empty>Not specified.</Empty>;
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12px]">
+      {shown.map(([k, v]) => (
+        <div key={k} className="contents">
+          <dt className="text-muted-foreground">{k}</dt>
+          <dd className="mono min-w-0">{typeof v === "string" || typeof v === "number" ? String(v) : v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+};
+
+const FilesGrouped = ({ files }: { files: NonNullable<ProjectRow["rpps"]["files"]> }) => {
+  const groups = files.reduce<Record<string, typeof files>>((acc, f) => {
+    (acc[f.kind] ||= [] as any).push(f);
+    return acc;
+  }, {});
+  const order = ["readme", "cad", "urdf", "mjcf", "firmware", "config", "image", "video", "doc", "other"];
+  const keys = Object.keys(groups).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return (
+    <div className="space-y-2 text-[12px]">
+      {keys.map(k => (
+        <div key={k}>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{k}</div>
+          <ul className="space-y-0.5">
+            {groups[k].map((f, ix) => (
+              <li key={ix} className="flex items-baseline justify-between gap-2">
+                <span className="mono text-[11px] truncate">{f.path}</span>
+                {f.url && <a href={f.url} target="_blank" rel="noreferrer" className="text-primary hover:underline text-[11px] inline-flex items-center gap-1 shrink-0">open <ExternalLink className="h-3 w-3" /></a>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+};

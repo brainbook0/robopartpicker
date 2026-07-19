@@ -1,0 +1,602 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { createProject, draftFromGithub } from "@/lib/projects";
+import { slugify, validateRpps, RPPS_VERSION, type RppsPackage } from "@/lib/rpps/schema";
+import { Github, FileJson, Loader2, Pencil, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Info } from "lucide-react";
+
+type Mode = "manual" | "github" | "paste";
+type Difficulty = "beginner" | "intermediate" | "advanced" | "expert" | "";
+type RosSupport = "native" | "community" | "none" | "";
+type Fabrication = "3d-print" | "cnc" | "laser" | "waterjet" | "manual" | "pcb";
+
+const FABRICATION_OPTIONS: Fabrication[] = ["3d-print", "cnc", "laser", "waterjet", "manual", "pcb"];
+
+const isHttpUrl = (v: string) => {
+  if (!v) return true;
+  try { const u = new URL(v); return u.protocol === "http:" || u.protocol === "https:"; } catch { return false; }
+};
+const toList = (s: string) =>
+  Array.from(new Set(s.split(",").map(x => x.trim()).filter(Boolean)));
+const numOrUndef = (s: string) => (s === "" ? undefined : Number(s));
+
+export default function ProjectNew() {
+  const { user, loading } = useAuth();
+  const nav = useNavigate();
+  useEffect(() => { if (!loading && !user) nav("/auth", { state: { from: "/projects/new" }, replace: true }); }, [user, loading, nav]);
+
+  const [mode, setMode] = useState<Mode>("manual");
+  const [busy, setBusy] = useState(false);
+
+  // Identity
+  const [name, setName] = useState("");
+  const [version, setVersion] = useState("0.1.0");
+  const [summary, setSummary] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+
+  // Build profile
+  const [difficulty, setDifficulty] = useState<Difficulty>("");
+  const [costUsd, setCostUsd] = useState<string>("");
+  const [timeHours, setTimeHours] = useState<string>("");
+  const [requiredTools, setRequiredTools] = useState("");
+  const [requiredSkills, setRequiredSkills] = useState("");
+  const [fabrication, setFabrication] = useState<Fabrication[]>([]);
+
+  // Hardware
+  const [dof, setDof] = useState<string>("");
+  const [payloadKg, setPayloadKg] = useState<string>("");
+  const [weightKg, setWeightKg] = useState<string>("");
+  const [heightCm, setHeightCm] = useState<string>("");
+  const [compute, setCompute] = useState("");
+
+  // Software
+  const [os, setOs] = useState("");
+  const [middleware, setMiddleware] = useState("");
+  const [languages, setLanguages] = useState("");
+  const [rosSupport, setRosSupport] = useState<RosSupport>("");
+  const [simulators, setSimulators] = useState("");
+
+  // Publishing
+  const [license, setLicense] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
+  const [docsUrl, setDocsUrl] = useState("");
+  const [visibility, setVisibility] = useState<"public"|"unlisted"|"private">("public");
+
+  // Section open state
+  const [openBuild, setOpenBuild] = useState(true);
+  const [openHw, setOpenHw] = useState(false);
+  const [openSw, setOpenSw] = useState(false);
+
+  // Import indicator
+  const [importedFields, setImportedFields] = useState<Set<string>>(new Set());
+
+  // GitHub / Paste
+  const [ghUrl, setGhUrl] = useState("");
+  const [ghBusy, setGhBusy] = useState(false);
+  const [pasted, setPasted] = useState("");
+
+  // Live validation
+  const errors = useMemo(() => {
+    const e: Record<string, string> = {};
+    if (!name.trim()) e.name = "Required";
+    else if (name.trim().length > 500) e.name = "Too long";
+    if (!version.trim()) e.version = "Required";
+    else if (version.length > 40) e.version = "Max 40 chars";
+    if (summary.length > 280) e.summary = "Max 280 chars";
+    if (!isHttpUrl(repoUrl.trim())) e.repoUrl = "Must be http(s) URL";
+    if (!isHttpUrl(docsUrl.trim())) e.docsUrl = "Must be http(s) URL";
+    if (!isHttpUrl(coverImageUrl.trim())) e.coverImageUrl = "Must be http(s) URL";
+    for (const [k, v] of Object.entries({ costUsd, timeHours, dof, payloadKg, weightKg, heightCm })) {
+      if (v !== "" && (isNaN(Number(v)) || Number(v) < 0)) e[k] = "Nonnegative number";
+    }
+    if (dof !== "" && !/^\d+$/.test(dof.trim())) e.dof = "Nonnegative integer";
+    return e;
+  }, [name, version, summary, repoUrl, docsUrl, coverImageUrl, costUsd, timeHours, dof, payloadKg, weightKg, heightCm]);
+  const hasErrors = Object.keys(errors).length > 0;
+
+  // Live paste validation
+  const pasteState = useMemo(() => {
+    if (!pasted.trim()) return { status: "empty" as const };
+    let parsed: unknown;
+    try { parsed = JSON.parse(pasted); } catch (err: any) { return { status: "invalid-json" as const, message: err?.message ?? "Invalid JSON" }; }
+    const check = validateRpps(parsed);
+    if (check.ok === false) return { status: "invalid-schema" as const, errors: check.errors };
+    return { status: "valid" as const, pkg: check.data };
+  }, [pasted]);
+
+  const tagList = useMemo(() => toList(tags), [tags]);
+
+  // Completeness (not persisted)
+  const readiness = useMemo(() => {
+    const checks: { label: string; ok: boolean }[] = [
+      { label: "Name", ok: !!name.trim() },
+      { label: "Summary", ok: !!summary.trim() },
+      { label: "Description", ok: description.trim().length >= 40 },
+      { label: "License", ok: !!license.trim() },
+      { label: "Repository or docs URL", ok: !!repoUrl.trim() || !!docsUrl.trim() },
+      { label: "Cover image", ok: !!coverImageUrl.trim() },
+      { label: "Difficulty", ok: !!difficulty },
+      { label: "Cost or build time", ok: !!costUsd || !!timeHours },
+      { label: "Technical stack (OS / middleware / compute)", ok: !!os.trim() || !!middleware.trim() || !!compute.trim() },
+      { label: "Tags", ok: tagList.length > 0 },
+    ];
+    const done = checks.filter(c => c.ok).length;
+    return { checks, done, total: checks.length, pct: Math.round((done / checks.length) * 100) };
+  }, [name, summary, description, license, repoUrl, docsUrl, coverImageUrl, difficulty, costUsd, timeHours, os, middleware, compute, tagList]);
+
+  const markImported = (keys: string[]) => setImportedFields(prev => {
+    const next = new Set(prev); keys.forEach(k => next.add(k)); return next;
+  });
+  const clearImported = (key: string) => setImportedFields(prev => {
+    if (!prev.has(key)) return prev;
+    const next = new Set(prev); next.delete(key); return next;
+  });
+
+  const importFromGithub = async () => {
+    if (!ghUrl.trim()) return;
+    setGhBusy(true);
+    try {
+      const d = await draftFromGithub(ghUrl.trim());
+      setName(d.name); setSummary(d.summary); setDescription(d.description);
+      setLicense(d.license ?? ""); setRepoUrl(d.repo_url); setTags(d.tags.join(", "));
+      if (d.cover_image_url) setCoverImageUrl(d.cover_image_url);
+      markImported(["name","summary","description","license","repoUrl","tags", ...(d.cover_image_url ? ["coverImageUrl"] : [])]);
+      setMode("manual");
+      toast({ title: "Imported", description: "Repository metadata extracted. Review highlighted fields before publishing." });
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message ?? String(e), variant: "destructive" });
+    } finally { setGhBusy(false); }
+  };
+
+  const buildRpps = (): Partial<RppsPackage> => ({
+    hardware: {
+      dof: numOrUndef(dof) as any,
+      payload_kg: numOrUndef(payloadKg),
+      weight_kg: numOrUndef(weightKg),
+      height_cm: numOrUndef(heightCm),
+      compute: compute.trim() || undefined,
+    },
+    software: {
+      os: os.trim() || undefined,
+      middleware: middleware.trim() || undefined,
+      languages: toList(languages),
+      ros_support: rosSupport || undefined,
+      simulators: toList(simulators),
+    },
+    build: {
+      difficulty: (difficulty || undefined) as any,
+      estimated_time_hours: numOrUndef(timeHours),
+      estimated_cost_usd: numOrUndef(costUsd),
+      required_tools: toList(requiredTools),
+      required_skills: toList(requiredSkills),
+      fabrication,
+    },
+    cover_image_url: coverImageUrl.trim() || undefined,
+  });
+
+  const submit = async () => {
+    if (!user) return;
+    setBusy(true);
+    try {
+      if (mode === "paste") {
+        if (pasteState.status !== "valid") throw new Error("Package is not valid RPPS yet");
+        const pkg = pasteState.pkg;
+        const row = await createProject(user.id, {
+          name: pkg.name, slug: pkg.slug, summary: pkg.summary, description: pkg.description,
+          license: pkg.license, version: pkg.version, repo_url: pkg.repo_url, docs_url: pkg.docs_url,
+          cover_image_url: pkg.cover_image_url, tags: pkg.tags,
+          difficulty: pkg.build?.difficulty ?? null,
+          estimated_cost_usd: pkg.build?.estimated_cost_usd ?? null,
+          visibility, rpps: pkg,
+        });
+        nav(`/projects/${row.slug}`); return;
+      }
+      if (hasErrors) throw new Error("Fix highlighted fields before creating");
+      const row = await createProject(user.id, {
+        name: name.trim(),
+        summary: summary.trim() || undefined,
+        description: description.trim() || undefined,
+        license: license.trim() || undefined,
+        version: version.trim() || "0.1.0",
+        repo_url: repoUrl.trim() || undefined,
+        docs_url: docsUrl.trim() || undefined,
+        cover_image_url: coverImageUrl.trim() || undefined,
+        tags: tagList,
+        difficulty: (difficulty || null) as any,
+        estimated_cost_usd: numOrUndef(costUsd) ?? null,
+        visibility,
+        rpps: buildRpps(),
+      });
+      nav(`/projects/${row.slug}`);
+    } catch (e: any) {
+      toast({ title: "Could not create project", description: e.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  if (!user) return null;
+
+  const derivedSlug = slugify(name || "project");
+  const canCreate = mode === "paste" ? pasteState.status === "valid" && !busy
+    : !hasErrors && !busy;
+
+  return (
+    <div className="mx-auto max-w-[1200px] px-4 py-6">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <div className="section-title mb-1">Publish</div>
+          <h1 className="text-[20px] font-bold tracking-tight">New project</h1>
+          <p className="text-[12px] text-muted-foreground">
+            Publish a standardized RPPS <span className="mono">v{RPPS_VERSION}</span> project.{" "}
+            <Link to="/rpps" className="text-primary hover:underline">Read the spec</Link>.
+          </p>
+        </div>
+        <Link to="/projects" className="btn-ghost btn-sm">Cancel</Link>
+      </div>
+
+      {/* Method cards */}
+      <fieldset className="mb-4" aria-label="Creation method">
+        <legend className="sr-only">Creation method</legend>
+        <div role="tablist" aria-label="Creation method" className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <MethodCard mode={mode} value="manual" onSelect={setMode} icon={<Pencil className="h-3.5 w-3.5" />}
+            title="Manual" desc="Start from a blank form. Best when you know your build details firsthand." />
+          <MethodCard mode={mode} value="github" onSelect={setMode} icon={<Github className="h-3.5 w-3.5" />}
+            title="From GitHub" desc="Pre-fill from a public repo’s metadata and README. You still review every field." />
+          <MethodCard mode={mode} value="paste" onSelect={setMode} icon={<FileJson className="h-3.5 w-3.5" />}
+            title="Paste RPPS JSON" desc="Import an existing RPPS package produced elsewhere. Validated against the schema." />
+        </div>
+      </fieldset>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
+        <div className="min-w-0 space-y-4">
+          {mode === "github" && (
+            <div className="surface-card p-4 space-y-2">
+              <label className="text-[11px] text-muted-foreground flex items-center gap-1"><Github className="h-3 w-3" /> Public GitHub repository URL</label>
+              <div className="flex gap-2">
+                <input value={ghUrl} onChange={e => setGhUrl(e.target.value)}
+                  placeholder="https://github.com/owner/repo" className="input-bare flex-1" />
+                <button onClick={importFromGithub} disabled={ghBusy || !ghUrl.trim()} className="btn-primary btn-sm">
+                  {ghBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Extract"}
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Fetches repo metadata + README from the public GitHub API. All content is untrusted and shown as data only — never executed.
+              </p>
+              {importedFields.size > 0 && (
+                <div className="text-[11px] flex items-center gap-1 text-primary"><Info className="h-3 w-3" /> Imported fields are highlighted below — review before publishing.</div>
+              )}
+            </div>
+          )}
+
+          {mode === "paste" ? (
+            <div className="surface-card p-4 space-y-2">
+              <label className="text-[11px] text-muted-foreground flex items-center gap-1"><FileJson className="h-3 w-3" /> RPPS package JSON</label>
+              <textarea value={pasted} onChange={e => setPasted(e.target.value)} rows={18}
+                className="input-bare font-mono text-[11px] w-full"
+                placeholder='{"rpps_version":"1.0.0","name":"…","slug":"…","version":"0.1.0","bom":[]}' />
+              <PasteFeedback state={pasteState} />
+              <div className="pt-2">
+                <VisibilitySelector value={visibility} onChange={setVisibility} />
+              </div>
+            </div>
+          ) : (
+            <>
+              <Section title="Identity" desc="What this project is called and how it’s described.">
+                <Grid>
+                  <Field label="Name *" error={errors.name} imported={importedFields.has("name")} onEdit={() => clearImported("name")}>
+                    <input value={name} onChange={e => { setName(e.target.value); clearImported("name"); }} className="input-bare w-full" />
+                  </Field>
+                  <Field label="Slug (auto)">
+                    <input value={derivedSlug} disabled className="input-bare w-full opacity-60 mono" />
+                  </Field>
+                  <Field label="Version *" error={errors.version}>
+                    <input value={version} onChange={e => setVersion(e.target.value)} className="input-bare w-full mono" />
+                  </Field>
+                  <Field label="Cover image URL" error={errors.coverImageUrl} imported={importedFields.has("coverImageUrl")} onEdit={() => clearImported("coverImageUrl")}>
+                    <input value={coverImageUrl} onChange={e => { setCoverImageUrl(e.target.value); clearImported("coverImageUrl"); }} placeholder="https://…" className="input-bare w-full" />
+                  </Field>
+                </Grid>
+                <Field label={`Summary (${summary.length}/280)`} error={errors.summary} imported={importedFields.has("summary")} onEdit={() => clearImported("summary")}>
+                  <input maxLength={280} value={summary} onChange={e => { setSummary(e.target.value); clearImported("summary"); }} className="input-bare w-full" />
+                </Field>
+                <Field label="Description (markdown ok)" imported={importedFields.has("description")} onEdit={() => clearImported("description")}>
+                  <textarea rows={8} value={description} onChange={e => { setDescription(e.target.value); clearImported("description"); }} className="input-bare w-full text-[12px]" />
+                </Field>
+                <Field label="Tags (comma separated)" imported={importedFields.has("tags")} onEdit={() => clearImported("tags")}>
+                  <input value={tags} onChange={e => { setTags(e.target.value); clearImported("tags"); }} placeholder="humanoid, arm, ros2" className="input-bare w-full" />
+                  {tagList.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {tagList.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground mono">{t}</span>)}
+                    </div>
+                  )}
+                </Field>
+              </Section>
+
+              <Collapsible open={openBuild} onToggle={() => setOpenBuild(v => !v)} title="Build profile" desc="Difficulty, cost, time, and what someone needs to attempt it.">
+                <Grid>
+                  <Field label="Difficulty">
+                    <select value={difficulty} onChange={e => setDifficulty(e.target.value as Difficulty)} className="input-bare w-full">
+                      <option value="">—</option><option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option><option value="advanced">Advanced</option>
+                      <option value="expert">Expert</option>
+                    </select>
+                  </Field>
+                  <Field label="Estimated cost (USD)" error={errors.costUsd}>
+                    <input type="number" min={0} value={costUsd} onChange={e => setCostUsd(e.target.value)} className="input-bare w-full mono" />
+                  </Field>
+                  <Field label="Estimated build time (hours)" error={errors.timeHours}>
+                    <input type="number" min={0} value={timeHours} onChange={e => setTimeHours(e.target.value)} className="input-bare w-full mono" />
+                  </Field>
+                </Grid>
+                <Grid>
+                  <Field label="Required tools (comma separated)">
+                    <input value={requiredTools} onChange={e => setRequiredTools(e.target.value)} placeholder="soldering iron, calipers, torque wrench" className="input-bare w-full" />
+                  </Field>
+                  <Field label="Required skills (comma separated)">
+                    <input value={requiredSkills} onChange={e => setRequiredSkills(e.target.value)} placeholder="soldering, basic CAD, ROS 2" className="input-bare w-full" />
+                  </Field>
+                </Grid>
+                <fieldset>
+                  <legend className="text-[11px] text-muted-foreground mb-1">Fabrication methods</legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {FABRICATION_OPTIONS.map(f => {
+                      const active = fabrication.includes(f);
+                      return (
+                        <button key={f} type="button" aria-pressed={active}
+                          onClick={() => setFabrication(prev => active ? prev.filter(x => x !== f) : [...prev, f])}
+                          className={`text-[11px] px-2 py-0.5 rounded border mono ${active ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}>
+                          {f}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              </Collapsible>
+
+              <Collapsible open={openHw} onToggle={() => setOpenHw(v => !v)} title="Hardware" desc="Physical characteristics and compute.">
+                <Grid>
+                  <Field label="Degrees of freedom" error={errors.dof}>
+                    <input type="number" min={0} value={dof} onChange={e => setDof(e.target.value)} className="input-bare w-full mono" />
+                  </Field>
+                  <Field label="Payload (kg)" error={errors.payloadKg}>
+                    <input type="number" min={0} step="0.01" value={payloadKg} onChange={e => setPayloadKg(e.target.value)} className="input-bare w-full mono" />
+                  </Field>
+                  <Field label="Weight (kg)" error={errors.weightKg}>
+                    <input type="number" min={0} step="0.01" value={weightKg} onChange={e => setWeightKg(e.target.value)} className="input-bare w-full mono" />
+                  </Field>
+                  <Field label="Height (cm)" error={errors.heightCm}>
+                    <input type="number" min={0} step="0.1" value={heightCm} onChange={e => setHeightCm(e.target.value)} className="input-bare w-full mono" />
+                  </Field>
+                  <Field label="Compute">
+                    <input value={compute} onChange={e => setCompute(e.target.value)} placeholder="Jetson Orin Nano, RPi 5…" className="input-bare w-full" />
+                  </Field>
+                </Grid>
+              </Collapsible>
+
+              <Collapsible open={openSw} onToggle={() => setOpenSw(v => !v)} title="Software" desc="OS, middleware, languages, and simulation targets.">
+                <Grid>
+                  <Field label="OS"><input value={os} onChange={e => setOs(e.target.value)} placeholder="Ubuntu 24.04" className="input-bare w-full" /></Field>
+                  <Field label="Middleware"><input value={middleware} onChange={e => setMiddleware(e.target.value)} placeholder="ROS 2 Jazzy" className="input-bare w-full" /></Field>
+                  <Field label="ROS support">
+                    <select value={rosSupport} onChange={e => setRosSupport(e.target.value as RosSupport)} className="input-bare w-full">
+                      <option value="">—</option><option value="native">Native</option>
+                      <option value="community">Community</option><option value="none">None</option>
+                    </select>
+                  </Field>
+                  <Field label="Languages (comma separated)">
+                    <input value={languages} onChange={e => setLanguages(e.target.value)} placeholder="C++, Python, Rust" className="input-bare w-full" />
+                  </Field>
+                  <Field label="Simulators (comma separated)">
+                    <input value={simulators} onChange={e => setSimulators(e.target.value)} placeholder="Gazebo, MuJoCo, Isaac Sim" className="input-bare w-full" />
+                  </Field>
+                </Grid>
+              </Collapsible>
+
+              <Section title="Publishing" desc="License, source links, and visibility.">
+                <Grid>
+                  <Field label="License (SPDX)" imported={importedFields.has("license")} onEdit={() => clearImported("license")}>
+                    <input value={license} onChange={e => { setLicense(e.target.value); clearImported("license"); }} placeholder="MIT, Apache-2.0, CERN-OHL-S-2.0…" className="input-bare w-full" />
+                  </Field>
+                  <Field label="Repository URL" error={errors.repoUrl} imported={importedFields.has("repoUrl")} onEdit={() => clearImported("repoUrl")}>
+                    <input value={repoUrl} onChange={e => { setRepoUrl(e.target.value); clearImported("repoUrl"); }} placeholder="https://github.com/…" className="input-bare w-full" />
+                  </Field>
+                  <Field label="Docs URL" error={errors.docsUrl}>
+                    <input value={docsUrl} onChange={e => setDocsUrl(e.target.value)} placeholder="https://…" className="input-bare w-full" />
+                  </Field>
+                </Grid>
+                <VisibilitySelector value={visibility} onChange={setVisibility} />
+              </Section>
+            </>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <aside className="lg:sticky lg:top-4 lg:self-start space-y-3">
+          <div className="surface-card p-3">
+            <div className="section-title mb-2">Summary</div>
+            <dl className="text-[12px] space-y-1">
+              <Row k="Slug" v={<span className="mono">{derivedSlug}</span>} />
+              <Row k="Version" v={<span className="mono">{version || "—"}</span>} />
+              <Row k="Visibility" v={<span className="capitalize">{visibility}</span>} />
+              <Row k="RPPS" v={<span className="mono">v{RPPS_VERSION}</span>} />
+            </dl>
+          </div>
+
+          {mode !== "paste" && (
+            <div className="surface-card p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="section-title">Readiness</div>
+                <div className="text-[11px] mono text-muted-foreground">{readiness.done}/{readiness.total}</div>
+              </div>
+              <div className="h-1 w-full bg-muted rounded overflow-hidden mb-2" aria-hidden>
+                <div className="h-full bg-primary transition-all" style={{ width: `${readiness.pct}%` }} />
+              </div>
+              <ul className="space-y-1 text-[11.5px]">
+                {readiness.checks.map(c => (
+                  <li key={c.label} className="flex items-center gap-1.5">
+                    {c.ok ? <CheckCircle2 className="h-3 w-3 text-primary" /> : <AlertCircle className="h-3 w-3 text-muted-foreground" />}
+                    <span className={c.ok ? "text-foreground" : "text-muted-foreground"}>{c.label}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[10.5px] text-muted-foreground mt-2">Local guidance only — not stored on the project.</p>
+            </div>
+          )}
+
+          <div className="surface-card p-3 space-y-2">
+            <button onClick={submit} disabled={!canCreate}
+              className="btn-primary btn-sm w-full disabled:opacity-50 disabled:cursor-not-allowed">
+              {busy ? "Creating…" : mode === "paste" ? "Validate & create" : "Create project"}
+            </button>
+            {mode !== "paste" && hasErrors && (
+              <div className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Fix highlighted fields to continue.</div>
+            )}
+            <Link to="/projects" className="btn-ghost btn-sm w-full text-center block">Cancel</Link>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Subcomponents ---------- */
+
+const MethodCard = ({ mode, value, onSelect, icon, title, desc }: {
+  mode: Mode; value: Mode; onSelect: (m: Mode) => void; icon: React.ReactNode; title: string; desc: string;
+}) => {
+  const active = mode === value;
+  return (
+    <button role="tab" aria-selected={active} onClick={() => onSelect(value)}
+      className={`text-left rounded border p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40 bg-surface"
+      }`}>
+      <div className="flex items-center gap-1.5 text-[12px] font-medium">{icon}{title}</div>
+      <div className="text-[11px] text-muted-foreground mt-1">{desc}</div>
+    </button>
+  );
+};
+
+const Section = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+  <section className="surface-card p-4 space-y-3">
+    <div>
+      <div className="text-[13px] font-semibold tracking-tight">{title}</div>
+      {desc && <div className="text-[11px] text-muted-foreground">{desc}</div>}
+    </div>
+    {children}
+  </section>
+);
+
+const Collapsible = ({ open, onToggle, title, desc, children }: {
+  open: boolean; onToggle: () => void; title: string; desc?: string; children: React.ReactNode;
+}) => (
+  <section className="surface-card">
+    <button type="button" onClick={onToggle} aria-expanded={open}
+      className="w-full flex items-center justify-between gap-3 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
+      <div>
+        <div className="text-[13px] font-semibold tracking-tight">{title}</div>
+        {desc && <div className="text-[11px] text-muted-foreground">{desc}</div>}
+      </div>
+      {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+    </button>
+    {open && <div className="px-4 pb-4 space-y-3">{children}</div>}
+  </section>
+);
+
+const Grid = ({ children }: { children: React.ReactNode }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{children}</div>
+);
+
+const Field = ({ label, children, error, imported, onEdit }: {
+  label: string; children: React.ReactNode; error?: string; imported?: boolean; onEdit?: () => void;
+}) => (
+  <label className="block">
+    <div className="text-[11px] text-muted-foreground mb-0.5 flex items-center gap-1.5">
+      <span>{label}</span>
+      {imported && (
+        <button type="button" onClick={onEdit}
+          className="text-[10px] uppercase tracking-wide mono px-1 py-0.5 rounded bg-primary/15 text-primary hover:bg-primary/25"
+          title="Imported — click to acknowledge">
+          imported
+        </button>
+      )}
+    </div>
+    {children}
+    {error && <div className="text-[10.5px] text-destructive mt-0.5">{error}</div>}
+  </label>
+);
+
+const Row = ({ k, v }: { k: string; v: React.ReactNode }) => (
+  <div className="flex items-center justify-between gap-2">
+    <dt className="text-muted-foreground text-[11px]">{k}</dt>
+    <dd className="text-[12px]">{v}</dd>
+  </div>
+);
+
+type Visibility = "public" | "unlisted" | "private";
+const VISIBILITY_OPTIONS: ReadonlyArray<readonly [Visibility, string, string]> = [
+  ["public", "Public", "Listed in Discover and search. Anyone can view."],
+  ["unlisted", "Unlisted", "Anyone with the link can view. Hidden from Discover."],
+  ["private", "Private", "Only you can view. Useful for drafts."],
+];
+const VisibilitySelector = ({ value, onChange }: { value: Visibility; onChange: (v: Visibility) => void }) => (
+  <fieldset>
+    <legend className="text-[11px] text-muted-foreground mb-1">Visibility</legend>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+      {VISIBILITY_OPTIONS.map(([v, l, d]) => {
+        const active = value === v;
+        return (
+          <label key={v} className={`cursor-pointer rounded border p-2 text-[12px] ${active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}>
+            <div className="flex items-center gap-2">
+              <input type="radio" name="visibility" className="accent-primary" checked={active} onChange={() => onChange(v)} />
+              <span className="font-medium">{l}</span>
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-1">{d}</div>
+          </label>
+        );
+      })}
+    </div>
+  </fieldset>
+);
+
+type PasteState =
+  | { status: "empty" }
+  | { status: "invalid-json"; message: string }
+  | { status: "invalid-schema"; errors: string[] }
+  | { status: "valid"; pkg: RppsPackage };
+
+const PasteFeedback = ({ state }: { state: PasteState }) => {
+  if (state.status === "empty") return (
+    <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Info className="h-3 w-3" /> Paste an RPPS JSON package to validate.</div>
+  );
+  if (state.status === "invalid-json") return (
+    <div className="rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
+      <div className="flex items-center gap-1 font-medium"><AlertCircle className="h-3 w-3" /> Invalid JSON</div>
+      <div className="mono mt-1 break-words">{state.message}</div>
+    </div>
+  );
+  if (state.status === "invalid-schema") return (
+    <div className="rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
+      <div className="flex items-center gap-1 font-medium mb-1"><AlertCircle className="h-3 w-3" /> Schema validation failed</div>
+      <ul className="mono space-y-0.5 max-h-40 overflow-auto">
+        {state.errors.slice(0, 20).map((e, i) => <li key={i}>• {e}</li>)}
+        {state.errors.length > 20 && <li>… {state.errors.length - 20} more</li>}
+      </ul>
+    </div>
+  );
+  const p = state.pkg;
+  return (
+    <div className="rounded border border-primary/40 bg-primary/5 p-2 text-[11px]">
+      <div className="flex items-center gap-1 font-medium text-primary mb-1"><CheckCircle2 className="h-3 w-3" /> Valid RPPS package</div>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+        <Row k="Name" v={p.name} />
+        <Row k="Slug" v={<span className="mono">{p.slug}</span>} />
+        <Row k="Version" v={<span className="mono">{p.version}</span>} />
+        <Row k="License" v={p.license ?? "—"} />
+        <Row k="BOM items" v={<span className="mono">{p.bom?.length ?? 0}</span>} />
+        <Row k="Assembly steps" v={<span className="mono">{p.assembly?.length ?? 0}</span>} />
+      </dl>
+    </div>
+  );
+};
