@@ -58,6 +58,8 @@ Route handlers call typed domain repositories. Repositories own prepared SQL and
 
 Public list endpoints use bounded cursor/limit pagination, allow-listed sorts, indexed filters, and explicit response shapes. Private repositories always accept an authenticated actor or an already-authorized scope.
 
+Build engineering records use nested, owner/organization-authorized endpoints for configurations, firmware, calibrations, and tests. Repositories commit each record and its build-activity entry in one D1 batch. A configuration, firmware binary, or test-evidence file ID is accepted only when the ready R2-backed file is already attached to that build.
+
 ## Files
 
 D1 stores file identity, object key, owner, organization/project/build relationships, visibility, status, size, media type, checksum, and timestamps. R2 stores bytes. Object keys are generated server-side and never derived directly from a filename. Upload and read endpoints enforce size/type/ownership; private objects are Worker-proxied. Malware scanning is an explicit quarantine-to-ready integration boundary.

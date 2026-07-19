@@ -216,11 +216,103 @@ function BuildWorkspace({ build, catalogQuery, setCatalogQuery, catalog, catalog
         {!catalogLoading && catalog.length === 0 && <div className="p-3 text-xs text-muted-foreground">No matching components.</div>}
       </div>}
     </div>
+    <EngineeringRecords build={build} onRefresh={onRefresh} />
     <div className="surface-card p-3">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="section-title">Build files · R2</div><p className="text-[11px] text-muted-foreground">CAD, URDF/MJCF, firmware, configurations, documents, images, and test evidence.</p></div><label className={`btn-primary btn-sm inline-flex cursor-pointer items-center gap-1 ${uploading ? "pointer-events-none opacity-50" : ""}`}><FileUp className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : "Upload file"}<input type="file" className="sr-only" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ""; }} /></label></div>
       {build.files.length === 0 ? <div className="mt-3 text-xs text-muted-foreground">No attached files.</div> : <div className="mt-3 grid gap-2 sm:grid-cols-2">{build.files.map((file) => <a key={file.id} href={`/api/v1/files/${encodeURIComponent(file.id)}/content`} className="rounded border border-border p-2 hover:border-primary/50"><div className="truncate text-sm font-medium">{file.originalName}</div><div className="mt-1 text-[10px] text-muted-foreground">{file.kind} · {formatBytes(file.sizeBytes)} · {file.visibility}</div></a>)}</div>}
     </div>
   </>;
+}
+
+function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefresh: () => Promise<void> }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [configuration, setConfiguration] = useState({ name: "", format: "yaml", contentText: "" });
+  const [firmware, setFirmware] = useState({ name: "", repositoryUrl: "", revision: "", licenseSpdx: "", notes: "" });
+  const [calibration, setCalibration] = useState({ name: "", procedureText: "", resultNotes: "", status: "pending" as "pending" | "passed" | "failed" | "superseded" });
+  const [test, setTest] = useState({ name: "", methodText: "", expectedText: "", observedText: "", result: "pending" as "pending" | "passed" | "failed" | "inconclusive", evidenceFileId: "" });
+
+  const run = async (key: string, operation: () => Promise<unknown>, success: string, reset?: () => void) => {
+    setBusy(key);
+    try {
+      await operation();
+      reset?.();
+      await onRefresh();
+      toast({ title: success, description: "Saved to this D1-backed build." });
+    } catch (error) {
+      toast({ title: "Technical record update failed", description: message(error), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
+
+  const remove = async (kind: "configuration" | "firmware" | "calibration" | "test", id: string, name: string) => {
+    if (!window.confirm(`Delete ${name}? This removes the record from this build.`)) return;
+    const operations = {
+      configuration: () => buildsApi.deleteConfiguration(build.id, id),
+      firmware: () => buildsApi.deleteFirmware(build.id, id),
+      calibration: () => buildsApi.deleteCalibration(build.id, id),
+      test: () => buildsApi.deleteTest(build.id, id),
+    };
+    await run(`delete-${id}`, operations[kind], `${name} deleted`);
+  };
+
+  return <div className="surface-card p-3">
+    <div className="mb-3">
+      <div className="section-title">Engineering records</div>
+      <p className="text-[11px] text-muted-foreground">Versioned configuration plus traceable firmware, calibration, and verification results.</p>
+    </div>
+    <div className="grid gap-3 xl:grid-cols-2">
+      <section className="rounded border border-border p-3">
+        <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Configurations</h3><span className="badge-neutral mono">{build.configurations.length}</span></div>
+        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("configuration", () => buildsApi.addConfiguration(build.id, configuration), "Configuration saved", () => setConfiguration({ name: "", format: "yaml", contentText: "" })); }}>
+          <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-2"><input aria-label="Configuration name" required maxLength={200} value={configuration.name} onChange={(event) => setConfiguration({ ...configuration, name: event.target.value })} placeholder="Motor controller" className="input-bare h-9" /><select aria-label="Configuration format" value={configuration.format} onChange={(event) => setConfiguration({ ...configuration, format: event.target.value })} className="input-bare h-9"><option>yaml</option><option>json</option><option>toml</option><option>xml</option><option>text</option></select></div>
+          <textarea aria-label="Configuration content" required maxLength={200000} rows={4} value={configuration.contentText} onChange={(event) => setConfiguration({ ...configuration, contentText: event.target.value })} placeholder="motor:\n  current_limit: 12" className="input-bare resize-y p-2 mono text-xs" />
+          <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Save configuration</button>
+        </form>
+        <div className="mt-3 space-y-2">{build.configurations.map((item) => <RecordRow key={item.id} title={item.name} meta={`${item.format} · v${item.version}`} detail={item.contentText ?? "Attached file"} busy={busy === `delete-${item.id}`} onDelete={() => void remove("configuration", item.id, item.name)} />)}</div>
+      </section>
+
+      <section className="rounded border border-border p-3">
+        <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Firmware</h3><span className="badge-neutral mono">{build.firmware.length}</span></div>
+        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("firmware", () => buildsApi.addFirmware(build.id, { ...firmware, repositoryUrl: firmware.repositoryUrl || null, revision: firmware.revision || null, licenseSpdx: firmware.licenseSpdx || null, notes: firmware.notes || null }), "Firmware reference saved", () => setFirmware({ name: "", repositoryUrl: "", revision: "", licenseSpdx: "", notes: "" })); }}>
+          <input aria-label="Firmware name" required maxLength={200} value={firmware.name} onChange={(event) => setFirmware({ ...firmware, name: event.target.value })} placeholder="Drive firmware" className="input-bare h-9" />
+          <input aria-label="Firmware repository URL" required type="url" maxLength={2048} value={firmware.repositoryUrl} onChange={(event) => setFirmware({ ...firmware, repositoryUrl: event.target.value })} placeholder="https://github.com/org/firmware" className="input-bare h-9" />
+          <div className="grid grid-cols-2 gap-2"><input aria-label="Firmware revision" maxLength={200} value={firmware.revision} onChange={(event) => setFirmware({ ...firmware, revision: event.target.value })} placeholder="Revision / tag" className="input-bare h-9" /><input aria-label="Firmware license" maxLength={100} value={firmware.licenseSpdx} onChange={(event) => setFirmware({ ...firmware, licenseSpdx: event.target.value })} placeholder="SPDX license" className="input-bare h-9" /></div>
+          <input aria-label="Firmware notes" maxLength={10000} value={firmware.notes} onChange={(event) => setFirmware({ ...firmware, notes: event.target.value })} placeholder="Reproducibility notes" className="input-bare h-9" />
+          <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Save firmware</button>
+        </form>
+        <div className="mt-3 space-y-2">{build.firmware.map((item) => <RecordRow key={item.id} title={item.name} meta={[item.revision, item.licenseSpdx].filter(Boolean).join(" · ") || "Unpinned"} detail={item.repositoryUrl ?? item.notes ?? "Attached file"} href={item.repositoryUrl} busy={busy === `delete-${item.id}`} onDelete={() => void remove("firmware", item.id, item.name)} />)}</div>
+      </section>
+
+      <section className="rounded border border-border p-3">
+        <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Calibrations</h3><span className="badge-neutral mono">{build.calibrations.length}</span></div>
+        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("calibration", () => buildsApi.addCalibration(build.id, { name: calibration.name, procedureText: calibration.procedureText || null, resultData: calibration.resultNotes ? { notes: calibration.resultNotes } : {}, status: calibration.status }), "Calibration recorded", () => setCalibration({ name: "", procedureText: "", resultNotes: "", status: "pending" })); }}>
+          <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-2"><input aria-label="Calibration name" required maxLength={200} value={calibration.name} onChange={(event) => setCalibration({ ...calibration, name: event.target.value })} placeholder="Encoder zero" className="input-bare h-9" /><select aria-label="Calibration status" value={calibration.status} onChange={(event) => setCalibration({ ...calibration, status: event.target.value as typeof calibration.status })} className="input-bare h-9"><option value="pending">Pending</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="superseded">Superseded</option></select></div>
+          <textarea aria-label="Calibration procedure" maxLength={20000} rows={2} value={calibration.procedureText} onChange={(event) => setCalibration({ ...calibration, procedureText: event.target.value })} placeholder="Procedure" className="input-bare resize-y p-2 text-xs" />
+          <input aria-label="Calibration result notes" maxLength={10000} value={calibration.resultNotes} onChange={(event) => setCalibration({ ...calibration, resultNotes: event.target.value })} placeholder="Result measurements / notes" className="input-bare h-9" />
+          <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Record calibration</button>
+        </form>
+        <div className="mt-3 space-y-2">{build.calibrations.map((item) => <RecordRow key={item.id} title={item.name} meta={item.status} detail={item.procedureText ?? JSON.stringify(item.resultData)} busy={busy === `delete-${item.id}`} onDelete={() => void remove("calibration", item.id, item.name)} />)}</div>
+      </section>
+
+      <section className="rounded border border-border p-3">
+        <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Verification tests</h3><span className="badge-neutral mono">{build.tests.length}</span></div>
+        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("test", () => buildsApi.addTest(build.id, { ...test, expectedText: test.expectedText || null, observedText: test.observedText || null, evidenceFileId: test.evidenceFileId || null }), "Test result recorded", () => setTest({ name: "", methodText: "", expectedText: "", observedText: "", result: "pending", evidenceFileId: "" })); }}>
+          <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-2"><input aria-label="Test name" required maxLength={200} value={test.name} onChange={(event) => setTest({ ...test, name: event.target.value })} placeholder="No-load spin" className="input-bare h-9" /><select aria-label="Test result" value={test.result} onChange={(event) => setTest({ ...test, result: event.target.value as typeof test.result })} className="input-bare h-9"><option value="pending">Pending</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="inconclusive">Inconclusive</option></select></div>
+          <textarea aria-label="Test method" required maxLength={20000} rows={2} value={test.methodText} onChange={(event) => setTest({ ...test, methodText: event.target.value })} placeholder="Method and conditions" className="input-bare resize-y p-2 text-xs" />
+          <div className="grid grid-cols-2 gap-2"><input aria-label="Expected test result" maxLength={20000} value={test.expectedText} onChange={(event) => setTest({ ...test, expectedText: event.target.value })} placeholder="Expected" className="input-bare h-9" /><input aria-label="Observed test result" maxLength={20000} value={test.observedText} onChange={(event) => setTest({ ...test, observedText: event.target.value })} placeholder="Observed" className="input-bare h-9" /></div>
+          <select aria-label="Test evidence file" value={test.evidenceFileId} onChange={(event) => setTest({ ...test, evidenceFileId: event.target.value })} className="input-bare h-9"><option value="">No evidence file</option>{build.files.map((file) => <option key={file.id} value={file.id}>{file.originalName}</option>)}</select>
+          <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Record test</button>
+        </form>
+        <div className="mt-3 space-y-2">{build.tests.map((item) => <RecordRow key={item.id} title={item.name} meta={item.result} detail={item.observedText ?? item.methodText} busy={busy === `delete-${item.id}`} onDelete={() => void remove("test", item.id, item.name)} />)}</div>
+      </section>
+    </div>
+  </div>;
+}
+
+function RecordRow({ title, meta, detail, href, busy, onDelete }: { title: string; meta: string; detail: string; href?: string | null; busy: boolean; onDelete: () => void }) {
+  return <div className="flex items-start justify-between gap-2 rounded border border-border bg-muted/20 p-2">
+    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-medium">{title}</span><span className="badge-neutral text-[9px] uppercase">{meta}</span></div>{href ? <a href={href} target="_blank" rel="noreferrer" className="mt-1 block truncate text-[10px] text-primary hover:underline">{detail}</a> : <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-[10px] text-muted-foreground">{detail}</p>}</div>
+    <button type="button" disabled={busy} aria-label={`Delete ${title}`} onClick={onDelete} className="btn-ghost btn-sm shrink-0 text-negative disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
+  </div>;
 }
 
 function Kpi({ label, value }: { label: string; value: string }) { return <div className="surface-card p-3"><div className="section-title">{label}</div><div className="mono text-lg font-bold capitalize">{value}</div></div>; }

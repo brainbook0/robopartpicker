@@ -64,6 +64,29 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const csv = await call(`/api/v1/builds/${buildId}/export?format=csv`, {}, ownerCookie); expect(csv.status).toBe(200); expect(await csv.text()).toContain("TM-42 Motor");
   });
 
+  it("persists build configuration, firmware, calibration, and test records with build authorization", async () => {
+    const configuration = await call(`/api/v1/builds/${buildId}/configurations`, { method: "POST", body: jsonBody({ name: "Motor controller", format: "yaml", contentText: "motor:\n  current_limit: 12" }) }, ownerCookie);
+    expect(configuration.status).toBe(201); const configurationId = (await body<{ item: { id: string } }>(configuration)).item.id;
+    const firmware = await call(`/api/v1/builds/${buildId}/firmware`, { method: "POST", body: jsonBody({ name: "Drive firmware", repositoryUrl: "https://github.com/example/drive-firmware", revision: "v1.2.0", licenseSpdx: "MIT", notes: "Pinned for repeatability." }) }, ownerCookie);
+    expect(firmware.status).toBe(201);
+    const calibration = await call(`/api/v1/builds/${buildId}/calibrations`, { method: "POST", body: jsonBody({ name: "Encoder zero", procedureText: "Unload the shaft and set the encoder offset.", resultData: { offsetDegrees: 0.42 }, status: "passed" }) }, ownerCookie);
+    expect(calibration.status).toBe(201);
+    const unattachedEvidence = await call(`/api/v1/builds/${buildId}/tests`, { method: "POST", body: jsonBody({ name: "Unattached evidence", methodText: "Reference a file outside the build.", result: "pending", evidenceFileId: crypto.randomUUID() }) }, ownerCookie);
+    expect(unattachedEvidence.status).toBe(422);
+    const test = await call(`/api/v1/builds/${buildId}/tests`, { method: "POST", body: jsonBody({ name: "No-load spin", methodText: "Command 100 RPM for 60 seconds.", expectedText: "Stable speed within 2 RPM.", observedText: "Maximum error was 1.4 RPM.", result: "passed" }) }, ownerCookie);
+    expect(test.status).toBe(201);
+    const denied = await call(`/api/v1/builds/${buildId}/tests`, { method: "POST", body: jsonBody({ name: "Unauthorized test", methodText: "Should never persist.", result: "pending" }) }, otherCookie);
+    expect(denied.status).toBe(403);
+    const detail = await call(`/api/v1/builds/${buildId}`, {}, ownerCookie);
+    expect(detail.status).toBe(200);
+    const record = (await body<{ item: { configurations: unknown[]; firmware: unknown[]; calibrations: Array<{ resultData: unknown }>; tests: unknown[] } }>(detail)).item;
+    expect(record.configurations).toHaveLength(1); expect(record.firmware).toHaveLength(1); expect(record.calibrations).toHaveLength(1); expect(record.tests).toHaveLength(1);
+    expect(record.calibrations[0].resultData).toEqual({ offsetDegrees: 0.42 });
+    const removed = await call(`/api/v1/builds/${buildId}/configurations/${configurationId}`, { method: "DELETE" }, ownerCookie);
+    expect(removed.status).toBe(204);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM build_configurations WHERE id = ?1").bind(configurationId).first<{ value: number }>())?.value)).toBe(0);
+  });
+
   it("enforces accepted-answer ownership and reopens a question after reply deletion", async () => {
     const threadResponse = await call("/api/v1/community/threads", { method: "POST", body: jsonBody({ categoryId: "cat-general", title: "How should this test actuator be calibrated?", slug: "test-actuator-calibration", body: "I need a repeatable calibration method for this actuator before integration.", tags: ["calibration"], threadType: "question", structuredData: {} }) }, ownerCookie);
     expect(threadResponse.status).toBe(201); const threadId = (await body<{ item: { id: string } }>(threadResponse)).item.id;
