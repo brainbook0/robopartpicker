@@ -72,6 +72,10 @@ Repository and scraper imports never write directly to canonical tables. The pip
 
 Provider keys and calls stay in the Worker. Tools expose narrow, authorized domain operations rather than SQL. Read tools return evidence metadata; mutation tools create structured proposals and require user confirmation before writes. Conversations, messages, tool calls, usage, and cost estimates persist in D1.
 
+## Notifications
+
+Notifications are user-scoped D1 records. Community replies and Marketplace inquiries call a shared service that checks the recipient's per-type in-app preference before inserting. Reads, unread counts, and mutations are authenticated and constrained by `user_id`; the React notification center accepts navigation only through the existing safe-internal-path validator. Email preferences store the user's intent but do not claim delivery unless the Worker email-provider boundary is configured.
+
 ## Cloudflare sources
 
 - <https://developers.cloudflare.com/workers/vite-plugin/reference/static-assets/>

@@ -2,6 +2,13 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.3] - 2026-07-19
+
+### Added
+
+- D1-backed notification center with unread filtering/counts, safe internal links, mark-read actions, and in-app/email preference controls.
+- Preference-aware in-app notifications for Community replies and Marketplace inquiries, with recipient-isolation tests and truthful email-provider messaging.
+
 ## [0.2.2] - 2026-07-19
 
 ### Added

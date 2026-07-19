@@ -1,11 +1,13 @@
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Moon, Sun, Search, Bell, GitPullRequest, Activity, LogOut, User as UserIcon, Sparkles, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { profileInitials, profileName } from "@/lib/profile-display";
 import logoUrl from "@/assets/logo.png";
 import { categoryLabel, lowestPrice, priceDelta30, type PartCategory } from "@/shared/catalog";
 import { useComponents, useSuppliers } from "@/lib/api/catalog";
+import { notificationsApi } from "@/lib/api/notifications";
 
 const navItems: { label: string; to: string }[] = [
   { label: "Discover", to: "/" },
@@ -48,6 +50,12 @@ export const SiteHeader = () => {
   const loc = useLocation();
   const onParts = loc.pathname.startsWith("/parts");
   const { user, profile, signOut } = useAuth();
+  const notificationCount = useQuery({
+    queryKey: ["notification-count", user?.id],
+    queryFn: ({ signal }) => notificationsApi.list(true, signal),
+    enabled: Boolean(user),
+    refetchInterval: 60_000,
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -99,7 +107,7 @@ export const SiteHeader = () => {
         <div className="ml-auto flex items-center gap-1.5">
           <Link to="/assistant" className="hidden sm:inline-flex btn-ghost btn-sm" aria-label="Ask AI"><Sparkles className="h-3.5 w-3.5" /> Ask AI</Link>
           <Link to="/marketplace/wanted/new" className="hidden lg:inline-flex btn-ghost btn-sm"><GitPullRequest className="h-3.5 w-3.5" /> RFQ</Link>
-          <button className="hidden sm:inline-flex btn-ghost btn-sm" aria-label="Alerts"><Bell className="h-3.5 w-3.5" /></button>
+          {user && <Link to="/notifications" className="relative hidden sm:inline-flex btn-ghost btn-sm" aria-label={`${notificationCount.data?.unreadCount ?? 0} unread notifications`}><Bell className="h-3.5 w-3.5" />{Boolean(notificationCount.data?.unreadCount) && <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[9px] font-bold text-primary-foreground">{Math.min(notificationCount.data!.unreadCount, 99)}</span>}</Link>}
           <button onClick={() => setDark(!dark)} aria-label="Toggle theme"
             className="rounded border border-border p-1 hover:bg-muted">
             {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
@@ -121,6 +129,7 @@ export const SiteHeader = () => {
                       <div className="text-muted-foreground truncate text-[10.5px]">{user.email}</div>
                     </div>
                     <Link to="/community" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><UserIcon className="h-3.5 w-3.5" /> Forum</Link>
+                    <Link to="/notifications" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><Bell className="h-3.5 w-3.5" /> Notifications{Boolean(notificationCount.data?.unreadCount) && <span className="ml-auto badge-neutral mono">{notificationCount.data?.unreadCount}</span>}</Link>
                     <button onClick={() => { setMenuOpen(false); signOut(); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-muted text-destructive"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
                   </div>
                 </>

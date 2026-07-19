@@ -7,6 +7,7 @@ import { loadAuthSession, requireAuth } from "../middleware/authentication";
 import { assertOrganizationPermission, authenticatedUserId, organizationRole, requirePlatformRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
+import { createInAppNotification } from "../services/notifications";
 
 const listingTypes = ["sell", "wanted", "service"] as const;
 const grades = ["A", "B", "C", "untested", "for_parts", "not_applicable"] as const;
@@ -110,6 +111,7 @@ marketplaceRoutes.post("/marketplace/:id/inquiries", loadAuthSession, requireAut
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, inquirySchema);
   const inquiry = await new MarketplaceRepository(c.env.DB).createInquiry(userId, c.req.param("id"), body.subject ?? null, body.message);
+  await createInAppNotification(c.env.DB, { userId: inquiry.sellerUserId, type: "marketplace_inquiry", title: "New Marketplace inquiry", body: body.subject ?? inquiry.listingTitle, internalPath: `/marketplace/${encodeURIComponent(c.req.param("id"))}`, data: { inquiryId: inquiry.id } });
   await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "marketplace.inquiry.create", entityType: "marketplace_inquiry", entityId: inquiry.id, requestId: c.get("requestId") });
   return c.json({ item: inquiry, sent: true, deliveryScope: "RoboPartPicker internal messaging only", paymentProcessed: false }, 201);
 });

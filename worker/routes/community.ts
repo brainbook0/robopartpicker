@@ -7,6 +7,7 @@ import { loadAuthSession, requireAuth } from "../middleware/authentication";
 import { authenticatedUserId, hasPlatformRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
+import { createInAppNotification } from "../services/notifications";
 
 const threadTypes = ["question", "discussion", "build_log", "integration_report", "substitution_report", "bom_correction", "supplier_report", "teardown", "project_update", "measured_test"] as const;
 const relatedTypes = ["project", "component", "marketplace_listing", "build", "supplier"] as const;
@@ -78,7 +79,12 @@ communityRoutes.post("/community/threads", loadAuthSession, requireAuth, async (
 communityRoutes.post("/community/threads/:id/posts", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, createPostSchema);
-  const item = await new CommunityRepository(c.env.DB).createPost(userId, c.req.param("id"), body.body, body.parentId);
+  const threadId = c.req.param("id");
+  const item = await new CommunityRepository(c.env.DB).createPost(userId, threadId, body.body, body.parentId);
+  const thread = await c.env.DB.prepare("SELECT user_id AS userId, title FROM forum_threads WHERE id = ?1").bind(threadId).first<{ userId: string | null; title: string }>();
+  if (thread?.userId && thread.userId !== userId) {
+    await createInAppNotification(c.env.DB, { userId: thread.userId, type: "community_reply", title: "New reply to your thread", body: thread.title, internalPath: `/community/t/${encodeURIComponent(threadId)}`, data: { threadId, postId: item.id } });
+  }
   return c.json({ item }, 201);
 });
 
