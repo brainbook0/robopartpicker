@@ -67,7 +67,11 @@ Malformed records are recorded in `import_errors` and never reach staging or can
 
 Validation -> raw import record -> record-specific staging row -> normalized fingerprint -> deterministic match candidates -> conflict detection -> manual review or configured auto-approval -> canonical write -> import audit event.
 
-Canonical merge operations record before/after linkage so an administrator can reverse the association where practical. Source priority and freshness influence review, but never silently erase conflicting evidence.
+An administrator can create canonical manufacturers, suppliers, components, offers, projects, BOMs, integrations, and evidence, or merge an import into an existing canonical record. Teardowns, commercial robots, and Marketplace references remain reviewed reference records rather than being projected into an unrelated product table. Canonical creation, import linkage, staging status, and the import audit event are committed in one D1 batch.
+
+Offers, BOM items, and integration entities can refer to an already-approved record from the same source by external ID. They may also include a canonical ID where the service has one, but that ID is checked against the relevant canonical table. Dependency records must be approved first; otherwise review returns `CANONICAL_DEPENDENCY_NOT_APPROVED` without a partial canonical write.
+
+Canonical merge operations retain the import-to-canonical linkage so an administrator can reassess the association. Source priority and freshness influence review, but never silently erase conflicting evidence.
 
 ## Security limits
 

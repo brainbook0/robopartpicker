@@ -147,16 +147,27 @@ importRoutes.post("/admin/import-records/:id/approve", loadAuthSession, requireA
   const parsed = JSON.parse(String(record.parsed_data_json)) as Record<string, unknown>;
   const now = new Date().toISOString();
   let canonicalId = body.canonicalEntityId ?? null;
+  let canonicalStatements: D1PreparedStatement[] = [];
   if (body.decision === "merge") {
     if (!canonicalId) throw new AppError(422, "CANONICAL_ENTITY_REQUIRED", "A canonical entity is required for a merge.");
     await ensureCanonical(c.env.DB, recordType, canonicalId);
   } else {
-    canonicalId = ["teardown", "commercial_robot", "marketplace_reference"].includes(recordType)
-      ? String(record.id)
-      : await createCanonical(c.env.DB, recordType, parsed, String(record.source_url ?? "") || null, now);
+    if (["teardown", "commercial_robot", "marketplace_reference"].includes(recordType)) canonicalId = String(record.id);
+    else {
+      const prepared = await prepareCanonical(c.env.DB, recordType, parsed, {
+        importRecordId: String(record.id),
+        sourceId: String(record.source_id),
+        sourceUrl: String(record.source_url ?? "") || null,
+        userId,
+        now,
+      });
+      canonicalId = prepared.id;
+      canonicalStatements = prepared.statements;
+    }
   }
   const stagingTable = stagingTableFor(recordType);
   const statements: D1PreparedStatement[] = [
+    ...canonicalStatements,
     c.env.DB.prepare(`UPDATE import_records SET status = 'approved', canonical_entity_type = ?1,
       canonical_entity_id = ?2, updated_at = ?3 WHERE id = ?4`).bind(recordType, canonicalId, now, record.id),
     c.env.DB.prepare(`UPDATE canonical_match_candidates SET decision = CASE WHEN canonical_entity_id = ?1 THEN 'accepted' ELSE 'rejected' END,
@@ -203,34 +214,140 @@ function constantTime(left: string, right: string): boolean { if (left.length !=
 function stagingTableFor(type: string): string | null { return ({ manufacturer: "staging_manufacturers", supplier: "staging_suppliers", component: "staging_components", offer: "staging_offers", project: "staging_projects", bom: "staging_boms", integration: "staging_integrations" } as Record<string, string>)[type] ?? null; }
 
 async function ensureCanonical(db: D1Database, type: string, id: string): Promise<void> {
-  const table = ({ manufacturer: "manufacturers", supplier: "suppliers", component: "components", project: "projects", integration: "integrations", evidence: "evidence" } as Record<string, string>)[type];
+  const table = ({ manufacturer: "manufacturers", supplier: "suppliers", component: "components", offer: "supplier_offers", project: "projects", bom: "boms", integration: "integrations", evidence: "evidence" } as Record<string, string>)[type];
   if (!table) throw new AppError(422, "UNSUPPORTED_CANONICAL_TYPE", `Manual approval for ${type} is not implemented.`);
   const row = await db.prepare(`SELECT id FROM ${table} WHERE id = ?1`).bind(id).first();
   if (!row) throw new AppError(422, "CANONICAL_ENTITY_NOT_FOUND", "The selected canonical entity does not exist.");
 }
 
-async function createCanonical(db: D1Database, type: string, parsed: Record<string, unknown>, sourceUrl: string | null, now: string): Promise<string> {
-  const id = crypto.randomUUID(); const slug = `${slugify(String(parsed.name ?? parsed.title ?? type))}-${id.slice(0, 8)}`;
-  if (type === "manufacturer") await db.prepare(`INSERT INTO manufacturers
-    (id, slug, name, website_url, headquarters_region, status, is_demo, created_at, updated_at)
-    VALUES (?1, ?2, ?3, ?4, ?5, 'unverified', 0, ?6, ?6)`).bind(id, slug, parsed.name, parsed.websiteUrl ?? null, parsed.headquartersRegion ?? null, now).run();
-  else if (type === "supplier") {
-    await db.prepare(`INSERT INTO suppliers (id, slug, name, website_url, status, freshness_at, is_demo, created_at, updated_at)
-      VALUES (?1, ?2, ?3, ?4, 'unverified', ?5, 0, ?5, ?5)`).bind(id, slug, parsed.name, parsed.websiteUrl ?? null, now).run();
-    const regions = Array.isArray(parsed.regions) ? parsed.regions : [];
-    if (regions.length) await db.batch(regions.map((region) => db.prepare(`INSERT INTO supplier_regions
-      (supplier_id, region_code, ships_from, ships_to) VALUES (?1, ?2, 0, 1)`).bind(id, String(region))));
+type CanonicalContext = { importRecordId: string; sourceId: string; sourceUrl: string | null; userId: string; now: string };
+type PreparedCanonical = { id: string; statements: D1PreparedStatement[] };
+
+async function prepareCanonical(db: D1Database, type: string, parsed: Record<string, unknown>, context: CanonicalContext): Promise<PreparedCanonical> {
+  const id = crypto.randomUUID();
+  const slug = `${slugify(String(parsed.name ?? parsed.title ?? type)).slice(0, 71)}-${id.slice(0, 8)}`;
+  const statements: D1PreparedStatement[] = [];
+  if (type === "manufacturer") {
+    statements.push(db.prepare(`INSERT INTO manufacturers
+      (id, slug, name, website_url, headquarters_region, status, is_demo, created_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, 'unverified', 0, ?6, ?6)`)
+      .bind(id, slug, parsed.name, parsed.websiteUrl ?? null, parsed.headquartersRegion ?? null, context.now));
+  } else if (type === "supplier") {
+    statements.push(db.prepare(`INSERT INTO suppliers (id, slug, name, website_url, status, freshness_at, is_demo, created_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, 'unverified', ?5, 0, ?5, ?5)`).bind(id, slug, parsed.name, parsed.websiteUrl ?? null, context.now));
+    const regions = [...new Set(Array.isArray(parsed.regions) ? parsed.regions.map(String) : [])];
+    statements.push(...regions.map((region) => db.prepare(`INSERT INTO supplier_regions
+      (supplier_id, region_code, ships_from, ships_to) VALUES (?1, ?2, 0, 1)`).bind(id, region)));
   } else if (type === "component") {
     let manufacturerId: string | null = null;
     if (parsed.manufacturerName) manufacturerId = (await db.prepare("SELECT id FROM manufacturers WHERE lower(name) = lower(?1) LIMIT 1").bind(parsed.manufacturerName).first<{ id: string }>())?.id ?? null;
-    await db.prepare(`INSERT INTO components
+    statements.push(db.prepare(`INSERT INTO components
       (id, slug, manufacturer_id, manufacturer_part_number, name, category, summary, lifecycle_status, source_url,
        provenance_label, freshness_at, is_demo, version, created_at, updated_at)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'unknown', ?8, 'imported; admin-reviewed', ?9, 0, 1, ?9, ?9)`)
-      .bind(id, slug, manufacturerId, parsed.manufacturerPartNumber ?? null, parsed.name, parsed.category, parsed.summary ?? null, sourceUrl, now).run();
-  } else if (type === "evidence") await db.prepare(`INSERT INTO evidence
-    (id, source_type, source_url, title, retrieved_at, trust_score, created_at) VALUES (?1, ?2, ?3, ?4, ?5, 0.5, ?5)`)
-    .bind(id, parsed.sourceType, parsed.sourceUrl ?? sourceUrl, parsed.title, now).run();
-  else throw new AppError(422, "UNSUPPORTED_CANONICAL_TYPE", `Creating canonical ${type} records is not implemented; merge into a reviewed entity instead.`);
-  return id;
+      .bind(id, slug, manufacturerId, parsed.manufacturerPartNumber ?? null, parsed.name, parsed.category, parsed.summary ?? null, context.sourceUrl, context.now));
+  } else if (type === "evidence") {
+    statements.push(db.prepare(`INSERT INTO evidence
+      (id, source_type, source_url, title, retrieved_at, confidence, created_at) VALUES (?1, ?2, ?3, ?4, ?5, 0.5, ?5)`)
+      .bind(id, parsed.sourceType, parsed.sourceUrl ?? context.sourceUrl, parsed.title, context.now));
+  } else if (type === "offer") {
+    const supplierId = await resolveCanonicalReference(db, context.sourceId, "supplier", parsed.supplierCanonicalId, parsed.supplierExternalId);
+    const componentId = await resolveCanonicalReference(db, context.sourceId, "component", parsed.componentCanonicalId, parsed.componentExternalId);
+    statements.push(db.prepare(`INSERT INTO supplier_offers
+      (id, supplier_id, component_id, supplier_sku, product_url, region_code, currency, unit_price_minor,
+       minimum_quantity, availability, observed_at, is_demo, created_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, 'unknown', ?9, 0, ?10, ?10)`)
+      .bind(id, supplierId, componentId, parsed.supplierSku ?? null, context.sourceUrl, parsed.regionCode ?? null, parsed.currency, parsed.unitPriceMinor, parsed.observedAt, context.now));
+    statements.push(db.prepare(`INSERT INTO offer_price_history
+      (id, supplier_offer_id, currency, unit_price_minor, observed_at, source_import_record_id)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6)`)
+      .bind(crypto.randomUUID(), id, parsed.currency, parsed.unitPriceMinor, parsed.observedAt, context.importRecordId));
+  } else if (type === "project") {
+    const versionId = crypto.randomUUID();
+    const extracted = asRecord(parsed.extracted);
+    const summary = optionalString(parsed.summary) ?? optionalString(extracted.summary);
+    const description = optionalString(parsed.description) ?? optionalString(extracted.description);
+    const version = optionalString(parsed.version) ?? "0.1.0";
+    const rpps = { rpps_version: "1.0.0", name: String(parsed.name), slug, version, summary: summary ?? undefined, description: description ?? undefined, license: optionalString(parsed.licenseSpdx) ?? undefined, repo_url: optionalString(parsed.repositoryUrl) ?? undefined, bom: [] };
+    statements.push(
+      db.prepare(`INSERT INTO projects
+        (id, slug, name, summary, description, owner_user_id, visibility, status, current_version_id,
+         license_spdx, repository_url, is_demo, version, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'unlisted', 'review', ?7, ?8, ?9, 0, 1, ?10, ?10)`)
+        .bind(id, slug, parsed.name, summary, description, context.userId, versionId, parsed.licenseSpdx ?? null, parsed.repositoryUrl ?? context.sourceUrl, context.now),
+      db.prepare(`INSERT INTO project_versions
+        (id, project_id, version_label, rpps_schema_version, changelog, rpps_json, status, created_by_user_id, created_at)
+        VALUES (?1, ?2, ?3, '1.0.0', 'Created from an administrator-reviewed import', ?4, 'review', ?5, ?6)`)
+        .bind(versionId, id, version, JSON.stringify(rpps), context.userId, context.now),
+      db.prepare(`INSERT INTO project_maintainers (project_id, user_id, role, created_at)
+        VALUES (?1, ?2, 'owner', ?3)`).bind(id, context.userId, context.now),
+    );
+  } else if (type === "bom") {
+    const versionId = crypto.randomUUID();
+    const version = optionalString(parsed.version) ?? "0.1.0";
+    const currency = optionalString(parsed.currency) ?? "USD";
+    statements.push(
+      db.prepare(`INSERT INTO boms
+        (id, owner_user_id, slug, name, current_version_id, visibility, is_demo, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, 'private', 0, ?6, ?6)`)
+        .bind(id, context.userId, slug, parsed.name, versionId, context.now),
+      db.prepare(`INSERT INTO bom_versions
+        (id, bom_id, version_label, notes, currency, created_by_user_id, created_at)
+        VALUES (?1, ?2, ?3, 'Created from an administrator-reviewed import', ?4, ?5, ?6)`)
+        .bind(versionId, id, version, currency, context.userId, context.now),
+    );
+    const items = Array.isArray(parsed.items) ? parsed.items.map(asRecord) : [];
+    const slots = new Set<string>();
+    for (let index = 0; index < items.length; index += 1) {
+      const item = items[index];
+      const requestedSlot = optionalString(item.ref) ?? `item-${index + 1}`;
+      const slot = slots.has(requestedSlot) ? `${requestedSlot}-${index + 1}` : requestedSlot;
+      slots.add(slot);
+      const componentId = item.componentCanonicalId || item.componentExternalId
+        ? await resolveCanonicalReference(db, context.sourceId, "component", item.componentCanonicalId, item.componentExternalId)
+        : null;
+      statements.push(db.prepare(`INSERT INTO bom_items
+        (id, bom_version_id, component_id, slot_key, description, quantity, unit, notes, sort_order)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`)
+        .bind(crypto.randomUUID(), versionId, componentId, slot, item.name, item.quantity ?? item.qty, item.unit ?? "each", item.notes ?? null, index));
+    }
+  } else if (type === "integration") {
+    statements.push(db.prepare(`INSERT INTO integrations
+      (id, slug, name, integration_type, description, status, created_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, 'reported', ?6, ?6)`)
+      .bind(id, slug, parsed.name, parsed.integrationType, parsed.description ?? null, context.now));
+    const entities = Array.isArray(parsed.entities) ? parsed.entities.map(asRecord) : [];
+    for (const entity of entities) {
+      const entityType = String(entity.recordType);
+      const entityId = await resolveCanonicalReference(db, context.sourceId, entityType, entity.canonicalEntityId, entity.externalRecordId);
+      statements.push(db.prepare(`INSERT INTO integration_entities
+        (integration_id, entity_type, entity_id, role, notes) VALUES (?1, ?2, ?3, ?4, ?5)`)
+        .bind(id, entityType, entityId, entity.role, entity.notes ?? null));
+    }
+  } else {
+    throw new AppError(422, "UNSUPPORTED_CANONICAL_TYPE", `Creating canonical ${type} records is not implemented; merge into a reviewed entity instead.`);
+  }
+  return { id, statements };
+}
+
+async function resolveCanonicalReference(db: D1Database, sourceId: string, type: string, canonicalValue: unknown, externalValue: unknown): Promise<string> {
+  if (typeof canonicalValue === "string" && canonicalValue) {
+    await ensureCanonical(db, type, canonicalValue);
+    return canonicalValue;
+  }
+  if (typeof externalValue !== "string" || !externalValue) throw new AppError(422, "CANONICAL_DEPENDENCY_REQUIRED", `A canonical or external ${type} reference is required.`);
+  const row = await db.prepare(`SELECT canonical_entity_id AS id FROM import_records
+    WHERE source_id = ?1 AND record_type = ?2 AND external_record_id = ?3
+      AND status = 'approved' AND canonical_entity_id IS NOT NULL
+    ORDER BY updated_at DESC LIMIT 1`).bind(sourceId, type, externalValue).first<{ id: string }>();
+  if (!row) throw new AppError(422, "CANONICAL_DEPENDENCY_NOT_APPROVED", `The referenced ${type} import must be approved first.`);
+  return row.id;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function optionalString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }

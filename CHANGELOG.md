@@ -2,6 +2,18 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.1] - 2026-07-19
+
+### Added
+
+- Atomic administrator promotion of staged offers, projects, BOMs, and integrations into canonical D1 records, including validated external/canonical dependency references and regression coverage.
+- Structured BOM-item and integration-entity definitions in the versioned scraper ingestion contract.
+- Required-secret declarations for local validation and fail-closed production deployment.
+
+### Fixed
+
+- Corrected imported evidence persistence to use the D1 `confidence` column and bounded generated canonical slugs to the RPPS limit.
+
 ## [0.2.0] - 2026-07-19
 
 ### Added

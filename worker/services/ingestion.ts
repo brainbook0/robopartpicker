@@ -5,14 +5,32 @@ export type RecordType = (typeof recordTypes)[number];
 
 const commonName = z.string().trim().min(1).max(300);
 const optionalUrl = z.string().url().max(2_048).refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Only HTTP(S) URLs are allowed.").nullable().optional();
+const referenceId = z.string().trim().min(1).max(500);
+const bomItemSchema = z.object({
+  ref: z.string().trim().max(100).optional(),
+  name: commonName,
+  quantity: z.number().positive().max(1_000_000).optional(),
+  qty: z.number().positive().max(1_000_000).optional(),
+  unit: z.string().trim().min(1).max(40).optional(),
+  notes: z.string().trim().max(2_000).optional(),
+  componentExternalId: referenceId.optional(),
+  componentCanonicalId: referenceId.optional(),
+}).passthrough().refine((item) => item.quantity !== undefined || item.qty !== undefined, { message: "quantity or qty is required", path: ["quantity"] });
+const integrationEntitySchema = z.object({
+  recordType: z.enum(["manufacturer", "supplier", "component", "project"]),
+  externalRecordId: referenceId.optional(),
+  canonicalEntityId: referenceId.optional(),
+  role: z.string().trim().min(1).max(100),
+  notes: z.string().trim().max(2_000).optional(),
+}).passthrough().refine((entity) => entity.externalRecordId !== undefined || entity.canonicalEntityId !== undefined, { message: "externalRecordId or canonicalEntityId is required", path: ["externalRecordId"] });
 const parsedSchemas: Record<RecordType, z.ZodType<Record<string, unknown>>> = {
   manufacturer: z.object({ name: commonName, websiteUrl: optionalUrl, headquartersRegion: z.string().trim().max(50).nullable().optional() }).passthrough(),
   supplier: z.object({ name: commonName, websiteUrl: optionalUrl, regions: z.array(z.string().trim().min(1).max(30)).max(100).default([]) }).passthrough(),
   component: z.object({ name: commonName, category: z.string().trim().min(1).max(80), manufacturerName: z.string().trim().max(300).nullable().optional(), manufacturerPartNumber: z.string().trim().max(200).nullable().optional(), specs: z.record(z.string(), z.unknown()).default({}) }).passthrough(),
-  offer: z.object({ supplierExternalId: z.string().trim().min(1).max(300), componentExternalId: z.string().trim().min(1).max(300), supplierSku: z.string().trim().max(200).nullable().optional(), currency: z.string().regex(/^[A-Z]{3}$/u), unitPriceMinor: z.number().int().nonnegative(), regionCode: z.string().trim().max(30).nullable().optional(), observedAt: z.string().datetime() }).passthrough(),
-  project: z.object({ name: commonName, repositoryUrl: optionalUrl, licenseSpdx: z.string().trim().max(100).nullable().optional(), extracted: z.record(z.string(), z.unknown()).default({}) }).passthrough(),
-  bom: z.object({ name: commonName, items: z.array(z.record(z.string(), z.unknown())).max(2_000) }).passthrough(),
-  integration: z.object({ name: commonName, integrationType: z.string().trim().min(1).max(100), entities: z.array(z.record(z.string(), z.unknown())).max(1_000).default([]) }).passthrough(),
+  offer: z.object({ supplierExternalId: referenceId, componentExternalId: referenceId, supplierCanonicalId: referenceId.optional(), componentCanonicalId: referenceId.optional(), supplierSku: z.string().trim().max(200).nullable().optional(), currency: z.string().regex(/^[A-Z]{3}$/u), unitPriceMinor: z.number().int().nonnegative(), regionCode: z.string().trim().max(30).nullable().optional(), observedAt: z.string().datetime() }).passthrough(),
+  project: z.object({ name: commonName, version: z.string().trim().max(40).default("0.1.0"), summary: z.string().trim().max(280).nullable().optional(), description: z.string().trim().max(20_000).nullable().optional(), repositoryUrl: optionalUrl, licenseSpdx: z.string().trim().max(100).nullable().optional(), extracted: z.record(z.string(), z.unknown()).default({}) }).passthrough(),
+  bom: z.object({ name: commonName, version: z.string().trim().max(40).default("0.1.0"), currency: z.string().regex(/^[A-Z]{3}$/u).default("USD"), items: z.array(bomItemSchema).max(2_000) }).passthrough(),
+  integration: z.object({ name: commonName, integrationType: z.string().trim().min(1).max(100), description: z.string().trim().max(2_000).nullable().optional(), entities: z.array(integrationEntitySchema).max(1_000).default([]) }).passthrough(),
   evidence: z.object({ title: commonName, sourceType: z.string().trim().min(1).max(100), sourceUrl: optionalUrl }).passthrough(),
   teardown: z.object({ title: commonName }).passthrough(),
   commercial_robot: z.object({ name: commonName }).passthrough(),

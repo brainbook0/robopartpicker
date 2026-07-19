@@ -40,6 +40,8 @@ beforeAll(async () => {
   expect(owner.status).toBe(200); ownerCookie = cookies(owner); const ownerData = await body<{ user: { id: string } }>(owner); ownerId = ownerData.user.id;
   const other = await call("/api/auth/sign-up/email", { method: "POST", body: jsonBody({ name: "Other User", email: "other@example.com", password: "correct-horse-battery" }) });
   expect(other.status).toBe(200); otherCookie = cookies(other); const otherData = await body<{ user: { id: string } }>(other); otherId = otherData.user.id;
+  await env.DB.prepare(`INSERT INTO platform_user_roles (user_id, role, granted_by_user_id, granted_at)
+    VALUES (?1, 'administrator', ?1, ?2)`).bind(ownerId, now).run();
 });
 
 describe("Worker, D1, R2, authentication, and domain invariants", () => {
@@ -87,8 +89,40 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(first.status).toBe(202); const result = await body<{ job: { status: string; acceptedCount: number; rejectedCount: number } }>(first); expect(result.job).toMatchObject({ status: "partial", acceptedCount: 1, rejectedCount: 1 });
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM staging_manufacturers").first<{ value: number }>())?.value)).toBe(1);
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM manufacturers WHERE name = 'Imported Motors'").first<{ value: number }>())?.value)).toBe(0);
+    const staged = await env.DB.prepare("SELECT id FROM import_records WHERE external_record_id = 'maker-1'").first<{ id: string }>();
+    const approved = await call(`/api/v1/admin/import-records/${staged?.id}/approve`, { method: "POST", body: jsonBody({ decision: "create" }) }, ownerCookie);
+    expect(approved.status).toBe(200);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM manufacturers WHERE name = 'Imported Motors'").first<{ value: number }>())?.value)).toBe(1);
     const duplicate = await call("/api/v1/imports/batches", { method: "POST", headers: { authorization: `Bearer ${ingestionSecret}`, "idempotency-key": payload.idempotencyKey }, body: jsonBody(payload) });
     expect(duplicate.status).toBe(200); expect((await body<{ duplicate: boolean }>(duplicate)).duplicate).toBe(true);
+  });
+
+  it("promotes dependent offer, project, BOM, and integration records after review", async () => {
+    const payload = { schemaVersion: "1.0", batchId: "batch-promotion-1", idempotencyKey: "idempotency-promotion-1", retrievalTimestamp: new Date().toISOString(), source: { name: "Promotion Scraper", type: "test" }, records: [
+      { externalRecordId: "supplier-1", recordType: "supplier", rawPayload: {}, parsedData: { name: "Promotion Parts", regions: ["CA"] }, confidence: 0.8 },
+      { externalRecordId: "component-1", recordType: "component", rawPayload: {}, parsedData: { name: "Promotion Actuator", category: "actuator", specs: { voltage: 24 } }, confidence: 0.8 },
+      { externalRecordId: "offer-1", recordType: "offer", sourceUrl: "https://example.net/offer-1", rawPayload: {}, parsedData: { supplierExternalId: "supplier-1", componentExternalId: "component-1", supplierSku: "PROMO-1", currency: "CAD", unitPriceMinor: 12500, regionCode: "CA", observedAt: new Date().toISOString() }, confidence: 0.8 },
+      { externalRecordId: "project-1", recordType: "project", rawPayload: {}, parsedData: { name: "Promotion Robot", repositoryUrl: "https://github.com/example/promotion-robot", licenseSpdx: "MIT", extracted: { summary: "Admin-reviewed imported robot project." } }, confidence: 0.8 },
+      { externalRecordId: "bom-1", recordType: "bom", rawPayload: {}, parsedData: { name: "Promotion Robot BOM", items: [{ ref: "ACT-1", name: "Promotion Actuator", quantity: 2, componentExternalId: "component-1" }] }, confidence: 0.8 },
+      { externalRecordId: "integration-1", recordType: "integration", rawPayload: {}, parsedData: { name: "Promotion actuator integration", integrationType: "mechanical", entities: [{ recordType: "component", externalRecordId: "component-1", role: "actuator" }, { recordType: "project", externalRecordId: "project-1", role: "project" }] }, confidence: 0.8 },
+      { externalRecordId: "evidence-1", recordType: "evidence", sourceUrl: "https://example.net/evidence-1", rawPayload: {}, parsedData: { title: "Promotion actuator datasheet", sourceType: "manufacturer_datasheet" }, confidence: 0.8 },
+    ] };
+    const staged = await call("/api/v1/imports/batches", { method: "POST", headers: { authorization: `Bearer ${ingestionSecret}`, "idempotency-key": payload.idempotencyKey }, body: jsonBody(payload) });
+    expect(staged.status).toBe(202);
+    const rows = await env.DB.prepare("SELECT id, record_type FROM import_records WHERE import_job_id = (SELECT id FROM import_jobs WHERE batch_id = ?1)").bind(payload.batchId).all<{ id: string; record_type: string }>();
+    const ids = new Map(rows.results.map((row) => [row.record_type, row.id]));
+    const prematureOffer = await call(`/api/v1/admin/import-records/${ids.get("offer")}/approve`, { method: "POST", body: jsonBody({ decision: "create" }) }, ownerCookie);
+    expect(prematureOffer.status).toBe(422);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM supplier_offers WHERE supplier_sku = 'PROMO-1'").first<{ value: number }>())?.value)).toBe(0);
+    for (const type of ["supplier", "component", "project", "offer", "bom", "integration", "evidence"]) {
+      const response = await call(`/api/v1/admin/import-records/${ids.get(type)}/approve`, { method: "POST", body: jsonBody({ decision: "create" }) }, ownerCookie);
+      expect(response.status, `${type}: ${await response.text()}`).toBe(200);
+    }
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM supplier_offers WHERE supplier_sku = 'PROMO-1'").first<{ value: number }>())?.value)).toBe(1);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM projects WHERE name = 'Promotion Robot'").first<{ value: number }>())?.value)).toBe(1);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM boms WHERE name = 'Promotion Robot BOM'").first<{ value: number }>())?.value)).toBe(1);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM integrations WHERE name = 'Promotion actuator integration'").first<{ value: number }>())?.value)).toBe(1);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM evidence WHERE title = 'Promotion actuator datasheet'").first<{ value: number }>())?.value)).toBe(1);
   });
 
   it("stores a private file in R2, attaches it, and enforces content authorization", async () => {

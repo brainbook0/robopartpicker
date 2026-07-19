@@ -35,6 +35,8 @@ npm run db:validate
 
 `.dev.vars.example` documents required names without values. `.dev.vars` must contain a unique local `BETTER_AUTH_SECRET`, local `BETTER_AUTH_URL`, an ingestion credential, and optional email/OAuth/AI provider credentials. It is ignored by Git.
 
+Cloudflare's Vite plugin copies `.dev.vars` into the ignored Worker build directory for `vite preview`; Cloudflare documents that this copy is not deployed. Never publish or commit `dist/`, and do not use a production credential in the local file. The Wrangler configuration declares the three mandatory binding names so development warns when one is absent and deployment refuses to proceed until they have been configured on the Worker.
+
 Wrangler local D1 and R2 behavior is documented at:
 
 - <https://developers.cloudflare.com/workers/local-development/>
