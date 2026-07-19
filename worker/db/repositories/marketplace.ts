@@ -142,7 +142,7 @@ export class MarketplaceRepository {
     return (await this.find(id, userId))!.item;
   }
 
-  async createInquiry(userId: string, listingId: string, subject: string | null, message: string): Promise<{ id: string }> {
+  async createInquiry(userId: string, listingId: string, subject: string | null, message: string): Promise<{ id: string; sellerUserId: string; listingTitle: string }> {
     const listing = await this.find(listingId, userId);
     if (!listing || listing.row.status !== "published" || !["public", "unlisted"].includes(listing.row.visibility)) {
       throw new AppError(404, "LISTING_NOT_FOUND", "Published listing not found.");
@@ -159,7 +159,7 @@ export class MarketplaceRepository {
       this.db.prepare(`INSERT INTO marketplace_messages (id, inquiry_id, sender_user_id, body, created_at)
         VALUES (?1, ?2, ?3, ?4, ?5)`).bind(crypto.randomUUID(), id, userId, message, now),
     ]);
-    return { id };
+    return { id, sellerUserId: listing.row.seller_user_id, listingTitle: listing.row.title };
   }
 
   async listInquiries(userId: string): Promise<Array<Record<string, unknown>>> {

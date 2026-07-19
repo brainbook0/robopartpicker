@@ -92,6 +92,12 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(threadResponse.status).toBe(201); const threadId = (await body<{ item: { id: string } }>(threadResponse)).item.id;
     const replyResponse = await call(`/api/v1/community/threads/${threadId}/posts`, { method: "POST", body: jsonBody({ body: "Use a fixed reference load, record encoder zero, and repeat three times." }) }, otherCookie);
     expect(replyResponse.status).toBe(201); const postId = (await body<{ item: { id: string } }>(replyResponse)).item.id;
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM notifications WHERE user_id = ?1 AND notification_type = 'community_reply'").bind(ownerId).first<{ value: number }>())?.value)).toBe(1);
+    const preference = await call("/api/v1/notifications/preferences", { method: "PUT", body: jsonBody({ notificationType: "community_reply", inAppEnabled: false, emailEnabled: false }) }, ownerCookie);
+    expect(preference.status).toBe(200);
+    const mutedReply = await call(`/api/v1/community/threads/${threadId}/posts`, { method: "POST", body: jsonBody({ body: "A second valid reply should respect the owner's muted in-app preference." }) }, otherCookie);
+    expect(mutedReply.status).toBe(201);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM notifications WHERE user_id = ?1 AND notification_type = 'community_reply'").bind(ownerId).first<{ value: number }>())?.value)).toBe(1);
     const forbidden = await call(`/api/v1/community/threads/${threadId}/accepted-answer`, { method: "PUT", body: jsonBody({ postId }) }, otherCookie); expect(forbidden.status).toBe(403);
     await forbidden.text();
     const ownership = await env.DB.prepare("SELECT user_id, thread_type FROM forum_threads WHERE id = ?1").bind(threadId).first<{ user_id: string; thread_type: string }>();
@@ -175,6 +181,31 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const published = await call(`/api/v1/marketplace/${listing.id}/status`, { method: "PUT", body: jsonBody({ status: "published" }) }, ownerCookie); expect(published.status).toBe(200);
     const inquiry = await call(`/api/v1/marketplace/${listing.id}/inquiries`, { method: "POST", body: jsonBody({ subject: "Encoder evidence", message: "Can you share the encoder test conditions and calibration log?" }) }, otherCookie);
     expect(inquiry.status).toBe(201); expect((await body<{ paymentProcessed: boolean }>(inquiry)).paymentProcessed).toBe(false);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM notifications WHERE user_id = ?1 AND notification_type = 'marketplace_inquiry'").bind(ownerId).first<{ value: number }>())?.value)).toBe(1);
+  });
+
+  it("isolates notifications and persists read state and delivery preferences", async () => {
+    const now = new Date().toISOString();
+    const notificationId = crypto.randomUUID();
+    await env.DB.prepare("DELETE FROM notifications WHERE user_id = ?1").bind(ownerId).run();
+    await env.DB.prepare(`INSERT INTO notifications
+      (id, user_id, notification_type, title, body, internal_path, data_json, created_at)
+      VALUES (?1, ?2, 'build_activity', 'Build test completed', 'The no-load spin test passed.', ?3, '{}', ?4)`)
+      .bind(notificationId, ownerId, `/builder?build=${buildId}`, now).run();
+    const ownerInbox = await call("/api/v1/notifications?unread=true", {}, ownerCookie);
+    expect(ownerInbox.status).toBe(200); expect(await body(ownerInbox)).toMatchObject({ unreadCount: 1 });
+    const otherInbox = await call("/api/v1/notifications", {}, otherCookie);
+    expect(otherInbox.status).toBe(200); expect(await body(otherInbox)).toMatchObject({ items: [], unreadCount: 0 });
+    const otherRead = await call(`/api/v1/notifications/${notificationId}/read`, { method: "PATCH" }, otherCookie);
+    expect(otherRead.status).toBe(200); expect(await body(otherRead)).toEqual({ updated: false });
+    const ownerRead = await call(`/api/v1/notifications/${notificationId}/read`, { method: "PATCH" }, ownerCookie);
+    expect(ownerRead.status).toBe(200); expect(await body(ownerRead)).toEqual({ updated: true });
+    const preference = await call("/api/v1/notifications/preferences", { method: "PUT", body: jsonBody({ notificationType: "build_activity", inAppEnabled: true, emailEnabled: false }) }, ownerCookie);
+    expect(preference.status).toBe(200);
+    const preferences = await call("/api/v1/notifications/preferences", {}, ownerCookie);
+    expect(preferences.status).toBe(200);
+    const preferenceItems = (await body<{ items: Array<{ notificationType: string; inAppEnabled: number; emailEnabled: number }> }>(preferences)).items;
+    expect(preferenceItems.find((item) => item.notificationType === "build_activity")).toMatchObject({ inAppEnabled: 1, emailEnabled: 0 });
   });
 
   it("fails AI requests honestly when no provider secret is configured", async () => {
