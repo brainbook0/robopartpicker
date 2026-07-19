@@ -114,7 +114,15 @@ export class ProjectsRepository {
         this.db.prepare(`INSERT INTO project_maintainers (project_id, user_id, role, created_at)
           VALUES (?1, ?2, 'owner', ?3)`).bind(projectId, input.ownerUserId, now),
       ]);
-      await this.replaceNormalizedProjectData(projectId, versionId, input.ownerUserId, input.visibility, rpps);
+      await this.replaceNormalizedProjectData(
+        projectId,
+        versionId,
+        input.ownerUserId,
+        input.ownerUserId,
+        input.organizationId ?? null,
+        input.visibility,
+        rpps,
+      );
     } catch (error) {
       if (String(error).includes("UNIQUE")) throw new AppError(409, "PROJECT_SLUG_TAKEN", "That project slug is already in use.");
       throw error;
@@ -141,11 +149,42 @@ export class ProjectsRepository {
             rpps.repo_url ?? null, rpps.build?.difficulty ?? null,
             rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100), now, projectId),
       ]);
-      await this.replaceNormalizedProjectData(projectId, versionId, userId, current.row.visibility, rpps);
+      await this.replaceNormalizedProjectData(
+        projectId,
+        versionId,
+        userId,
+        current.row.owner_user_id ?? userId,
+        current.row.organization_id,
+        current.row.visibility,
+        rpps,
+      );
     } catch (error) {
       if (String(error).includes("UNIQUE")) throw new AppError(409, "PROJECT_VERSION_CONFLICT", "That project slug or version already exists.");
       throw error;
     }
+    return (await this.find(projectId))!.item;
+  }
+
+  async updateScope(
+    projectId: string,
+    expectedVersion: number,
+    organizationId: string | null,
+    visibility: ProjectDatabaseRow["visibility"],
+  ): Promise<ProjectDto> {
+    const current = await this.find(projectId);
+    if (!current) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+    const now = new Date().toISOString();
+    const [updated] = await this.db.batch([
+      this.db.prepare(`UPDATE projects SET organization_id = ?1, visibility = ?2, version = version + 1, updated_at = ?3
+        WHERE id = ?4 AND version = ?5`).bind(organizationId, visibility, now, projectId, expectedVersion),
+      this.db.prepare(`UPDATE boms SET
+        owner_user_id = (SELECT owner_user_id FROM projects WHERE id = ?1),
+        organization_id = (SELECT organization_id FROM projects WHERE id = ?1),
+        visibility = (SELECT visibility FROM projects WHERE id = ?1),
+        updated_at = ?2
+        WHERE project_id = ?1`).bind(projectId, now),
+    ]);
+    if (Number(updated.meta.changes) < 1) throw new AppError(409, "PROJECT_VERSION_CONFLICT", "The project changed; refresh and retry.");
     return (await this.find(projectId))!.item;
   }
 
@@ -154,18 +193,28 @@ export class ProjectsRepository {
       .bind(new Date().toISOString(), projectId).run();
   }
 
-  private async replaceNormalizedProjectData(projectId: string, versionId: string, userId: string, visibility: ProjectDatabaseRow["visibility"], rpps: RppsPackage): Promise<void> {
+  private async replaceNormalizedProjectData(
+    projectId: string,
+    versionId: string,
+    actorUserId: string,
+    ownerUserId: string,
+    organizationId: string | null,
+    visibility: ProjectDatabaseRow["visibility"],
+    rpps: RppsPackage,
+  ): Promise<void> {
     const now = new Date().toISOString();
     const bomId = `project-bom-${projectId}`;
     const bomVersionId = `project-bom-version-${versionId}`;
     const statements: D1PreparedStatement[] = [
-      this.db.prepare(`INSERT INTO boms (id, project_id, slug, name, current_version_id, visibility, is_demo, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7, ?7)
+      this.db.prepare(`INSERT INTO boms
+        (id, project_id, owner_user_id, organization_id, slug, name, current_version_id, visibility, is_demo, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9, ?9)
         ON CONFLICT(id) DO UPDATE SET slug = excluded.slug, name = excluded.name,
+          owner_user_id = excluded.owner_user_id, organization_id = excluded.organization_id,
           current_version_id = excluded.current_version_id, visibility = excluded.visibility, updated_at = excluded.updated_at`)
-        .bind(bomId, projectId, `${rpps.slug}-bom`, `${rpps.name} BOM`, bomVersionId, visibility, now),
+        .bind(bomId, projectId, ownerUserId, organizationId, `${rpps.slug}-bom`, `${rpps.name} BOM`, bomVersionId, visibility, now),
       this.db.prepare(`INSERT INTO bom_versions (id, bom_id, version_label, notes, currency, created_by_user_id, created_at)
-        VALUES (?1, ?2, ?3, 'Generated from the published RPPS package', 'USD', ?4, ?5)`).bind(bomVersionId, bomId, rpps.version, userId, now),
+        VALUES (?1, ?2, ?3, 'Generated from the published RPPS package', 'USD', ?4, ?5)`).bind(bomVersionId, bomId, rpps.version, actorUserId, now),
     ];
     rpps.bom.forEach((item, index) => {
       statements.push(this.db.prepare(`INSERT INTO bom_items

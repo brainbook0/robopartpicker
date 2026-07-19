@@ -52,7 +52,8 @@ export type NewProjectInput = {
   description?: string;
   license?: string;
   version?: string;
-  visibility?: "public" | "unlisted" | "private";
+  visibility?: "public" | "organization" | "unlisted" | "private";
+  organizationId?: string | null;
   repo_url?: string;
   docs_url?: string;
   cover_image_url?: string;
@@ -100,7 +101,19 @@ export async function createProject(userId: string, input: NewProjectInput): Pro
     rpps: check.data as any,
   };
   void userId;
-  return (await api.post<{ item: ProjectRow }>("/api/v1/projects", { visibility: row.visibility, rpps: check.data })).item;
+  return (await api.post<{ item: ProjectRow }>("/api/v1/projects", {
+    visibility: row.visibility,
+    organizationId: input.organizationId ?? null,
+    rpps: check.data,
+  })).item;
+}
+
+export async function updateProjectScope(projectId: string, input: {
+  version: number;
+  organizationId: string | null;
+  visibility: ProjectRow["visibility"];
+}): Promise<ProjectRow> {
+  return (await api.patch<{ item: ProjectRow }>(`/api/v1/projects/${encodeURIComponent(projectId)}`, input)).item;
 }
 
 export async function updateProjectRpps(projectId: string, rpps: RppsPackage): Promise<void> {

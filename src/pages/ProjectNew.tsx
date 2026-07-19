@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { createProject, draftFromGithub } from "@/lib/projects";
+import { organizationsApi } from "@/lib/api/organizations";
 import { slugify, validateRpps, RPPS_VERSION, type RppsPackage } from "@/lib/rpps/schema";
 import { Github, FileJson, Loader2, Pencil, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Info } from "lucide-react";
 
@@ -63,7 +65,17 @@ export default function ProjectNew() {
   const [license, setLicense] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
   const [docsUrl, setDocsUrl] = useState("");
-  const [visibility, setVisibility] = useState<"public"|"unlisted"|"private">("public");
+  const [visibility, setVisibility] = useState<Visibility>("public");
+  const [organizationId, setOrganizationId] = useState("");
+
+  const organizations = useQuery({
+    queryKey: ["organizations", user?.id],
+    queryFn: ({ signal }) => organizationsApi.list(signal),
+    enabled: Boolean(user),
+  });
+  const projectOrganizations = (organizations.data?.items ?? []).filter((organization) =>
+    ["owner", "admin", "engineer"].includes(organization.member_role),
+  );
 
   // Section open state
   const [openBuild, setOpenBuild] = useState(true);
@@ -190,7 +202,7 @@ export default function ProjectNew() {
           cover_image_url: pkg.cover_image_url, tags: pkg.tags,
           difficulty: pkg.build?.difficulty ?? null,
           estimated_cost_usd: pkg.build?.estimated_cost_usd ?? null,
-          visibility, rpps: pkg,
+          visibility, organizationId: organizationId || null, rpps: pkg,
         });
         nav(`/projects/${row.slug}`); return;
       }
@@ -208,6 +220,7 @@ export default function ProjectNew() {
         difficulty: (difficulty || null) as any,
         estimated_cost_usd: numOrUndef(costUsd) ?? null,
         visibility,
+        organizationId: organizationId || null,
         rpps: buildRpps(),
       });
       nav(`/projects/${row.slug}`);
@@ -278,7 +291,17 @@ export default function ProjectNew() {
                 placeholder='{"rpps_version":"1.0.0","name":"…","slug":"…","version":"0.1.0","bom":[]}' />
               <PasteFeedback state={pasteState} />
               <div className="pt-2">
-                <VisibilitySelector value={visibility} onChange={setVisibility} />
+                <Field label="Organization owner">
+                  <select value={organizationId} onChange={e => {
+                    const next = e.target.value;
+                    setOrganizationId(next);
+                    if (!next && visibility === "organization") setVisibility("private");
+                  }} className="input-bare w-full">
+                    <option value="">Personal project</option>
+                    {projectOrganizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} · {organization.member_role}</option>)}
+                  </select>
+                </Field>
+                <VisibilitySelector value={visibility} organizationSelected={Boolean(organizationId)} onChange={setVisibility} />
               </div>
             </div>
           ) : (
@@ -406,7 +429,17 @@ export default function ProjectNew() {
                     <input value={docsUrl} onChange={e => setDocsUrl(e.target.value)} placeholder="https://…" className="input-bare w-full" />
                   </Field>
                 </Grid>
-                <VisibilitySelector value={visibility} onChange={setVisibility} />
+                <Field label="Organization owner">
+                  <select value={organizationId} onChange={e => {
+                    const next = e.target.value;
+                    setOrganizationId(next);
+                    if (!next && visibility === "organization") setVisibility("private");
+                  }} className="input-bare w-full">
+                    <option value="">Personal project</option>
+                    {projectOrganizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} · {organization.member_role}</option>)}
+                  </select>
+                </Field>
+                <VisibilitySelector value={visibility} organizationSelected={Boolean(organizationId)} onChange={setVisibility} />
               </Section>
             </>
           )}
@@ -420,6 +453,7 @@ export default function ProjectNew() {
               <Row k="Slug" v={<span className="mono">{derivedSlug}</span>} />
               <Row k="Version" v={<span className="mono">{version || "—"}</span>} />
               <Row k="Visibility" v={<span className="capitalize">{visibility}</span>} />
+              <Row k="Owner" v={organizationId ? projectOrganizations.find((organization) => organization.id === organizationId)?.name ?? "Organization" : "Personal"} />
               <Row k="RPPS" v={<span className="mono">v{RPPS_VERSION}</span>} />
             </dl>
           </div>
@@ -534,22 +568,24 @@ const Row = ({ k, v }: { k: string; v: React.ReactNode }) => (
   </div>
 );
 
-type Visibility = "public" | "unlisted" | "private";
+type Visibility = "public" | "organization" | "unlisted" | "private";
 const VISIBILITY_OPTIONS: ReadonlyArray<readonly [Visibility, string, string]> = [
   ["public", "Public", "Listed in Discover and search. Anyone can view."],
+  ["organization", "Organization", "Only active members of the selected organization can view."],
   ["unlisted", "Unlisted", "Anyone with the link can view. Hidden from Discover."],
   ["private", "Private", "Only you can view. Useful for drafts."],
 ];
-const VisibilitySelector = ({ value, onChange }: { value: Visibility; onChange: (v: Visibility) => void }) => (
+const VisibilitySelector = ({ value, organizationSelected, onChange }: { value: Visibility; organizationSelected: boolean; onChange: (v: Visibility) => void }) => (
   <fieldset>
     <legend className="text-[11px] text-muted-foreground mb-1">Visibility</legend>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
       {VISIBILITY_OPTIONS.map(([v, l, d]) => {
         const active = value === v;
+        const disabled = v === "organization" && !organizationSelected;
         return (
-          <label key={v} className={`cursor-pointer rounded border p-2 text-[12px] ${active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}>
+          <label key={v} className={`rounded border p-2 text-[12px] ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"} ${active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}>
             <div className="flex items-center gap-2">
-              <input type="radio" name="visibility" className="accent-primary" checked={active} onChange={() => onChange(v)} />
+              <input type="radio" name="visibility" className="accent-primary" checked={active} disabled={disabled} onChange={() => onChange(v)} />
               <span className="font-medium">{l}</span>
             </div>
             <div className="text-[11px] text-muted-foreground mt-1">{d}</div>

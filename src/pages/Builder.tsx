@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import type { CatalogPart } from "@/shared/catalog";
 import type { BuildDetail, BuildItem } from "@/shared/builds";
 import { attachFile, uploadFile, type FileKind } from "@/lib/api/files";
+import { organizationsApi, type Organization } from "@/lib/api/organizations";
 
 const money = (minor: number | null, currency = "USD") => minor == null
   ? "—"
@@ -24,6 +25,8 @@ export default function Builder() {
   const addComponentId = search.get("add");
   const consumedAdds = useRef(new Set<string>());
   const [newName, setNewName] = useState("My robot build");
+  const [newOrganizationId, setNewOrganizationId] = useState("");
+  const [newVisibility, setNewVisibility] = useState<BuildDetail["visibility"]>("private");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -38,6 +41,14 @@ export default function Builder() {
     enabled: Boolean(user && selectedId),
   });
   const catalog = useComponents({ q: catalogQuery, limit: 30 }, Boolean(catalogQuery.trim()));
+  const organizations = useQuery({
+    queryKey: ["organizations", user?.id],
+    queryFn: ({ signal }) => organizationsApi.list(signal),
+    enabled: Boolean(user),
+  });
+  const buildOrganizations = (organizations.data?.items ?? []).filter((organization) =>
+    ["owner", "admin", "engineer", "builder"].includes(organization.member_role),
+  );
 
   const refresh = async () => {
     await Promise.all([
@@ -49,11 +60,11 @@ export default function Builder() {
   const createBuild = async () => {
     setBusy(true);
     try {
-      const result = await buildsApi.create({ name: newName, visibility: "private" });
+      const result = await buildsApi.create({ name: newName, organizationId: newOrganizationId || null, visibility: newVisibility });
       const next = new URLSearchParams(search);
       next.set("build", result.item.id);
       setSearch(next);
-      toast({ title: "Persistent build created", description: "This build is stored in your local D1 database." });
+      toast({ title: "Persistent build created", description: "This build is stored in the Cloudflare D1 database for this environment." });
       await queryClient.invalidateQueries({ queryKey: ["builds"] });
     } catch (error) {
       toast({ title: "Could not create build", description: message(error), variant: "destructive" });
@@ -113,7 +124,21 @@ export default function Builder() {
           <div className="surface-card p-3">
             <div className="section-title mb-2">Create build</div>
             <input className="input-bare h-9 w-full" value={newName} maxLength={120} onChange={(event) => setNewName(event.target.value)} />
-            <button disabled={busy || newName.trim().length < 2} onClick={() => void createBuild()} className="btn-primary mt-2 w-full disabled:opacity-50">{busy ? "Creating…" : "Create private build"}</button>
+            <select aria-label="Build organization" value={newOrganizationId} onChange={(event) => {
+              const next = event.target.value;
+              setNewOrganizationId(next);
+              if (!next && newVisibility === "organization") setNewVisibility("private");
+            }} className="input-bare mt-2 h-9 w-full">
+              <option value="">Personal build</option>
+              {buildOrganizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} · {organization.member_role}</option>)}
+            </select>
+            <select aria-label="Build visibility" value={newVisibility} onChange={(event) => setNewVisibility(event.target.value as BuildDetail["visibility"])} className="input-bare mt-2 h-9 w-full">
+              <option value="private">Private</option>
+              <option value="organization" disabled={!newOrganizationId}>Organization members</option>
+              <option value="unlisted">Unlisted</option>
+              <option value="public">Public</option>
+            </select>
+            <button disabled={busy || newName.trim().length < 2} onClick={() => void createBuild()} className="btn-primary mt-2 w-full disabled:opacity-50">{busy ? "Creating…" : "Create build"}</button>
           </div>
           <div className="surface-card overflow-hidden">
             <div className="border-b border-border p-3 section-title">My builds</div>
@@ -132,14 +157,14 @@ export default function Builder() {
           {!selectedId && <div className="surface-card p-8 text-center text-sm text-muted-foreground">Select a build or create one. A component passed from Part Detail will be added after you select a build.</div>}
           {detail.isLoading && <Centered><Loader2 className="h-5 w-5 animate-spin" /> Loading build…</Centered>}
           {detail.error && <div className="surface-card p-4 text-sm text-negative">{message(detail.error)}</div>}
-          {detail.data && <BuildWorkspace build={detail.data.item} catalogQuery={catalogQuery} setCatalogQuery={setCatalogQuery} catalog={catalog.data?.items ?? []} catalogLoading={catalog.isLoading} onRefresh={refresh} />}
+          {detail.data && <BuildWorkspace build={detail.data.item} organizations={organizations.data?.items ?? []} userId={user.id} catalogQuery={catalogQuery} setCatalogQuery={setCatalogQuery} catalog={catalog.data?.items ?? []} catalogLoading={catalog.isLoading} onRefresh={refresh} />}
         </main>
       </div>
     </div>
   );
 }
 
-function BuildWorkspace({ build, catalogQuery, setCatalogQuery, catalog, catalogLoading, onRefresh }: { build: BuildDetail; catalogQuery: string; setCatalogQuery: (value: string) => void; catalog: CatalogPart[]; catalogLoading: boolean; onRefresh: () => Promise<void> }) {
+function BuildWorkspace({ build, organizations, userId, catalogQuery, setCatalogQuery, catalog, catalogLoading, onRefresh }: { build: BuildDetail; organizations: Organization[]; userId: string; catalogQuery: string; setCatalogQuery: (value: string) => void; catalog: CatalogPart[]; catalogLoading: boolean; onRefresh: () => Promise<void> }) {
   const [busyItem, setBusyItem] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const total = useMemo(() => build.items.reduce((sum, item) => {
@@ -177,7 +202,14 @@ function BuildWorkspace({ build, catalogQuery, setCatalogQuery, catalog, catalog
     finally { setUploading(false); }
   };
 
+  const currentOrganization = organizations.find((organization) => organization.id === build.organization_id);
+  const canEdit = build.owner_user_id === userId || ["owner", "admin", "engineer", "builder"].includes(currentOrganization?.member_role ?? "");
+  const canManageScope = build.organization_id
+    ? ["owner", "admin"].includes(currentOrganization?.member_role ?? "")
+    : build.owner_user_id === userId;
+
   return <>
+    {canEdit && <BuildSettings build={build} organizations={organizations} canManageScope={canManageScope} onRefresh={onRefresh} />}
     <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
       <Kpi label="Known cost" value={money(total, build.currency)} />
       <Kpi label="BOM lines" value={String(build.items.length)} />
@@ -222,6 +254,66 @@ function BuildWorkspace({ build, catalogQuery, setCatalogQuery, catalog, catalog
       {build.files.length === 0 ? <div className="mt-3 text-xs text-muted-foreground">No attached files.</div> : <div className="mt-3 grid gap-2 sm:grid-cols-2">{build.files.map((file) => <a key={file.id} href={`/api/v1/files/${encodeURIComponent(file.id)}/content`} className="rounded border border-border p-2 hover:border-primary/50"><div className="truncate text-sm font-medium">{file.originalName}</div><div className="mt-1 text-[10px] text-muted-foreground">{file.kind} · {formatBytes(file.sizeBytes)} · {file.visibility}</div></a>)}</div>}
     </div>
   </>;
+}
+
+function BuildSettings({ build, organizations, canManageScope, onRefresh }: {
+  build: BuildDetail;
+  organizations: Organization[];
+  canManageScope: boolean;
+  onRefresh: () => Promise<void>;
+}) {
+  const [name, setName] = useState(build.name);
+  const [status, setStatus] = useState<BuildDetail["status"]>(build.status);
+  const [progress, setProgress] = useState(build.progress_percent);
+  const [organizationId, setOrganizationId] = useState(build.organization_id ?? "");
+  const [visibility, setVisibility] = useState<BuildDetail["visibility"]>(build.visibility);
+  const [saving, setSaving] = useState(false);
+  const currentOrganization = organizations.find((organization) => organization.id === build.organization_id);
+  const transferOrganizations = organizations.filter((organization) => ["owner", "admin"].includes(organization.member_role));
+  const organizationOptions = currentOrganization && !transferOrganizations.some((organization) => organization.id === currentOrganization.id)
+    ? [currentOrganization, ...transferOrganizations]
+    : transferOrganizations;
+
+  useEffect(() => {
+    setName(build.name);
+    setStatus(build.status);
+    setProgress(build.progress_percent);
+    setOrganizationId(build.organization_id ?? "");
+    setVisibility(build.visibility);
+  }, [build.id, build.name, build.status, build.progress_percent, build.organization_id, build.visibility, build.version]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await buildsApi.update(build.id, {
+        version: build.version,
+        name: name.trim(),
+        status,
+        progressPercent: progress,
+        ...(canManageScope ? { organizationId: organizationId || null, visibility } : {}),
+      });
+      await onRefresh();
+      toast({ title: "Build settings saved", description: "The Worker authorized and persisted this build update in D1." });
+    } catch (cause) {
+      toast({ title: "Could not save build settings", description: message(cause), variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="surface-card p-3">
+      <div className="section-title mb-2">Build settings</div>
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+        <label className="text-[10px] uppercase text-muted-foreground">Name<input value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={120} className="input-bare mt-1 h-9 w-full normal-case" /></label>
+        <label className="text-[10px] uppercase text-muted-foreground">Status<select value={status} onChange={(event) => setStatus(event.target.value as BuildDetail["status"])} className="input-bare mt-1 h-9 w-full normal-case"><option value="planning">Planning</option><option value="sourcing">Sourcing</option><option value="building">Building</option><option value="testing">Testing</option><option value="complete">Complete</option><option value="paused">Paused</option><option value="archived">Archived</option></select></label>
+        <label className="text-[10px] uppercase text-muted-foreground">Progress<input type="number" min={0} max={100} value={progress} onChange={(event) => setProgress(Math.max(0, Math.min(100, Number(event.target.value))))} className="input-bare mt-1 h-9 w-full normal-case" /></label>
+        <label className="text-[10px] uppercase text-muted-foreground">Owner scope<select disabled={!canManageScope} value={organizationId} onChange={(event) => { const next = event.target.value; setOrganizationId(next); if (!next && visibility === "organization") setVisibility("private"); }} className="input-bare mt-1 h-9 w-full normal-case disabled:opacity-60"><option value="">Personal</option>{organizationOptions.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
+        <label className="text-[10px] uppercase text-muted-foreground">Visibility<select disabled={!canManageScope} value={visibility} onChange={(event) => setVisibility(event.target.value as BuildDetail["visibility"])} className="input-bare mt-1 h-9 w-full normal-case disabled:opacity-60"><option value="private">Private</option><option value="organization" disabled={!organizationId}>Organization</option><option value="unlisted">Unlisted</option><option value="public">Public</option></select></label>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-3"><p className="text-[10px] text-muted-foreground">Scope transfers require organization admin access; engineering fields follow the build role policy.</p><button disabled={saving || name.trim().length < 2} onClick={() => void save()} className="btn-primary btn-sm shrink-0 disabled:opacity-50">{saving ? "Saving…" : "Save settings"}</button></div>
+    </div>
+  );
 }
 
 function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefresh: () => Promise<void> }) {

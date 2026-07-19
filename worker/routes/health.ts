@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppBindings } from "../env";
 import { isEmailDeliveryConfigured } from "../services/email";
+import packageJson from "../../package.json";
 
 export const healthRoutes = new Hono<AppBindings>();
 
@@ -9,7 +10,7 @@ healthRoutes.get("/health", async (c) => {
   return c.json({
     status: result?.ok === 1 ? "ok" : "degraded",
     service: "robopartpicker-api",
-    version: "0.2.0",
+    version: packageJson.version,
     environment: c.env.APP_ENV,
     database: "d1",
     files: "r2",

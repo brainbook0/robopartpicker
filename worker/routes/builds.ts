@@ -14,7 +14,7 @@ const buildStatuses = ["planning", "sourcing", "building", "testing", "complete"
 const itemStatuses = ["needed", "selected", "ordered", "purchased", "fabricated", "installed", "replaced", "skipped"] as const;
 const stepStatuses = ["pending", "blocked", "in_progress", "complete", "skipped"] as const;
 const createSchema = z.object({ name: z.string().trim().min(2).max(120), organizationId: z.string().uuid().nullable().optional(), sourceProjectId: z.string().uuid().nullable().optional(), visibility: z.enum(visibilities).default("private") }).strict();
-const updateSchema = z.object({ version: z.number().int().positive(), name: z.string().trim().min(2).max(120).optional(), visibility: z.enum(visibilities).optional(), status: z.enum(buildStatuses).optional(), progressPercent: z.number().int().min(0).max(100).optional() }).strict();
+const updateSchema = z.object({ version: z.number().int().positive(), name: z.string().trim().min(2).max(120).optional(), organizationId: z.string().uuid().nullable().optional(), visibility: z.enum(visibilities).optional(), status: z.enum(buildStatuses).optional(), progressPercent: z.number().int().min(0).max(100).optional() }).strict();
 const itemSchema = z.object({ componentId: z.string().max(100).nullable().optional(), description: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1_000_000), unit: z.string().trim().min(1).max(30).optional(), selectedSupplierOfferId: z.string().max(200).nullable().optional(), unitCostMinor: z.number().int().nonnegative().nullable().optional(), notes: z.string().trim().max(4_000).nullable().optional(), substitutedForItemId: z.string().uuid().nullable().optional() }).strict();
 const itemUpdateSchema = z.object({ quantity: z.number().positive().max(1_000_000).optional(), selectedSupplierOfferId: z.string().max(200).nullable().optional(), unitCostMinor: z.number().int().nonnegative().nullable().optional(), status: z.enum(itemStatuses).optional(), notes: z.string().trim().max(4_000).nullable().optional() }).strict();
 const stepSchema = z.object({ title: z.string().trim().min(1).max(300), body: z.string().trim().max(20_000).nullable().optional(), dependsOn: z.array(z.string().uuid()).max(50).optional() }).strict();
@@ -85,7 +85,19 @@ buildRoutes.get("/builds/:id", loadAuthSession, async (c) => {
 buildRoutes.patch("/builds/:id", loadAuthSession, requireAuth, async (c) => {
   const { userId, build } = await writableBuild(c, c.req.param("id"));
   const { version, ...changes } = await parseJson(c, updateSchema);
-  const item = await new BuildsRepository(c.env.DB).updateBuild(build.id, version, changes);
+  const organizationId = changes.organizationId === undefined ? build.organization_id : changes.organizationId;
+  const visibility = changes.visibility ?? build.visibility;
+  const scopeChanged = organizationId !== build.organization_id || visibility !== build.visibility;
+  if (scopeChanged && build.organization_id) {
+    await assertOrganizationPermission(c.env.DB, userId, build.organization_id, "admin");
+  }
+  if (organizationId && organizationId !== build.organization_id) {
+    await assertOrganizationPermission(c.env.DB, userId, organizationId, "admin");
+  }
+  if (visibility === "organization" && !organizationId) {
+    throw new AppError(422, "ORGANIZATION_REQUIRED", "Organization visibility requires an organization.");
+  }
+  const item = await new BuildsRepository(c.env.DB).updateBuild(build.id, version, { ...changes, organizationId, visibility });
   await recordAuditEvent(c.env.DB, { actorUserId: userId, organizationId: build.organization_id, action: "build.update", entityType: "build", entityId: build.id, requestId: c.get("requestId"), after: changes });
   return c.json({ item });
 });
