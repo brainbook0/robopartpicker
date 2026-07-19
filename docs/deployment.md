@@ -22,6 +22,8 @@ npx wrangler secret put BETTER_AUTH_URL --env production
 npx wrangler secret put INGESTION_SECRET --env production
 ```
 
+These three names are also declared under `secrets.required` in the production Wrangler environment. An actual deployment fails closed if any is missing. Optional provider credentials are set only when their integration is enabled.
+
 Add email provider, OAuth, repository provider, AI provider, and malware scanner credentials only for features that are configured. Secrets are environment-specific, so every production secret command includes `--env production`. Never put them in `vars`, `VITE_*`, source control, or client code.
 
 ## Release

@@ -140,6 +140,8 @@
       "properties": {
         "supplierExternalId": { "type": "string", "minLength": 1, "maxLength": 300 },
         "componentExternalId": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "supplierCanonicalId": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "componentCanonicalId": { "type": "string", "minLength": 1, "maxLength": 500 },
         "supplierSku": { "oneOf": [{ "type": "string", "maxLength": 200 }, { "type": "null" }] },
         "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
         "unitPriceMinor": { "type": "integer", "minimum": 0 },
@@ -152,6 +154,9 @@
       "required": ["name"],
       "properties": {
         "name": { "$ref": "#/$defs/name" },
+        "version": { "type": "string", "maxLength": 40, "default": "0.1.0" },
+        "summary": { "oneOf": [{ "type": "string", "maxLength": 280 }, { "type": "null" }] },
+        "description": { "oneOf": [{ "type": "string", "maxLength": 20000 }, { "type": "null" }] },
         "repositoryUrl": { "oneOf": [{ "$ref": "#/$defs/httpUrl" }, { "type": "null" }] },
         "licenseSpdx": { "oneOf": [{ "type": "string", "maxLength": 100 }, { "type": "null" }] },
         "extracted": { "type": "object", "default": {} }
@@ -162,8 +167,25 @@
       "required": ["name", "items"],
       "properties": {
         "name": { "$ref": "#/$defs/name" },
-        "items": { "type": "array", "maxItems": 2000, "items": { "type": "object" } }
+        "version": { "type": "string", "maxLength": 40, "default": "0.1.0" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$", "default": "USD" },
+        "items": { "type": "array", "maxItems": 2000, "items": { "$ref": "#/$defs/bomItem" } }
       }
+    },
+    "bomItem": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "ref": { "type": "string", "maxLength": 100 },
+        "name": { "$ref": "#/$defs/name" },
+        "quantity": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "qty": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "unit": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "componentExternalId": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "componentCanonicalId": { "type": "string", "minLength": 1, "maxLength": 500 }
+      },
+      "anyOf": [{ "required": ["quantity"] }, { "required": ["qty"] }]
     },
     "integration": {
       "type": "object",
@@ -171,8 +193,21 @@
       "properties": {
         "name": { "$ref": "#/$defs/name" },
         "integrationType": { "type": "string", "minLength": 1, "maxLength": 100 },
-        "entities": { "type": "array", "maxItems": 1000, "items": { "type": "object" }, "default": [] }
+        "description": { "oneOf": [{ "type": "string", "maxLength": 2000 }, { "type": "null" }] },
+        "entities": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/integrationEntity" }, "default": [] }
       }
+    },
+    "integrationEntity": {
+      "type": "object",
+      "required": ["recordType", "role"],
+      "properties": {
+        "recordType": { "enum": ["manufacturer", "supplier", "component", "project"] },
+        "externalRecordId": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "canonicalEntityId": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "role": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 2000 }
+      },
+      "anyOf": [{ "required": ["externalRecordId"] }, { "required": ["canonicalEntityId"] }]
     },
     "evidence": {
       "type": "object",
