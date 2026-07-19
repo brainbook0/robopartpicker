@@ -14,7 +14,7 @@ const createSchema = z.object({
   organizationId: z.string().uuid().nullable().optional(),
   rpps: RppsPackage,
 }).strict();
-const rppsUpdateSchema = z.object({ rpps: RppsPackage }).strict();
+const rppsUpdateSchema = z.object({ version: z.number().int().positive(), rpps: RppsPackage }).strict();
 const scopeUpdateSchema = z.object({
   version: z.number().int().positive(),
   organizationId: z.string().uuid().nullable().optional(),
@@ -162,7 +162,7 @@ projectRoutes.put("/projects/:id/rpps", loadAuthSession, requireAuth, async (c) 
   if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
   await assertScopedWrite(c.env.DB, userId, project.row, "engineer");
   const body = await parseJson(c, rppsUpdateSchema);
-  const item = await repository.updateRpps(project.row.id, userId, body.rpps);
+  const item = await repository.updateRpps(project.row.id, body.version, userId, body.rpps);
   await recordAuditEvent(c.env.DB, { actorUserId: userId, organizationId: project.row.organization_id, action: "project.rpps.update", entityType: "project", entityId: item.id, requestId: c.get("requestId"), before: project.item, after: item });
   return c.json({ item });
 });

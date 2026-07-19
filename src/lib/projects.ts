@@ -116,10 +116,10 @@ export async function updateProjectScope(projectId: string, input: {
   return (await api.patch<{ item: ProjectRow }>(`/api/v1/projects/${encodeURIComponent(projectId)}`, input)).item;
 }
 
-export async function updateProjectRpps(projectId: string, rpps: RppsPackage): Promise<void> {
+export async function updateProjectRpps(projectId: string, version: number, rpps: RppsPackage): Promise<ProjectRow> {
   const check = validateRpps(rpps);
   if (check.ok === false) throw new Error("Invalid RPPS package: " + check.errors.join("; "));
-  await api.put(`/api/v1/projects/${encodeURIComponent(projectId)}/rpps`, { rpps: check.data });
+  return (await api.put<{ item: ProjectRow }>(`/api/v1/projects/${encodeURIComponent(projectId)}/rpps`, { version, rpps: check.data })).item;
 }
 
 export async function deleteProject(projectId: string): Promise<void> {

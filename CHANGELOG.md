@@ -2,6 +2,18 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.7] - 2026-07-19
+
+### Added
+
+- Collapsible project technical-record editor for authors, required tools, required skills, known issues, and evidence.
+- D1 normalization of RPPS tools/skills into `project_requirements` and evidence into `evidence` plus `evidence_claims`.
+- Worker integration coverage for technical-record authorization, normalization, version publication, and stale-write rejection.
+
+### Changed
+
+- RPPS publication now requires the current project record version and rejects stale browser state with a conflict response.
+
 ## [0.2.6] - 2026-07-19
 
 ### Added

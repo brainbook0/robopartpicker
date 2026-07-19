@@ -130,25 +130,29 @@ export class ProjectsRepository {
     return (await this.find(projectId))!.item;
   }
 
-  async updateRpps(projectId: string, userId: string, rpps: RppsPackage): Promise<ProjectDto> {
+  async updateRpps(projectId: string, expectedVersion: number, userId: string, rpps: RppsPackage): Promise<ProjectDto> {
     const current = await this.find(projectId);
     if (!current) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
     const versionId = crypto.randomUUID();
     const now = new Date().toISOString();
     try {
-      await this.db.batch([
-        this.db.prepare(`UPDATE project_versions SET status = 'superseded' WHERE project_id = ?1 AND status = 'published'`).bind(projectId),
+      const results = await this.db.batch([
         this.db.prepare(`INSERT INTO project_versions
           (id, project_id, version_label, rpps_schema_version, changelog, rpps_json, status, created_by_user_id, created_at, published_at)
-          VALUES (?1, ?2, ?3, ?4, 'RPPS package updated', ?5, 'published', ?6, ?7, ?7)`)
-          .bind(versionId, projectId, rpps.version, rpps.rpps_version, JSON.stringify(rpps), userId, now),
+          SELECT ?1, ?2, ?3, ?4, 'RPPS package updated', ?5, 'published', ?6, ?7, ?7
+          WHERE EXISTS (SELECT 1 FROM projects WHERE id = ?2 AND version = ?8)`)
+          .bind(versionId, projectId, rpps.version, rpps.rpps_version, JSON.stringify(rpps), userId, now, expectedVersion),
+        this.db.prepare(`UPDATE project_versions SET status = 'superseded'
+          WHERE project_id = ?1 AND id <> ?2 AND status = 'published'
+          AND EXISTS (SELECT 1 FROM projects WHERE id = ?1 AND version = ?3)`).bind(projectId, versionId, expectedVersion),
         this.db.prepare(`UPDATE projects SET slug = ?1, name = ?2, summary = ?3, description = ?4,
           current_version_id = ?5, license_spdx = ?6, repository_url = ?7, difficulty = ?8,
-          estimated_cost_minor = ?9, version = version + 1, updated_at = ?10 WHERE id = ?11`)
+          estimated_cost_minor = ?9, version = version + 1, updated_at = ?10 WHERE id = ?11 AND version = ?12`)
           .bind(rpps.slug, rpps.name, rpps.summary ?? null, rpps.description ?? null, versionId, rpps.license ?? null,
             rpps.repo_url ?? null, rpps.build?.difficulty ?? null,
-            rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100), now, projectId),
+            rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100), now, projectId, expectedVersion),
       ]);
+      if (Number(results[2].meta.changes) < 1) throw new AppError(409, "PROJECT_VERSION_CONFLICT", "The project changed; refresh and retry.");
       await this.replaceNormalizedProjectData(
         projectId,
         versionId,
@@ -234,6 +238,32 @@ export class ProjectsRepository {
         (id, project_version_id, title, description, severity, status, created_at)
         VALUES (?1, ?2, ?3, ?4, 'medium', 'open', ?5)`)
         .bind(crypto.randomUUID(), versionId, issue.title, issue.body ?? "", now));
+    });
+    Array.from(new Set(rpps.build?.required_tools ?? [])).forEach((label, index) => {
+      statements.push(this.db.prepare(`INSERT INTO project_requirements
+        (id, project_version_id, requirement_type, label, required, sort_order)
+        VALUES (?1, ?2, 'tool', ?3, 1, ?4)`)
+        .bind(crypto.randomUUID(), versionId, label, index));
+    });
+    Array.from(new Set(rpps.build?.required_skills ?? [])).forEach((label, index) => {
+      statements.push(this.db.prepare(`INSERT INTO project_requirements
+        (id, project_version_id, requirement_type, label, required, sort_order)
+        VALUES (?1, ?2, 'skill', ?3, 1, ?4)`)
+        .bind(crypto.randomUUID(), versionId, label, index));
+    });
+    (rpps.evidence ?? []).forEach((evidence, index) => {
+      const evidenceId = crypto.randomUUID();
+      const confidence = evidence.confidence ?? 0.5;
+      statements.push(
+        this.db.prepare(`INSERT INTO evidence
+          (id, source_type, source_url, title, retrieved_at, confidence, excerpt, is_demo, created_at)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?4, 0, ?7)`)
+          .bind(evidenceId, evidence.source_type, evidence.source_url ?? null, evidence.claim, evidence.retrieved_at ?? now, confidence, now),
+        this.db.prepare(`INSERT INTO evidence_claims
+          (id, evidence_id, entity_type, entity_id, claim_key, claim_value, confidence, created_at)
+          VALUES (?1, ?2, 'project', ?3, ?4, ?5, ?6, ?7)`)
+          .bind(crypto.randomUUID(), evidenceId, projectId, `rpps.evidence.${index}`, evidence.claim, confidence, now),
+      );
     });
     for (let index = 0; index < statements.length; index += 75) await this.db.batch(statements.slice(index, index + 75));
   }
