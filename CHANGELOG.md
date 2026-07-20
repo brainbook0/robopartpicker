@@ -2,6 +2,22 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.9] - 2026-07-19
+
+### Added
+
+- R2-backed managed project artifacts with project-version linkage, server-authorized listing/detach, image header/dimension validation, and Project Detail upload/download controls.
+- Stateless `/mcp` Streamable HTTP endpoint with public read-only robotics search, comparison, project-artifact, and RPPS-validation tools.
+- OpenRouter configuration for `deepseek/deepseek-v4-pro` with response, tool-step, retry, per-minute, and rolling token cost controls.
+
+### Changed
+
+- Empty catalog, project, and Marketplace states are now the default local and preview workflow; fixture seeding is an explicit optional utility.
+
+### Removed
+
+- Previously generated demo projects and all remaining demo fixture records from the isolated live preview database.
+
 ## [0.2.8] - 2026-07-19
 
 ### Added

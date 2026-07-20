@@ -14,6 +14,8 @@ export interface Env {
   AI_PROVIDER_URL?: string;
   AI_PROVIDER_KEY?: string;
   AI_MODEL?: string;
+  AI_DAILY_TOKEN_LIMIT?: string;
+  AI_MAX_OUTPUT_TOKENS?: string;
   MALWARE_SCAN_URL?: string;
   MALWARE_SCAN_TOKEN?: string;
 }

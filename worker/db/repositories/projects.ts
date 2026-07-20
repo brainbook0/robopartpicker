@@ -52,6 +52,25 @@ export type ProjectDto = {
   updated_at: string;
 };
 
+export type ProjectFileDto = {
+  id: string;
+  projectVersionId: string | null;
+  originalName: string;
+  mediaType: string;
+  sizeBytes: number;
+  checksumSha256: string | null;
+  visibility: "private" | "organization" | "public";
+  status: "pending" | "quarantined" | "ready" | "rejected";
+  kind: string;
+  purpose: string;
+  relativePath: string | null;
+  caption: string | null;
+  altText: string | null;
+  createdAt: string;
+  updatedAt: string;
+  contentUrl: string;
+};
+
 const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p.owner_user_id,
   p.organization_id, p.visibility, p.status, p.license_spdx, p.repository_url, p.difficulty,
   p.estimated_cost_minor, p.estimated_cost_currency, p.is_demo, p.version, p.created_at, p.updated_at,
@@ -85,6 +104,50 @@ export class ProjectsRepository {
     const row = await this.db.prepare(`${SELECT_PROJECT} WHERE p.deleted_at IS NULL AND (p.id = ?1 OR p.slug = ?1)`)
       .bind(idOrSlug).first<ProjectDatabaseRow>();
     return row ? { row, item: toProjectDto(row) } : null;
+  }
+
+  async listFiles(projectId: string, publicOnly: boolean): Promise<ProjectFileDto[]> {
+    const result = await this.db.prepare(`SELECT f.id, pf.project_version_id, f.original_name, f.media_type,
+      f.size_bytes, f.checksum_sha256, f.visibility, f.status, f.kind, pf.purpose, pf.relative_path,
+      pm.caption, pm.alt_text, f.created_at, f.updated_at
+      FROM project_files pf
+      JOIN files f ON f.id = pf.file_id
+      LEFT JOIN project_media pm ON pm.project_id = pf.project_id AND pm.file_id = pf.file_id
+      WHERE pf.project_id = ?1 AND f.deleted_at IS NULL
+        AND (?2 = 0 OR (f.visibility = 'public' AND f.status = 'ready'))
+      ORDER BY COALESCE(pm.sort_order, 2147483647), pf.relative_path, f.original_name`)
+      .bind(projectId, publicOnly ? 1 : 0).all<{
+        id: string; project_version_id: string | null; original_name: string; media_type: string;
+        size_bytes: number; checksum_sha256: string | null; visibility: ProjectFileDto["visibility"];
+        status: ProjectFileDto["status"]; kind: string; purpose: string; relative_path: string | null;
+        caption: string | null; alt_text: string | null; created_at: string; updated_at: string;
+      }>();
+    return result.results.map((row) => ({
+      id: row.id,
+      projectVersionId: row.project_version_id,
+      originalName: row.original_name,
+      mediaType: row.media_type,
+      sizeBytes: row.size_bytes,
+      checksumSha256: row.checksum_sha256,
+      visibility: row.visibility,
+      status: row.status,
+      kind: row.kind,
+      purpose: row.purpose,
+      relativePath: row.relative_path,
+      caption: row.caption,
+      altText: row.alt_text,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      contentUrl: `/api/v1/files/${row.id}/content`,
+    }));
+  }
+
+  async detachFile(projectId: string, fileId: string): Promise<boolean> {
+    const results = await this.db.batch([
+      this.db.prepare("DELETE FROM project_media WHERE project_id = ?1 AND file_id = ?2").bind(projectId, fileId),
+      this.db.prepare("DELETE FROM project_files WHERE project_id = ?1 AND file_id = ?2").bind(projectId, fileId),
+    ]);
+    return Number(results[1].meta.changes) === 1;
   }
 
   async create(input: {

@@ -70,8 +70,8 @@ if (foreignKeyFailures.length > 0) {
 const migrationRows = query<{ count: number }>(
   "SELECT COUNT(*) AS count FROM d1_migrations",
 );
-const fixtureCounts = query<{ components: number; suppliers: number; boms: number; projects: number }>(
-  "SELECT (SELECT COUNT(*) FROM components WHERE is_demo = 1) AS components, (SELECT COUNT(*) FROM suppliers WHERE is_demo = 1) AS suppliers, (SELECT COUNT(*) FROM boms WHERE is_demo = 1) AS boms, (SELECT COUNT(*) FROM projects WHERE is_demo = 1) AS projects",
+const demoCounts = query<{ components: number; suppliers: number; boms: number }>(
+  "SELECT (SELECT COUNT(*) FROM components WHERE is_demo = 1) AS components, (SELECT COUNT(*) FROM suppliers WHERE is_demo = 1) AS suppliers, (SELECT COUNT(*) FROM boms WHERE is_demo = 1) AS boms",
 );
 
 const migrationCount = Number(migrationRows[0]?.count ?? 0);
@@ -79,10 +79,7 @@ if (migrationCount !== 9) {
   throw new Error(`Expected exactly nine applied migrations; found ${migrationCount}`);
 }
 
-const counts = fixtureCounts[0];
-if (!counts || Number(counts.components) === 0 || Number(counts.suppliers) === 0 || Number(counts.boms) === 0 || Number(counts.projects) === 0) {
-  throw new Error(`Development fixture seed is incomplete: ${JSON.stringify(counts)}`);
-}
+const counts = demoCounts[0] ?? { components: 0, suppliers: 0, boms: 0 };
 
 console.log(
   JSON.stringify(
@@ -91,11 +88,10 @@ console.log(
       environment: remote ? environment : "local",
       tables: tables.length,
       migrations: migrationCount,
-      demoRecords: {
+      optionalDemoRecords: {
         components: Number(counts.components),
         suppliers: Number(counts.suppliers),
         boms: Number(counts.boms),
-        projects: Number(counts.projects),
       },
       foreignKeyFailures: 0,
     },

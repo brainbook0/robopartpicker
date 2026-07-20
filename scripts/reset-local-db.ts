@@ -15,5 +15,3 @@ console.log(`Resetting the local-only D1 state at ${localD1Root}`);
 rmSync(localD1Root, { recursive: true, force: true });
 
 runWrangler(["d1", "migrations", "apply", "robopartpicker", "--local"]);
-
-await import("./seed");

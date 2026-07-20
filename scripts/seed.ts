@@ -1,10 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { boms, bomCost } from "../src/data/boms";
-import { partById, parts, lowestPrice } from "../src/data/parts";
+import { boms } from "../src/data/boms";
+import { parts } from "../src/data/parts";
 import { suppliers } from "../src/data/suppliers";
 import { listings, wanted } from "../src/data/listings";
-import { emptyRpps } from "../src/lib/rpps/schema";
 import { runWrangler } from "./wrangler-cli";
 
 const now = new Date().toISOString();
@@ -226,59 +225,6 @@ for (const bom of boms) {
   });
 }
 
-const projectDifficulty = { arm: "advanced", leg: "advanced", hand: "intermediate", "upper-body": "advanced", perception: "intermediate", full: "expert" } as const;
-for (const bom of boms) {
-  const projectId = `project-${bom.id}`;
-  const projectVersionId = `${projectId}-version-1`;
-  const projectSlug = `demo-${bom.slug}`;
-  const updatedAt = new Date(Date.now() - bom.updatedDaysAgo * 86_400_000).toISOString();
-  const estimatedCost = bomCost(bom);
-  const rpps = emptyRpps({
-    name: bom.name,
-    slug: projectSlug,
-    version: "0.1.0-demo",
-    summary: bom.description,
-    description: `Demonstration RPPS project generated from the downloaded ${bom.name} BOM fixture. Component choices and observed prices are demo data, not a validated build recipe.`,
-    authors: [{ name: bom.author, role: "fixture author label" }],
-    tags: [bom.subsystem, "demo-fixture"],
-    build: { difficulty: projectDifficulty[bom.subsystem], estimated_cost_usd: estimatedCost },
-    bom: bom.slots.map((slot) => {
-      const part = partById(slot.partId);
-      if (!part) throw new Error(`Fixture BOM ${bom.id} references unknown component ${slot.partId}.`);
-      return {
-        ref: idPart(slot.slot),
-        name: part.name,
-        manufacturer: part.maker,
-        category: part.category,
-        qty: slot.qty,
-        unit_cost_usd: lowestPrice(part),
-        notes: slot.note ?? slot.slot,
-      };
-    }),
-  });
-  push(`
-    INSERT INTO projects
-      (id, slug, name, summary, description, visibility, status, license_spdx, difficulty,
-       estimated_cost_minor, estimated_cost_currency, is_demo, version, created_at, updated_at)
-    VALUES (${sql(projectId)}, ${sql(projectSlug)}, ${sql(rpps.name)}, ${sql(rpps.summary)}, ${sql(rpps.description)},
-      'public', 'published', NULL, ${sql(rpps.build?.difficulty)}, ${Math.round(estimatedCost * 100)}, 'USD', 1, 1, ${sql(updatedAt)}, ${sql(updatedAt)})
-    ON CONFLICT(id) DO UPDATE SET slug = excluded.slug, name = excluded.name, summary = excluded.summary,
-      description = excluded.description, visibility = 'public', status = 'published', difficulty = excluded.difficulty,
-      estimated_cost_minor = excluded.estimated_cost_minor, estimated_cost_currency = 'USD', is_demo = 1,
-      updated_at = excluded.updated_at, deleted_at = NULL;
-  `);
-  push(`
-    INSERT INTO project_versions
-      (id, project_id, version_label, rpps_schema_version, changelog, rpps_json, status, created_at, published_at)
-    VALUES (${sql(projectVersionId)}, ${sql(projectId)}, ${sql(rpps.version)}, ${sql(rpps.rpps_version)},
-      'Generated from the downloaded BOM fixture.', ${sql(JSON.stringify(rpps))}, 'published', ${sql(updatedAt)}, ${sql(updatedAt)})
-    ON CONFLICT(id) DO UPDATE SET version_label = excluded.version_label, rpps_schema_version = excluded.rpps_schema_version,
-      changelog = excluded.changelog, rpps_json = excluded.rpps_json, status = 'published', published_at = excluded.published_at;
-  `);
-  push(`UPDATE projects SET current_version_id = ${sql(projectVersionId)} WHERE id = ${sql(projectId)};`);
-  push(`UPDATE boms SET project_id = ${sql(projectId)} WHERE id = ${sql(bom.id)};`);
-}
-
 const categories = [
   ["cat-general", "general", "General", "Open robotics discussion and project coordination."],
   ["cat-build-help", "build-help", "Build help", "Structured questions about assembly, calibration, and troubleshooting."],
@@ -299,7 +245,7 @@ const outputDirectory = path.resolve(".wrangler");
 const outputFile = path.join(outputDirectory, "seed.generated.sql");
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(outputFile, statements.join("\n"), "utf8");
-console.log(`Generated ${statements.length} idempotent fixture statements from ${parts.length} components, ${suppliers.length} suppliers, ${boms.length} BOMs, and ${boms.length} derived RPPS projects.`);
+console.log(`Generated ${statements.length} idempotent fixture statements from ${parts.length} components, ${suppliers.length} suppliers, and ${boms.length} BOMs.`);
 const cliArguments = process.argv.slice(2);
 const remote = cliArguments.includes("--remote");
 const environmentIndex = cliArguments.indexOf("--env");

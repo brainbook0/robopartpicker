@@ -8,7 +8,7 @@ Local development uses the Cloudflare Vite plugin with local Wrangler bindings. 
 npm install
 Copy-Item .dev.vars.example .dev.vars
 npm run db:migrate:local
-npm run db:seed
+npm run db:validate
 npm run dev
 ```
 
@@ -33,7 +33,9 @@ npm run db:validate
 
 ## Local secrets
 
-`.dev.vars.example` documents required names without values. `.dev.vars` must contain a unique local `BETTER_AUTH_SECRET`, local `BETTER_AUTH_URL`, an ingestion credential, and optional email/OAuth/AI provider credentials. It is ignored by Git.
+`.dev.vars.example` documents required names without values. `.dev.vars` must contain a unique local `BETTER_AUTH_SECRET`, local `BETTER_AUTH_URL`, an ingestion credential, and optional email/OAuth/AI provider credentials. It is ignored by Git. The catalog starts empty; `npm run db:seed` remains an explicit legacy-fixture utility and is not part of normal setup.
+
+The AI route defaults to OpenRouter's `deepseek/deepseek-v4-pro` model only when `AI_PROVIDER_KEY` is supplied. Tests never call the live provider. Local requests are capped by the configured per-response and rolling token limits.
 
 Cloudflare's Vite plugin copies `.dev.vars` into the ignored Worker build directory for `vite preview`; Cloudflare documents that this copy is not deployed. Never publish or commit `dist/`, and do not use a production credential in the local file. The Wrangler configuration declares the three mandatory binding names so development warns when one is absent and deployment refuses to proceed until they have been configured on the Worker.
 

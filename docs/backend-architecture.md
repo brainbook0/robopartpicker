@@ -7,8 +7,9 @@ RoboPartPicker is one same-origin Cloudflare Worker deployment:
 1. The Cloudflare Vite plugin builds the React client and Worker.
 2. `/api/auth/*` is handled by Better Auth.
 3. `/api/v1/*` is handled by the Hono API router.
-4. Worker-proxied file routes enforce D1 metadata and authorization before reading `FILES`.
-5. Other paths use Cloudflare static assets with SPA fallback to `index.html`.
+4. `/mcp` is a stateless Streamable HTTP MCP endpoint for public read-only robotics tools.
+5. Worker-proxied file routes enforce D1 metadata and authorization before reading `FILES`.
+6. Other paths use Cloudflare static assets with SPA fallback to `index.html`.
 
 There is no browser-to-database path, broad CORS policy, Node server, native SQLite driver, or runtime Lovable/Supabase dependency.
 
@@ -62,7 +63,7 @@ Build engineering records use nested, owner/organization-authorized endpoints fo
 
 ## Files
 
-D1 stores file identity, object key, owner, organization/project/build relationships, visibility, status, size, media type, checksum, and timestamps. R2 stores bytes. Object keys are generated server-side and never derived directly from a filename. Upload and read endpoints enforce size/type/ownership; private objects are Worker-proxied. Malware scanning is an explicit quarantine-to-ready integration boundary.
+D1 stores file identity, object key, owner, organization/project/build relationships, visibility, status, size, media type, checksum, and timestamps. R2 stores bytes. Object keys are generated server-side and never derived directly from a filename. Upload and read endpoints enforce size/type/ownership; private objects are Worker-proxied. Image uploads require recognized headers and bounded dimensions before storage. Project artifacts are linked to the current immutable project version and remain distinct from external references declared in RPPS. Malware scanning is an explicit quarantine-to-ready integration boundary.
 
 ## Imports and external content
 
@@ -70,7 +71,11 @@ Repository and scraper imports never write directly to canonical tables. The pip
 
 ## AI
 
-Provider keys and calls stay in the Worker. Tools expose narrow, authorized domain operations rather than SQL. Read tools return evidence metadata; mutation tools create structured proposals and require user confirmation before writes. Conversations, messages, tool calls, usage, and cost estimates persist in D1.
+Provider keys and calls stay in the Worker. OpenRouter uses `deepseek/deepseek-v4-pro` through its OpenAI-compatible API. Tools expose narrow, authorized domain operations rather than unrestricted SQL. Read tools return evidence metadata; mutation tools create structured proposals and require user confirmation before writes. Conversations, messages, tool calls, usage, and cost estimates persist in D1. Output, tool-step, retry, per-minute, and rolling token limits bound spend.
+
+## Model Context Protocol
+
+`/mcp` implements the current Streamable HTTP transport with the Web Standards MCP SDK. The server is stateless and exposes only public, read-only catalog/project/supplier search, component comparison, managed public project artifacts, and RPPS validation. It cannot read private projects/builds/files or mutate data. Private tools require a later OAuth 2.1 consent flow mapped to RoboPartPicker user and organization permissions; they must not be added to the public server.
 
 ## Notifications
 

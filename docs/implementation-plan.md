@@ -16,7 +16,7 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 - [x] Configured one same-origin Worker, Worker-first `/api/*`, static assets, SPA fallback, local `DB`/`FILES`, and a distinct flattened production environment.
 - [x] Added typed bindings, request IDs, JSON errors, validation, security headers, request limits, same-origin mutation checks, D1 rate limiting, and audit events.
 - [x] Created and clean-applied nine sequential D1 migrations: 112 tables including Better Auth, all requested product domains, indexes, constraints, triggers, and FTS5 search.
-- [x] Added idempotent demo fixture seed for components, suppliers, offers, BOMs, Marketplace records, and six derived RPPS projects; guarded local reset, schema validation, inspect, and FTS-aware data export commands are implemented.
+- [x] Kept the downloaded fixture importer as an explicit optional utility; guarded local reset, schema validation, inspect, and FTS-aware data export commands are implemented. Clean local and preview databases remain intentionally unpopulated for a separate data run.
 - [x] Started `npm run dev` on `127.0.0.1:8080`; verified health, major public/private API groups, and SPA deep-link fallback over HTTP.
 
 ## 2. Authentication and authorization
@@ -30,7 +30,7 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 ## 3. Product-domain vertical slices
 
 - [x] Components/manufacturers/suppliers/offers: D1 repositories/APIs, filters, numeric validation, region/manufacturer filters, save/compare (four same-category maximum), URL state, CSV/share/BOM actions, evidence/freshness, and honest demo labels.
-- [~] Projects/RPPS/BOMs: versioned RPPS schema/import/export, normalized persistence, publication, BOM versions/items/export/fork, repository-import boundary, review staging, administrator-gated organization ownership/visibility settings, and structured author/requirement/evidence/known-issue editing are implemented. Generated BOM scope stays synchronized with its project. Identity-linked maintainer and uploaded-media management remain limited.
+- [~] Projects/RPPS/BOMs: versioned RPPS schema/import/export, normalized persistence, publication, BOM versions/items/export/fork, repository-import boundary, review staging, administrator-gated organization ownership/visibility settings, structured author/requirement/evidence/known-issue editing, and R2-backed managed artifacts are implemented. Generated BOM scope stays synchronized with its project. Identity-linked maintainer management and semantic CAD/BOM diff breadth remain limited.
 - [~] Builds: D1 persistence, privacy, start-from-project, items/quantities/offers/status/cost, steps, problems/resolutions/decisions, version snapshots, files, export, dedicated firmware/configuration/calibration/test editors, and organization ownership/visibility settings are implemented. Organization creation, settings, membership, role, and suspension UX expose the server-enforced collaboration model.
 - [x] Community: D1 threads, structured types/data, linked entities, posts, reactions, bookmarks, reports, contributor stats, safe paths, reply anchors, and accepted-answer invariants are implemented and tested.
 - [~] Marketplace: persistent drafts/editing/publishing, seller/listing records, saves, wanted types, inquiries/messages/offers/reports/moderation schema, build/component prefills, and honest no-payment claims are implemented. Transaction-provider, expiration automation, and full moderation UI are intentionally absent.
@@ -38,23 +38,25 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 
 ## 4. Files, ingestion, search, and AI
 
-- [x] R2 upload initialization, nonce/token validation, size/MIME policy, generated keys, metadata, attachments, ownership, private/public reads, deletion, and scanner quarantine boundary are implemented and tested.
+- [x] R2 upload initialization, nonce/token validation, size/MIME/image-metadata policy, generated keys, metadata, attachments, ownership, private/public reads, deletion, project-version artifact linkage, and scanner quarantine boundary are implemented and tested.
 - [x] External ingestion has a versioned JSON Schema/example, service credential, size/schema validation, partial success, idempotency, raw records, record-specific staging, exact matches, withdrawal, audit/errors, and admin review. Canonical creation supports manufacturers, suppliers, components, offers, projects, BOMs, integrations, and evidence, with validated dependency ordering and atomic D1 promotion; teardown, commercial-robot, and Marketplace-reference inputs remain reviewed reference records by design.
 - [x] Indexed FTS search covers components, projects, manufacturers, suppliers, offers, visible builds, Marketplace, and Community with typed categories, filters, ranking, URL state, and pagination.
-- [~] AI runs only in the Worker with streamed provider abstraction, stored conversations/messages/tool calls/usage, authorized read tools, evidence retrieval, comparison, RPPS validation, build state, and confirmation-gated BOM/substitution/problem proposals. RFQ/sourcing-plan, resolution, and Marketplace-draft tools remain future breadth.
+- [~] AI runs only in the Worker through OpenRouter/DeepSeek V4 Pro with streamed responses, stored conversations/messages/tool calls/usage/cost, bounded spend, authorized read tools, evidence retrieval, comparison, RPPS validation, build state, and confirmation-gated BOM/substitution/problem proposals. RFQ/sourcing-plan, resolution, and Marketplace-draft tools remain future breadth.
+- [x] Stateless Streamable HTTP MCP exposes public read-only robotics search, component comparison, public project artifacts, and RPPS validation. Private/build/write tools are intentionally reserved for a future OAuth consent boundary.
 - [x] No Queue binding was added: current batches run within the bounded request path. Long-running production extraction/notification processing should introduce Queues only when measured duration requires it.
 
 ## 5. Release quality
 
 - [x] Unit tests cover comparison, RFQ normalization/storage safety, safe Community links, tags, and slugs.
 - [x] Worker tests run all migrations against isolated D1/R2 and cover health/FTS, auth sessions, authorization/isolation, builds/BOM export, build engineering records and attached-file checks, organization role changes and final-owner protection, Community accepted answers, notification generation/isolation/preferences, ingestion validation/idempotency, R2 authorization, Marketplace inquiry honesty, and AI provider failure.
-- [x] CI performs clean install, type-check, lint, contract validation, unit/Worker tests, clean D1 migrate/seed/schema validation, and production build.
+- [x] CI performs clean install, type-check, lint, contract validation, unit/Worker tests, clean unpopulated D1 migration/schema validation, and production build.
 - [x] Supabase/Lovable runtime code, packages, variables, migrations, generated types, stale Bun lockfile, and platform metadata were removed. The sanitized baseline archive/tag remains the rollback source.
 - [x] Production `vite build` and `wrangler deploy --dry-run` pass with a flattened `robopartpicker-production` configuration and D1/R2/assets bindings; no publish occurred.
-- [x] An isolated live preview is deployed at <https://robopartpicker-preview.ludomi2502.workers.dev> with a dedicated Worker, remote D1, R2, environment secrets, all nine migrations, labeled demo seed, and live auth/private-resource checks.
+- [x] An isolated live preview is deployed at <https://robopartpicker-preview.ludomi2502.workers.dev> with a dedicated Worker, remote D1, R2, environment secrets, all nine migrations, an intentionally empty catalog, and live auth/private-resource checks.
 - [ ] In-app browser control was unavailable in this session, so desktop/mobile visual inspection, accessibility automation, and browser-driven end-to-end flows remain unverified.
 - [ ] Production D1/R2 resources, real provider secrets, remote migrations, deployment, custom domain, and deployed health/auth/isolation checks require explicit production access and approval.
-- [x] Record validated local states in annotated checkpoint tags through `v0.2.4-organization-management`; production deployment remains separate.
+- [ ] Upgrade the coordinated AI SDK package family when a tested migration window is available; the current production audit reports five low-severity resource-consumption advisories whose fixes require multi-major upgrades.
+- [x] Record validated local states in annotated checkpoint tags through `v0.2.9-project-artifacts-ai-mcp`; production deployment remains separate.
 
 ## Downloaded baseline results (2026-07-19)
 
@@ -71,6 +73,6 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 
 - Raw prepared D1 repositories keep the large schema inspectable and avoid a second migration abstraction.
 - D1 `batch()` plus validation and schema triggers enforce cross-statement invariants where an interactive transaction is unavailable.
-- Local seed data is explicit demo data; production is not seeded by deployment scripts.
+- The legacy fixture seed is opt-in; clean local, preview, and production workflows remain unpopulated by default.
 - Repository content, scraped data, posts, uploads, and AI context are untrusted input and never instructions.
 - The large AI rendering/client chunk and 1.76 MB logo remain performance work; they do not invalidate correctness but should be code-split/optimized before traffic scale.
