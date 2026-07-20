@@ -1,7 +1,7 @@
 {
   "name": "robopartpicker",
   "private": true,
-  "version": "0.2.8",
+  "version": "0.2.9",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -25,7 +25,7 @@
     "db:migrate:local": "wrangler d1 migrations apply robopartpicker --local",
     "db:migrate:remote": "tsx scripts/apply-remote-migration-compat.ts --env production && wrangler d1 migrations apply DB --env production --remote",
     "db:migrate:preview": "tsx scripts/apply-remote-migration-compat.ts --env preview && wrangler d1 migrations apply DB --env preview --remote",
-    "db:init": "npm run db:migrate:local && npm run db:seed && npm run db:validate",
+    "db:init": "npm run db:migrate:local && npm run db:validate",
     "db:reset": "tsx scripts/reset-local-db.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:seed:preview": "tsx scripts/seed.ts --remote --env preview",
@@ -41,6 +41,7 @@
     "@ai-sdk/openai-compatible": "1.0.46",
     "@ai-sdk/react": "^2",
     "@hookform/resolvers": "^3.10.0",
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
-  Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu,
+  Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu, FileUp,
   Clock, DollarSign, Package, ListChecks, ShieldCheck, BookOpen, AlertTriangle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { deleteProject, downloadRpps, getProjectBySlug, updateProjectRpps, updateProjectScope, type ProjectRow } from "@/lib/projects";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
+import { attachFile, detachProjectFile, listProjectFiles, uploadFile, type FileKind, type ProjectFile } from "@/lib/api/files";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 
 export default function ProjectDetail() {
@@ -18,6 +19,10 @@ export default function ProjectDetail() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [managedFiles, setManagedFiles] = useState<ProjectFile[]>([]);
+  const [managedFilesLoading, setManagedFilesLoading] = useState(false);
+  const [fileBusy, setFileBusy] = useState<string | null>(null);
+  const projectId = p?.id;
 
   useEffect(() => {
     if (!slug) return;
@@ -31,6 +36,17 @@ export default function ProjectDetail() {
     organizationsApi.list(controller.signal).then((result) => setOrganizations(result.items)).catch(() => undefined);
     return () => controller.abort();
   }, [user]);
+
+  useEffect(() => {
+    if (!projectId) { setManagedFiles([]); return; }
+    let cancelled = false;
+    setManagedFilesLoading(true);
+    listProjectFiles(projectId)
+      .then((items) => { if (!cancelled) setManagedFiles(items); })
+      .catch((error) => { if (!cancelled) toast({ title: "Project files unavailable", description: errorMessage(error), variant: "destructive" }); })
+      .finally(() => { if (!cancelled) setManagedFilesLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectId]);
 
   if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
   if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
@@ -77,6 +93,45 @@ export default function ProjectDetail() {
       toast({ title: "Link copied", description: "Project URL copied to clipboard." });
     } catch (e: any) {
       toast({ title: "Copy failed", description: e?.message ?? "Clipboard unavailable.", variant: "destructive" });
+    }
+  };
+
+  const uploadManagedFile = async (file: File) => {
+    const kind = inferProjectFileKind(file);
+    const fileVisibility = p.visibility === "public" || p.visibility === "unlisted"
+      ? "public"
+      : p.organization_id ? "organization" : "private";
+    setFileBusy("upload");
+    try {
+      const uploaded = await uploadFile(file, kind, fileVisibility, p.organization_id ?? null);
+      if (uploaded.status !== "ready") throw new Error(`Upload is ${uploaded.status}; it cannot be attached until safety review completes.`);
+      await attachFile(uploaded.fileId, {
+        entityType: "project",
+        entityId: p.id,
+        purpose: kind === "image" ? "media" : kind,
+        relativePath: file.name,
+        altText: kind === "image" ? file.name : null,
+      });
+      setManagedFiles(await listProjectFiles(p.id));
+      toast({ title: "Project artifact uploaded", description: `${file.name} is stored in R2 and linked to this project version.` });
+    } catch (error) {
+      toast({ title: "Upload failed", description: errorMessage(error), variant: "destructive" });
+    } finally {
+      setFileBusy(null);
+    }
+  };
+
+  const detachManagedFile = async (file: ProjectFile) => {
+    if (!confirm(`Detach "${file.originalName}" from this project? The stored file will remain available to its owner.`)) return;
+    setFileBusy(file.id);
+    try {
+      await detachProjectFile(p.id, file.id);
+      setManagedFiles((current) => current.filter((item) => item.id !== file.id));
+      toast({ title: "Project artifact detached" });
+    } catch (error) {
+      toast({ title: "Detach failed", description: errorMessage(error), variant: "destructive" });
+    } finally {
+      setFileBusy(null);
     }
   };
 
@@ -409,9 +464,48 @@ export default function ProjectDetail() {
             </Section>
           )}
 
-          <Section title={`Files${files.length ? ` · ${files.length}` : ""}`}>
+          <Section
+            title={`Managed artifacts${managedFiles.length ? ` · ${managedFiles.length}` : ""}`}
+            right={canEditRpps && (
+              <label className={`btn-primary btn-sm inline-flex cursor-pointer items-center gap-1 ${fileBusy === "upload" ? "pointer-events-none opacity-50" : ""}`}>
+                <FileUp className="h-3.5 w-3.5" /> {fileBusy === "upload" ? "Uploading…" : "Upload"}
+                <input type="file" className="sr-only" disabled={fileBusy === "upload"} onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadManagedFile(file);
+                  event.target.value = "";
+                }} />
+              </label>
+            )}
+          >
+            {managedFilesLoading
+              ? <Empty>Loading managed project artifacts…</Empty>
+              : managedFiles.length === 0
+                ? <Empty>No managed artifacts. Upload CAD, BOMs, firmware, configuration, documents, or project media.</Empty>
+                : <div className="space-y-1.5 text-[12px]">
+                  {managedFiles.map((file) => (
+                    <div key={file.id} className="rounded border border-border p-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <a href={file.contentUrl} className="min-w-0 hover:text-primary">
+                          <div className="truncate font-medium">{file.relativePath ?? file.originalName}</div>
+                          <div className="mt-0.5 text-[10.5px] text-muted-foreground">
+                            {file.kind} · {formatProjectFileBytes(file.sizeBytes)} · {file.status} · {file.visibility}
+                          </div>
+                        </a>
+                        {canEditRpps && (
+                          <button type="button" className="btn-ghost btn-sm text-destructive" disabled={fileBusy === file.id} aria-label={`Detach ${file.originalName}`} onClick={() => void detachManagedFile(file)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>}
+            <p className="mt-2 text-[10.5px] text-muted-foreground">Stored in Cloudflare R2 and linked to the current project release. Detaching does not delete the owner’s stored file.</p>
+          </Section>
+
+          <Section title={`RPPS file references${files.length ? ` · ${files.length}` : ""}`}>
             {files.length === 0
-              ? <Empty>No files attached.</Empty>
+              ? <Empty>No external file references declared in the RPPS package.</Empty>
               : (
                 <FilesGrouped files={files} />
               )}
@@ -724,3 +818,24 @@ const FilesGrouped = ({ files }: { files: NonNullable<ProjectRow["rpps"]["files"
     </div>
   );
 };
+
+function inferProjectFileKind(file: File): FileKind {
+  const extension = file.name.split(".").at(-1)?.toLowerCase();
+  if (file.type.startsWith("image/")) return "image";
+  if (["step", "stp", "iges", "igs", "stl", "obj", "3mf"].includes(extension ?? "")) return "cad";
+  if (extension === "urdf") return "urdf";
+  if (extension === "mjcf") return "mjcf";
+  if (["csv", "xlsx"].includes(extension ?? "")) return "bom";
+  if (["bin", "hex", "uf2", "zip"].includes(extension ?? "")) return "firmware";
+  if (["yaml", "yml", "toml", "json", "xml"].includes(extension ?? "")) return "configuration";
+  if (["pdf", "md", "txt"].includes(extension ?? "")) return "document";
+  return "other";
+}
+
+function formatProjectFileBytes(value: number): string {
+  return value >= 1024 * 1024 ? `${(value / 1024 / 1024).toFixed(1)} MiB` : `${Math.max(1, Math.round(value / 1024))} KiB`;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unexpected error.";
+}

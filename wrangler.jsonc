@@ -7,7 +7,7 @@
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/files/*"]
+    "run_worker_first": ["/api/*", "/files/*", "/mcp"]
   },
   "d1_databases": [
     {
@@ -25,7 +25,11 @@
   ],
   "vars": {
     "APP_ENV": "development",
-    "APP_NAME": "RoboPartPicker"
+    "APP_NAME": "RoboPartPicker",
+    "AI_PROVIDER_URL": "https://openrouter.ai/api/v1",
+    "AI_MODEL": "deepseek/deepseek-v4-pro",
+    "AI_DAILY_TOKEN_LIMIT": "150000",
+    "AI_MAX_OUTPUT_TOKENS": "2048"
   },
   "secrets": {
     "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "INGESTION_SECRET"]
@@ -38,7 +42,7 @@
       "assets": {
         "binding": "ASSETS",
         "not_found_handling": "single-page-application",
-        "run_worker_first": ["/api/*", "/files/*"]
+        "run_worker_first": ["/api/*", "/files/*", "/mcp"]
       },
       "d1_databases": [
         {
@@ -56,7 +60,11 @@
       ],
       "vars": {
         "APP_ENV": "preview",
-        "APP_NAME": "RoboPartPicker"
+        "APP_NAME": "RoboPartPicker",
+        "AI_PROVIDER_URL": "https://openrouter.ai/api/v1",
+        "AI_MODEL": "deepseek/deepseek-v4-pro",
+        "AI_DAILY_TOKEN_LIMIT": "150000",
+        "AI_MAX_OUTPUT_TOKENS": "2048"
       },
       "secrets": {
         "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "INGESTION_SECRET"]
@@ -66,7 +74,7 @@
       "assets": {
         "binding": "ASSETS",
         "not_found_handling": "single-page-application",
-        "run_worker_first": ["/api/*", "/files/*"]
+        "run_worker_first": ["/api/*", "/files/*", "/mcp"]
       },
       "d1_databases": [
         {
@@ -84,7 +92,11 @@
       ],
       "vars": {
         "APP_ENV": "production",
-        "APP_NAME": "RoboPartPicker"
+        "APP_NAME": "RoboPartPicker",
+        "AI_PROVIDER_URL": "https://openrouter.ai/api/v1",
+        "AI_MODEL": "deepseek/deepseek-v4-pro",
+        "AI_DAILY_TOKEN_LIMIT": "150000",
+        "AI_MAX_OUTPUT_TOKENS": "2048"
       },
       "secrets": {
         "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "INGESTION_SECRET"]

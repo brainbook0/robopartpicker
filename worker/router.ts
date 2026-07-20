@@ -23,6 +23,7 @@ import { discoveryRoutes } from "./routes/discovery";
 import { notificationRoutes } from "./routes/notifications";
 import { adminRoutes } from "./routes/admin";
 import { apiRateLimit } from "./middleware/rate-limit";
+import { handleMcpRequest } from "./mcp";
 
 export const app = new Hono<AppBindings>();
 
@@ -31,6 +32,11 @@ app.use("/api/*", apiSecurityHeaders);
 app.use("/api/v1/*", apiRequestSizeLimit);
 app.use("/api/v1/*", apiRateLimit);
 app.use("/api/v1/*", requireSameOriginMutation);
+app.use("/mcp", requestId);
+app.use("/mcp", apiSecurityHeaders);
+app.use("/mcp", apiRateLimit);
+
+app.all("/mcp", (c) => handleMcpRequest(c.req.raw, c.env));
 
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
 app.route("/api", healthRoutes);

@@ -49,7 +49,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
     expect(Number(migrations?.value)).toBe(9);
-    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.2.8" });
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.2.9" });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
     const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
@@ -258,6 +258,50 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     ]);
   });
 
+  it("validates and manages authorized R2-backed project media", async () => {
+    const created = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      visibility: "private",
+      rpps: emptyRpps({ name: "Project Media Robot", slug: "project-media-robot" }),
+    }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const projectId = (await body<{ item: { id: string } }>(created)).item.id;
+
+    const invalidInit = await call("/api/v1/files/uploads", { method: "POST", body: jsonBody({ originalName: "invalid.png", mediaType: "image/png", sizeBytes: 8, kind: "image", visibility: "private" }) }, ownerCookie);
+    const invalidUpload = await body<{ file: { id: string }; upload: { url: string; token: string } }>(invalidInit);
+    const invalidBytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
+    const invalidStored = await call(invalidUpload.upload.url, { method: "PUT", headers: { "content-type": "image/png", "content-length": "8", "x-upload-token": invalidUpload.upload.token }, body: invalidBytes }, ownerCookie);
+    expect(invalidStored.status).toBe(422);
+    expect(await env.DB.prepare("SELECT status FROM files WHERE id = ?1").bind(invalidUpload.file.id).first()).toEqual({ status: "rejected" });
+
+    const initialized = await call("/api/v1/files/uploads", { method: "POST", body: jsonBody({ originalName: "assembly.png", mediaType: "image/png", sizeBytes: 24, kind: "image", visibility: "private" }) }, ownerCookie);
+    expect(initialized.status).toBe(201);
+    const upload = await body<{ file: { id: string }; upload: { url: string; token: string } }>(initialized);
+    const pngHeader = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1, 0, 0, 0, 1]);
+    const stored = await call(upload.upload.url, { method: "PUT", headers: { "content-type": "image/png", "content-length": "24", "x-upload-token": upload.upload.token }, body: pngHeader }, ownerCookie);
+    expect(stored.status).toBe(201);
+    const unsafePath = await call(`/api/v1/files/${upload.file.id}/attachments`, { method: "POST", body: jsonBody({ entityType: "project", entityId: projectId, purpose: "media", relativePath: "../private/assembly.png", altText: "Robot arm assembly fixture" }) }, ownerCookie);
+    expect(unsafePath.status).toBe(422);
+    expect(await env.DB.prepare("SELECT COUNT(*) AS value FROM project_files WHERE project_id = ?1 AND file_id = ?2").bind(projectId, upload.file.id).first()).toEqual({ value: 0 });
+    const attached = await call(`/api/v1/files/${upload.file.id}/attachments`, { method: "POST", body: jsonBody({ entityType: "project", entityId: projectId, purpose: "media", relativePath: "images/assembly.png", altText: "Robot arm assembly fixture" }) }, ownerCookie);
+    expect(attached.status).toBe(201);
+    expect(await env.DB.prepare("SELECT alt_text FROM project_media WHERE project_id = ?1 AND file_id = ?2").bind(projectId, upload.file.id).first()).toEqual({ alt_text: "Robot arm assembly fixture" });
+
+    const deniedList = await call(`/api/v1/projects/${projectId}/files`, {}, otherCookie);
+    expect(deniedList.status).toBe(403);
+    const listed = await call(`/api/v1/projects/${projectId}/files`, {}, ownerCookie);
+    expect(listed.status).toBe(200);
+    expect((await body<{ items: Array<Record<string, unknown>> }>(listed)).items).toEqual([
+      expect.objectContaining({ id: upload.file.id, purpose: "media", relativePath: "images/assembly.png", altText: "Robot arm assembly fixture", status: "ready" }),
+    ]);
+
+    const deniedDetach = await call(`/api/v1/projects/${projectId}/files/${upload.file.id}`, { method: "DELETE" }, otherCookie);
+    expect(deniedDetach.status).toBe(403);
+    const detached = await call(`/api/v1/projects/${projectId}/files/${upload.file.id}`, { method: "DELETE" }, ownerCookie);
+    expect(detached.status).toBe(204);
+    expect(await env.DB.prepare("SELECT COUNT(*) AS value FROM project_files WHERE project_id = ?1 AND file_id = ?2").bind(projectId, upload.file.id).first()).toEqual({ value: 0 });
+    expect(await env.DB.prepare("SELECT status FROM files WHERE id = ?1").bind(upload.file.id).first()).toEqual({ status: "ready" });
+  });
+
   it("persists Marketplace inquiry records without claiming payment processing", async () => {
     const draft = await call("/api/v1/marketplace", { method: "POST", body: jsonBody({ listingType: "sell", title: "TM-42 actuator test unit", description: "Used for integration testing with measured encoder output.", category: "actuator", conditionGrade: "B", currency: "USD", price: 125, quantity: 1, region: "US", visibility: "public" }) }, ownerCookie);
     expect(draft.status).toBe(201); const listing = (await body<{ item: { id: string; version: number } }>(draft)).item;
@@ -296,6 +340,28 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(conversation.status).toBe(201); const id = (await body<{ item: { id: string } }>(conversation)).item.id;
     const response = await call("/api/v1/ai/chat", { method: "POST", body: jsonBody({ threadId: id, messages: [{ id: crypto.randomUUID(), role: "user", parts: [{ type: "text", text: "Find an actuator" }] }] }) }, ownerCookie);
     expect(response.status).toBe(503); expect((await body<{ error: { code: string } }>(response)).error.code).toBe("AI_PROVIDER_NOT_CONFIGURED");
+  });
+
+  it("serves stateless read-only robotics tools over MCP Streamable HTTP", async () => {
+    const headers = { accept: "application/json, text/event-stream", "content-type": "application/json" };
+    const initialized = await call("/mcp", { method: "POST", headers, body: jsonBody({
+      jsonrpc: "2.0", id: 1, method: "initialize",
+      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "worker-test", version: "1.0.0" } },
+    }) });
+    expect(initialized.status).toBe(200);
+    expect(await body<{ result: { serverInfo: { name: string } } }>(initialized)).toMatchObject({ result: { serverInfo: { name: "RoboPartPicker" } } });
+
+    const listed = await call("/mcp", { method: "POST", headers, body: jsonBody({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }) });
+    expect(listed.status).toBe(200);
+    const tools = (await body<{ result: { tools: Array<{ name: string }> } }>(listed)).result.tools.map((tool) => tool.name);
+    expect(tools).toEqual(expect.arrayContaining(["search_components", "compare_components", "search_projects", "get_project", "search_suppliers", "validate_rpps"]));
+
+    const searched = await call("/mcp", { method: "POST", headers, body: jsonBody({
+      jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "search_components", arguments: { query: "TM-42", limit: 5 } },
+    }) });
+    expect(searched.status).toBe(200);
+    const result = await body<{ result: { structuredContent: { items: Array<{ id: string }> } } }>(searched);
+    expect(result.result.structuredContent.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: "c-test" })]));
   });
 
   it("persists and revokes Better Auth sessions across sign-out and sign-in", async () => {

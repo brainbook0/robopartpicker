@@ -12,6 +12,10 @@ import { recordAuditEvent } from "../services/audit";
 
 const kinds = ["image", "cad", "urdf", "mjcf", "bom", "document", "firmware", "configuration", "test_evidence", "attachment", "other"] as const;
 const visibility = ["private", "organization", "public"] as const;
+const projectRelativePath = z.string().trim().min(1).max(500).refine((value) => {
+  if (value.startsWith("/") || value.includes("\\") || /^[a-z]:/iu.test(value) || /[\u0000-\u001f\u007f]/u.test(value)) return false;
+  return value.split("/").every((segment) => segment !== "" && segment !== "." && segment !== "..");
+}, "Use a portable project-relative path without absolute paths, backslashes, or traversal segments.");
 const initSchema = z.object({
   originalName: z.string().trim().min(1).max(255), mediaType: z.string().trim().min(1).max(150),
   sizeBytes: z.number().int().positive(), kind: z.enum(kinds), visibility: z.enum(visibility).default("private"),
@@ -20,7 +24,7 @@ const initSchema = z.object({
 const attachSchema = z.object({
   entityType: z.enum(["build", "project", "marketplace_listing"]), entityId: z.string().min(1).max(200),
   purpose: z.string().trim().min(1).max(100), buildStepId: z.string().uuid().nullable().optional(),
-  relativePath: z.string().trim().max(500).nullable().optional(), altText: z.string().trim().max(500).nullable().optional(),
+  relativePath: projectRelativePath.nullable().optional(), altText: z.string().trim().max(500).nullable().optional(),
 }).strict();
 
 const KIND_LIMITS: Record<(typeof kinds)[number], number> = {
@@ -95,7 +99,24 @@ fileRoutes.put("/files/uploads/:intentId", loadAuthSession, requireAuth, async (
   const contentLength = Number(c.req.header("content-length") ?? -1);
   if (contentType !== intent.expected_media_type || contentLength !== intent.expected_size_bytes) throw new AppError(422, "UPLOAD_METADATA_MISMATCH", "Upload size and media type must match the initialization request.");
   if (!c.req.raw.body) throw new AppError(422, "UPLOAD_BODY_REQUIRED", "The file body is required.");
-  const object = await c.env.FILES.put(intent.object_key, c.req.raw.body, {
+  let uploadBody: ReadableStream<Uint8Array> | Uint8Array = c.req.raw.body;
+  let imageMetadata: { width: number; height: number } | null = null;
+  if (contentType.startsWith("image/")) {
+    const bytes = new Uint8Array(await c.req.raw.arrayBuffer());
+    try {
+      imageMetadata = validateImageMetadata(bytes, contentType);
+    } catch (error) {
+      const now = new Date().toISOString();
+      await c.env.DB.batch([
+        c.env.DB.prepare("UPDATE file_upload_intents SET consumed_at = ?1 WHERE id = ?2 AND consumed_at IS NULL").bind(now, intent.id),
+        c.env.DB.prepare("UPDATE files SET status = 'rejected', metadata_json = ?1, updated_at = ?2 WHERE id = ?3")
+          .bind(JSON.stringify({ rejection: "invalid_image_metadata" }), now, intent.file_id),
+      ]);
+      throw error;
+    }
+    uploadBody = bytes;
+  }
+  const object = await c.env.FILES.put(intent.object_key, uploadBody, {
     httpMetadata: { contentType, contentDisposition: disposition(intent.original_name, contentType), cacheControl: intent.visibility === "public" ? "public, max-age=3600" : "private, no-store" },
     customMetadata: { fileId: intent.file_id, ownerUserId: userId, kind: intent.kind },
   });
@@ -110,7 +131,7 @@ fileRoutes.put("/files/uploads/:intentId", loadAuthSession, requireAuth, async (
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE file_upload_intents SET consumed_at = ?1 WHERE id = ?2 AND consumed_at IS NULL").bind(now, intent.id),
     c.env.DB.prepare("UPDATE files SET status = ?1, metadata_json = ?2, updated_at = ?3 WHERE id = ?4")
-      .bind(scan.status, JSON.stringify({ scanStatus: scan.scanStatus, r2Etag: object.etag, uploadedAt: object.uploaded.toISOString() }), now, intent.file_id),
+      .bind(scan.status, JSON.stringify({ scanStatus: scan.scanStatus, r2Etag: object.etag, uploadedAt: object.uploaded.toISOString(), ...(imageMetadata ? { image: imageMetadata } : {}) }), now, intent.file_id),
   ]);
   await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "file.upload", entityType: "file", entityId: intent.file_id, requestId: c.get("requestId"), after: { status: scan.status, scanStatus: scan.scanStatus, sizeBytes: object.size } });
   return c.json({ fileId: intent.file_id, status: scan.status, scanStatus: scan.scanStatus, accessUrl: `/api/v1/files/${intent.file_id}/content` }, 201);
@@ -143,10 +164,26 @@ fileRoutes.post("/files/:id/attachments", loadAuthSession, requireAuth, async (c
   } else if (body.entityType === "project") {
     const project = await new ProjectsRepository(c.env.DB).find(body.entityId); if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
     await assertScopedWrite(c.env.DB, userId, project.row, "engineer");
-    await c.env.DB.prepare(`INSERT INTO project_files (project_id, project_version_id, file_id, purpose, relative_path, created_at)
-      VALUES (?1, (SELECT current_version_id FROM projects WHERE id = ?1), ?2, ?3, ?4, ?5)
-      ON CONFLICT(project_id, file_id) DO UPDATE SET purpose = excluded.purpose, relative_path = excluded.relative_path`)
-      .bind(project.row.id, file.id, body.purpose, body.relativePath ?? null, now).run();
+    if (project.row.organization_id !== file.organization_id) {
+      throw new AppError(422, "FILE_SCOPE_MISMATCH", "Project files must use the same organization scope as the project.");
+    }
+    const statements: D1PreparedStatement[] = [
+      c.env.DB.prepare(`INSERT INTO project_files (project_id, project_version_id, file_id, purpose, relative_path, created_at)
+        VALUES (?1, (SELECT current_version_id FROM projects WHERE id = ?1), ?2, ?3, ?4, ?5)
+        ON CONFLICT(project_id, file_id) DO UPDATE SET project_version_id = excluded.project_version_id,
+          purpose = excluded.purpose, relative_path = excluded.relative_path`)
+        .bind(project.row.id, file.id, body.purpose, body.relativePath ?? null, now),
+      c.env.DB.prepare("DELETE FROM project_media WHERE project_id = ?1 AND file_id = ?2").bind(project.row.id, file.id),
+    ];
+    if (body.purpose === "media") {
+      if (!file.media_type.startsWith("image/")) throw new AppError(422, "PROJECT_MEDIA_IMAGE_REQUIRED", "Project media must be a validated image.");
+      const max = await c.env.DB.prepare("SELECT COALESCE(MAX(sort_order), -1) AS value FROM project_media WHERE project_id = ?1")
+        .bind(project.row.id).first<{ value: number }>();
+      statements.push(c.env.DB.prepare(`INSERT INTO project_media
+        (id, project_id, file_id, alt_text, sort_order, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`)
+        .bind(crypto.randomUUID(), project.row.id, file.id, body.altText ?? null, Number(max?.value ?? -1) + 1, now));
+    }
+    await c.env.DB.batch(statements);
   } else {
     const listing = await c.env.DB.prepare("SELECT id, seller_user_id, organization_id FROM marketplace_listings WHERE id = ?1 AND deleted_at IS NULL").bind(body.entityId).first<{ id: string; seller_user_id: string | null; organization_id: string | null }>();
     if (!listing) throw new AppError(404, "LISTING_NOT_FOUND", "Marketplace listing not found.");
@@ -228,3 +265,67 @@ function disposition(name: string, mediaType: string): string { return `${mediaT
 function randomToken(): string { const bytes = crypto.getRandomValues(new Uint8Array(32)); return btoa(String.fromCharCode(...bytes)).replace(/\+/gu, "-").replace(/\//gu, "_").replace(/=+$/gu, ""); }
 async function sha256(value: string): Promise<string> { return [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))].map((byte) => byte.toString(16).padStart(2, "0")).join(""); }
 function timingSafeEqual(left: string, right: string): boolean { if (left.length !== right.length) return false; let result = 0; for (let index = 0; index < left.length; index += 1) result |= left.charCodeAt(index) ^ right.charCodeAt(index); return result === 0; }
+
+function validateImageMetadata(bytes: Uint8Array, mediaType: string): { width: number; height: number } {
+  let dimensions: { width: number; height: number } | null = null;
+  if (mediaType === "image/png") dimensions = pngDimensions(bytes);
+  else if (mediaType === "image/gif") dimensions = gifDimensions(bytes);
+  else if (mediaType === "image/jpeg") dimensions = jpegDimensions(bytes);
+  else if (mediaType === "image/webp") dimensions = webpDimensions(bytes);
+  if (!dimensions || dimensions.width < 1 || dimensions.height < 1 || dimensions.width > 50_000 || dimensions.height > 50_000) {
+    throw new AppError(422, "INVALID_IMAGE_METADATA", "The uploaded image header or dimensions are invalid.");
+  }
+  return dimensions;
+}
+
+function pngDimensions(bytes: Uint8Array) {
+  const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (bytes.length < 24 || !signature.every((value, index) => bytes[index] === value)
+    || String.fromCharCode(...bytes.slice(12, 16)) !== "IHDR") return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+function gifDimensions(bytes: Uint8Array) {
+  if (bytes.length < 10 || !["GIF87a", "GIF89a"].includes(String.fromCharCode(...bytes.slice(0, 6)))) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint16(6, true), height: view.getUint16(8, true) };
+}
+
+function jpegDimensions(bytes: Uint8Array) {
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  const sof = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+  let offset = 2;
+  while (offset + 3 < bytes.length) {
+    if (bytes[offset] !== 0xff) return null;
+    while (bytes[offset] === 0xff) offset += 1;
+    const marker = bytes[offset++];
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (offset + 1 >= bytes.length) return null;
+    const length = (bytes[offset] << 8) | bytes[offset + 1];
+    if (length < 2 || offset + length > bytes.length) return null;
+    if (sof.has(marker) && length >= 7) {
+      return { height: (bytes[offset + 3] << 8) | bytes[offset + 4], width: (bytes[offset + 5] << 8) | bytes[offset + 6] };
+    }
+    offset += length;
+  }
+  return null;
+}
+
+function webpDimensions(bytes: Uint8Array) {
+  if (bytes.length < 30 || String.fromCharCode(...bytes.slice(0, 4)) !== "RIFF" || String.fromCharCode(...bytes.slice(8, 12)) !== "WEBP") return null;
+  const format = String.fromCharCode(...bytes.slice(12, 16));
+  if (format === "VP8X") return {
+    width: 1 + bytes[24] + (bytes[25] << 8) + (bytes[26] << 16),
+    height: 1 + bytes[27] + (bytes[28] << 8) + (bytes[29] << 16),
+  };
+  if (format === "VP8 " && bytes[23] === 0x9d && bytes[24] === 0x01 && bytes[25] === 0x2a) return {
+    width: (bytes[26] | (bytes[27] << 8)) & 0x3fff,
+    height: (bytes[28] | (bytes[29] << 8)) & 0x3fff,
+  };
+  if (format === "VP8L" && bytes[20] === 0x2f) {
+    return { width: 1 + bytes[21] + ((bytes[22] & 0x3f) << 8), height: 1 + (bytes[23] >> 2) + ((bytes[24] & 0x0f) << 6) };
+  }
+  return null;
+}

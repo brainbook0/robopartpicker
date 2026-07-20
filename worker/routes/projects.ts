@@ -5,7 +5,7 @@ import type { AppBindings } from "../env";
 import { ProjectsRepository } from "../db/repositories/projects";
 import { AppError, parsePositiveInt } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
-import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId } from "../middleware/authorization";
+import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId, organizationRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
 
@@ -100,6 +100,41 @@ projectRoutes.post("/projects/import/repository", loadAuthSession, requireAuth, 
   ]);
   await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "project.repository_import.draft", entityType: "import_job", entityId: jobId, requestId: c.get("requestId"), after: { sourceUrl: repositoryUrl, recordId } });
   return c.json({ draft, importJobId: jobId, reviewRequired: true });
+});
+
+projectRoutes.get("/projects/:id/files", loadAuthSession, async (c) => {
+  const repository = new ProjectsRepository(c.env.DB);
+  const project = await repository.find(c.req.param("id"));
+  if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+  const userId = c.get("authSession")?.user?.id ?? null;
+  await assertScopedRead(c.env.DB, userId, project.row);
+  const privileged = Boolean(userId && (
+    project.row.owner_user_id === userId
+    || (project.row.organization_id && await organizationRole(c.env.DB, userId, project.row.organization_id))
+  ));
+  const items = await repository.listFiles(project.row.id, !privileged);
+  return c.json({ items, total: items.length });
+});
+
+projectRoutes.delete("/projects/:id/files/:fileId", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  const repository = new ProjectsRepository(c.env.DB);
+  const project = await repository.find(c.req.param("id"));
+  if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+  await assertScopedWrite(c.env.DB, userId, project.row, "engineer");
+  if (!(await repository.detachFile(project.row.id, c.req.param("fileId")))) {
+    throw new AppError(404, "PROJECT_FILE_NOT_FOUND", "That file is not attached to this project.");
+  }
+  await recordAuditEvent(c.env.DB, {
+    actorUserId: userId,
+    organizationId: project.row.organization_id,
+    action: "project.file.detach",
+    entityType: "project",
+    entityId: project.row.id,
+    requestId: c.get("requestId"),
+    before: { fileId: c.req.param("fileId") },
+  });
+  return c.body(null, 204);
 });
 
 projectRoutes.get("/projects/:id", loadAuthSession, async (c) => {

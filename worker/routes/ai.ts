@@ -79,6 +79,13 @@ aiRoutes.post("/ai/chat", loadAuthSession, requireAuth, async (c) => {
   const recent = await c.env.DB.prepare(`SELECT COUNT(*) AS value FROM ai_messages am JOIN ai_conversations ac ON ac.id = am.conversation_id
     WHERE ac.user_id = ?1 AND am.role = 'user' AND am.created_at >= ?2`).bind(userId, new Date(Date.now() - 60_000).toISOString()).first<{ value: number }>();
   if (Number(recent?.value ?? 0) >= 20) throw new AppError(429, "AI_RATE_LIMITED", "Too many assistant requests; retry in one minute.");
+  const dailyLimit = positiveInteger(c.env.AI_DAILY_TOKEN_LIMIT, 150_000, 10_000, 10_000_000);
+  const dailyUsage = await c.env.DB.prepare(`SELECT COALESCE(SUM(input_tokens + output_tokens), 0) AS value
+    FROM ai_usage WHERE user_id = ?1 AND created_at >= ?2`)
+    .bind(userId, new Date(Date.now() - 24 * 60 * 60_000).toISOString()).first<{ value: number }>();
+  if (Number(dailyUsage?.value ?? 0) >= dailyLimit) {
+    throw new AppError(429, "AI_DAILY_LIMIT_REACHED", "The assistant's rolling 24-hour token limit has been reached.");
+  }
   const messages = body.messages as UIMessage[];
   const lastUser = [...messages].reverse().find((message) => message.role === "user");
   if (!lastUser) throw new AppError(422, "USER_MESSAGE_REQUIRED", "A user message is required.");
@@ -93,16 +100,30 @@ aiRoutes.post("/ai/chat", loadAuthSession, requireAuth, async (c) => {
 
   const providerUrl = new URL(c.env.AI_PROVIDER_URL);
   if (c.env.APP_ENV === "production" && providerUrl.protocol !== "https:") throw new AppError(503, "AI_PROVIDER_URL_UNSAFE", "Production AI providers must use HTTPS.");
-  const provider = createOpenAICompatible({ name: "configured", baseURL: providerUrl.toString().replace(/\/$/u, ""), apiKey: c.env.AI_PROVIDER_KEY, includeUsage: true });
+  const provider = createOpenAICompatible({
+    name: "openrouter",
+    baseURL: providerUrl.toString().replace(/\/$/u, ""),
+    apiKey: c.env.AI_PROVIDER_KEY,
+    includeUsage: true,
+    headers: { "HTTP-Referer": c.env.BETTER_AUTH_URL, "X-OpenRouter-Title": c.env.APP_NAME },
+  });
   const tools = createTools(c.env.DB, userId, conversation.id);
   const result = streamText({
     model: provider.chatModel(c.env.AI_MODEL), system: SYSTEM,
-    messages: await convertToModelMessages(messages), tools, stopWhen: stepCountIs(12), abortSignal: c.req.raw.signal,
+    messages: await convertToModelMessages(messages),
+    tools,
+    stopWhen: stepCountIs(8),
+    maxOutputTokens: positiveInteger(c.env.AI_MAX_OUTPUT_TOKENS, 2_048, 256, 16_384),
+    maxRetries: 0,
+    abortSignal: c.req.raw.signal,
     onFinish: async ({ usage }) => {
+      const inputTokens = usage.inputTokens ?? 0;
+      const outputTokens = usage.outputTokens ?? 0;
       await c.env.DB.prepare(`INSERT INTO ai_usage
         (id, conversation_id, user_id, provider, model, input_tokens, output_tokens, estimated_cost_microunits, currency, request_id, created_at)
-        VALUES (?1, ?2, ?3, 'configured', ?4, ?5, ?6, 0, 'USD', ?7, ?8)`)
-        .bind(crypto.randomUUID(), conversation.id, userId, c.env.AI_MODEL, usage.inputTokens ?? 0, usage.outputTokens ?? 0, c.get("requestId"), new Date().toISOString()).run();
+        VALUES (?1, ?2, ?3, 'openrouter', ?4, ?5, ?6, ?7, 'USD', ?8, ?9)`)
+        .bind(crypto.randomUUID(), conversation.id, userId, c.env.AI_MODEL, inputTokens, outputTokens,
+          estimatedCostMicrounits(c.env.AI_MODEL!, inputTokens, outputTokens), c.get("requestId"), new Date().toISOString()).run();
     },
   });
   c.executionCtx.waitUntil(result.consumeStream());
@@ -242,3 +263,13 @@ async function assertBuildWritable(db: D1Database, userId: string, buildId: stri
 async function ownedConversation(db: D1Database, userId: string, id: string) { const row = await db.prepare("SELECT * FROM ai_conversations WHERE id = ?1 AND user_id = ?2 AND status <> 'deleted'").bind(id, userId).first<{ id: string; title: string } & Record<string, unknown>>(); if (!row) throw new AppError(404, "AI_CONVERSATION_NOT_FOUND", "Conversation not found."); return row; }
 function safeJson(value: string, fallback: unknown) { try { return JSON.parse(value) as unknown; } catch { return fallback; } }
 function extractText(message: UIMessage): string { return message.parts.map((part) => part.type === "text" ? part.text : "").join(" ").trim(); }
+
+function positiveInteger(value: string | undefined, fallback: number, minimum: number, maximum: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= minimum && parsed <= maximum ? parsed : fallback;
+}
+
+function estimatedCostMicrounits(model: string, inputTokens: number, outputTokens: number): number {
+  if (model === "deepseek/deepseek-v4-pro") return Math.round(inputTokens * 0.435 + outputTokens * 0.87);
+  return 0;
+}

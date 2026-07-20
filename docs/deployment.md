@@ -10,18 +10,25 @@ The `preview` Wrangler environment is a full-stack Worker deployment with isolat
 - D1: `robopartpicker-preview`
 - R2: `robopartpicker-preview-files`
 - URL: <https://robopartpicker-preview.ludomi2502.workers.dev>
-- Verified checkpoint Worker version: `c70b90dd-9fc0-4187-99a5-830268805c49`
+- Verified checkpoint Worker version: `93684800-3daf-43e3-9bb2-a941029b39`
 
-It serves the React assets and `/api/*` from one origin. Apply and seed the preview database explicitly, then deploy:
+It serves the React assets, `/api/*`, and the public read-only `/mcp` endpoint from one origin. Apply migrations, validate the intentionally empty catalog, then deploy:
 
 ```powershell
 npm run db:migrate:preview
-npm run db:seed:preview
 npm run db:validate:preview
 npm run deploy:preview
 ```
 
-Preview secrets are environment-specific and must be configured with `--env preview`. Fixture seeding is intentional in preview only; production remains unseeded by default.
+Preview secrets are environment-specific and must be configured with `--env preview`. Catalog population is a separate run; neither preview nor production is seeded by default.
+
+After rotating the OpenRouter key that was shared through chat, enter the replacement without placing it on the command line:
+
+```powershell
+npx wrangler secret put AI_PROVIDER_KEY --env preview
+```
+
+Wrangler prompts for the value interactively. Do not paste the key into source, `.dev.vars.example`, shell arguments, or documentation.
 
 The preview deploy script passes `--env preview` explicitly. It cannot silently deploy the base or production configuration.
 
@@ -45,9 +52,10 @@ At minimum, configure:
 npx wrangler secret put BETTER_AUTH_SECRET --env production
 npx wrangler secret put BETTER_AUTH_URL --env production
 npx wrangler secret put INGESTION_SECRET --env production
+npx wrangler secret put AI_PROVIDER_KEY --env production
 ```
 
-These three names are also declared under `secrets.required` in the production Wrangler environment. An actual deployment fails closed if any is missing. Optional provider credentials are set only when their integration is enabled.
+The authentication and ingestion names are declared under `secrets.required` in the production Wrangler environment. The AI route fails closed when its provider key is absent. OpenRouter's base URL and `deepseek/deepseek-v4-pro` model ID are non-secret Wrangler vars; the credential is entered only through Wrangler's interactive secret prompt.
 
 Add email provider, OAuth, repository provider, AI provider, and malware scanner credentials only for features that are configured. Secrets are environment-specific, so every production secret command includes `--env production`. Never put them in `vars`, `VITE_*`, source control, or client code.
 
@@ -67,7 +75,7 @@ The normal `npm run build` selects the named Cloudflare `production` environment
 
 ## Verification
 
-After deploy, verify the health endpoint, SPA deep links, signup/sign-in/sign-out, private-resource isolation, organization roles, file authorization, malformed/duplicate imports, AI provider failure behavior, and the custom domain. A deploy command alone is not evidence that deployment succeeded.
+After deploy, verify the health endpoint, SPA deep links, signup/sign-in/sign-out, private-resource isolation, organization roles, file authorization, malformed/duplicate imports, AI provider failure behavior, MCP initialization/tool discovery, and the custom domain. A deploy command alone is not evidence that deployment succeeded.
 
 Cloudflare references:
 

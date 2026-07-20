@@ -28,7 +28,7 @@ jobs:
       - run: npm run contracts:validate
       - run: npm run test:unit
       - run: npm run test:worker
-      - name: Rebuild and seed a clean local D1 database
+      - name: Rebuild a clean unpopulated local D1 database
         run: npm run db:reset
       - run: npm run db:validate
       - run: npm run build
