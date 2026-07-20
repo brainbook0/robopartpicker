@@ -34,6 +34,8 @@ Marketplace buyer/seller offers and supplier commercial offers are deliberately 
 
 Each published RPPS package remains intact as validated JSON in `project_versions`. Queryable technical records are also normalized: assembly steps populate `project_steps`, known issues populate `project_known_issues`, required tools and skills populate `project_requirements`, and evidence produces provenance rows in `evidence` plus project-scoped `evidence_claims`. Older version rows are retained for history.
 
+Development and preview seeding derives six `is_demo = 1` projects from the downloaded BOM/component fixtures and links each source BOM to its project. The generated descriptions and UI labels explicitly state that these are examples rather than validated instructions or live community publications. Production deployment never invokes the fixture seed command automatically.
+
 ## Authorization invariants
 
 Private project/build/file/marketplace/import/message reads require ownership, membership with a permitted role, or a platform moderation policy. Organization membership is unique per user and organization. Organization owner is a distinct role and the last active owner cannot be removed without an ownership transfer.

@@ -16,7 +16,7 @@ Status legend: `[x]` implemented and directly verified, `[~]` implemented founda
 - [x] Configured one same-origin Worker, Worker-first `/api/*`, static assets, SPA fallback, local `DB`/`FILES`, and a distinct flattened production environment.
 - [x] Added typed bindings, request IDs, JSON errors, validation, security headers, request limits, same-origin mutation checks, D1 rate limiting, and audit events.
 - [x] Created and clean-applied nine sequential D1 migrations: 112 tables including Better Auth, all requested product domains, indexes, constraints, triggers, and FTS5 search.
-- [x] Added idempotent demo fixture seed, guarded local reset, schema validation, inspect, and FTS-aware data export commands.
+- [x] Added idempotent demo fixture seed for components, suppliers, offers, BOMs, Marketplace records, and six derived RPPS projects; guarded local reset, schema validation, inspect, and FTS-aware data export commands are implemented.
 - [x] Started `npm run dev` on `127.0.0.1:8080`; verified health, major public/private API groups, and SPA deep-link fallback over HTTP.
 
 ## 2. Authentication and authorization

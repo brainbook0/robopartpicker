@@ -23,6 +23,7 @@ export type ProjectRow = {
   reproducibility_score: number | null;
   rpps_version: string;
   rpps: RppsPackage;
+  is_demo: boolean;
   created_at: string;
   updated_at: string;
 };
