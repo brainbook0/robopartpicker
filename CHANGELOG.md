@@ -2,6 +2,32 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.4.0] - 2026-07-20
+
+### Added
+
+- Universal deterministic project analysis for public GitHub repositories, portable/legacy RPPS, CSV/JSON/YAML BOMs, URDF, and bounded ZIP project packages stored privately in R2. Imports inventory source artifacts, preserve provenance, generate a portable draft, and produce the progressive buildability scorecard without executing or treating imported content as instructions.
+- Anonymous import analysis for bounded text inputs, authenticated owner-only ZIP analysis, strict canonical GitHub URLs, archive traversal/expansion limits, and explicit staging for saved repository imports.
+- OAuth 2.1 authorization-server support through Better Auth with PKCE, public dynamic client registration, short-lived JWT access tokens, refresh tokens, scoped consent, protected-resource metadata, and session-linked revocation.
+- Authenticated private `/mcp/private` tools for projects, exact releases, builds, release collaboration, and confirmation-gated build mutations. The public `/mcp` remains stateless and read-only.
+- AI-assisted, review-before-apply form drafting for projects, Community threads, Marketplace listings/wanted requests, build engineering records, and RPPS change proposals.
+- Exact-release build passports pinned to the immutable RPPS release ID, version, and package hash, with stable mappings into editable build items and procedure steps.
+- Evidence-backed release outcomes, server-derived maintainer/independent status, Structured/Tested/Reproduced/Repeated levels, honest separate freshness status, structured change proposals and maintainer review, draft publication, and stable-ID semantic release diffs.
+- D1 migrations `0011_oauth_provider_and_private_mcp.sql` and `0012_rpps_release_collaboration.sql`.
+
+### Changed
+
+- Project creation is private by default, permits analysis before sign-in, and offers GitHub, RPPS/BOM/URDF/ZIP, manual, and legacy RPPS JSON entry paths in the existing yellow/neutral interface.
+- Health metadata now advertises public/private MCP and tokenless versus token-enhanced repository import capabilities separately.
+- Zod is pinned to 4.4.3 for the Better Auth OAuth provider and MCP/AI schema stack; `fflate` provides Worker-compatible bounded ZIP extraction.
+
+### Security
+
+- Private MCP validates issuer, audience, scope, signature, and the live Better Auth session inside the Worker; sign-out or session deletion revokes MCP access.
+- AI and MCP mutations remain inert proposals until literal user confirmation. Release-change proposals do not mutate published packages; accepted changes are incorporated only through a new immutable release.
+- Secret values were scanned against the browser bundle with zero matches. Cloudflare's build-time `.dev.vars` copy remains ignored, untracked, preview-only, and outside the static client directory.
+- The isolated empty-data Cloudflare preview was migrated, deployed, and smoke-tested at Worker version `fe68d7f1-25e9-40ea-a6aa-fbcd21011e8b`.
+
 ## [0.3.0] - 2026-07-19
 
 ### Added

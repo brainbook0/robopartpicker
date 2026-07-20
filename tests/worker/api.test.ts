@@ -1,5 +1,6 @@
 import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
+import { strToU8, zipSync } from "fflate";
 import { emptyRpps } from "../../src/lib/rpps/schema";
 
 const origin = "https://example.com";
@@ -94,8 +95,8 @@ beforeAll(async () => {
 describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
-    expect(Number(migrations?.value)).toBe(10);
-    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.3.0" });
+    expect(Number(migrations?.value)).toBe(12);
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.4.0" });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
     const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
@@ -211,6 +212,102 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const content = await call(`/api/v1/files/${upload.file.id}/content`, {}, ownerCookie); expect(content.status).toBe(200); expect(await content.text()).toBe("hello");
   });
 
+  it("analyzes portable RPPS, BOM, and URDF inputs anonymously without persisting product data", async () => {
+    const projectsBefore = Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM projects").first<{ value: number }>())?.value);
+    const bom = await call("/api/v1/projects/import/analyze", {
+      method: "POST",
+      body: jsonBody({
+        sourceType: "bom",
+        fileName: "bom.csv",
+        content: "Name,Manufacturer,MPN,Quantity\nDrive motor,Test Motors,TM-42,2\nController,Control Works,CW-7,1\n",
+      }),
+    });
+    expect(bom.status).toBe(200);
+    const bomAnalysis = (await body<{ analysis: {
+      deterministic: boolean; aiUsed: boolean; manifest: { components: Array<{ name: string; quantity: number; mpn?: string }> };
+      inventory: { detected: string[] }; report: { profiles: { core: { score: number } }; findings: Array<{ ruleId: string }> };
+    } }>(bom)).analysis;
+    expect(bomAnalysis).toMatchObject({ deterministic: true, aiUsed: false });
+    expect(bomAnalysis.inventory.detected).toContain("bom");
+    expect(bomAnalysis.manifest.components).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "Drive motor", quantity: 2, mpn: "TM-42" }),
+      expect.objectContaining({ name: "Controller", quantity: 1, mpn: "CW-7" }),
+    ]));
+    expect(bomAnalysis.report.profiles.core.score).toBeGreaterThanOrEqual(0);
+
+    const urdf = await call("/api/v1/projects/import/analyze", {
+      method: "POST",
+      body: jsonBody({ sourceType: "urdf", fileName: "robot.urdf", content: '<robot name="benchbot"><link name="base_link"/><link name="tool0"/></robot>' }),
+    });
+    expect(urdf.status).toBe(200);
+    const urdfAnalysis = (await body<{ analysis: { manifest: { interfaces: Array<{ kind: string; name: string; description: string }> } } }>(urdf)).analysis;
+    expect(urdfAnalysis.manifest.interfaces).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "coordinate-frame", name: "base_link coordinate frame" }),
+      expect.objectContaining({ kind: "coordinate-frame", name: "tool0 coordinate frame" }),
+    ]));
+    expect(urdfAnalysis.manifest.interfaces[0].description).toContain("has not been inferred");
+
+    const portable = await call("/api/v1/projects/import/analyze", {
+      method: "POST",
+      body: jsonBody({ sourceType: "rpps", fileName: "rpps.yaml", content: portableRpps }),
+    });
+    expect(portable.status).toBe(200);
+    const portableAnalysis = (await body<{ analysis: { manifest: { project: { id: string }; extensions: Record<string, unknown> }; importWarnings: string[] } }>(portable)).analysis;
+    expect(portableAnalysis.manifest.project.id).toBe("project:portable-test");
+    expect(portableAnalysis.manifest.extensions["org.example.test"]).toEqual({ preserved: true });
+    expect(portableAnalysis.importWarnings).not.toContain(expect.stringContaining("No portable rpps.yaml"));
+
+    const unsafePath = await call("/api/v1/projects/import/analyze", {
+      method: "POST", body: jsonBody({ sourceType: "bom", fileName: "../bom.csv", content: "Name,Quantity\nMotor,1" }),
+    });
+    expect(unsafePath.status).toBe(422);
+    expect((await body<{ error: { code: string } }>(unsafePath)).error.code).toBe("UNSAFE_ARCHIVE_PATH");
+    const nonCanonicalRepository = await call("/api/v1/projects/import/analyze", {
+      method: "POST", body: jsonBody({ sourceType: "github", repositoryUrl: "https://github.com.example.invalid/owner/repository" }),
+    });
+    expect(nonCanonicalRepository.status).toBe(422);
+    expect((await body<{ error: { code: string } }>(nonCanonicalRepository)).error.code).toBe("UNSUPPORTED_REPOSITORY_URL");
+
+    const projectsAfter = Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM projects").first<{ value: number }>())?.value);
+    expect(projectsAfter).toBe(projectsBefore);
+  });
+
+  it("stores project ZIPs privately in R2 and bounds archive analysis to the owner", async () => {
+    const archive = zipSync({
+      "README.md": strToU8("# Bench robot\nA small robot used for repeatable integration tests."),
+      "bom/parts.csv": strToU8("Name,Manufacturer,MPN,Quantity\nDrive motor,Test Motors,TM-42,2\n"),
+      "description/robot.urdf": strToU8('<robot name="benchbot"><link name="base_link"/></robot>'),
+      "cad/chassis.step": strToU8("ISO-10303-21; placeholder for inventory-only analysis"),
+    });
+    const initialized = await call("/api/v1/files/uploads", {
+      method: "POST",
+      body: jsonBody({ originalName: "bench-robot.zip", mediaType: "application/zip", sizeBytes: archive.byteLength, kind: "attachment", visibility: "private" }),
+    }, ownerCookie);
+    expect(initialized.status).toBe(201);
+    const upload = await body<{ file: { id: string }; upload: { url: string; token: string } }>(initialized);
+    const stored = await call(upload.upload.url, {
+      method: "PUT",
+      headers: { "content-type": "application/zip", "content-length": String(archive.byteLength), "x-upload-token": upload.upload.token },
+      body: archive,
+    }, ownerCookie);
+    expect(stored.status).toBe(201);
+
+    const denied = await call("/api/v1/projects/import/archive", { method: "POST", body: jsonBody({ fileId: upload.file.id }) }, otherCookie);
+    expect(denied.status).toBe(403);
+    const analyzed = await call("/api/v1/projects/import/archive", { method: "POST", body: jsonBody({ fileId: upload.file.id }) }, ownerCookie);
+    expect(analyzed.status).toBe(200);
+    const result = (await body<{ analysis: {
+      sourceType: string; deterministic: boolean; aiUsed: boolean; inventory: { totalFiles: number; relevantFiles: number; detected: string[] };
+      manifest: { components: Array<{ mpn?: string }>; interfaces: Array<{ kind: string }> }; sourceMappings: unknown[];
+    } }>(analyzed)).analysis;
+    expect(result).toMatchObject({ sourceType: "archive", deterministic: true, aiUsed: false });
+    expect(result.inventory).toMatchObject({ totalFiles: 4, relevantFiles: 4 });
+    expect(result.inventory.detected).toEqual(expect.arrayContaining(["bom", "cad", "documentation", "urdf"]));
+    expect(result.manifest.components).toEqual(expect.arrayContaining([expect.objectContaining({ mpn: "TM-42" })]));
+    expect(result.manifest.interfaces).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "coordinate-frame" })]));
+    expect(result.sourceMappings).toHaveLength(4);
+  });
+
   it("enforces organization roles on server-side mutations", async () => {
     const created = await call("/api/v1/organizations", { method: "POST", body: jsonBody({ name: "Test Robotics Group", slug: "test-robotics-group" }) }, ownerCookie);
     expect(created.status).toBe(201); const organization = (await body<{ item: { id: string; version: number } }>(created)).item;
@@ -292,19 +389,102 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(item.packageSha256).toMatch(/^[a-f0-9]{64}$/u);
     const duplicate = await call(`/api/v1/projects/${projectId}/releases`, { method: "POST", body: jsonBody({ manifest: portableRpps, status: "published" }) }, ownerCookie);
     expect(duplicate.status).toBe(409);
-    const draftManifest = portableRpps.replaceAll("0.1.0", "0.1.1");
+    const draftManifest = portableRpps.replaceAll("0.1.0", "0.1.1").replace("quantity: 2", "quantity: 3");
     const draft = await call(`/api/v1/projects/${projectId}/releases`, { method: "POST", body: jsonBody({ manifest: draftManifest, status: "draft" }) }, ownerCookie);
     expect(draft.status).toBe(201);
+    const draftItem = (await body<{ item: { id: string } }>(draft)).item;
     const listed = await call(`/api/v1/projects/${projectId}/releases`, {}, ownerCookie);
     expect(listed.status).toBe(200);
     expect((await body<{ total: number }>(listed)).total).toBe(2);
     const publicList = await call(`/api/v1/projects/${projectId}/releases`);
     expect(publicList.status).toBe(200);
     expect((await body<{ total: number }>(publicList)).total).toBe(1);
+    const publishedDraft = await call(`/api/v1/projects/${projectId}/releases/${draftItem.id}/publish`, { method: "POST" }, ownerCookie);
+    expect(publishedDraft.status).toBe(200);
+    expect((await body<{ item: { status: string } }>(publishedDraft)).item.status).toBe("published");
+    const diff = await call(`/api/v1/projects/${projectId}/releases/${draftItem.id}/diff?against=${encodeURIComponent(item.id)}`);
+    expect(diff.status).toBe(200);
+    expect((await body<{ collections: { components: { changed: Array<{ id: string; fields: string[] }> } } }>(diff)).collections.components.changed)
+      .toEqual([{ id: "component:motor", fields: ["quantity"] }]);
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM rpps_validation_findings WHERE release_id = ?1").bind(item.id).first<{ value: number }>())?.value)).toBeGreaterThan(0);
     expect(await env.DB.prepare("SELECT stable_id, name FROM rpps_release_assemblies WHERE release_id = ?1").bind(item.id).first()).toEqual({ stable_id: "assembly:drive", name: "Drive assembly" });
     expect(await env.DB.prepare("SELECT stable_id, interface_kind FROM rpps_release_interfaces WHERE release_id = ?1").bind(item.id).first()).toEqual({ stable_id: "interface:motor-mount", interface_kind: "mechanical" });
     expect(await env.DB.prepare("SELECT source_url, source_revision FROM rpps_source_mappings WHERE release_id = ?1").bind(item.id).first()).toEqual({ source_url: "https://github.com/example/portable-test", source_revision: "abc123" });
+  });
+
+  it("creates exact-release build passports and turns tested outcomes into scoped reproducibility evidence", async () => {
+    const manifest = portableRpps.replace("extensions:", `procedures:
+  - id: procedure:drive-assembly
+    kind: assembly
+    title: Assemble drive
+    steps:
+      - id: step:mount-motor
+        instruction: Mount both motors to the drive plate using the documented torque.
+      - id: step:verify-rotation
+        instruction: Verify both shafts rotate freely before applying power.
+    expectedResult: Both shafts rotate without binding.
+extensions:`);
+    const projectResponse = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      visibility: "public", rpps: emptyRpps({ name: "Release Passport Host", slug: "release-passport-host" }),
+    }) }, ownerCookie);
+    expect(projectResponse.status).toBe(201);
+    const projectId = (await body<{ item: { id: string } }>(projectResponse)).item.id;
+    const releaseResponse = await call(`/api/v1/projects/${projectId}/releases`, {
+      method: "POST", body: jsonBody({ manifest, status: "published" }),
+    }, ownerCookie);
+    expect(releaseResponse.status).toBe(201);
+    const release = (await body<{ item: { id: string; packageSha256: string } }>(releaseResponse)).item;
+
+    const started = await call(`/api/v1/projects/${projectId}/releases/${release.id}/build-passports`, {
+      method: "POST", body: jsonBody({ name: "Independent exact build", visibility: "private" }),
+    }, otherCookie);
+    expect(started.status).toBe(201);
+    const startedBody = await body<{ item: { id: string; slug: string; items: Array<{ componentId: string | null }>; steps: Array<{ title: string }> }; passport: { packageSha256: string } }>(started);
+    expect(startedBody.passport.packageSha256).toBe(release.packageSha256);
+    expect(startedBody.item.items).toEqual([expect.objectContaining({ componentId: "c-test" })]);
+    expect(startedBody.item.steps).toHaveLength(2);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM rpps_build_passport_steps WHERE passport_id = (SELECT id FROM rpps_build_passports WHERE build_id = ?1)")
+      .bind(startedBody.item.id).first<{ value: number }>())?.value)).toBe(2);
+
+    const premature = await call(`/api/v1/projects/${projectId}/releases/${release.id}/outcomes`, {
+      method: "POST", body: jsonBody({ buildId: startedBody.item.id, outcome: "succeeded", summary: "The exact release completed successfully under the recorded bench conditions." }),
+    }, otherCookie);
+    expect(premature.status).toBe(422);
+    expect((await body<{ error: { code: string } }>(premature)).error.code).toBe("BUILD_EVIDENCE_REQUIRED");
+    const test = await call(`/api/v1/builds/${startedBody.item.id}/tests`, { method: "POST", body: jsonBody({
+      name: "Free rotation", methodText: "Rotate both shafts through a complete revolution.", expectedText: "No binding.", observedText: "No binding was observed.", result: "passed",
+    }) }, otherCookie);
+    expect(test.status).toBe(201);
+    const outcome = await call(`/api/v1/projects/${projectId}/releases/${release.id}/outcomes`, {
+      method: "POST", body: jsonBody({ buildId: startedBody.item.id, outcome: "succeeded",
+        summary: "The exact release completed successfully under the recorded bench conditions.", conditions: { supplyVoltage: 24, ambient: "bench" } }),
+    }, otherCookie);
+    expect(outcome.status).toBe(201);
+    expect((await body<{ item: { independence: string } }>(outcome)).item.independence).toBe("independent");
+
+    const proposal = await call(`/api/v1/projects/${projectId}/releases/${release.id}/proposals`, { method: "POST", body: jsonBody({
+      type: "correct_component_identity", targetComponentId: "component:motor", manufacturer: "Test Motors", mpn: "TM-42-R2",
+      rationale: "The independently built unit used the R2 manufacturer revision and the manifest should preserve that exact identity.",
+    }) }, otherCookie);
+    expect(proposal.status).toBe(201);
+    const proposalId = (await body<{ item: { id: string } }>(proposal)).item.id;
+    const deniedReview = await call(`/api/v1/projects/${projectId}/releases/${release.id}/proposals/${proposalId}`, {
+      method: "PATCH", body: jsonBody({ action: "accept" }),
+    }, otherCookie);
+    expect(deniedReview.status).toBe(403);
+    const accepted = await call(`/api/v1/projects/${projectId}/releases/${release.id}/proposals/${proposalId}`, {
+      method: "PATCH", body: jsonBody({ action: "accept", note: "Accepted for the next immutable release." }),
+    }, ownerCookie);
+    expect(accepted.status).toBe(200);
+
+    const collaboration = await call(`/api/v1/projects/${projectId}/releases/${release.id}/collaboration`, {}, otherCookie);
+    expect(collaboration.status).toBe(200);
+    const collaborationBody = await body<{ evidence: { achieved: string[]; succeededIndependent: number }; eligibleBuilds: unknown[]; outcomes: Array<{ independence: string; buildId: string | null }>; proposals: Array<{ status: string }> }>(collaboration);
+    expect(collaborationBody.evidence.achieved).toEqual(expect.arrayContaining(["structured", "reproduced"]));
+    expect(collaborationBody.evidence.succeededIndependent).toBe(1);
+    expect(collaborationBody.eligibleBuilds).toHaveLength(0);
+    expect(collaborationBody.outcomes[0]).toMatchObject({ independence: "independent", buildId: startedBody.item.id });
+    expect(collaborationBody.proposals).toEqual(expect.arrayContaining([expect.objectContaining({ status: "accepted" })]));
   });
 
   it("versions project technical records with normalized requirements and evidence", async () => {
@@ -422,8 +602,23 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("fails AI requests honestly when no provider secret is configured", async () => {
     const conversation = await call("/api/v1/ai/conversations", { method: "POST", body: jsonBody({ title: "New chat" }) }, ownerCookie);
     expect(conversation.status).toBe(201); const id = (await body<{ item: { id: string } }>(conversation)).item.id;
+    const anonymousDraft = await call("/api/v1/ai/form-drafts", { method: "POST", body: jsonBody({ form: "project", prompt: "Draft a small robot arm project", current: {} }) });
+    expect(anonymousDraft.status).toBe(401);
+    const unavailableDraft = await call("/api/v1/ai/form-drafts", { method: "POST", body: jsonBody({ form: "project", prompt: "Draft a small robot arm project", current: {} }) }, ownerCookie);
+    expect(unavailableDraft.status).toBe(503); expect((await body<{ error: { code: string } }>(unavailableDraft)).error.code).toBe("AI_PROVIDER_NOT_CONFIGURED");
     const response = await call("/api/v1/ai/chat", { method: "POST", body: jsonBody({ threadId: id, messages: [{ id: crypto.randomUUID(), role: "user", parts: [{ type: "text", text: "Find an actuator" }] }] }) }, ownerCookie);
     expect(response.status).toBe(503); expect((await body<{ error: { code: string } }>(response)).error.code).toBe("AI_PROVIDER_NOT_CONFIGURED");
+
+    const proposalId = crypto.randomUUID();
+    await env.DB.prepare(`INSERT INTO ai_tool_calls
+      (id, conversation_id, tool_name, input_json, status, requires_confirmation, created_at)
+      VALUES (?1, ?2, 'propose_build_decision', ?3, 'proposed', 1, ?4)`)
+      .bind(proposalId, id, jsonBody({ buildId, title: "Controller selection", context: "Two supported controllers", decision: "Use the pinned controller revision", consequences: "Document the connector mapping" }), new Date().toISOString()).run();
+    const hidden = await call(`/api/v1/ai/tool-calls/${proposalId}`, {}, otherCookie); expect(hidden.status).toBe(404);
+    const pending = await call(`/api/v1/ai/tool-calls/${proposalId}`, {}, ownerCookie); expect(pending.status).toBe(200); expect(await body(pending)).toMatchObject({ item: { id: proposalId, status: "proposed", requiresConfirmation: true } });
+    const applied = await call(`/api/v1/ai/tool-calls/${proposalId}/confirm`, { method: "POST", body: jsonBody({ confirm: true }) }, ownerCookie); expect(applied.status).toBe(200);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM build_decisions WHERE build_id = ?1 AND title = 'Controller selection'").bind(buildId).first<{ value: number }>())?.value)).toBe(1);
+    const completed = await call(`/api/v1/ai/tool-calls/${proposalId}`, {}, ownerCookie); expect(await body(completed)).toMatchObject({ item: { status: "succeeded" } });
   });
 
   it("serves stateless read-only robotics tools over MCP Streamable HTTP", async () => {
@@ -452,6 +647,135 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(validated.status).toBe(200);
     const validation = await body<{ result: { structuredContent: { valid: boolean; format: string; report: { profiles: { core: { conformant: boolean } } } } } }>(validated);
     expect(validation.result.structuredContent).toMatchObject({ valid: true, format: "portable-0.1-draft", report: { profiles: { core: { conformant: true } } } });
+  });
+
+  it("protects private MCP with OAuth 2.1, PKCE, audience scopes, and explicit proposal confirmation", async () => {
+    const oauthBuildResponse = await call("/api/v1/builds", { method: "POST", body: jsonBody({ name: "Private MCP test build", visibility: "private" }) }, ownerCookie);
+    expect(oauthBuildResponse.status).toBe(201);
+    const oauthBuildId = (await body<{ item: { id: string } }>(oauthBuildResponse)).item.id;
+    const metadata = await call("/.well-known/oauth-protected-resource/mcp/private");
+    expect(metadata.status).toBe(200);
+    expect(await body(metadata)).toMatchObject({
+      resource: `${origin}/mcp/private`,
+      authorization_servers: [`${origin}/api/auth`],
+      scopes_supported: ["rpp:read", "rpp:write"],
+    });
+    const authMetadata = await call("/.well-known/oauth-authorization-server/api/auth");
+    expect(authMetadata.status).toBe(200);
+    expect(await body(authMetadata)).toMatchObject({ issuer: `${origin}/api/auth`, code_challenge_methods_supported: ["S256"] });
+
+    const unauthorized = await call("/mcp/private", {
+      method: "POST",
+      headers: { accept: "application/json, text/event-stream" },
+      body: jsonBody({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+    });
+    expect(unauthorized.status).toBe(401);
+    expect(unauthorized.headers.get("www-authenticate")).toContain("/.well-known/oauth-protected-resource/mcp/private");
+
+    const redirectUri = "http://127.0.0.1:7777/oauth/callback";
+    const registered = await call("/api/auth/oauth2/register", {
+      method: "POST",
+      body: jsonBody({
+        client_name: "RoboPartPicker Worker Test",
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: "none",
+        grant_types: ["authorization_code", "refresh_token"],
+        response_types: ["code"],
+        scope: "openid profile rpp:read rpp:write",
+        type: "native",
+      }),
+    });
+    const registrationText = await registered.text();
+    expect(registered.status, registrationText).toBe(200);
+    const registration = JSON.parse(registrationText) as { client_id: string };
+    expect(await env.DB.prepare("SELECT clientId, scopes, redirectUris FROM oauthClient WHERE clientId = ?1").bind(registration.client_id).first()).toBeTruthy();
+    const publicClient = await call(`/api/auth/oauth2/public-client?client_id=${registration.client_id}`, {}, ownerCookie);
+    const publicClientText = await publicClient.text();
+    expect(publicClient.status, publicClientText).toBe(200);
+
+    const verifier = "worker-test-pkce-verifier-abcdefghijklmnopqrstuvwxyz0123456789";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+    const challenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/gu, "-").replace(/\//gu, "_").replace(/=+$/gu, "");
+    const authorize = new URLSearchParams({
+      response_type: "code",
+      client_id: registration.client_id,
+      redirect_uri: redirectUri,
+      scope: "openid profile rpp:read rpp:write",
+      state: "worker-test-state",
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+    });
+    const authorization = await call(`/api/auth/oauth2/authorize?${authorize}`, { redirect: "manual" }, ownerCookie);
+    const authorizationText = await authorization.clone().text();
+    expect(authorization.status, authorizationText).toBe(302);
+    const consentLocation = authorization.headers.get("location");
+    expect(consentLocation).toContain("/oauth/consent?");
+    const oauthQuery = new URL(consentLocation!, origin).search.slice(1);
+
+    const consent = await call("/api/auth/oauth2/consent", {
+      method: "POST",
+      headers: { accept: "application/json" },
+      body: jsonBody({ accept: true, oauth_query: oauthQuery }),
+    }, ownerCookie);
+    expect(consent.status).toBe(200);
+    const consentBody = await body<{ url: string }>(consent);
+    const callback = new URL(consentBody.url);
+    expect(callback.origin + callback.pathname).toBe(redirectUri);
+    expect(callback.searchParams.get("state")).toBe("worker-test-state");
+
+    const tokenForm = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: registration.client_id,
+      redirect_uri: redirectUri,
+      code: callback.searchParams.get("code")!,
+      code_verifier: verifier,
+      resource: `${origin}/mcp/private`,
+    });
+    const token = await call("/api/auth/oauth2/token", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
+      body: tokenForm.toString(),
+    });
+    const tokenText = await token.text();
+    expect(token.status, tokenText).toBe(200);
+    const accessToken = (JSON.parse(tokenText) as { access_token: string }).access_token;
+    expect(accessToken.split(".")).toHaveLength(3);
+
+    const mcpHeaders = {
+      authorization: `Bearer ${accessToken}`,
+      accept: "application/json, text/event-stream",
+      "content-type": "application/json",
+    };
+    const initialized = await call("/mcp/private", { method: "POST", headers: mcpHeaders, body: jsonBody({
+      jsonrpc: "2.0", id: 10, method: "initialize",
+      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "private-worker-test", version: "1.0.0" } },
+    }) });
+    expect(initialized.status).toBe(200);
+    expect(await body(initialized)).toMatchObject({ result: { serverInfo: { name: "RoboPartPicker Private" } } });
+
+    const privateTools = await call("/mcp/private", { method: "POST", headers: mcpHeaders, body: jsonBody({
+      jsonrpc: "2.0", id: 15, method: "tools/list", params: {},
+    }) });
+    expect(privateTools.status).toBe(200);
+    expect((await body<{ result: { tools: Array<{ name: string }> } }>(privateTools)).result.tools.map((tool) => tool.name))
+      .toEqual(expect.arrayContaining(["list_project_releases", "read_release_collaboration", "read_build_state", "propose_build_problem", "confirm_proposal"]));
+
+    const proposed = await call("/mcp/private", { method: "POST", headers: mcpHeaders, body: jsonBody({
+      jsonrpc: "2.0", id: 11, method: "tools/call", params: { name: "propose_build_problem", arguments: {
+        buildId: oauthBuildId, title: "Intermittent encoder reading", description: "Encoder count drops under vibration.", severity: "high",
+      } },
+    }) });
+    expect(proposed.status).toBe(200);
+    const proposalId = (await body<{ result: { structuredContent: { proposalId: string; applied: boolean } } }>(proposed)).result.structuredContent.proposalId;
+    expect(proposalId).toBeTruthy();
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM build_problems WHERE build_id = ?1 AND title = 'Intermittent encoder reading'").bind(oauthBuildId).first<{ value: number }>())?.value)).toBe(0);
+
+    const confirmed = await call("/mcp/private", { method: "POST", headers: mcpHeaders, body: jsonBody({
+      jsonrpc: "2.0", id: 12, method: "tools/call", params: { name: "confirm_proposal", arguments: { proposalId, confirm: true } },
+    }) });
+    expect(confirmed.status).toBe(200);
+    expect((await body<{ result: { structuredContent: { applied: boolean } } }>(confirmed)).result.structuredContent.applied).toBe(true);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM build_problems WHERE build_id = ?1 AND title = 'Intermittent encoder reading'").bind(oauthBuildId).first<{ value: number }>())?.value)).toBe(1);
   });
 
   it("persists and revokes Better Auth sessions across sign-out and sign-in", async () => {

@@ -13,6 +13,7 @@ import { listPublicProjects } from "@/lib/projects";
 import { useMarketplace } from "@/lib/api/marketplace";
 import { toast } from "@/hooks/use-toast";
 import { Info } from "lucide-react";
+import { AiFormDraft } from "@/components/ai/AiFormDraft";
 
 type FieldDef = { key: string; label: string; placeholder?: string; multiline?: boolean };
 
@@ -220,6 +221,17 @@ export default function ForumNewThread() {
     setTags(merged.join(", "));
   };
 
+  const applyAiDraft = (draft: Record<string, unknown>) => {
+    if (typeof draft.title === "string") setTitle(draft.title);
+    if (typeof draft.body === "string") setBody(draft.body);
+    if (Array.isArray(draft.tags)) setTags(normalizeTags(draft.tags.filter((item): item is string => typeof item === "string").join(", ")).join(", "));
+    if (typeof draft.threadType === "string" && (THREAD_TYPES as readonly string[]).includes(draft.threadType)) setThreadType(draft.threadType as ThreadType);
+    if (typeof draft.structuredValues === "object" && draft.structuredValues !== null && !Array.isArray(draft.structuredValues)) {
+      const values = Object.fromEntries(Object.entries(draft.structuredValues).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+      setStructuredValues((current) => ({ ...current, ...values }));
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -260,7 +272,15 @@ export default function ForumNewThread() {
   return (
     <div className="mx-auto max-w-[900px] px-4 py-6">
       <div className="text-[12px] text-muted-foreground mb-1"><Link to="/community" className="hover:text-primary">Forum</Link> / new thread</div>
-      <h1 className="text-[20px] font-bold tracking-tight mb-4">Start a new discussion</h1>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-[20px] font-bold tracking-tight">Start a new discussion</h1>
+        <AiFormDraft
+          form="community_thread"
+          current={{ threadType, title, body, tags: normalizeTags(tags), structuredValues }}
+          onApply={applyAiDraft}
+          hint="Paste rough notes, logs, measurements, or a question. The assistant will structure them without inventing evidence."
+        />
+      </div>
 
       <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
         <div className="surface-card p-4 space-y-3">

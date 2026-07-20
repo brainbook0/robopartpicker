@@ -1,5 +1,6 @@
 import { api } from "@/lib/api/client";
 import { emptyRpps, RPPS_VERSION, slugify, validateRpps, type RppsPackage } from "@/lib/rpps/schema";
+import type { PortableRppsManifest, RppsValidationReport } from "@/lib/rpps/portable";
 
 export type ProjectRow = {
   id: string;
@@ -138,8 +139,37 @@ export type GithubDraft = {
   repo_url: string;
   license?: string;
   tags: string[];
-  cover_image_url?: string;
 };
+
+export type ProjectImportAnalysis = {
+  schemaVersion: "project-import-analysis/2";
+  sourceType: "github" | "rpps" | "bom" | "urdf" | "archive";
+  sourceLabel: string;
+  analyzedAt: string;
+  draft: GithubDraft;
+  inventory: {
+    totalFiles: number;
+    relevantFiles: number;
+    truncated: boolean;
+    detected: string[];
+    artifacts: Array<{ path: string; kind: string; sizeBytes: number | null; sha256?: string; sourceUrl?: string; sourceRevision?: string }>;
+  };
+  sourceMappings: Array<{ objectType: string; objectStableId: string; sourceUrl?: string; sourcePath: string; sourceRevision?: string; parserId: string; confidence: number }>;
+  manifest: PortableRppsManifest;
+  manifestYaml: string;
+  report: RppsValidationReport;
+  importWarnings: string[];
+  deterministic: true;
+  aiUsed: false;
+};
+
+export async function analyzeProjectSource(input: { sourceType: "github"; repositoryUrl: string } | { sourceType: "rpps" | "bom" | "urdf"; fileName: string; content: string }): Promise<ProjectImportAnalysis> {
+  return (await api.post<{ analysis: ProjectImportAnalysis }>("/api/v1/projects/import/analyze", input)).analysis;
+}
+
+export async function analyzeProjectArchive(fileId: string): Promise<ProjectImportAnalysis> {
+  return (await api.post<{ analysis: ProjectImportAnalysis }>("/api/v1/projects/import/archive", { fileId })).analysis;
+}
 
 export async function draftFromGithub(repoUrl: string): Promise<GithubDraft> {
   return (await api.post<{ draft: GithubDraft }>("/api/v1/projects/import/repository", { repositoryUrl: repoUrl })).draft;

@@ -18,10 +18,10 @@ Remote D1 bootstrap preserves the immutable migration files. Cloudflare's remote
 
 | Domain | Tables |
 | --- | --- |
-| Better Auth | `user`, `session`, `account`, `verification` |
+| Better Auth and OAuth | `user`, `session`, `account`, `verification`, `jwks`, `oauthClient`, `oauthRefreshToken`, `oauthAccessToken`, `oauthConsent` |
 | Users and organizations | `profiles`, `user_preferences`, `organizations`, `organization_members`, `organization_invitations` |
 | Catalog and sourcing | `manufacturers`, `suppliers`, `supplier_regions`, `components`, `component_revisions`, `component_specs`, `component_files`, `supplier_offers`, `offer_price_history`, `evidence`, `evidence_claims`, `data_conflicts`, `integrations`, `integration_entities`, `component_alternatives` |
-| Projects and RPPS | `projects`, `project_versions`, `project_maintainers`, `project_files`, `project_media`, `project_requirements`, `project_steps`, `project_known_issues`, `rpps_releases`, `rpps_release_assemblies`, `rpps_release_interfaces`, `rpps_source_mappings`, `rpps_validation_findings`, `rpps_change_proposals`, `rpps_build_outcomes`, `boms`, `bom_versions`, `bom_items`, `bom_item_alternatives` |
+| Projects and RPPS | `projects`, `project_versions`, `project_maintainers`, `project_files`, `project_media`, `project_requirements`, `project_steps`, `project_known_issues`, `rpps_releases`, `rpps_release_assemblies`, `rpps_release_interfaces`, `rpps_source_mappings`, `rpps_validation_findings`, `rpps_change_proposals`, `rpps_build_passports`, `rpps_build_passport_items`, `rpps_build_passport_steps`, `rpps_build_outcomes`, `rpps_build_outcome_evidence`, `boms`, `bom_versions`, `bom_items`, `bom_item_alternatives` |
 | Builds | `builds`, `build_members`, `build_versions`, `build_items`, `build_steps`, `build_step_dependencies`, `build_files`, `build_configurations`, `build_firmware`, `build_calibrations`, `build_tests`, `build_problems`, `build_resolutions`, `build_decisions`, `build_activity` |
 | Community | `forum_categories`, `forum_threads`, `forum_posts`, `forum_reactions`, `forum_bookmarks`, `forum_reports`, `forum_moderation_actions` |
 | Marketplace | `marketplace_listings`, `marketplace_listing_images`, `marketplace_listing_items`, `marketplace_saves`, `marketplace_inquiries`, `marketplace_offers`, `marketplace_messages`, `marketplace_reports`, `marketplace_moderation_actions`, `marketplace_transactions` |
@@ -35,6 +35,8 @@ Marketplace buyer/seller offers and supplier commercial offers are deliberately 
 Each published RPPS package remains intact as validated JSON in `project_versions`. Queryable technical records are also normalized: assembly steps populate `project_steps`, known issues populate `project_known_issues`, required tools and skills populate `project_requirements`, and evidence produces provenance rows in `evidence` plus project-scoped `evidence_claims`. Older version rows are retained for history.
 
 Portable RPPS 0.1 Draft releases are append-only rows in `rpps_releases`. They retain normalized manifest/lockfile YAML, manifest and package SHA-256 digests, and the complete deterministic report. Assemblies, interfaces, source mappings, and findings are projected into child tables. A uniqueness constraint prevents a project from reusing a stable release ID or version label. Corrections require a new release rather than mutation.
+
+`rpps_build_passports` binds one persistent build to one exact release and copies the release identity/hash so later project changes cannot silently move the build target. Item/step mapping tables retain RPPS stable IDs. One outcome is allowed per release/build pair; optional outcome evidence must reference files already attached to that build. Proposal status transitions use conditional updates so concurrent review cannot accept/reject the same open proposal twice.
 
 ## Authorization invariants
 

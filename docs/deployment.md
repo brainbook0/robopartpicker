@@ -10,9 +10,9 @@ The `preview` Wrangler environment is a full-stack Worker deployment with isolat
 - D1: `robopartpicker-preview`
 - R2: `robopartpicker-preview-files`
 - URL: <https://robopartpicker-preview.ludomi2502.workers.dev>
-- Verified checkpoint Worker version: `93684800-3daf-43e3-9bb2-a941029b39`
+- Verified 0.4.0 Worker version: `fe68d7f1-25e9-40ea-a6aa-fbcd21011e8b`
 
-It serves the React assets, `/api/*`, and the public read-only `/mcp` endpoint from one origin. Apply migrations, validate the intentionally empty catalog, then deploy:
+It serves the React assets, `/api/*`, the public read-only `/mcp` endpoint, and the OAuth-protected `/mcp/private` endpoint from one origin. Apply migrations, validate the intentionally empty catalog, then deploy:
 
 ```powershell
 npm run db:migrate:preview
@@ -59,6 +59,8 @@ The authentication and ingestion names are declared under `secrets.required` in 
 
 Add email provider, OAuth, repository provider, AI provider, and malware scanner credentials only for features that are configured. Secrets are environment-specific, so every production secret command includes `--env production`. Never put them in `vars`, `VITE_*`, source control, or client code.
 
+`GITHUB_TOKEN` is optional and only raises the GitHub API rate limit for repository imports. Better Auth provides the OAuth authorization server used by private MCP clients; no separate OAuth client secret is required for dynamically registered public PKCE clients. Migrations `0011_oauth_provider_and_private_mcp.sql` and `0012_rpps_release_collaboration.sql` must be applied before private MCP or exact-release collaboration is enabled.
+
 ## Release
 
 ```powershell
@@ -75,7 +77,7 @@ The normal `npm run build` selects the named Cloudflare `production` environment
 
 ## Verification
 
-After deploy, verify the health endpoint, SPA deep links, signup/sign-in/sign-out, private-resource isolation, organization roles, file authorization, malformed/duplicate imports, AI provider failure behavior, MCP initialization/tool discovery, and the custom domain. A deploy command alone is not evidence that deployment succeeded.
+After deploy, verify the health endpoint, SPA deep links, signup/sign-in/sign-out, private-resource isolation, organization roles, file authorization, malformed/duplicate imports, deterministic project analysis, AI provider failure behavior, public MCP initialization/tool discovery, private MCP's unauthenticated challenge, OAuth discovery metadata, and the custom domain. Confirm the catalog is empty unless an intentional population run occurred. A deploy command alone is not evidence that deployment succeeded.
 
 Cloudflare references:
 

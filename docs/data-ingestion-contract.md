@@ -4,6 +4,14 @@ The scraper agent submits versioned batches to `POST /api/v1/imports/batches`. I
 
 The machine-readable contract is `contracts/import-batch.v1.schema.json`; an accepted example is `contracts/examples/import-batch.v1.json`. This document is the operational companion.
 
+## Interactive project import is separate
+
+The scraper ingestion endpoint is not used by the interactive project importer. A visitor can analyze a bounded BOM, RPPS manifest, URDF, or canonical public GitHub repository through `POST /api/v1/projects/import/analyze`. Signed-in users can also upload a project archive through `POST /api/v1/projects/import/archive`; archive bytes remain private in R2 and only the owner can retrieve them.
+
+Interactive analysis is deterministic and does not call an AI model. It inventories artifacts, records hashes and source provenance, preserves unknown namespaced RPPS extensions, resolves only unambiguous BOM identities, and produces a progressive buildability scorecard. It never writes catalog components, supplier offers, prices, or scraped records. Saving creates a private project draft and portable RPPS release only after explicit user action.
+
+The public GitHub path accepts only canonical repository URLs and reads repository metadata through the bounded GitHub API integration. Direct text inputs are limited to 1 MiB. ZIP inputs are limited to 10 MiB compressed, 25 MiB expanded, 500 entries, and 5 MiB of extracted text; absolute paths, traversal paths, unsupported compression, encrypted entries, and oversized packages are rejected. Imported files and repository content are always untrusted data, never executable instructions.
+
 ## Batch envelope
 
 ```json

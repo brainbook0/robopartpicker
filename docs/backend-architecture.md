@@ -8,8 +8,9 @@ RoboPartPicker is one same-origin Cloudflare Worker deployment:
 2. `/api/auth/*` is handled by Better Auth.
 3. `/api/v1/*` is handled by the Hono API router.
 4. `/mcp` is a stateless Streamable HTTP MCP endpoint for public read-only robotics tools.
-5. Worker-proxied file routes enforce D1 metadata and authorization before reading `FILES`.
-6. Other paths use Cloudflare static assets with SPA fallback to `index.html`.
+5. `/mcp/private` is an OAuth-protected, scoped MCP endpoint for authorized projects, exact releases, builds, and confirmation-gated proposals.
+6. Worker-proxied file routes enforce D1 metadata and authorization before reading `FILES`.
+7. Other paths use Cloudflare static assets with SPA fallback to `index.html`.
 
 There is no browser-to-database path, broad CORS policy, Node server, native SQLite driver, or runtime Lovable/Supabase dependency.
 
@@ -45,7 +46,7 @@ Internal database and provider messages are logged with the request ID and are n
 
 `createAuth(env)` constructs Better Auth with the request's `DB` binding, same-origin secure cookies, email/password enabled, and explicit email/reset delivery callbacks. The Worker mounts the standards-based `Request`/`Response` handler. The React client uses the same origin and sends cookies.
 
-Better Auth tables are managed by sequential D1 SQL migrations. Runtime auto-migration is forbidden. Product profiles and organization authorization remain explicit RoboPartPicker tables so the role model can express owner, admin, engineer, builder, procurement, and viewer independently of authentication.
+Better Auth tables are managed by sequential D1 SQL migrations. Runtime auto-migration is forbidden. The Better Auth OAuth provider exposes authorization-code plus refresh-token flows with PKCE, scoped consent, short-lived JWT access tokens, and public dynamic client registration for native MCP clients. Private MCP verifies signature, issuer, audience, scopes, and the referenced live session; revoking the session invalidates access immediately. Product profiles and organization authorization remain explicit RoboPartPicker tables so the role model can express owner, admin, engineer, builder, procurement, and viewer independently of authentication.
 
 Authoritative references:
 
@@ -67,15 +68,19 @@ D1 stores file identity, object key, owner, organization/project/build relations
 
 ## Imports and external content
 
-Repository and scraper imports never write directly to canonical tables. The pipeline is raw record -> validated staging row -> deterministic candidates/conflicts -> review or policy-approved promotion -> canonical rows -> audit event. Imported text is data, never an instruction to AI tools.
+Repository and scraper imports never write directly to canonical tables. The external-agent pipeline is raw record -> validated staging row -> deterministic candidates/conflicts -> review or policy-approved promotion -> canonical rows -> audit event. Imported text is data, never an instruction to AI tools.
+
+The interactive project importer is a separate bounded analysis boundary. Anonymous requests accept portable/legacy RPPS, CSV/JSON/YAML BOMs, and URDF up to 1 MiB. Public GitHub analysis accepts only canonical HTTPS repository URLs, calls the fixed `api.github.com` origin, inventories at most 10,000 tree entries/500 relevant files, and downloads at most 24 small relevant text files. Authenticated ZIP imports first use the owner's private R2 upload, then enforce compressed, expanded, file-count, path-traversal, and extracted-text limits. Analysis preserves source mappings and produces a reviewable manifest/scorecard; it does not populate canonical catalog data.
 
 ## AI
 
-Provider keys and calls stay in the Worker. OpenRouter uses `deepseek/deepseek-v4-pro` through its OpenAI-compatible API. Tools expose narrow, authorized domain operations rather than unrestricted SQL. Read tools return evidence metadata; mutation tools create structured proposals and require user confirmation before writes. Conversations, messages, tool calls, usage, and cost estimates persist in D1. Output, tool-step, retry, per-minute, and rolling token limits bound spend.
+Provider keys and calls stay in the Worker. OpenRouter uses `deepseek/deepseek-v4-pro` through its OpenAI-compatible API. Tools expose narrow, authorized domain operations rather than unrestricted SQL. Read tools return evidence metadata; mutation tools create structured proposals and require user confirmation before writes. Review-before-apply structured drafting covers the main project, Community, Marketplace, build-record, and release-proposal forms. Conversations, messages, tool calls, usage, and cost estimates persist in D1. Output, tool-step, retry, per-minute, and rolling token limits bound spend.
 
 ## Model Context Protocol
 
-`/mcp` implements the current Streamable HTTP transport with the Web Standards MCP SDK. The server is stateless and exposes only public, read-only catalog/project/supplier search, component comparison, managed public project artifacts, and portable-or-legacy RPPS validation. It cannot read private projects/builds/files or mutate data. Private tools require a later OAuth 2.1 consent flow mapped to RoboPartPicker user and organization permissions; they must not be added to the public server.
+`/mcp` implements the current Streamable HTTP transport with the Web Standards MCP SDK. The server is stateless and exposes only public, read-only catalog/project/supplier search, component comparison, managed public project artifacts, and portable-or-legacy RPPS validation. It cannot read private projects/builds/files or mutate data.
+
+`/mcp/private` is a separate OAuth 2.1 protected resource with `rpp:read` and `rpp:write` scopes. It reads authorized project files, exact releases/collaboration, and persistent build state. Write tools create inert D1 proposals; a second call with `confirm=true` and write scope applies a still-authorized proposal. No MCP tool receives unrestricted SQL, database credentials, raw R2 object keys, or provider secrets.
 
 ## Notifications
 
@@ -95,7 +100,7 @@ The existing flat `project_versions.rpps_json` record is the legacy application 
 
 `POST /api/v1/rpps/validate` is anonymous, size-bounded, deterministic, and performs no persistence. Authenticated engineers may append releases through `/api/v1/projects/:id/releases`; release rows are immutable and content-addressed. Draft releases are visible only to the project owner or organization members, even when the containing project is public. Published releases inherit project read scope.
 
-The complete normalized YAML remains authoritative. D1 also projects assemblies, interfaces, artifact source mappings, and validation findings for queries. Tables for structured proposals and exact-release build outcomes establish later collaboration without pretending those UI flows are complete. The pure TypeScript core and CLI have no Cloudflare dependency.
+The complete normalized YAML remains authoritative. D1 also projects assemblies, interfaces, artifact source mappings, and validation findings for queries. Published releases are immutable; a draft may be published exactly once. "Build this release" creates a private-by-default build passport pinned to its stable release ID, version, and package digest, with stable component/procedure mappings. Outcomes require an exact passport and recorded build evidence; maintainer versus independent status is derived server-side. Structured proposals are reviewed for a future release and never rewrite a published package. Semantic diffs compare stable object IDs and changed fields. The pure TypeScript core and CLI have no Cloudflare dependency.
 
 ## Cloudflare sources
 

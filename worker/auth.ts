@@ -1,4 +1,6 @@
 import { betterAuth } from "better-auth";
+import { jwt } from "better-auth/plugins";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import type { Env } from "./env";
 import { UsersRepository } from "./db/repositories/users";
 import { sendAuthEmail } from "./services/email";
@@ -6,13 +8,47 @@ import { sendAuthEmail } from "./services/email";
 export function createAuth(env: Env) {
   const users = new UsersRepository(env.DB);
   const emailConfigured = Boolean(env.EMAIL_PROVIDER_URL && env.EMAIL_PROVIDER_TOKEN && env.EMAIL_FROM);
+  const origin = new URL(env.BETTER_AUTH_URL).origin;
+  const privateMcpAudience = `${origin}/mcp/private`;
 
   return betterAuth({
     appName: env.APP_NAME,
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     database: env.DB,
-    trustedOrigins: [env.BETTER_AUTH_URL],
+    trustedOrigins: [origin],
+    disabledPaths: ["/token"],
+    plugins: [
+      jwt(),
+      oauthProvider({
+        loginPage: "/auth",
+        consentPage: "/oauth/consent",
+        scopes: ["openid", "profile", "email", "offline_access", "rpp:read", "rpp:write"],
+        advertisedMetadata: {
+          scopes_supported: ["openid", "profile", "email", "offline_access", "rpp:read", "rpp:write"],
+        },
+        validAudiences: [privateMcpAudience],
+        grantTypes: ["authorization_code", "refresh_token"],
+        accessTokenExpiresIn: 15 * 60,
+        refreshTokenExpiresIn: 30 * 24 * 60 * 60,
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+        clientRegistrationDefaultScopes: ["openid", "profile", "rpp:read"],
+        clientRegistrationAllowedScopes: ["openid", "profile", "email", "offline_access", "rpp:read", "rpp:write"],
+        rateLimit: {
+          token: { window: 60, max: 20 },
+          authorize: { window: 60, max: 20 },
+          register: { window: 60, max: 3 },
+          introspect: { window: 60, max: 60 },
+          revoke: { window: 60, max: 20 },
+          userinfo: { window: 60, max: 60 },
+        },
+        silenceWarnings: {
+          oauthAuthServerConfig: true,
+          openidConfig: true,
+        },
+      }),
+    ],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

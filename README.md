@@ -18,7 +18,7 @@ npm run dev
 
 Open <http://127.0.0.1:8080>. Vite and the Worker run together; `/api/*` uses locally simulated bindings. Local D1 and R2 data persists under ignored `.wrangler/` state and never accesses production by default.
 
-Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `INGESTION_SECRET` are required. Email, GitHub import, AI, and malware scanning providers are optional integration boundaries and report unavailable when not configured.
+Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `INGESTION_SECRET` are required. Email, authenticated GitHub import, AI, and malware scanning providers are optional integration boundaries and report unavailable when not configured. Public GitHub imports work against the bounded unauthenticated API path; a token only raises the provider rate limit.
 
 ## Commands
 
@@ -50,7 +50,7 @@ Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL
 ## Architecture
 
 - `src/` contains the React UI, typed same-origin API client, Better Auth client, and legacy plus portable RPPS cores.
-- `worker/` contains the Worker router, middleware, domain repositories, APIs, ingestion pipeline, R2 access, server-side AI provider boundary, and public read-only MCP endpoint.
+- `worker/` contains the Worker router, middleware, domain repositories, deterministic project/import pipeline, R2 access, server-side AI provider boundary, public read-only MCP, and OAuth-protected private MCP.
 - `migrations/` is the immutable, sequential, SQLite-compatible D1 schema.
 - `scripts/` owns local seed, reset, export, and schema validation workflows.
 - `contracts/` contains versioned machine-readable external schemas.
@@ -61,7 +61,7 @@ Detailed references: [backend architecture](docs/backend-architecture.md), [data
 
 ## Live preview
 
-The live preview is available at <https://robopartpicker-preview.ludomi2502.workers.dev>. It is a single Cloudflare Worker serving the React SPA, same-origin `/api/*` backend, and `/mcp` endpoint. It uses dedicated `robopartpicker-preview` D1 and `robopartpicker-preview-files` R2 resources, never the Attentify or production resources. The preview catalog is intentionally unpopulated; data ingestion and population are separate work.
+The live preview is available at <https://robopartpicker-preview.ludomi2502.workers.dev>. It is a single Cloudflare Worker serving the React SPA, same-origin `/api/*` backend, public `/mcp`, and OAuth-protected `/mcp/private`. It uses dedicated `robopartpicker-preview` D1 and `robopartpicker-preview-files` R2 resources, never the Attentify or production resources. The preview catalog is intentionally unpopulated; data ingestion, catalog population, scraping, and price tracking are separate work.
 
 ## Production deployment
 

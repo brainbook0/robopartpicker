@@ -24,6 +24,7 @@ import ForumCategory from "./pages/ForumCategory.tsx";
 import ForumThread from "./pages/ForumThread.tsx";
 import ForumNewThread from "./pages/ForumNewThread.tsx";
 import Auth from "./pages/Auth.tsx";
+import OAuthConsent from "./pages/OAuthConsent.tsx";
 import ProjectsIndex from "./pages/ProjectsIndex.tsx";
 import ProjectNew from "./pages/ProjectNew.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
@@ -47,6 +48,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/oauth/consent" element={<OAuthConsent />} />
             <Route element={<SiteLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/parts/compare" element={<PartCompare />} />

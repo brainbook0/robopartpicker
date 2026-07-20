@@ -3,12 +3,15 @@ import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { createProject, draftFromGithub } from "@/lib/projects";
+import { analyzeProjectArchive, analyzeProjectSource, createProject, type ProjectImportAnalysis } from "@/lib/projects";
+import { uploadFile } from "@/lib/api/files";
+import { createPortableRelease } from "@/lib/rpps/client";
 import { organizationsApi } from "@/lib/api/organizations";
 import { slugify, validateRpps, RPPS_VERSION, type RppsPackage } from "@/lib/rpps/schema";
-import { Github, FileJson, Loader2, Pencil, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { Github, FileJson, FileArchive, Loader2, Pencil, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { AiFormDraft } from "@/components/ai/AiFormDraft";
 
-type Mode = "manual" | "github" | "paste";
+type Mode = "manual" | "github" | "file" | "paste";
 type Difficulty = "beginner" | "intermediate" | "advanced" | "expert" | "";
 type RosSupport = "native" | "community" | "none" | "";
 type Fabrication = "3d-print" | "cnc" | "laser" | "waterjet" | "manual" | "pcb";
@@ -22,21 +25,43 @@ const isHttpUrl = (v: string) => {
 const toList = (s: string) =>
   Array.from(new Set(s.split(",").map(x => x.trim()).filter(Boolean)));
 const numOrUndef = (s: string) => (s === "" ? undefined : Number(s));
+const SAVED_IMPORT_KEY = "rpp-project-import-analysis";
+
+const saveImport = (analysis: ProjectImportAnalysis) => {
+  try { sessionStorage.setItem(SAVED_IMPORT_KEY, JSON.stringify(analysis)); } catch { /* A blocked/full session store must not block the import. */ }
+};
+
+const loadSavedImport = (): ProjectImportAnalysis | null => {
+  try {
+    const raw = sessionStorage.getItem(SAVED_IMPORT_KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<ProjectImportAnalysis>;
+    if (value.schemaVersion !== "project-import-analysis/2" || value.deterministic !== true || value.aiUsed !== false
+      || !value.draft || !value.inventory || !value.manifest || !value.report || typeof value.manifestYaml !== "string") {
+      sessionStorage.removeItem(SAVED_IMPORT_KEY);
+      return null;
+    }
+    return value as ProjectImportAnalysis;
+  } catch {
+    sessionStorage.removeItem(SAVED_IMPORT_KEY);
+    return null;
+  }
+};
 
 export default function ProjectNew() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
-  useEffect(() => { if (!loading && !user) nav("/auth", { state: { from: "/projects/new" }, replace: true }); }, [user, loading, nav]);
+  const [initialImport] = useState<ProjectImportAnalysis | null>(() => loadSavedImport());
 
   const [mode, setMode] = useState<Mode>("manual");
   const [busy, setBusy] = useState(false);
 
   // Identity
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialImport?.draft.name ?? "");
   const [version, setVersion] = useState("0.1.0");
-  const [summary, setSummary] = useState("");
-  const [description, setDescription] = useState("");
-  const [tags, setTags] = useState("");
+  const [summary, setSummary] = useState(initialImport?.draft.summary ?? "");
+  const [description, setDescription] = useState(initialImport?.draft.description ?? "");
+  const [tags, setTags] = useState(initialImport?.draft.tags.join(", ") ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState("");
 
   // Build profile
@@ -62,10 +87,10 @@ export default function ProjectNew() {
   const [simulators, setSimulators] = useState("");
 
   // Publishing
-  const [license, setLicense] = useState("");
-  const [repoUrl, setRepoUrl] = useState("");
+  const [license, setLicense] = useState(initialImport?.draft.license ?? "");
+  const [repoUrl, setRepoUrl] = useState(initialImport?.draft.repo_url ?? "");
   const [docsUrl, setDocsUrl] = useState("");
-  const [visibility, setVisibility] = useState<Visibility>("public");
+  const [visibility, setVisibility] = useState<Visibility>("private");
   const [organizationId, setOrganizationId] = useState("");
 
   const organizations = useQuery({
@@ -88,6 +113,8 @@ export default function ProjectNew() {
   // GitHub / Paste
   const [ghUrl, setGhUrl] = useState("");
   const [ghBusy, setGhBusy] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const [analysis, setAnalysis] = useState<ProjectImportAnalysis | null>(initialImport);
   const [pasted, setPasted] = useState("");
 
   // Live validation
@@ -151,16 +178,73 @@ export default function ProjectNew() {
     if (!ghUrl.trim()) return;
     setGhBusy(true);
     try {
-      const d = await draftFromGithub(ghUrl.trim());
+      const imported = await analyzeProjectSource({ sourceType: "github", repositoryUrl: ghUrl.trim() });
+      const d = imported.draft;
       setName(d.name); setSummary(d.summary); setDescription(d.description);
-      setLicense(d.license ?? ""); setRepoUrl(d.repo_url); setTags(d.tags.join(", "));
-      if (d.cover_image_url) setCoverImageUrl(d.cover_image_url);
-      markImported(["name","summary","description","license","repoUrl","tags", ...(d.cover_image_url ? ["coverImageUrl"] : [])]);
+      setLicense(d.license ?? ""); setRepoUrl(d.repo_url ?? ""); setTags(d.tags.join(", "));
+      setAnalysis(imported);
+      saveImport(imported);
+      markImported(["name","summary","description","license","repoUrl","tags"]);
       setMode("manual");
-      toast({ title: "Imported", description: "Repository metadata extracted. Review highlighted fields before publishing." });
+      toast({ title: "Buildability analysis ready", description: `${imported.inventory.relevantFiles} relevant files inventoried. Review the scorecard and highlighted fields.` });
     } catch (e: any) {
       toast({ title: "Import failed", description: e.message ?? String(e), variant: "destructive" });
     } finally { setGhBusy(false); }
+  };
+
+  const importProjectFile = async (file: File) => {
+    setFileBusy(true);
+    try {
+      const extension = file.name.split(".").at(-1)?.toLowerCase();
+      let imported: ProjectImportAnalysis;
+      if (extension === "zip") {
+        if (!user) {
+          sessionStorage.setItem("rpp-import-return", "/projects/new");
+          nav("/auth?redirect=%2Fprojects%2Fnew");
+          toast({ title: "Sign in to inspect archives", description: "ZIP archives are stored privately in R2 before the Worker analyzes them." });
+          return;
+        }
+        const uploaded = await uploadFile(file, "attachment", "private");
+        imported = await analyzeProjectArchive(uploaded.fileId);
+      } else {
+        if (file.size > 1_048_576) throw new Error("Direct RPPS, BOM, and URDF imports are limited to 1 MiB. Use a ZIP archive for larger packages.");
+        const sourceType = /\.urdf(?:\.xacro)?$/iu.test(file.name) ? "urdf"
+          : /(^|[-_.])(bom|parts?)([-_.]|$)|\.csv$/iu.test(file.name) ? "bom" : "rpps";
+        imported = await analyzeProjectSource({ sourceType, fileName: file.name, content: await file.text() });
+      }
+      const d = imported.draft;
+      setName(d.name); setSummary(d.summary); setDescription(d.description);
+      setLicense(d.license ?? ""); setRepoUrl(d.repo_url ?? ""); setTags(d.tags.join(", "));
+      setAnalysis(imported);
+      saveImport(imported);
+      markImported(["name", "summary", "description", "license", "repoUrl", "tags"]);
+      setMode("manual");
+      toast({ title: "Project package analyzed", description: `${imported.inventory.relevantFiles} relevant files mapped without AI inference.` });
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message ?? String(e), variant: "destructive" });
+    } finally {
+      setFileBusy(false);
+    }
+  };
+
+  const applyAiDraft = (draft: Record<string, unknown>) => {
+    const text = (key: string) => typeof draft[key] === "string" ? draft[key] : undefined;
+    const numberText = (key: string) => typeof draft[key] === "number" && Number.isFinite(draft[key]) ? String(draft[key]) : undefined;
+    const list = (key: string) => Array.isArray(draft[key]) ? draft[key].filter((item): item is string => typeof item === "string").join(", ") : undefined;
+    const applied: string[] = [];
+    const setText = (key: string, setter: (value: string) => void) => { const value = text(key); if (value !== undefined) { setter(value); applied.push(key); } };
+    setText("name", setName); setText("summary", setSummary); setText("description", setDescription);
+    setText("compute", setCompute); setText("os", setOs); setText("middleware", setMiddleware);
+    setText("license", setLicense); setText("repositoryUrl", setRepoUrl); setText("documentationUrl", setDocsUrl);
+    const mappedLists: Array<[string, (value: string) => void]> = [["tags", setTags], ["requiredTools", setRequiredTools], ["requiredSkills", setRequiredSkills], ["languages", setLanguages], ["simulators", setSimulators]];
+    for (const [key, setter] of mappedLists) { const value = list(key); if (value !== undefined) { setter(value); applied.push(key); } }
+    const mappedNumbers: Array<[string, (value: string) => void]> = [["costUsd", setCostUsd], ["timeHours", setTimeHours], ["dof", setDof], ["payloadKg", setPayloadKg], ["weightKg", setWeightKg], ["heightCm", setHeightCm]];
+    for (const [key, setter] of mappedNumbers) { const value = numberText(key); if (value !== undefined) { setter(value); applied.push(key); } }
+    if (["beginner", "intermediate", "advanced", "expert"].includes(String(draft.difficulty))) setDifficulty(String(draft.difficulty) as Difficulty);
+    if (["native", "community", "none"].includes(String(draft.rosSupport))) setRosSupport(String(draft.rosSupport) as RosSupport);
+    if (Array.isArray(draft.fabrication)) setFabrication(draft.fabrication.filter((item): item is Fabrication => typeof item === "string" && FABRICATION_OPTIONS.includes(item as Fabrication)));
+    markImported(applied.map((key) => ({ repositoryUrl: "repoUrl", documentationUrl: "docsUrl" })[key] ?? key));
+    setMode("manual");
   };
 
   const buildRpps = (): Partial<RppsPackage> => ({
@@ -190,7 +274,11 @@ export default function ProjectNew() {
   });
 
   const submit = async () => {
-    if (!user) return;
+    if (!user) {
+      if (analysis) saveImport(analysis);
+      nav("/auth?redirect=%2Fprojects%2Fnew");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "paste") {
@@ -223,13 +311,13 @@ export default function ProjectNew() {
         organizationId: organizationId || null,
         rpps: buildRpps(),
       });
+      if (analysis) await createPortableRelease(row.id, { manifest: analysis.manifestYaml, status: "draft" });
+      sessionStorage.removeItem("rpp-project-import-analysis");
       nav(`/projects/${row.slug}`);
     } catch (e: any) {
       toast({ title: "Could not create project", description: e.message ?? String(e), variant: "destructive" });
     } finally { setBusy(false); }
   };
-
-  if (!user) return null;
 
   const derivedSlug = slugify(name || "project");
   const canCreate = mode === "paste" ? pasteState.status === "valid" && !busy
@@ -246,21 +334,33 @@ export default function ProjectNew() {
             <Link to="/rpps" className="text-primary hover:underline">Read the spec</Link>.
           </p>
         </div>
-        <Link to="/projects" className="btn-ghost btn-sm">Cancel</Link>
+        <div className="flex items-center gap-2">
+          {user ? <AiFormDraft
+            form="project"
+            current={{ name, version, summary, description, tags: tagList, difficulty, costUsd, timeHours, requiredTools, requiredSkills, fabrication, dof, payloadKg, weightKg, heightCm, compute, os, middleware, languages, rosSupport, simulators, license, repositoryUrl: repoUrl, documentationUrl: docsUrl }}
+            onApply={applyAiDraft}
+            hint="Describe the robot, its build requirements, hardware, and software. Unknown measurements and URLs will be left blank."
+          /> : <Link to="/auth?redirect=%2Fprojects%2Fnew" className="btn-secondary btn-sm">Sign in to save</Link>}
+          <Link to="/projects" className="btn-ghost btn-sm">Cancel</Link>
+        </div>
       </div>
 
       {/* Method cards */}
       <fieldset className="mb-4" aria-label="Creation method">
         <legend className="sr-only">Creation method</legend>
-        <div role="tablist" aria-label="Creation method" className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div role="tablist" aria-label="Creation method" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
           <MethodCard mode={mode} value="manual" onSelect={setMode} icon={<Pencil className="h-3.5 w-3.5" />}
             title="Manual" desc="Start from a blank form. Best when you know your build details firsthand." />
           <MethodCard mode={mode} value="github" onSelect={setMode} icon={<Github className="h-3.5 w-3.5" />}
             title="From GitHub" desc="Pre-fill from a public repo’s metadata and README. You still review every field." />
+          <MethodCard mode={mode} value="file" onSelect={setMode} icon={<FileArchive className="h-3.5 w-3.5" />}
+            title="Project files" desc="Analyze RPPS, BOM, URDF, or a bounded ZIP package." />
           <MethodCard mode={mode} value="paste" onSelect={setMode} icon={<FileJson className="h-3.5 w-3.5" />}
             title="Paste RPPS JSON" desc="Import an existing RPPS package produced elsewhere. Validated against the schema." />
         </div>
       </fieldset>
+
+      {analysis && <ImportScorecard analysis={analysis} onClear={() => { setAnalysis(null); sessionStorage.removeItem("rpp-project-import-analysis"); }} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
         <div className="min-w-0 space-y-4">
@@ -280,6 +380,38 @@ export default function ProjectNew() {
               {importedFields.size > 0 && (
                 <div className="text-[11px] flex items-center gap-1 text-primary"><Info className="h-3 w-3" /> Imported fields are highlighted below — review before publishing.</div>
               )}
+            </div>
+          )}
+
+          {mode === "file" && (
+            <div className="surface-card p-4 space-y-3">
+              <div>
+                <div className="flex items-center gap-1.5 text-[13px] font-semibold"><FileArchive className="h-4 w-4" /> Analyze project files</div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Import a portable <span className="mono">rpps.yaml</span>, BOM, URDF, or ZIP package. The deterministic pass inventories artifacts, preserves provenance, and reports missing build information without executing imported content.
+                </p>
+              </div>
+              <label className={`flex min-h-28 cursor-pointer flex-col items-center justify-center rounded border border-dashed p-5 text-center transition-colors ${fileBusy ? "pointer-events-none opacity-60" : "hover:border-primary hover:bg-primary/5"}`}>
+                {fileBusy ? <Loader2 className="mb-2 h-5 w-5 animate-spin text-primary" /> : <FileArchive className="mb-2 h-5 w-5 text-muted-foreground" />}
+                <span className="text-[12px] font-medium">{fileBusy ? "Analyzing project package…" : "Choose an RPPS, BOM, URDF, or ZIP file"}</span>
+                <span className="mt-1 text-[10.5px] text-muted-foreground">Text files up to 1 MiB. ZIP files up to 10 MiB compressed and require sign-in.</span>
+                <input
+                  type="file"
+                  className="sr-only"
+                  accept=".yaml,.yml,.json,.csv,.urdf,.xacro,.zip,application/zip,text/csv,application/json"
+                  disabled={fileBusy}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    event.currentTarget.value = "";
+                    if (file) void importProjectFile(file);
+                  }}
+                />
+              </label>
+              <div className="grid gap-2 md:grid-cols-3 text-[10.5px] text-muted-foreground">
+                <div className="rounded border border-border p-2"><span className="font-medium text-foreground">Portable</span><br />Exports stay independent of RoboPartPicker.</div>
+                <div className="rounded border border-border p-2"><span className="font-medium text-foreground">Reviewable</span><br />Original values and source paths remain visible.</div>
+                <div className="rounded border border-border p-2"><span className="font-medium text-foreground">Private by default</span><br />Nothing is published during analysis.</div>
+              </div>
             </div>
           )}
 
@@ -304,7 +436,7 @@ export default function ProjectNew() {
                 <VisibilitySelector value={visibility} organizationSelected={Boolean(organizationId)} onChange={setVisibility} />
               </div>
             </div>
-          ) : (
+          ) : mode === "file" ? null : (
             <>
               <Section title="Identity" desc="What this project is called and how it’s described.">
                 <Grid>
@@ -482,7 +614,7 @@ export default function ProjectNew() {
           <div className="surface-card p-3 space-y-2">
             <button onClick={submit} disabled={!canCreate}
               className="btn-primary btn-sm w-full disabled:opacity-50 disabled:cursor-not-allowed">
-              {busy ? "Creating…" : mode === "paste" ? "Validate & create" : "Create project"}
+              {busy ? "Creating…" : !user ? "Sign in to save" : mode === "paste" ? "Validate & create" : "Create project"}
             </button>
             {mode !== "paste" && hasErrors && (
               <div className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Fix highlighted fields to continue.</div>
@@ -509,6 +641,94 @@ const MethodCard = ({ mode, value, onSelect, icon, title, desc }: {
       <div className="flex items-center gap-1.5 text-[12px] font-medium">{icon}{title}</div>
       <div className="text-[11px] text-muted-foreground mt-1">{desc}</div>
     </button>
+  );
+};
+
+const PROFILE_LABELS: Record<keyof ProjectImportAnalysis["report"]["profiles"], string> = {
+  core: "Core",
+  buildable: "Buildable",
+  reproducible: "Reproducible",
+  collaborative: "Collaborative",
+};
+
+const DIMENSION_LABELS: Record<keyof ProjectImportAnalysis["report"]["dimensions"], string> = {
+  "artifact-completeness": "Artifacts",
+  "bom-resolution": "BOM resolution",
+  "mechanical-interfaces": "Mechanical interfaces",
+  "electrical-interfaces": "Electrical interfaces",
+  "firmware-reproducibility": "Firmware",
+  "configuration-calibration": "Configuration & calibration",
+  "assembly-instructions": "Assembly instructions",
+  "test-coverage": "Test coverage",
+  "licensing-clarity": "Licensing",
+  "evidence-quality": "Evidence",
+  "collaboration-readiness": "Collaboration",
+};
+
+const ImportScorecard = ({ analysis, onClear }: { analysis: ProjectImportAnalysis; onClear: () => void }) => {
+  const blockers = analysis.report.findings.filter((finding) => finding.severity === "blocker");
+  return (
+    <section className="surface-card mb-4 overflow-hidden" aria-labelledby="import-scorecard-title">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
+        <div>
+          <div className="section-title">Deterministic import</div>
+          <h2 id="import-scorecard-title" className="text-[14px] font-semibold">Buildability scorecard · {analysis.sourceLabel}</h2>
+          <p className="mt-1 text-[10.5px] text-muted-foreground">
+            {analysis.inventory.relevantFiles} relevant of {analysis.inventory.totalFiles} inventoried · {analysis.sourceMappings.length} provenance mappings · no AI used
+          </p>
+        </div>
+        <button type="button" onClick={onClear} className="btn-ghost btn-sm">Clear analysis</button>
+      </div>
+      <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.8fr)]">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {(Object.entries(analysis.report.profiles) as Array<[keyof typeof PROFILE_LABELS, { score: number; conformant: boolean }]>).map(([profile, result]) => (
+              <div key={profile} className={`rounded border p-2 ${result.conformant ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{PROFILE_LABELS[profile]}</div>
+                <div className="mt-1 flex items-baseline justify-between gap-2"><span className="mono text-[16px] font-semibold">{result.score}%</span><span className="text-[10px] text-muted-foreground">{result.conformant ? "conformant" : "incomplete"}</span></div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div className="section-title mb-2">Score dimensions</div>
+            <div className="grid gap-x-4 gap-y-2 md:grid-cols-2">
+              {(Object.entries(analysis.report.dimensions) as Array<[keyof typeof DIMENSION_LABELS, number]>).map(([dimension, score]) => (
+                <div key={dimension}>
+                  <div className="mb-1 flex justify-between gap-2 text-[10.5px]"><span>{DIMENSION_LABELS[dimension]}</span><span className="mono text-muted-foreground">{score}%</span></div>
+                  <div className="h-1 overflow-hidden rounded bg-muted"><div className="h-full bg-primary" style={{ width: `${score}%` }} /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {analysis.importWarnings.length > 0 && (
+            <div className="rounded border border-border bg-muted/30 p-2">
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Import notes</div>
+              <ul className="space-y-1 text-[10.5px] text-muted-foreground">{analysis.importWarnings.map((warning) => <li key={warning}>• {warning}</li>)}</ul>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-2"><div className="section-title">Highest-impact findings</div><span className="mono text-[10px] text-muted-foreground">{blockers.length} blockers</span></div>
+          {analysis.report.findings.length === 0 ? (
+            <div className="rounded border border-primary/40 bg-primary/5 p-3 text-[11px] text-primary">No deterministic findings for this manifest.</div>
+          ) : (
+            <ol className="max-h-[360px] space-y-2 overflow-auto pr-1">
+              {analysis.report.findings.slice(0, 12).map((finding) => (
+                <li key={`${finding.ruleId}-${finding.affectedObject ?? "release"}`} className="rounded border border-border p-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="mono text-[10px] font-semibold">{finding.ruleId}</span>
+                    <span className={`rounded px-1 py-0.5 text-[9px] uppercase tracking-wide ${finding.severity === "blocker" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>{finding.severity}</span>
+                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground">{finding.deterministic ? "deterministic" : "inferred"}</span>
+                  </div>
+                  <p className="mt-1 text-[10.5px]">{finding.message}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">{finding.suggestion}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </div>
+    </section>
   );
 };
 

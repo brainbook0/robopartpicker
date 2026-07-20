@@ -18,7 +18,7 @@ const createThreadSchema = z.object({
   body: z.string().trim().min(20).max(50_000), tags: z.array(z.string().trim().min(1).max(24)).max(6), threadType: z.enum(threadTypes),
   relatedEntityType: z.enum(relatedTypes).nullable().optional(), relatedEntityId: z.string().max(200).nullable().optional(),
   linkedEntityLabel: z.string().trim().max(200).nullable().optional(), linkedEntityPath: safePath.nullable().optional(),
-  structuredData: z.record(z.unknown()).refine((value) => JSON.stringify(value).length <= 20_000, "Structured data is too large."),
+  structuredData: z.record(z.string(), z.unknown()).refine((value) => JSON.stringify(value).length <= 20_000, "Structured data is too large."),
 }).strict().refine((value) => Boolean(value.relatedEntityType) === Boolean(value.relatedEntityId), { message: "Related entity type and id must be provided together.", path: ["relatedEntityId"] });
 const createPostSchema = z.object({ body: z.string().trim().min(2).max(30_000), parentId: z.string().uuid().nullable().optional() }).strict();
 const statusSchema = z.object({ status: z.enum(statuses) }).strict();
@@ -26,7 +26,7 @@ const acceptedSchema = z.object({ postId: z.string().uuid().nullable() }).strict
 const reactionSchema = z.object({ emoji: z.enum(["👍", "❤️", "🚀", "🧠", "👀", "🔥"]), threadId: z.string().uuid().optional(), postId: z.string().uuid().optional() }).strict()
   .refine((value) => Boolean(value.threadId) !== Boolean(value.postId), { message: "Exactly one reaction target is required." });
 const statsSchema = z.object({ userIds: z.array(z.string().min(1).max(100)).max(100) }).strict();
-const reportSchema = z.object({ threadId: z.string().uuid().optional(), postId: z.string().uuid().optional(), reason: z.string().trim().min(3).max(100), details: z.string().trim().max(4_000).optional(), structuredData: z.record(z.unknown()).optional() }).strict()
+const reportSchema = z.object({ threadId: z.string().uuid().optional(), postId: z.string().uuid().optional(), reason: z.string().trim().min(3).max(100), details: z.string().trim().max(4_000).optional(), structuredData: z.record(z.string(), z.unknown()).optional() }).strict()
   .refine((value) => Boolean(value.threadId) || Boolean(value.postId), { message: "A report target is required." });
 
 export const communityRoutes = new Hono<AppBindings>();
