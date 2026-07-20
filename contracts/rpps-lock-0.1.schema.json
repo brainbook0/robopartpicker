@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:rpps:schema:lock:0.1",
+  "title": "RPPS 0.1 Draft lockfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["rppsLock", "release"],
+  "properties": {
+    "rppsLock": { "const": "0.1" },
+    "release": { "type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": { "id": { "$ref": "#/$defs/id" }, "version": { "type": "string", "minLength": 1, "maxLength": 500 } } },
+    "manifestSha256": { "$ref": "#/$defs/sha256" },
+    "artifacts": { "type": "array", "maxItems": 5000, "default": [], "items": { "type": "object", "additionalProperties": false, "required": ["id", "sha256"], "properties": { "id": { "$ref": "#/$defs/id" }, "sha256": { "$ref": "#/$defs/sha256" }, "sourceRevision": { "type": "string", "maxLength": 200 } } } },
+    "components": { "type": "array", "maxItems": 10000, "default": [], "items": { "type": "object", "additionalProperties": false, "required": ["id", "manufacturer", "mpn", "quantity"], "properties": { "id": { "$ref": "#/$defs/id" }, "manufacturer": { "type": "string", "maxLength": 160 }, "mpn": { "type": "string", "maxLength": 160 }, "revision": { "type": "string", "maxLength": 160 }, "quantity": { "type": "number", "exclusiveMinimum": 0 } } } },
+    "extensions": { "type": "object", "propertyNames": { "pattern": "^[a-z0-9]+([.-][a-z0-9-]+)+$" }, "additionalProperties": true }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9][A-Za-z0-9:._/-]*$" },
+    "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
+  }
+}

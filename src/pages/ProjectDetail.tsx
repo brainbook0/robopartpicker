@@ -10,6 +10,7 @@ import { deleteProject, downloadRpps, getProjectBySlug, updateProjectRpps, updat
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { attachFile, detachProjectFile, listProjectFiles, uploadFile, type FileKind, type ProjectFile } from "@/lib/api/files";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
+import { getPortableRelease, listPortableReleases, type PortableRppsReleaseSummary } from "@/lib/rpps/client";
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -22,6 +23,7 @@ export default function ProjectDetail() {
   const [managedFiles, setManagedFiles] = useState<ProjectFile[]>([]);
   const [managedFilesLoading, setManagedFilesLoading] = useState(false);
   const [fileBusy, setFileBusy] = useState<string | null>(null);
+  const [portableReleases, setPortableReleases] = useState<PortableRppsReleaseSummary[]>([]);
   const projectId = p?.id;
 
   useEffect(() => {
@@ -47,6 +49,13 @@ export default function ProjectDetail() {
       .finally(() => { if (!cancelled) setManagedFilesLoading(false); });
     return () => { cancelled = true; };
   }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId) { setPortableReleases([]); return; }
+    let cancelled = false;
+    listPortableReleases(projectId).then((items) => { if (!cancelled) setPortableReleases(items); }).catch(() => { if (!cancelled) setPortableReleases([]); });
+    return () => { cancelled = true; };
+  }, [projectId, user?.id]);
 
   if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
   if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
@@ -512,14 +521,22 @@ export default function ProjectDetail() {
           </Section>
 
           <div className="surface-card p-3">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> Portable RPPS releases
+            </div>
+            {portableReleases.length === 0 ? <p className="text-[10.5px] text-muted-foreground">No RPPS 0.1 Draft releases yet.</p> : <div className="space-y-2">{portableReleases.map((release) => <div key={release.id} className="border border-border p-2"><div className="flex items-center justify-between gap-2"><span className="mono text-[10px] font-semibold">{release.version}</span><span className="pill text-[8px]">{release.status}</span></div><div className="mt-1 flex justify-between text-[9.5px] text-muted-foreground"><span>Core {release.report.profiles.core.score}%</span><span>Buildable {release.report.profiles.buildable.score}%</span></div><div className="mt-2 flex gap-1"><button type="button" className="btn-ghost btn-sm flex-1 justify-center" onClick={() => void downloadReleaseArtifact(p.id, release.id, release.version, "manifest")}><Download className="h-3 w-3" /> manifest</button>{release.hasLockfile && <button type="button" className="btn-ghost btn-sm flex-1 justify-center" onClick={() => void downloadReleaseArtifact(p.id, release.id, release.version, "lockfile")}><Download className="h-3 w-3" /> lock</button>}</div><div className="mono mt-1 truncate text-[8.5px] text-muted-foreground" title={release.packageSha256}>sha256:{release.packageSha256}</div></div>)}</div>}
+            {canEditRpps && <Link to="/rpps" className="btn-primary btn-sm mt-2 w-full justify-center"><FileUp className="h-3.5 w-3.5" /> Validate or add release</Link>}
+          </div>
+
+          <div className="surface-card p-3">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1">
-              <FileJson className="h-3 w-3" /> RPPS package
+              <FileJson className="h-3 w-3" /> Legacy RPPS package
             </div>
             <button onClick={() => downloadRpps(p.rpps)} className="btn-ghost btn-sm w-full justify-center">
               <Download className="h-3.5 w-3.5" /> Download .rpps.json
             </button>
             <p className="text-[10.5px] text-muted-foreground mt-2">
-              Portable, versioned JSON per the <Link to="/rpps" className="text-primary hover:underline">RPPS spec</Link>. Import or diff externally.
+              Legacy flat JSON retained for current project compatibility. New portable releases use the <Link to="/rpps" className="text-primary hover:underline">RPPS 0.1 Draft</Link> manifest and lockfile.
             </p>
           </div>
           <RelatedDiscussionList relatedType="project" relatedId={p.id} title="Community discussions" />
@@ -527,6 +544,22 @@ export default function ProjectDetail() {
       </div>
     </div>
   );
+}
+
+function downloadPortableFile(name: string, content: string) {
+  const url = URL.createObjectURL(new Blob([content], { type: "application/yaml;charset=utf-8" }));
+  const anchor = document.createElement("a"); anchor.href = url; anchor.download = name; anchor.click(); URL.revokeObjectURL(url);
+}
+
+async function downloadReleaseArtifact(projectId: string, releaseId: string, version: string, type: "manifest" | "lockfile") {
+  try {
+    const release = await getPortableRelease(projectId, releaseId);
+    const content = type === "manifest" ? release.manifest : release.lockfile;
+    if (!content) throw new Error("This release has no lockfile.");
+    downloadPortableFile(type === "manifest" ? `rpps-${version}.yaml` : `rpps-${version}.lock.yaml`, content);
+  } catch (error) {
+    toast({ title: "Release download failed", description: errorMessage(error), variant: "destructive" });
+  }
 }
 
 type ProjectAuthor = NonNullable<ProjectRow["rpps"]["authors"]>[number];

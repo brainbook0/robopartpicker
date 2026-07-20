@@ -14,6 +14,17 @@ npm run dev
 
 The frontend and API share one origin. Authentication cookies therefore require no local cross-origin exception.
 
+## Portable RPPS commands
+
+```powershell
+npm run rpps:init -- my-robot
+npm run rpps:validate -- path/to/rpps.yaml path/to/rpps.lock.yaml
+npm run rpps:buildability -- path/to/rpps.yaml path/to/rpps.lock.yaml
+npm run rpps:migrate -- legacy.rpps.json output/rpps.yaml
+```
+
+These commands use the same pure TypeScript parser and deterministic rules as the Worker. They do not connect to D1, R2, RoboPartPicker, or any AI provider. The draft schemas and interoperability example live in `contracts/` and `standards/rpps/`.
+
 ## Database commands
 
 ```powershell

@@ -2,6 +2,23 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.3.0] - 2026-07-19
+
+### Added
+
+- Vendor-neutral `RPPS 0.1 Draft` manifest and lockfile contracts with stable object IDs, namespaced extension preservation, legacy RPPS conversion, checked-in JSON Schemas, examples, and local `init`, `validate`, `buildability`, and `migrate` CLI commands.
+- Deterministic progressive Core, Buildable, Reproducible, and Collaborative scorecards with stable rule IDs, blocker/warning severity, affected dimensions, and explicit corrective guidance.
+- Anonymous `/api/v1/rpps/validate` plus server-authorized, content-addressed immutable project releases with private drafts, public publication, audit history, and normalized D1 assemblies, interfaces, provenance, and findings.
+- D1 foundations for structured RPPS change proposals and release-linked build outcomes without prematurely exposing incomplete product flows.
+- Browser-based YAML/JSON manifest and lockfile validation, scorecard inspection, portable downloads, and authenticated draft/public release creation.
+- Portable RPPS validation in the existing read-only MCP and authorized AI toolsets, with legacy validation retained for compatibility.
+
+### Changed
+
+- Projects/import/releases now treat the previous flat RPPS 1.0 JSON as a legacy application format; the rest of RoboPartPicker remains unaffected and continues to use its existing domain APIs.
+- Evidence language uses Structured, Tested, Reproduced, and Repeated achievement levels while Current is a separate freshness status. Compatibility sources are explicit and the product does not claim certification.
+- RPPS composes Open Know-How, CycloneDX, SPDX, ROS REP-103, and native engineering formats instead of replacing them. SPDX 3.1 hardware adapters remain experimental until the upstream specification is published.
+
 ## [0.2.9] - 2026-07-19
 
 ### Added

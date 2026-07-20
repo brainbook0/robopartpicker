@@ -9,6 +9,52 @@ let otherCookie = "";
 let ownerId = "";
 let otherId = "";
 let buildId = "";
+const portableRpps = `
+rpps: "0.1"
+project:
+  id: project:portable-test
+  name: Portable Test Robot
+  slug: portable-test-robot
+release:
+  id: release:portable-test:0.1.0
+  version: 0.1.0
+authors:
+  - id: author:owner
+    name: Owner User
+licenses:
+  hardware: CERN-OHL-S-2.0
+  software: Apache-2.0
+  documentation: CC-BY-4.0
+artifacts:
+  - id: artifact:readme
+    path: README.md
+    kind: documentation
+    sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    source:
+      url: https://github.com/example/portable-test
+      revision: abc123
+components:
+  - id: component:motor
+    name: TM-42 Motor
+    quantity: 2
+    manufacturer: Test Motors
+    mpn: TM-42
+interfaces:
+  - id: interface:motor-mount
+    name: Motor mount
+    kind: mechanical
+    specifications:
+      boltPatternMm: 42
+assemblies:
+  - id: assembly:drive
+    name: Drive assembly
+    componentRefs: [component:motor]
+    artifactRefs: [artifact:readme]
+    interfaceRefs: [interface:motor-mount]
+extensions:
+  org.example.test:
+    preserved: true
+`;
 
 async function call(path: string, init: RequestInit = {}, cookie?: string) {
   const headers = new Headers(init.headers);
@@ -48,8 +94,8 @@ beforeAll(async () => {
 describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
-    expect(Number(migrations?.value)).toBe(9);
-    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.2.9" });
+    expect(Number(migrations?.value)).toBe(10);
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.3.0" });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
     const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
@@ -223,6 +269,44 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect((await body<{ item: { organization_id: string | null; visibility: string } }>(adminBuildDetach)).item).toMatchObject({ organization_id: null, visibility: "private" });
   });
 
+  it("validates portable RPPS anonymously and stores immutable authorized releases", async () => {
+    const validation = await call("/api/v1/rpps/validate", { method: "POST", body: jsonBody({ manifest: portableRpps }) });
+    expect(validation.status).toBe(200);
+    const validationBody = await body<{ report: { profiles: { core: { conformant: boolean }; buildable: { conformant: boolean } } }; manifest: { extensions: Record<string, unknown> } }>(validation);
+    expect(validationBody.report.profiles.core.conformant).toBe(true);
+    expect(validationBody.report.profiles.buildable.conformant).toBe(false);
+    expect(validationBody.manifest.extensions["org.example.test"]).toEqual({ preserved: true });
+
+    const projectResponse = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      visibility: "public",
+      rpps: emptyRpps({ name: "Portable Release Host", slug: "portable-release-host" }),
+    }) }, ownerCookie);
+    expect(projectResponse.status).toBe(201);
+    const projectId = (await body<{ item: { id: string } }>(projectResponse)).item.id;
+    const denied = await call(`/api/v1/projects/${projectId}/releases`, { method: "POST", body: jsonBody({ manifest: portableRpps, status: "published" }) }, otherCookie);
+    expect(denied.status).toBe(403);
+    const created = await call(`/api/v1/projects/${projectId}/releases`, { method: "POST", body: jsonBody({ manifest: portableRpps, status: "published" }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const item = (await body<{ item: { id: string; packageSha256: string; status: string } }>(created)).item;
+    expect(item).toMatchObject({ status: "published" });
+    expect(item.packageSha256).toMatch(/^[a-f0-9]{64}$/u);
+    const duplicate = await call(`/api/v1/projects/${projectId}/releases`, { method: "POST", body: jsonBody({ manifest: portableRpps, status: "published" }) }, ownerCookie);
+    expect(duplicate.status).toBe(409);
+    const draftManifest = portableRpps.replaceAll("0.1.0", "0.1.1");
+    const draft = await call(`/api/v1/projects/${projectId}/releases`, { method: "POST", body: jsonBody({ manifest: draftManifest, status: "draft" }) }, ownerCookie);
+    expect(draft.status).toBe(201);
+    const listed = await call(`/api/v1/projects/${projectId}/releases`, {}, ownerCookie);
+    expect(listed.status).toBe(200);
+    expect((await body<{ total: number }>(listed)).total).toBe(2);
+    const publicList = await call(`/api/v1/projects/${projectId}/releases`);
+    expect(publicList.status).toBe(200);
+    expect((await body<{ total: number }>(publicList)).total).toBe(1);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM rpps_validation_findings WHERE release_id = ?1").bind(item.id).first<{ value: number }>())?.value)).toBeGreaterThan(0);
+    expect(await env.DB.prepare("SELECT stable_id, name FROM rpps_release_assemblies WHERE release_id = ?1").bind(item.id).first()).toEqual({ stable_id: "assembly:drive", name: "Drive assembly" });
+    expect(await env.DB.prepare("SELECT stable_id, interface_kind FROM rpps_release_interfaces WHERE release_id = ?1").bind(item.id).first()).toEqual({ stable_id: "interface:motor-mount", interface_kind: "mechanical" });
+    expect(await env.DB.prepare("SELECT source_url, source_revision FROM rpps_source_mappings WHERE release_id = ?1").bind(item.id).first()).toEqual({ source_url: "https://github.com/example/portable-test", source_revision: "abc123" });
+  });
+
   it("versions project technical records with normalized requirements and evidence", async () => {
     const initialRpps = emptyRpps({
       name: "Technical Record Robot",
@@ -362,6 +446,12 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(searched.status).toBe(200);
     const result = await body<{ result: { structuredContent: { items: Array<{ id: string }> } } }>(searched);
     expect(result.result.structuredContent.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: "c-test" })]));
+    const validated = await call("/mcp", { method: "POST", headers, body: jsonBody({
+      jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "validate_rpps", arguments: { manifest: portableRpps } },
+    }) });
+    expect(validated.status).toBe(200);
+    const validation = await body<{ result: { structuredContent: { valid: boolean; format: string; report: { profiles: { core: { conformant: boolean } } } } } }>(validated);
+    expect(validation.result.structuredContent).toMatchObject({ valid: true, format: "portable-0.1-draft", report: { profiles: { core: { conformant: true } } } });
   });
 
   it("persists and revokes Better Auth sessions across sign-out and sign-in", async () => {
