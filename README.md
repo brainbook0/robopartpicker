@@ -58,7 +58,7 @@ Detailed references: [backend architecture](docs/backend-architecture.md), [data
 
 ## Live preview
 
-The live preview is available at <https://robopartpicker-preview.ludomi2502.workers.dev>. It is a single Cloudflare Worker serving the React SPA and the same-origin `/api/*` backend. It uses dedicated `robopartpicker-preview` D1 and `robopartpicker-preview-files` R2 resources, never the Attentify or production resources. Preview data is intentionally seeded from the clearly labeled demo fixtures.
+The live preview is available at <https://robopartpicker-preview.ludomi2502.workers.dev>. It is a single Cloudflare Worker serving the React SPA and the same-origin `/api/*` backend. It uses dedicated `robopartpicker-preview` D1 and `robopartpicker-preview-files` R2 resources, never the Attentify or production resources. Preview data is intentionally seeded from clearly labeled demo fixtures, including six RPPS projects derived from the downloaded BOM data.
 
 ## Production deployment
 

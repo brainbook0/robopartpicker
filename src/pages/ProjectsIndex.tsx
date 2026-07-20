@@ -100,6 +100,7 @@ export default function ProjectsIndex() {
   const hasActiveFilters = !!(q || tag || difficulty || quick.size || sort !== "updated");
   const noProjectsExist = !loading && rows.length === 0;
   const noMatches = !loading && rows.length > 0 && filtered.length === 0;
+  const demoOnly = rows.length > 0 && rows.every((project) => project.is_demo);
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-4">
@@ -130,6 +131,7 @@ export default function ProjectsIndex() {
         <StatCell label="With BOM" value={`${stats.withBom}/${stats.total || 0}`} />
         <StatCell label="Updated this week" value={stats.recent.toString()} />
       </div>
+      {demoOnly && <div className="mb-3 border border-warning/30 bg-warning/5 p-2 text-[11px] text-muted-foreground">All projects shown are derived from downloaded demo BOM fixtures. They are example RPPS records, not validated build instructions or live community publications.</div>}
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -269,6 +271,7 @@ function ProjectCard({ p }: { p: ProjectRow }) {
             {p.difficulty}
           </span>
         )}
+        {p.is_demo && <span className="absolute left-1.5 top-1.5 rounded border border-warning/40 bg-background/90 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-warning">demo fixture</span>}
       </div>
       <div className="p-3 flex flex-col flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">

@@ -2,6 +2,18 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.2.8] - 2026-07-19
+
+### Added
+
+- Six public RPPS demo projects derived deterministically from the downloaded BOM and component fixtures.
+- Explicit demo-fixture labels on the home page, project catalog, and project detail routes.
+- Schema validation that requires project fixture coverage in addition to components, suppliers, and BOMs.
+
+### Changed
+
+- The idempotent seed now links each fixture BOM to its derived project and preserves the original fixture author as a labeled RPPS author value.
+
 ## [0.2.7] - 2026-07-19
 
 ### Added

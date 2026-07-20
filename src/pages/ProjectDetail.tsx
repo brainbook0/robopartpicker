@@ -141,6 +141,7 @@ export default function ProjectDetail() {
               <Meta k="version" v={`v${p.version}`} />
               <Meta k="rpps" v={p.rpps_version} />
               <StatusPill kind={p.status === "published" ? "ok" : p.status === "archived" ? "muted" : "warn"} label={p.status} />
+              {p.is_demo && <StatusPill kind="warn" label="demo fixture" />}
               {p.difficulty && <Meta k="difficulty" v={p.difficulty} />}
               {p.license && <Meta k="license" v={p.license} />}
               <Meta k="updated" v={updated.toLocaleDateString()} />

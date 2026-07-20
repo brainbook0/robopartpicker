@@ -10,7 +10,7 @@ The `preview` Wrangler environment is a full-stack Worker deployment with isolat
 - D1: `robopartpicker-preview`
 - R2: `robopartpicker-preview-files`
 - URL: <https://robopartpicker-preview.ludomi2502.workers.dev>
-- Verified checkpoint Worker version: `24e04802-24fc-4f82-8c98-6622550d52d1`
+- Verified checkpoint Worker version: `c70b90dd-9fc0-4187-99a5-830268805c49`
 
 It serves the React assets and `/api/*` from one origin. Apply and seed the preview database explicitly, then deploy:
 
