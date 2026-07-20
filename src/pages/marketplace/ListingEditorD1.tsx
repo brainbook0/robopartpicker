@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useComponents } from "@/lib/api/catalog";
 import { marketplaceApi, useMarketplaceListing } from "@/lib/api/marketplace";
 import type { MarketplaceListing, MarketplaceListingInput } from "@/shared/marketplace";
+import { AiFormDraft } from "@/components/ai/AiFormDraft";
 
 const grades: NonNullable<MarketplaceListing["conditionGrade"]>[] = ["A", "B", "C", "untested", "for_parts", "not_applicable"];
 
@@ -62,6 +63,18 @@ export default function ListingEditorD1() {
     sellerDeclaresTestReport: testReport, sellerDeclaresVideo: video, sellerAcceptsReturns: returns, serialAvailable: serial,
   });
 
+  const applyAiDraft = (draft: Record<string, unknown>) => {
+    if (typeof draft.title === "string") setTitle(draft.title);
+    if (typeof draft.description === "string") setDescription(draft.description);
+    if (typeof draft.category === "string") setCategory(draft.category);
+    if (typeof draft.conditionGrade === "string" && grades.includes(draft.conditionGrade as NonNullable<MarketplaceListing["conditionGrade"]>)) setGrade(draft.conditionGrade as MarketplaceListing["conditionGrade"]);
+    if (typeof draft.price === "number" && Number.isFinite(draft.price)) setPrice(String(draft.price));
+    if (typeof draft.quantity === "number" && Number.isFinite(draft.quantity)) setQuantity(String(draft.quantity));
+    if (typeof draft.region === "string" && ["US", "EU", "CN", "JP", "KR", "Global"].includes(draft.region)) setRegion(draft.region);
+    if (typeof draft.runtimeHours === "number" && Number.isInteger(draft.runtimeHours)) setRuntimeHours(String(draft.runtimeHours));
+    if (typeof draft.provenance === "string") setProvenance(draft.provenance);
+  };
+
   const persist = async (publish: boolean) => {
     if (errors.length) { toast.error(errors[0]); return; }
     setBusy(true);
@@ -82,7 +95,7 @@ export default function ListingEditorD1() {
 
   return <main className="mx-auto max-w-[1000px] px-4 py-6">
     <div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / {draftId ? "edit draft" : "new listing"}</div>
-    <h1 className="text-[22px] font-bold tracking-tight mt-1">{draftId ? "Edit listing draft" : "Create a technical listing"}</h1>
+    <div className="mt-1 flex items-center justify-between gap-3"><h1 className="text-[22px] font-bold tracking-tight">{draftId ? "Edit listing draft" : "Create a technical listing"}</h1><AiFormDraft form="marketplace_listing" current={{ title, description, category, conditionGrade: grade, price, quantity, region, runtimeHours, provenance }} onApply={applyAiDraft} hint="Describe the item, condition, included hardware, defects, provenance, quantity, and asking price. Evidence declarations remain manual." /></div>
     <div className="surface-card mt-3 border-warning/30 bg-warning/5 p-2 text-[11.5px] text-muted-foreground flex gap-2"><AlertTriangle className="h-3.5 w-3.5 text-warning" /> Evidence fields below are seller declarations. RoboPartPicker does not verify identity, serial numbers, payment, escrow, shipping, or inspection.</div>
     <div className="grid gap-4 lg:grid-cols-[1fr_300px] mt-4">
       <form className="surface-card p-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void persist(false); }}>

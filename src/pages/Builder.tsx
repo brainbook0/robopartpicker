@@ -11,6 +11,7 @@ import type { CatalogPart } from "@/shared/catalog";
 import type { BuildDetail, BuildItem } from "@/shared/builds";
 import { attachFile, uploadFile, type FileKind } from "@/lib/api/files";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
+import { AiFormDraft } from "@/components/ai/AiFormDraft";
 
 const money = (minor: number | null, currency = "USD") => minor == null
   ? "—"
@@ -346,10 +347,19 @@ function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefres
     await run(`delete-${id}`, operations[kind], `${name} deleted`);
   };
 
+  const applyAiDraft = (draft: Record<string, unknown>) => {
+    const text = (key: string) => typeof draft[key] === "string" ? draft[key] as string : undefined;
+    const kind = text("recordType");
+    if (kind === "configuration" || (!kind && text("contentText"))) setConfiguration((current) => ({ ...current, name: text("name") ?? current.name, format: text("format") ?? current.format, contentText: text("contentText") ?? current.contentText }));
+    if (kind === "firmware" || (!kind && text("repositoryUrl"))) setFirmware((current) => ({ ...current, name: text("name") ?? current.name, repositoryUrl: text("repositoryUrl") ?? current.repositoryUrl, revision: text("revision") ?? current.revision, licenseSpdx: text("licenseSpdx") ?? current.licenseSpdx, notes: text("notes") ?? current.notes }));
+    if (kind === "calibration" || (!kind && text("procedureText"))) setCalibration((current) => ({ ...current, name: text("name") ?? current.name, procedureText: text("procedureText") ?? current.procedureText, resultNotes: text("resultNotes") ?? current.resultNotes }));
+    if (kind === "test" || (!kind && text("methodText"))) setTest((current) => ({ ...current, name: text("name") ?? current.name, methodText: text("methodText") ?? current.methodText, expectedText: text("expectedText") ?? current.expectedText, observedText: text("observedText") ?? current.observedText }));
+  };
+
   return <div className="surface-card p-3">
-    <div className="mb-3">
-      <div className="section-title">Engineering records</div>
-      <p className="text-[11px] text-muted-foreground">Versioned configuration plus traceable firmware, calibration, and verification results.</p>
+    <div className="mb-3 flex items-start justify-between gap-3">
+      <div><div className="section-title">Engineering records</div><p className="text-[11px] text-muted-foreground">Versioned configuration plus traceable firmware, calibration, and verification results.</p></div>
+      <AiFormDraft form="build_record" current={{ configuration, firmware, calibration, test }} onApply={applyAiDraft} hint="Describe one configuration, firmware reference, calibration procedure, or verification test. State the record type and include only known values." />
     </div>
     <div className="grid gap-3 xl:grid-cols-2">
       <section className="rounded border border-border p-3">

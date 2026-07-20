@@ -10,7 +10,7 @@ const ShortText = z.string().trim().min(1).max(500);
 const Url = z.string().url().max(2_048);
 const Sha256 = z.string().regex(/^[a-fA-F0-9]{64}$/u, "must be a SHA-256 hex digest").transform((value) => value.toLowerCase());
 const Timestamp = z.string().datetime({ offset: true });
-const ExtensionMap = z.record(z.unknown()).superRefine((value, context) => {
+const ExtensionMap = z.record(z.string(), z.unknown()).superRefine((value, context) => {
   for (const key of Object.keys(value)) {
     if (!/^[a-z0-9]+(?:[.-][a-z0-9-]+)+$/u.test(key)) {
       context.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: "extension keys must use a namespaced identifier such as org.example.feature" });
@@ -46,7 +46,7 @@ export const PortableInterface = z.object({
   name: ShortText,
   kind: z.enum(["mechanical", "electrical", "communication", "software", "coordinate-frame", "capability", "environmental", "other"]),
   description: z.string().max(4_000).optional(),
-  specifications: z.record(z.union([z.string(), z.number(), z.boolean()])).default({}),
+  specifications: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
   evidenceRefs: z.array(Identifier).max(100).default([]),
 }).strict();
 

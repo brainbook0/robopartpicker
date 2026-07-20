@@ -17,8 +17,8 @@ healthRoutes.get("/health", async (c) => {
     capabilities: {
       emailDelivery: isEmailDeliveryConfigured(c.env),
       ai: Boolean(c.env.AI_PROVIDER_URL && c.env.AI_PROVIDER_KEY && c.env.AI_MODEL),
-      mcp: "public_read_only",
-      repositoryImport: Boolean(c.env.GITHUB_TOKEN),
+      mcp: { publicReadOnly: true, privateOAuth: true },
+      repositoryImport: { publicGitHub: true, authenticatedGitHub: Boolean(c.env.GITHUB_TOKEN), directFiles: true, privateArchives: true },
     },
     requestId: c.get("requestId"),
   });

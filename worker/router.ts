@@ -25,6 +25,7 @@ import { notificationRoutes } from "./routes/notifications";
 import { adminRoutes } from "./routes/admin";
 import { apiRateLimit } from "./middleware/rate-limit";
 import { handleMcpRequest } from "./mcp";
+import { handlePrivateMcpRequest, privateMcpResourceMetadata } from "./mcp-private";
 
 export const app = new Hono<AppBindings>();
 
@@ -36,8 +37,25 @@ app.use("/api/v1/*", requireSameOriginMutation);
 app.use("/mcp", requestId);
 app.use("/mcp", apiSecurityHeaders);
 app.use("/mcp", apiRateLimit);
+app.use("/mcp/*", requestId);
+app.use("/mcp/*", apiSecurityHeaders);
+app.use("/mcp/*", apiRateLimit);
+app.use("/.well-known/*", requestId);
+app.use("/.well-known/*", apiSecurityHeaders);
 
+app.all("/mcp/private", (c) => handlePrivateMcpRequest(c.req.raw, c.env));
 app.all("/mcp", (c) => handleMcpRequest(c.req.raw, c.env));
+
+app.on(["GET", "HEAD"], ["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp/private"], (c) => {
+  const body = c.req.method === "HEAD" ? null : JSON.stringify(privateMcpResourceMetadata(c.env));
+  return new Response(body, {
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=300, stale-while-revalidate=300",
+    },
+  });
+});
+app.on(["GET", "HEAD"], "/.well-known/oauth-authorization-server/api/auth", (c) => createAuth(c.env).handler(c.req.raw));
 
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
 app.route("/api", healthRoutes);

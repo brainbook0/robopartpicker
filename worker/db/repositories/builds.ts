@@ -1,4 +1,5 @@
 import { AppError } from "../../http";
+import type { PortableRppsManifest } from "../../../src/lib/rpps/portable";
 
 export type BuildRow = {
   id: string; slug: string; name: string; owner_user_id: string | null; organization_id: string | null;
@@ -115,7 +116,19 @@ export class BuildsRepository {
       files: files.results as Array<Record<string, unknown>> };
   }
 
-  async create(userId: string, input: { name: string; organizationId?: string | null; sourceProjectId?: string | null; visibility: BuildRow["visibility"] }): Promise<BuildDetail> {
+  async create(userId: string, input: {
+    name: string;
+    organizationId?: string | null;
+    sourceProjectId?: string | null;
+    visibility: BuildRow["visibility"];
+    rppsRelease?: {
+      id: string;
+      stableReleaseId: string;
+      version: string;
+      packageSha256: string;
+      manifest: PortableRppsManifest;
+    };
+  }): Promise<BuildDetail> {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const slug = `${slugify(input.name)}-${id.slice(0, 8)}`;
@@ -132,7 +145,68 @@ export class BuildsRepository {
         VALUES (?1, ?2, 1, 'Build created', '{}', ?3, ?4)`).bind(versionId, id, userId, now),
       activityStatement(this.db, id, userId, "build.created", "build", id, `Created build ${input.name}`, {}, now),
     ];
-    if (input.sourceProjectId) {
+    if (input.rppsRelease) {
+      const passportId = crypto.randomUUID();
+      statements.push(this.db.prepare(`INSERT INTO rpps_build_passports
+        (id, release_id, build_id, stable_release_id, release_version, package_sha256, created_by_user_id, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`)
+        .bind(passportId, input.rppsRelease.id, id, input.rppsRelease.stableReleaseId, input.rppsRelease.version,
+          input.rppsRelease.packageSha256, userId, now));
+
+      const passportItems = input.rppsRelease.manifest.components.map((component) => ({
+        rowId: crypto.randomUUID(), stableId: component.id, name: component.name, quantity: component.quantity,
+        unit: component.unit, manufacturer: component.manufacturer ?? null, mpn: component.mpn ?? null,
+        notes: `Exact RPPS component ${component.id}${component.optional ? "; optional" : ""}${component.fabricated ? "; fabricated" : ""}`,
+      }));
+      if (passportItems.length > 0) {
+        const itemJson = JSON.stringify(passportItems);
+        statements.push(this.db.prepare(`INSERT INTO build_items
+          (id, build_id, component_id, description, quantity, unit, status, notes, created_at, updated_at)
+          SELECT json_extract(value, '$.rowId'), ?1,
+            (SELECT c.id FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
+              WHERE json_extract(value, '$.mpn') IS NOT NULL
+                AND c.manufacturer_part_number = json_extract(value, '$.mpn')
+                AND (json_extract(value, '$.manufacturer') IS NULL OR m.name = json_extract(value, '$.manufacturer') COLLATE NOCASE)
+                AND c.deleted_at IS NULL LIMIT 1),
+            json_extract(value, '$.name'), json_extract(value, '$.quantity'), json_extract(value, '$.unit'),
+            'needed', json_extract(value, '$.notes'), ?2, ?2 FROM json_each(?3)`)
+          .bind(id, now, itemJson));
+        statements.push(this.db.prepare(`INSERT INTO rpps_build_passport_items (build_item_id, passport_id, component_stable_id)
+          SELECT json_extract(value, '$.rowId'), ?1, json_extract(value, '$.stableId') FROM json_each(?2)`)
+          .bind(passportId, itemJson));
+      }
+
+      const passportSteps: Array<{ rowId: string; procedureStableId: string; stepStableId: string; title: string; body: string; sortOrder: number; previousId: string | null }> = [];
+      for (const procedure of input.rppsRelease.manifest.procedures) {
+        let previousId: string | null = null;
+        for (const [stepIndex, step] of procedure.steps.entries()) {
+          const rowId = crypto.randomUUID();
+          passportSteps.push({ rowId, procedureStableId: procedure.id, stepStableId: step.id,
+            title: `${procedure.title} · ${stepIndex + 1}`, body: step.instruction,
+            sortOrder: passportSteps.length, previousId });
+          previousId = rowId;
+        }
+      }
+      if (passportSteps.length > 0) {
+        const stepJson = JSON.stringify(passportSteps);
+        statements.push(this.db.prepare(`INSERT INTO build_steps
+          (id, build_id, title, body, status, sort_order, created_at, updated_at)
+          SELECT json_extract(value, '$.rowId'), ?1, json_extract(value, '$.title'), json_extract(value, '$.body'),
+            'pending', json_extract(value, '$.sortOrder'), ?2, ?2 FROM json_each(?3)`)
+          .bind(id, now, stepJson));
+        statements.push(this.db.prepare(`INSERT INTO rpps_build_passport_steps
+          (build_step_id, passport_id, procedure_stable_id, step_stable_id)
+          SELECT json_extract(value, '$.rowId'), ?1, json_extract(value, '$.procedureStableId'),
+            json_extract(value, '$.stepStableId') FROM json_each(?2)`)
+          .bind(passportId, stepJson));
+        statements.push(this.db.prepare(`INSERT INTO build_step_dependencies (build_step_id, depends_on_step_id)
+          SELECT json_extract(value, '$.rowId'), json_extract(value, '$.previousId') FROM json_each(?1)
+          WHERE json_extract(value, '$.previousId') IS NOT NULL`).bind(stepJson));
+      }
+      statements.push(activityStatement(this.db, id, userId, "build.rpps_passport.created", "rpps_release",
+        input.rppsRelease.id, `Started exact RPPS release ${input.rppsRelease.version}`,
+        { stableReleaseId: input.rppsRelease.stableReleaseId, packageSha256: input.rppsRelease.packageSha256 }, now));
+    } else if (input.sourceProjectId) {
       const bomItems = await this.db.prepare(`SELECT bi.component_id, bi.description, bi.quantity, bi.unit,
         bi.selected_supplier_offer_id, bi.target_unit_price_minor, bi.notes
         FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id

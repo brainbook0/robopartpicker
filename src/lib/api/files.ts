@@ -36,7 +36,7 @@ export async function uploadFile(
 
 function inferredMediaType(name: string): string {
   const extension = name.split(".").at(-1)?.toLowerCase();
-  return ({ step: "model/step", stp: "model/step", iges: "model/iges", igs: "model/iges", stl: "model/stl", urdf: "application/xml", mjcf: "application/xml", yaml: "text/yaml", yml: "text/yaml", toml: "text/plain", md: "text/markdown", csv: "text/csv", json: "application/json", xml: "application/xml", txt: "text/plain", pdf: "application/pdf" } as Record<string, string>)[extension ?? ""] ?? "application/octet-stream";
+  return ({ step: "model/step", stp: "model/step", iges: "model/iges", igs: "model/iges", stl: "model/stl", urdf: "application/xml", mjcf: "application/xml", yaml: "text/yaml", yml: "text/yaml", toml: "text/plain", md: "text/markdown", csv: "text/csv", json: "application/json", xml: "application/xml", txt: "text/plain", pdf: "application/pdf", zip: "application/zip" } as Record<string, string>)[extension ?? ""] ?? "application/octet-stream";
 }
 
 export async function attachFile(fileId: string, input: { entityType: "build" | "project" | "marketplace_listing"; entityId: string; purpose: string; buildStepId?: string | null; relativePath?: string | null; altText?: string | null }) {

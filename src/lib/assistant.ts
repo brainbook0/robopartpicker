@@ -9,3 +9,23 @@ export async function deleteThread(id: string): Promise<void> { await api.delete
 export async function renameThread(id: string, title: string): Promise<void> { await api.patch(`/api/v1/ai/conversations/${encodeURIComponent(id)}`, { title }); }
 export async function loadMessages(threadId: string): Promise<UIMessage[]> { return (await api.get<{ items: UIMessage[] }>(`/api/v1/ai/conversations/${encodeURIComponent(threadId)}/messages`, { retry: false })).items; }
 export function chatEndpoint(): string { return "/api/v1/ai/chat"; }
+
+export type AiFormKind = "project" | "community_thread" | "marketplace_listing" | "marketplace_wanted" | "build_record" | "release_proposal";
+export type AiFormDraft = Record<string, unknown>;
+
+export async function createFormDraft(form: AiFormKind, prompt: string, current: Record<string, unknown>): Promise<AiFormDraft> {
+  return (await api.post<{ draft: AiFormDraft }>("/api/v1/ai/form-drafts", { form, prompt, current })).draft;
+}
+
+export async function confirmProposal(id: string): Promise<unknown> {
+  return api.post(`/api/v1/ai/tool-calls/${encodeURIComponent(id)}/confirm`, { confirm: true });
+}
+
+export async function rejectProposal(id: string): Promise<void> {
+  await api.post(`/api/v1/ai/tool-calls/${encodeURIComponent(id)}/reject`, {});
+}
+
+export type AiProposalStatus = { id: string; toolName: string; status: "proposed" | "confirmed" | "running" | "succeeded" | "failed" | "rejected"; requiresConfirmation: boolean; output: unknown };
+export async function getProposalStatus(id: string): Promise<AiProposalStatus> {
+  return (await api.get<{ item: AiProposalStatus }>(`/api/v1/ai/tool-calls/${encodeURIComponent(id)}`, { retry: false })).item;
+}

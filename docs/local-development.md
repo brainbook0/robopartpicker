@@ -12,7 +12,18 @@ npm run db:validate
 npm run dev
 ```
 
-The frontend and API share one origin. Authentication cookies therefore require no local cross-origin exception.
+The frontend and API share one origin. Authentication cookies therefore require no local cross-origin exception. A clean database applies all 12 sequential migrations and contains no catalog, project, build, Community, or Marketplace fixture records.
+
+Useful local endpoints are:
+
+- `/api/health` for bindings and capability metadata.
+- `/api/v1/projects/import/analyze` for deterministic text/GitHub import analysis.
+- `/api/v1/projects/import/archive` for authenticated private ZIP analysis.
+- `/api/v1/ai/form-drafts` for optional server-side form drafting.
+- `/mcp` for public read-only tools and `/mcp/private` for OAuth-scoped user tools.
+- `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` for MCP OAuth discovery.
+
+Private MCP clients use authorization code plus PKCE. Dynamic registration is public-client only, consent is explicit, access tokens are short-lived and audience-bound, and signing out invalidates the Better Auth session backing subsequent MCP requests. AI and MCP write tools return inert proposals; only a separate explicit confirmation request can perform the mutation.
 
 ## Portable RPPS commands
 
@@ -46,7 +57,7 @@ npm run db:validate
 
 `.dev.vars.example` documents required names without values. `.dev.vars` must contain a unique local `BETTER_AUTH_SECRET`, local `BETTER_AUTH_URL`, an ingestion credential, and optional email/OAuth/AI provider credentials. It is ignored by Git. The catalog starts empty; `npm run db:seed` remains an explicit legacy-fixture utility and is not part of normal setup.
 
-The AI route defaults to OpenRouter's `deepseek/deepseek-v4-pro` model only when `AI_PROVIDER_KEY` is supplied. Tests never call the live provider. Local requests are capped by the configured per-response and rolling token limits.
+The AI route defaults to OpenRouter's `deepseek/deepseek-v4-pro` model only when `AI_PROVIDER_KEY` is supplied. Tests never call the live provider. Local requests are capped by the configured per-response and rolling token limits. `GITHUB_TOKEN` is optional: unauthenticated public repository imports still work within the provider's lower rate limit.
 
 Cloudflare's Vite plugin copies `.dev.vars` into the ignored Worker build directory for `vite preview`; Cloudflare documents that this copy is not deployed. Never publish or commit `dist/`, and do not use a production credential in the local file. The Wrangler configuration declares the three mandatory binding names so development warns when one is absent and deployment refuses to proceed until they have been configured on the Worker.
 

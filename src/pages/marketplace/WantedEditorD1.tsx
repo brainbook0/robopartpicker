@@ -4,6 +4,7 @@ import { Save, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { AiFormDraft } from "@/components/ai/AiFormDraft";
 
 export default function WantedEditorD1() {
   const { user, loading } = useAuth();
@@ -36,8 +37,16 @@ export default function WantedEditorD1() {
     } catch (error) { toast.error("Wanted request could not be saved", { description: error instanceof Error ? error.message : String(error) }); }
     finally { setBusy(false); }
   };
+  const applyAiDraft = (draft: Record<string, unknown>) => {
+    if (typeof draft.title === "string") setTitle(draft.title);
+    if (typeof draft.description === "string") setDescription(draft.description);
+    if (typeof draft.category === "string") setCategory(draft.category);
+    if (typeof draft.quantity === "number" && Number.isFinite(draft.quantity)) setQuantity(String(draft.quantity));
+    if (typeof draft.budget === "number" && Number.isFinite(draft.budget)) setBudget(String(draft.budget));
+    if (typeof draft.region === "string" && ["US", "EU", "CN", "JP", "KR", "Global"].includes(draft.region)) setRegion(draft.region);
+  };
   if (!user) return null;
-  return <main className="mx-auto max-w-[850px] px-4 py-6"><div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / wanted</div><h1 className="text-[22px] font-bold tracking-tight mt-1">Create a wanted request</h1><p className="text-[12px] text-muted-foreground mt-1">Publish demand to the internal Marketplace. This does not send an RFQ or contact suppliers automatically.</p>
+  return <main className="mx-auto max-w-[850px] px-4 py-6"><div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / wanted</div><div className="mt-1 flex items-center justify-between gap-3"><h1 className="text-[22px] font-bold tracking-tight">Create a wanted request</h1><AiFormDraft form="marketplace_wanted" current={{ title, description, category, quantity, budget, region }} onApply={applyAiDraft} hint="Describe the required component or service, acceptable revisions, quantity, evidence, destination, deadline, and budget." /></div><p className="text-[12px] text-muted-foreground mt-1">Publish demand to the internal Marketplace. This does not send an RFQ or contact suppliers automatically.</p>
     <form className="surface-card mt-4 p-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void save(false); }}>
       <Field label="Title"><input className="input-bare" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="e.g. Need 12× RMD-X8 Pro, matched revision" /></Field>
       <Field label="Technical requirements"><textarea className="input-bare min-h-32" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Acceptable models/revisions, condition, test evidence, destination, and deadline…" /></Field>

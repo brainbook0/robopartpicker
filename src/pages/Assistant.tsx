@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { Bot, Loader2, Plus, Send, Sparkle, Trash2, Wrench, Cpu, Package, FolderKanban } from "lucide-react";
+import { Bot, Check, Loader2, Plus, Sparkle, Trash2, Wrench, Cpu, Package, FolderKanban, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
@@ -19,6 +19,10 @@ import {
   listThreads,
   loadMessages,
   renameThread,
+  confirmProposal,
+  getProposalStatus,
+  rejectProposal,
+  type AiProposalStatus,
   type ChatThread,
 } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
@@ -361,7 +365,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
             );
           }
           if (part.type?.startsWith("tool-")) {
-            const tp = part as any;
+            const tp = part as unknown as { state?: string; input?: unknown; output?: unknown };
             const name = part.type.replace(/^tool-/, "");
             const state = tp.state as string | undefined;
             const output = tp.output;
@@ -387,6 +391,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
                       <pre className="mt-1 whitespace-pre-wrap break-all font-mono text-[11px]">{JSON.stringify(output, null, 2)}</pre>
                     </>
                   )}
+                  {proposalId(output) && <ProposalControls id={proposalId(output)!} />}
                 </div>
               </details>
             );
@@ -396,4 +401,29 @@ function MessageBubble({ message }: { message: UIMessage }) {
       </MessageContent>
     </Message>
   );
+}
+
+function ProposalControls({ id }: { id: string }) {
+  const [item, setItem] = useState<AiProposalStatus | null>(null);
+  const [busy, setBusy] = useState<"confirm" | "reject" | null>(null);
+  useEffect(() => { let live = true; getProposalStatus(id).then((value) => { if (live) setItem(value); }).catch(() => undefined); return () => { live = false; }; }, [id]);
+  const act = async (action: "confirm" | "reject") => {
+    setBusy(action);
+    try {
+      if (action === "confirm") await confirmProposal(id); else await rejectProposal(id);
+      setItem(await getProposalStatus(id));
+      toast.success(action === "confirm" ? "Proposal applied" : "Proposal rejected");
+    } catch (error) {
+      toast.error("Proposal action failed", { description: error instanceof Error ? error.message : String(error) });
+    } finally { setBusy(null); }
+  };
+  const status = item?.status ?? "proposed";
+  if (status !== "proposed") return <div className="mt-2 rounded border border-border/70 bg-background px-2 py-1.5 text-[11px]"><span className="font-medium capitalize">{status}</span>{item?.output ? <pre className="mt-1 whitespace-pre-wrap break-all font-mono text-[10px] text-muted-foreground">{JSON.stringify(item.output, null, 2)}</pre> : null}</div>;
+  return <div className="mt-2 flex items-center justify-between gap-2 rounded border border-warning/40 bg-warning/5 p-2"><span className="text-[11px] text-muted-foreground">Review the proposed mutation before applying it.</span><div className="flex gap-1"><button type="button" className="btn-ghost btn-sm" disabled={busy !== null} onClick={() => void act("reject")}><X className="h-3 w-3" /> Reject</button><button type="button" className="btn-primary btn-sm" disabled={busy !== null} onClick={() => void act("confirm")}>{busy === "confirm" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Apply</button></div></div>;
+}
+
+function proposalId(value: unknown): string | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const id = (value as Record<string, unknown>).proposalId;
+  return typeof id === "string" ? id : null;
 }

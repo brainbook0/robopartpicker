@@ -31,7 +31,11 @@ const requiredTables = [
   "organizations",
   "profiles",
   "projects",
+  "rpps_build_outcome_evidence",
   "rpps_build_outcomes",
+  "rpps_build_passport_items",
+  "rpps_build_passport_steps",
+  "rpps_build_passports",
   "rpps_change_proposals",
   "rpps_release_assemblies",
   "rpps_release_interfaces",
@@ -82,8 +86,9 @@ const demoCounts = query<{ components: number; suppliers: number; boms: number }
 );
 
 const migrationCount = Number(migrationRows[0]?.count ?? 0);
-if (migrationCount !== 10) {
-  throw new Error(`Expected exactly ten applied migrations; found ${migrationCount}`);
+const expectedMigrationCount = 12;
+if (migrationCount !== expectedMigrationCount) {
+  throw new Error(`Expected exactly ${expectedMigrationCount} applied migrations; found ${migrationCount}`);
 }
 
 const counts = demoCounts[0] ?? { components: 0, suppliers: 0, boms: 0 };
