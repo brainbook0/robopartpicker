@@ -3,13 +3,15 @@ import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { analyzeProjectArchive, analyzeProjectSource, createProject, type ProjectImportAnalysis } from "@/lib/projects";
-import { uploadFile } from "@/lib/api/files";
+import { analyzeProjectArchive, analyzeProjectSource, analyzeStoredProjectFiles, createProject, type ProjectImportAnalysis } from "@/lib/projects";
+import { attachFile, uploadFile, type FileKind } from "@/lib/api/files";
 import { createPortableRelease } from "@/lib/rpps/client";
 import { organizationsApi } from "@/lib/api/organizations";
 import { slugify, validateRpps, RPPS_VERSION, type RppsPackage } from "@/lib/rpps/schema";
 import { Github, FileJson, FileArchive, Loader2, Pencil, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Info } from "lucide-react";
-import { AiFormDraft } from "@/components/ai/AiFormDraft";
+import { AiNarrativeComposer } from "@/components/ai/AiNarrativeComposer";
+import { SubmissionQualityCard } from "@/components/ai/SubmissionQualityCard";
+import { reviewSubmission, type SubmissionQualityReview } from "@/lib/assistant";
 
 type Mode = "manual" | "github" | "file" | "paste";
 type Difficulty = "beginner" | "intermediate" | "advanced" | "expert" | "";
@@ -36,8 +38,8 @@ const loadSavedImport = (): ProjectImportAnalysis | null => {
     const raw = sessionStorage.getItem(SAVED_IMPORT_KEY);
     if (!raw) return null;
     const value = JSON.parse(raw) as Partial<ProjectImportAnalysis>;
-    if (value.schemaVersion !== "project-import-analysis/2" || value.deterministic !== true || value.aiUsed !== false
-      || !value.draft || !value.inventory || !value.manifest || !value.report || typeof value.manifestYaml !== "string") {
+    if (value.schemaVersion !== "project-import-analysis/3" || value.deterministic !== true || value.aiUsed !== false
+      || !value.draft || !value.inventory || !value.manifest || !value.report || !value.extracted?.repository || !value.extracted.configuration || typeof value.manifestYaml !== "string") {
       sessionStorage.removeItem(SAVED_IMPORT_KEY);
       return null;
     }
@@ -55,6 +57,10 @@ export default function ProjectNew() {
 
   const [mode, setMode] = useState<Mode>("manual");
   const [busy, setBusy] = useState(false);
+  const [qualityReview, setQualityReview] = useState<SubmissionQualityReview | null>(null);
+  const [reviewedFingerprint, setReviewedFingerprint] = useState<string | null>(null);
+  const [reviewUnavailable, setReviewUnavailable] = useState(false);
+  const [importedFiles, setImportedFiles] = useState<Array<{ id: string; name: string }>>([]);
 
   // Identity
   const [name, setName] = useState(initialImport?.draft.name ?? "");
@@ -103,7 +109,7 @@ export default function ProjectNew() {
   );
 
   // Section open state
-  const [openBuild, setOpenBuild] = useState(true);
+  const [openBuild, setOpenBuild] = useState(false);
   const [openHw, setOpenHw] = useState(false);
   const [openSw, setOpenSw] = useState(false);
 
@@ -192,25 +198,45 @@ export default function ProjectNew() {
     } finally { setGhBusy(false); }
   };
 
-  const importProjectFile = async (file: File) => {
+  const importProjectFiles = async (files: File[]) => {
+    if (files.length === 0) return;
     setFileBusy(true);
     try {
+      const file = files[0];
       const extension = file.name.split(".").at(-1)?.toLowerCase();
       let imported: ProjectImportAnalysis;
-      if (extension === "zip") {
+      if (files.length === 1 && extension === "zip") {
         if (!user) {
           sessionStorage.setItem("rpp-import-return", "/projects/new");
           nav("/auth?redirect=%2Fprojects%2Fnew");
           toast({ title: "Sign in to inspect archives", description: "ZIP archives are stored privately in R2 before the Worker analyzes them." });
           return;
         }
-        const uploaded = await uploadFile(file, "attachment", "private");
+        const uploaded = await uploadFile(file, "attachment", organizationId ? "organization" : "private", organizationId || null);
         imported = await analyzeProjectArchive(uploaded.fileId);
+        setImportedFiles([{ id: uploaded.fileId, name: file.name }]);
+      } else if (files.length > 1 || file.size > 1_048_576 || !isDirectProjectText(file.name)) {
+        if (!user) {
+          sessionStorage.setItem("rpp-import-return", "/projects/new");
+          nav("/auth?redirect=%2Fprojects%2Fnew");
+          toast({ title: "Sign in to inspect uploaded files", description: "Project files are stored privately in R2 before the Worker analyzes them together." });
+          return;
+        }
+        if (files.length > 100) throw new Error("Select no more than 100 project files at once.");
+        if (files.reduce((sum, item) => sum + item.size, 0) > 100 * 1024 * 1024) throw new Error("Selected project files must total 100 MiB or less.");
+        const uploaded: Array<{ id: string; name: string }> = [];
+        for (const selected of files) {
+          const result = await uploadFile(selected, projectUploadKind(selected.name), organizationId ? "organization" : "private", organizationId || null);
+          uploaded.push({ id: result.fileId, name: selected.name });
+        }
+        imported = await analyzeStoredProjectFiles(uploaded.map((item) => item.id));
+        setImportedFiles(uploaded);
       } else {
         if (file.size > 1_048_576) throw new Error("Direct RPPS, BOM, and URDF imports are limited to 1 MiB. Use a ZIP archive for larger packages.");
         const sourceType = /\.urdf(?:\.xacro)?$/iu.test(file.name) ? "urdf"
           : /(^|[-_.])(bom|parts?)([-_.]|$)|\.csv$/iu.test(file.name) ? "bom" : "rpps";
         imported = await analyzeProjectSource({ sourceType, fileName: file.name, content: await file.text() });
+        setImportedFiles([]);
       }
       const d = imported.draft;
       setName(d.name); setSummary(d.summary); setDescription(d.description);
@@ -273,7 +299,7 @@ export default function ProjectNew() {
     cover_image_url: coverImageUrl.trim() || undefined,
   });
 
-  const submit = async () => {
+  const persistProject = async () => {
     if (!user) {
       if (analysis) saveImport(analysis);
       nav("/auth?redirect=%2Fprojects%2Fnew");
@@ -312,11 +338,55 @@ export default function ProjectNew() {
         rpps: buildRpps(),
       });
       if (analysis) await createPortableRelease(row.id, { manifest: analysis.manifestYaml, status: "draft" });
+      if (importedFiles.length > 0) {
+        const results = await Promise.allSettled(importedFiles.map((file) => attachFile(file.id, {
+          entityType: "project",
+          entityId: row.id,
+          purpose: projectUploadKind(file.name),
+          relativePath: file.name,
+        })));
+        const failed = results.filter((result) => result.status === "rejected").length;
+        if (failed) toast({ title: "Some source files were not attached", description: `${failed} of ${importedFiles.length} uploads remain in your private file library.`, variant: "destructive" });
+      }
       sessionStorage.removeItem("rpp-project-import-analysis");
       nav(`/projects/${row.slug}`);
     } catch (e: any) {
       toast({ title: "Could not create project", description: e.message ?? String(e), variant: "destructive" });
     } finally { setBusy(false); }
+  };
+
+  const reviewPayload = () => ({
+    name, version, summary, description, tags: tagList, coverImageUrl, difficulty,
+    estimatedCostUsd: numOrUndef(costUsd), estimatedTimeHours: numOrUndef(timeHours),
+    requiredTools: toList(requiredTools), requiredSkills: toList(requiredSkills), fabrication,
+    hardware: { dof: numOrUndef(dof), payloadKg: numOrUndef(payloadKg), weightKg: numOrUndef(weightKg), heightCm: numOrUndef(heightCm), compute },
+    software: { os, middleware, languages: toList(languages), rosSupport, simulators: toList(simulators) },
+    license, repositoryUrl: repoUrl, documentationUrl: docsUrl, visibility,
+  });
+  const currentFingerprint = JSON.stringify(reviewPayload());
+  const reviewIsCurrent = reviewedFingerprint === currentFingerprint && (qualityReview !== null || reviewUnavailable);
+
+  const reviewBeforeCreate = async () => {
+    if (!user || mode === "paste") { await persistProject(); return; }
+    if (hasErrors) {
+      toast({ title: "Fix highlighted fields", description: "The quality review starts after the basic validation errors are resolved.", variant: "destructive" });
+      return;
+    }
+    setBusy(true);
+    setReviewUnavailable(false);
+    try {
+      const result = await reviewSubmission("project", description.trim(), reviewPayload());
+      setQualityReview(result);
+      setReviewedFingerprint(currentFingerprint);
+      toast({ title: result.decision === "meets_standard" ? "Quality standard met" : "AI suggested changes", description: "Review the report before creating the project." });
+    } catch (error) {
+      setQualityReview(null);
+      setReviewUnavailable(true);
+      setReviewedFingerprint(currentFingerprint);
+      toast({ title: "AI review unavailable", description: `${error instanceof Error ? error.message : String(error)} You can still create the project without an AI review.`, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const derivedSlug = slugify(name || "project");
@@ -335,12 +405,7 @@ export default function ProjectNew() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {user ? <AiFormDraft
-            form="project"
-            current={{ name, version, summary, description, tags: tagList, difficulty, costUsd, timeHours, requiredTools, requiredSkills, fabrication, dof, payloadKg, weightKg, heightCm, compute, os, middleware, languages, rosSupport, simulators, license, repositoryUrl: repoUrl, documentationUrl: docsUrl }}
-            onApply={applyAiDraft}
-            hint="Describe the robot, its build requirements, hardware, and software. Unknown measurements and URLs will be left blank."
-          /> : <Link to="/auth?redirect=%2Fprojects%2Fnew" className="btn-secondary btn-sm">Sign in to save</Link>}
+          {!user && <Link to="/auth?redirect=%2Fprojects%2Fnew" className="btn-secondary btn-sm">Sign in to save</Link>}
           <Link to="/projects" className="btn-ghost btn-sm">Cancel</Link>
         </div>
       </div>
@@ -354,7 +419,7 @@ export default function ProjectNew() {
           <MethodCard mode={mode} value="github" onSelect={setMode} icon={<Github className="h-3.5 w-3.5" />}
             title="From GitHub" desc="Pre-fill from a public repo’s metadata and README. You still review every field." />
           <MethodCard mode={mode} value="file" onSelect={setMode} icon={<FileArchive className="h-3.5 w-3.5" />}
-            title="Project files" desc="Analyze RPPS, BOM, URDF, or a bounded ZIP package." />
+            title="Project files" desc="Analyze BOMs, robot descriptions, code metadata, documentation, CAD inventory, or a bounded ZIP package." />
           <MethodCard mode={mode} value="paste" onSelect={setMode} icon={<FileJson className="h-3.5 w-3.5" />}
             title="Paste RPPS JSON" desc="Import an existing RPPS package produced elsewhere. Validated against the schema." />
         </div>
@@ -388,22 +453,23 @@ export default function ProjectNew() {
               <div>
                 <div className="flex items-center gap-1.5 text-[13px] font-semibold"><FileArchive className="h-4 w-4" /> Analyze project files</div>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Import a portable <span className="mono">rpps.yaml</span>, BOM, URDF, or ZIP package. The deterministic pass inventories artifacts, preserves provenance, and reports missing build information without executing imported content.
+                  Import a portable <span className="mono">rpps.yaml</span>, BOM, robot description, project file set, or ZIP package. The deterministic pass inventories artifacts, preserves provenance, and reports missing build information without executing imported content.
                 </p>
               </div>
               <label className={`flex min-h-28 cursor-pointer flex-col items-center justify-center rounded border border-dashed p-5 text-center transition-colors ${fileBusy ? "pointer-events-none opacity-60" : "hover:border-primary hover:bg-primary/5"}`}>
                 {fileBusy ? <Loader2 className="mb-2 h-5 w-5 animate-spin text-primary" /> : <FileArchive className="mb-2 h-5 w-5 text-muted-foreground" />}
-                <span className="text-[12px] font-medium">{fileBusy ? "Analyzing project package…" : "Choose an RPPS, BOM, URDF, or ZIP file"}</span>
-                <span className="mt-1 text-[10.5px] text-muted-foreground">Text files up to 1 MiB. ZIP files up to 10 MiB compressed and require sign-in.</span>
+                <span className="text-[12px] font-medium">{fileBusy ? "Analyzing project package…" : "Choose project files or a ZIP package"}</span>
+                <span className="mt-1 text-[10.5px] text-muted-foreground">Multiple files: 100 files / 100 MiB total. Extracted text is capped at 5 MiB. ZIP files are capped at 10 MiB compressed.</span>
                 <input
                   type="file"
+                  multiple
                   className="sr-only"
-                  accept=".yaml,.yml,.json,.csv,.urdf,.xacro,.zip,application/zip,text/csv,application/json"
+                  accept=".yaml,.yml,.json,.csv,.tsv,.urdf,.xacro,.xml,.md,.txt,.toml,.zip,.step,.stp,.stl,.obj,.gltf,.glb,.mjcf,.sdf,.py,.js,.ts,.cpp,.c,.h,.ino,application/zip,text/csv,application/json"
                   disabled={fileBusy}
                   onChange={(event) => {
-                    const file = event.currentTarget.files?.[0];
+                    const files = Array.from(event.currentTarget.files ?? []);
                     event.currentTarget.value = "";
-                    if (file) void importProjectFile(file);
+                    if (files.length) void importProjectFiles(files);
                   }}
                 />
               </label>
@@ -438,6 +504,15 @@ export default function ProjectNew() {
             </div>
           ) : mode === "file" ? null : (
             <>
+              <AiNarrativeComposer
+                form="project"
+                value={description}
+                onChange={setDescription}
+                current={reviewPayload()}
+                onApply={applyAiDraft}
+                hint="Start with a free-form description. Keep your voice and level of detail; the structured sections below are optional until a fact is useful for buildability."
+                placeholder="Example: I am publishing a 12-DOF walking robot based on release 0.4. The frame is printed in PETG, firmware is in the linked repository, and the motor-controller revision is still uncertain…"
+              />
               <Section title="Identity" desc="What this project is called and how it’s described.">
                 <Grid>
                   <Field label="Name *" error={errors.name} imported={importedFields.has("name")} onEdit={() => clearImported("name")}>
@@ -611,11 +686,15 @@ export default function ProjectNew() {
             </div>
           )}
 
+          {qualityReview && reviewIsCurrent && <SubmissionQualityCard review={qualityReview} />}
+          {reviewUnavailable && reviewIsCurrent && <div className="surface-card border-amber-500/40 p-3 text-[10.5px] text-muted-foreground"><span className="font-medium text-foreground">AI review unavailable.</span> You can save without it; no quality claim will be attached.</div>}
+
           <div className="surface-card p-3 space-y-2">
-            <button onClick={submit} disabled={!canCreate}
+            <button onClick={() => void (mode === "paste" || reviewIsCurrent ? persistProject() : reviewBeforeCreate())} disabled={!canCreate}
               className="btn-primary btn-sm w-full disabled:opacity-50 disabled:cursor-not-allowed">
-              {busy ? "Creating…" : !user ? "Sign in to save" : mode === "paste" ? "Validate & create" : "Create project"}
+              {busy ? (reviewIsCurrent ? "Creating…" : "Reviewing…") : !user ? "Sign in to save" : mode === "paste" ? "Validate & create" : !reviewIsCurrent ? "Review quality with AI" : qualityReview?.decision === "needs_changes" ? "Create with acknowledged changes" : "Create project"}
             </button>
+            {mode !== "paste" && reviewIsCurrent && <button type="button" className="btn-ghost btn-sm w-full" onClick={() => { setQualityReview(null); setReviewUnavailable(false); setReviewedFingerprint(null); }}>Revise and review again</button>}
             {mode !== "paste" && hasErrors && (
               <div className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Fix highlighted fields to continue.</div>
             )}
@@ -700,6 +779,18 @@ const ImportScorecard = ({ analysis, onClear }: { analysis: ProjectImportAnalysi
               ))}
             </div>
           </div>
+          <div>
+            <div className="section-title mb-2">Extracted project intelligence</div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              <ExtractionStat label="Explicit parts" value={analysis.extracted.parts.candidates.length} detail={analysis.extracted.parts.sourcePaths.length ? `from ${analysis.extracted.parts.sourcePaths.length} manifest/BOM file(s)` : "No explicit BOM found"} />
+              <ExtractionStat label="Model structure" value={analysis.extracted.model?.linkCount ?? 0} detail={analysis.extracted.model ? `${analysis.extracted.model.movableJointCount} movable joints · ${analysis.extracted.parts.modelCandidates.length} mesh-linked structures` : "No parsed URDF"} />
+              <ExtractionStat label="Software packages" value={analysis.extracted.software.packages.length} detail={`${analysis.extracted.software.packages.reduce((sum, item) => sum + item.dependencies.length, 0)} declared dependencies`} />
+              <ExtractionStat label="Procedure candidates" value={analysis.extracted.procedureCandidates.length} detail="Heuristic draft steps requiring creator review" />
+              <ExtractionStat label="Configuration keys" value={analysis.extracted.configuration.parameters.length} detail="Names and value types only; configuration values are not exposed in the summary" />
+              <ExtractionStat label="Engineering artifacts" value={analysis.extracted.repository.nativeCadArtifacts.length + analysis.extracted.repository.manufacturingArtifacts.length + analysis.extracted.repository.firmwareArtifacts.length + analysis.extracted.repository.testArtifacts.length} detail={`${analysis.extracted.repository.ciDefinitions.length} CI · ${analysis.extracted.repository.licenses.length} license · ${analysis.extracted.repository.contributionGuides.length} contribution file(s)`} />
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">Model links and meshes are classified as fabricated parts or assemblies; they are not treated as purchasable catalog components until a BOM or reviewed identity supports that claim.</p>
+          </div>
           {analysis.importWarnings.length > 0 && (
             <div className="rounded border border-border bg-muted/30 p-2">
               <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Import notes</div>
@@ -731,6 +822,10 @@ const ImportScorecard = ({ analysis, onClear }: { analysis: ProjectImportAnalysi
     </section>
   );
 };
+
+const ExtractionStat = ({ label, value, detail }: { label: string; value: number; detail: string }) => (
+  <div className="rounded border border-border p-2"><div className="text-[9.5px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="mt-1 font-mono text-[16px] font-semibold">{value}</div><p className="mt-0.5 text-[9.5px] leading-snug text-muted-foreground">{detail}</p></div>
+);
 
 const Section = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
   <section className="surface-card p-4 space-y-3">
@@ -856,3 +951,20 @@ const PasteFeedback = ({ state }: { state: PasteState }) => {
     </div>
   );
 };
+
+function projectUploadKind(name: string): FileKind {
+  const extension = name.split(".").at(-1)?.toLowerCase();
+  if (["png", "jpg", "jpeg", "webp", "gif", "avif"].includes(extension ?? "")) return "image";
+  if (["step", "stp", "iges", "igs", "stl", "obj", "gltf", "glb"].includes(extension ?? "")) return "cad";
+  if (["urdf", "xacro"].includes(extension ?? "")) return "urdf";
+  if (["mjcf", "sdf"].includes(extension ?? "")) return "mjcf";
+  if (["csv", "tsv", "xlsx"].includes(extension ?? "") || /(^|[-_.])(bom|parts?)([-_.]|$)/iu.test(name)) return "bom";
+  if (["ino", "hex", "bin", "elf", "uf2"].includes(extension ?? "")) return "firmware";
+  if (["yaml", "yml", "json", "toml", "ini", "cfg", "conf"].includes(extension ?? "")) return "configuration";
+  if (["md", "txt", "pdf", "doc", "docx", "xml"].includes(extension ?? "")) return "document";
+  return "attachment";
+}
+
+function isDirectProjectText(name: string): boolean {
+  return /\.(?:ya?ml|json|csv|tsv|urdf|xacro)$/iu.test(name);
+}

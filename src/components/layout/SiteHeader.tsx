@@ -12,7 +12,7 @@ import { notificationsApi } from "@/lib/api/notifications";
 const navItems: { label: string; to: string }[] = [
   { label: "Discover", to: "/" },
   { label: "Projects", to: "/projects" },
-  { label: "Build", to: "/builder" },
+  { label: "My builds", to: "/builder" },
   { label: "Marketplace", to: "/marketplace" },
   { label: "Community", to: "/community" },
 ];

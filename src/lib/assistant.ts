@@ -10,11 +10,28 @@ export async function renameThread(id: string, title: string): Promise<void> { a
 export async function loadMessages(threadId: string): Promise<UIMessage[]> { return (await api.get<{ items: UIMessage[] }>(`/api/v1/ai/conversations/${encodeURIComponent(threadId)}/messages`, { retry: false })).items; }
 export function chatEndpoint(): string { return "/api/v1/ai/chat"; }
 
-export type AiFormKind = "project" | "community_thread" | "marketplace_listing" | "marketplace_wanted" | "build_record" | "release_proposal";
+export type AiFormKind = "project" | "build" | "community_thread" | "marketplace_listing" | "marketplace_wanted" | "build_record" | "release_proposal";
 export type AiFormDraft = Record<string, unknown>;
 
 export async function createFormDraft(form: AiFormKind, prompt: string, current: Record<string, unknown>): Promise<AiFormDraft> {
   return (await api.post<{ draft: AiFormDraft }>("/api/v1/ai/form-drafts", { form, prompt, current })).draft;
+}
+
+export type SubmissionKind = "project" | "build" | "community_thread" | "marketplace_listing" | "marketplace_wanted";
+export type SubmissionQualityReview = {
+  decision: "meets_standard" | "needs_changes";
+  summary: string;
+  strengths: string[];
+  issues: Array<{ severity: "blocker" | "warning" | "suggestion"; field?: string; message: string; suggestedChange: string }>;
+  missingEvidence: string[];
+};
+
+export async function reviewSubmission(
+  submissionType: SubmissionKind,
+  narrative: string,
+  submission: Record<string, unknown>,
+): Promise<SubmissionQualityReview> {
+  return (await api.post<{ review: SubmissionQualityReview }>("/api/v1/ai/quality-reviews", { submissionType, narrative, submission })).review;
 }
 
 export async function confirmProposal(id: string): Promise<unknown> {

@@ -28,6 +28,7 @@ import OAuthConsent from "./pages/OAuthConsent.tsx";
 import ProjectsIndex from "./pages/ProjectsIndex.tsx";
 import ProjectNew from "./pages/ProjectNew.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
+import ProjectInsight from "./pages/ProjectInsight.tsx";
 import RppsSpec from "./pages/RppsSpec.tsx";
 import Assistant from "./pages/Assistant.tsx";
 import PartCompare from "./pages/PartCompare.tsx";
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/projects" element={<ProjectsIndex />} />
             <Route path="/projects/new" element={<ProjectNew />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
+            <Route path="/projects/:slug/:aspect" element={<ProjectInsight />} />
             <Route path="/rpps" element={<RppsSpec />} />
             <Route path="/assistant" element={<Assistant />} />
             <Route path="/assistant/:threadId" element={<Assistant />} />

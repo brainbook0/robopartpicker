@@ -2,7 +2,7 @@ import { AppError } from "../../http";
 import type { PortableRppsManifest } from "../../../src/lib/rpps/portable";
 
 export type BuildRow = {
-  id: string; slug: string; name: string; owner_user_id: string | null; organization_id: string | null;
+  id: string; slug: string; name: string; description: string | null; owner_user_id: string | null; organization_id: string | null;
   source_project_id: string | null; source_project_version_id: string | null;
   visibility: "private" | "organization" | "unlisted" | "public";
   status: "planning" | "sourcing" | "building" | "testing" | "complete" | "paused" | "archived";
@@ -118,6 +118,7 @@ export class BuildsRepository {
 
   async create(userId: string, input: {
     name: string;
+    description?: string | null;
     organizationId?: string | null;
     sourceProjectId?: string | null;
     visibility: BuildRow["visibility"];
@@ -135,11 +136,11 @@ export class BuildsRepository {
     const versionId = crypto.randomUUID();
     const statements: D1PreparedStatement[] = [
       this.db.prepare(`INSERT INTO builds
-        (id, slug, name, owner_user_id, organization_id, source_project_id, source_project_version_id,
+        (id, slug, name, description, owner_user_id, organization_id, source_project_id, source_project_version_id,
          visibility, status, progress_percent, currency, current_version_id, version, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6,
-          (SELECT current_version_id FROM projects WHERE id = ?6), ?7, 'planning', 0, 'USD', ?8, 1, ?9, ?9)`)
-        .bind(id, slug, input.name, userId, input.organizationId ?? null, input.sourceProjectId ?? null, input.visibility, versionId, now),
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7,
+          (SELECT current_version_id FROM projects WHERE id = ?7), ?8, 'planning', 0, 'USD', ?9, 1, ?10, ?10)`)
+        .bind(id, slug, input.name, input.description ?? null, userId, input.organizationId ?? null, input.sourceProjectId ?? null, input.visibility, versionId, now),
       this.db.prepare(`INSERT INTO build_members (build_id, user_id, role, created_at) VALUES (?1, ?2, 'owner', ?3)`).bind(id, userId, now),
       this.db.prepare(`INSERT INTO build_versions (id, build_id, version_number, summary, snapshot_json, created_by_user_id, created_at)
         VALUES (?1, ?2, 1, 'Build created', '{}', ?3, ?4)`).bind(versionId, id, userId, now),
@@ -227,12 +228,13 @@ export class BuildsRepository {
     return (await this.detail(id))!;
   }
 
-  async updateBuild(id: string, expectedVersion: number, input: { name?: string; organizationId?: string | null; visibility?: BuildRow["visibility"]; status?: BuildRow["status"]; progressPercent?: number }): Promise<BuildDetail> {
+  async updateBuild(id: string, expectedVersion: number, input: { name?: string; description?: string | null; organizationId?: string | null; visibility?: BuildRow["visibility"]; status?: BuildRow["status"]; progressPercent?: number }): Promise<BuildDetail> {
     const current = await this.find(id);
     if (!current) throw new AppError(404, "BUILD_NOT_FOUND", "Build not found.");
-    const result = await this.db.prepare(`UPDATE builds SET name = ?1, organization_id = ?2, visibility = ?3, status = ?4,
-      progress_percent = ?5, version = version + 1, updated_at = ?6 WHERE id = ?7 AND version = ?8`)
-      .bind(input.name ?? current.name, input.organizationId === undefined ? current.organization_id : input.organizationId,
+    const result = await this.db.prepare(`UPDATE builds SET name = ?1, description = ?2, organization_id = ?3, visibility = ?4, status = ?5,
+      progress_percent = ?6, version = version + 1, updated_at = ?7 WHERE id = ?8 AND version = ?9`)
+      .bind(input.name ?? current.name, input.description === undefined ? current.description : input.description,
+        input.organizationId === undefined ? current.organization_id : input.organizationId,
         input.visibility ?? current.visibility, input.status ?? current.status,
         input.progressPercent ?? current.progress_percent, new Date().toISOString(), id, expectedVersion).run();
     if (Number(result.meta.changes) < 1) throw new AppError(409, "BUILD_VERSION_CONFLICT", "The build changed; refresh and retry.");

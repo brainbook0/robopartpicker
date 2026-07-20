@@ -6,7 +6,9 @@ The machine-readable contract is `contracts/import-batch.v1.schema.json`; an acc
 
 ## Interactive project import is separate
 
-The scraper ingestion endpoint is not used by the interactive project importer. A visitor can analyze a bounded BOM, RPPS manifest, URDF, or canonical public GitHub repository through `POST /api/v1/projects/import/analyze`. Signed-in users can also upload a project archive through `POST /api/v1/projects/import/archive`; archive bytes remain private in R2 and only the owner can retrieve them.
+The scraper ingestion endpoint is not used by the interactive project importer. A visitor can analyze a bounded BOM, RPPS manifest, URDF, or canonical public GitHub repository through `POST /api/v1/projects/import/analyze`. Signed-in users can upload a project archive through `POST /api/v1/projects/import/archive` or analyze an authorized mixed R2 file set through `POST /api/v1/projects/import/files`; source bytes remain private or organization-scoped by default.
+
+Interactive extraction inventories source files and can propose explicit BOM identities, model/joint structure, software dependencies, configuration key types, procedures, previews, and engineering-repository signals. It never writes inferred parts or prices into the canonical catalog. Future pricing resolves reviewed BOM identities only against RoboPartPicker's internal component and supplier-offer records; scraping and price collection are a separate ingestion run.
 
 Interactive analysis is deterministic and does not call an AI model. It inventories artifacts, records hashes and source provenance, preserves unknown namespaced RPPS extensions, resolves only unambiguous BOM identities, and produces a progressive buildability scorecard. It never writes catalog components, supplier offers, prices, or scraped records. Saving creates a private project draft and portable RPPS release only after explicit user action.
 

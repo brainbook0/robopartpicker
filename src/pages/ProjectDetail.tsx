@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu, FileUp,
   Clock, DollarSign, Package, ListChecks, ShieldCheck, BookOpen, AlertTriangle,
+  Play, Users, Code2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,8 +11,10 @@ import { deleteProject, downloadRpps, getProjectBySlug, updateProjectRpps, updat
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { attachFile, detachProjectFile, listProjectFiles, uploadFile, type FileKind, type ProjectFile } from "@/lib/api/files";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
-import { listPortableReleases, type PortableRppsReleaseSummary } from "@/lib/rpps/client";
+import { createReleaseBuildPassport, listPortableReleases, type PortableRppsReleaseSummary } from "@/lib/rpps/client";
 import { ReleaseCollaborationPanel } from "@/components/projects/ReleaseCollaborationPanel";
+
+const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -25,6 +28,7 @@ export default function ProjectDetail() {
   const [managedFilesLoading, setManagedFilesLoading] = useState(false);
   const [fileBusy, setFileBusy] = useState<string | null>(null);
   const [portableReleases, setPortableReleases] = useState<PortableRppsReleaseSummary[]>([]);
+  const [reproducing, setReproducing] = useState(false);
   const projectId = p?.id;
 
   useEffect(() => {
@@ -74,6 +78,7 @@ export default function ProjectDetail() {
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
+  const previewUrdf = files.find((file) => file.kind === "urdf" && typeof file.url === "string" && /\.urdf(?:[?#]|$)/iu.test(file.url));
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
@@ -90,6 +95,28 @@ export default function ProjectDetail() {
 
   const estCost = p.estimated_cost_usd ?? p.rpps.build?.estimated_cost_usd ?? null;
   const estTime = p.rpps.build?.estimated_time_hours ?? (totalBuildMin > 0 ? totalBuildMin / 60 : null);
+  const latestPublishedRelease = portableReleases.find((release) => release.status === "published");
+
+  const reproduce = async () => {
+    if (!user) {
+      nav("/auth", { state: { from: `/projects/${p.slug}` } });
+      return;
+    }
+    if (!latestPublishedRelease) {
+      toast({ title: "No reproducible release yet", description: "A maintainer must publish an immutable RPPS release before another builder can reproduce it.", variant: "destructive" });
+      return;
+    }
+    setReproducing(true);
+    try {
+      const result = await createReleaseBuildPassport(p.id, latestPublishedRelease.id, { visibility: "private" });
+      toast({ title: "Reproduction created", description: `A private build passport is now locked to release ${latestPublishedRelease.version}.` });
+      nav(`/builder?build=${encodeURIComponent(result.item.id)}`);
+    } catch (error) {
+      toast({ title: "Could not start reproduction", description: errorMessage(error), variant: "destructive" });
+    } finally {
+      setReproducing(false);
+    }
+  };
 
   const remove = async () => {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
@@ -193,6 +220,7 @@ export default function ProjectDetail() {
                   {p.repo_url && <a href={p.repo_url} target="_blank" rel="noreferrer" aria-label="Open source repository" className="btn-ghost btn-sm"><Github className="h-3.5 w-3.5" /> Repo <ExternalLink className="h-3 w-3" /></a>}
                   {p.docs_url && <a href={p.docs_url} target="_blank" rel="noreferrer" aria-label="Open documentation" className="btn-ghost btn-sm"><BookOpen className="h-3.5 w-3.5" /> Docs <ExternalLink className="h-3 w-3" /></a>}
                   <button onClick={copyLink} aria-label="Copy project link" className="btn-ghost btn-sm"><Link2 className="h-3.5 w-3.5" /> Copy link</button>
+                  <button onClick={() => void reproduce()} disabled={reproducing || portableReleases.length === 0} aria-label="Reproduce this project release" className="btn-primary btn-sm disabled:opacity-50"><Play className="h-3.5 w-3.5" /> {reproducing ? "Creating…" : "Reproduce"}</button>
                   <button onClick={() => downloadRpps(p.rpps)} aria-label="Export RPPS package" className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> Export RPPS</button>
                 </div>
                 {canManageScope && (
@@ -216,14 +244,15 @@ export default function ProjectDetail() {
         </div>
 
         {/* KPI strip */}
-        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 border-t border-border pt-3">
-          <Kpi icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Reproducibility" value={p.reproducibility_score != null ? `${Math.round(p.reproducibility_score)}%` : "—"} />
-          <Kpi icon={<DollarSign className="h-3.5 w-3.5" />} label="Est. cost" value={estCost != null ? `$${estCost.toLocaleString()}` : "—"} />
-          <Kpi icon={<Clock className="h-3.5 w-3.5" />} label="Est. time" value={estTime != null ? `${Number(estTime).toFixed(estTime >= 10 ? 0 : 1)} h` : "—"} />
-          <Kpi icon={<Package className="h-3.5 w-3.5" />} label="BOM" value={bom.length > 0 ? `${bom.length} lines · ${bomQty} pcs` : "—"} />
-          <Kpi icon={<ListChecks className="h-3.5 w-3.5" />} label="Assembly" value={assembly.length > 0 ? `${assembly.length} steps` : "—"} />
-          <Kpi icon={<Link2 className="h-3.5 w-3.5" />} label="Integrations" value={integrations.length > 0 ? `${integrations.length} · ${integrationCounts["verified"] ?? 0} verified` : "—"} />
-          <Kpi icon={<FileJson className="h-3.5 w-3.5" />} label="Evidence" value={evidence.length > 0 ? `${evidence.length} src` : "—"} />
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 border-t border-border pt-3">
+          <Kpi to={`/projects/${p.slug}/reproducibility`} icon={<Users className="h-3.5 w-3.5" />} label="Reproductions" value={`${p.reproduction_count} started · ${p.successful_reproduction_count} verified`} />
+          <Kpi to={`/projects/${p.slug}/cost`} icon={<DollarSign className="h-3.5 w-3.5" />} label="Est. cost" value={estCost != null ? `$${estCost.toLocaleString()}` : "—"} />
+          <Kpi to={`/projects/${p.slug}/schedule`} icon={<Clock className="h-3.5 w-3.5" />} label="Est. time" value={estTime != null ? `${Number(estTime).toFixed(estTime >= 10 ? 0 : 1)} h` : "—"} />
+          <Kpi to={`/projects/${p.slug}/parts`} icon={<Package className="h-3.5 w-3.5" />} label="Parts" value={bom.length > 0 ? `${bom.length} lines · ${bomQty} pcs` : "—"} />
+          <Kpi to={`/projects/${p.slug}/assembly`} icon={<ListChecks className="h-3.5 w-3.5" />} label="Assembly" value={assembly.length > 0 ? `${assembly.length} steps` : "—"} />
+          <Kpi to={`/projects/${p.slug}/software`} icon={<Code2 className="h-3.5 w-3.5" />} label="Software" value={p.rpps.software?.middleware ?? p.rpps.software?.os ?? "—"} />
+          <Kpi to={`/projects/${p.slug}/integrations`} icon={<Link2 className="h-3.5 w-3.5" />} label="Integrations" value={integrations.length > 0 ? `${integrations.length} · ${integrationCounts["verified"] ?? 0} verified` : "—"} />
+          <Kpi to={`/projects/${p.slug}/evidence`} icon={<FileJson className="h-3.5 w-3.5" />} label="Evidence" value={evidence.length > 0 ? `${evidence.length} sources` : "—"} />
         </div>
       </div>
 
@@ -237,6 +266,12 @@ export default function ProjectDetail() {
               ? <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed">{p.description}</pre>
               : <Empty>No long-form description provided.</Empty>}
           </Section>
+
+          {previewUrdf?.url && (
+            <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
+              <UrdfModelViewer urdfUrl={previewUrdf.url} sourceUrl={p.repo_url ?? previewUrdf.url} title={`${p.name} · URDF preview`} />
+            </Suspense>
+          )}
 
           <Section
             title={`Bill of materials${bom.length ? ` · ${bom.length}` : ""}`}
@@ -521,7 +556,7 @@ export default function ProjectDetail() {
               )}
           </Section>
 
-          <div className="surface-card p-3">
+          <div id="portable-releases" className="surface-card scroll-mt-20 p-3">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
               <ShieldCheck className="h-3 w-3" /> Portable RPPS releases
             </div>
@@ -754,13 +789,13 @@ const Meta = ({ k, v }: { k: string; v: React.ReactNode }) => (
   </span>
 );
 
-const Kpi = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
-  <div className="rounded border border-border bg-surface px-2 py-1.5">
+const Kpi = ({ to, icon, label, value }: { to: string; icon: React.ReactNode; label: string; value: React.ReactNode }) => (
+  <Link to={to} className="group rounded border border-border bg-surface px-2 py-1.5 transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
     <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
       <span className="text-primary/80">{icon}</span>{label}
     </div>
     <div className="mono text-[13px] font-medium mt-0.5 truncate">{value}</div>
-  </div>
+  </Link>
 );
 
 const Empty = ({ children }: { children: React.ReactNode }) => (

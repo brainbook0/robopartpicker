@@ -2,6 +2,34 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.5.0] - 2026-07-20
+
+### Added
+
+- Deterministic mixed-file project analysis for up to 100 authorized R2 files, with bounded text extraction, checksums, provenance, explicit BOM candidates, URDF joint/interface structure, dependency manifests, configuration key/type metadata, procedure candidates, preview selection, and repository engineering signals.
+- Lightweight, lazy-loaded URDF/mesh viewing on project pages with orbit/zoom controls, bounded device pixel ratio, disposal, and an explicit visual-preview disclaimer.
+- Prominent exact-release reproduction from the project header, project-level started/evidence-backed successful reproduction counts, and dedicated detail routes for reproducibility, cost, parts, time, assembly, software, integrations, and evidence.
+- Narrative descriptions for persistent builds and advisory AI quality review for project, build, Community, Marketplace, and wanted-request submissions.
+- Narrative-first Marketplace listing creation with AI organization, multi-image R2 uploads, image removal, authorized source-build linking, known parts-cost coverage, asking-price comparison, and expanded price/condition/sort filters.
+- D1 migration `0013_build_descriptions.sql`.
+
+### Changed
+
+- The primary navigation now labels the personal build workspace as “My builds”; projects remain canonical releases while personal builds are exact-release reproduction passports.
+- Project import source files are attached to the resulting project after publication when authorization and scope allow. Uploaded artifacts remain private or organization-scoped by default.
+- Marketplace build-cost context is computed from recorded build-item costs or selected internal supplier offers. It is not a live quote, profit calculation, or substitute for the future catalog-backed sourcing planner.
+
+### Security
+
+- Mixed-file analysis verifies ownership or active organization membership, caps file count/aggregate inventory/extracted text, and never executes imported content.
+- Marketplace source-build IDs are server-authorized before creation or update; only aggregate cost and coverage are exposed on a listing.
+- Marketplace media accepts only validated image uploads, enforces a twelve-image limit, remains private while the listing is a draft, and becomes public with the published listing.
+- Marketplace parts-cost aggregation excludes supplier offers whose currency differs from the linked build currency instead of silently mixing currencies.
+
+### Preview
+
+- Deployed the isolated Cloudflare preview at Worker version `156a4542-8bf8-4077-aa8a-322764e79cca`, applied all thirteen migrations, and verified the empty catalog, live API/MCP boundaries, structured AI form drafting and quality review, SPA deep links, and the single Berkeley Humanoid Lite image/URDF test record.
+
 ## [0.4.0] - 2026-07-20
 
 ### Added

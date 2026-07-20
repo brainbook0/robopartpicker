@@ -41,7 +41,8 @@ export default function ProjectsIndex() {
   const tag = params.get("tag");
   const difficulty = params.get("difficulty") ?? "";
   const sort = (params.get("sort") as SortKey) || "updated";
-  const quick = new Set((params.get("f") ?? "").split(",").filter(Boolean));
+  const quickParam = params.get("f") ?? "";
+  const quick = useMemo(() => new Set(quickParam.split(",").filter(Boolean)), [quickParam]);
 
   const setParam = (key: string, value: string | null, replace = false) => {
     const next = new URLSearchParams(params);
@@ -71,27 +72,28 @@ export default function ProjectsIndex() {
       if (quick.has("repo") && !r.repo_url) return false;
       if (quick.has("under1k") && !(r.estimated_cost_usd != null && r.estimated_cost_usd < 1000)) return false;
       if (quick.has("ros") && !hasRos(r)) return false;
+      if (quick.has("reproduced") && r.successful_reproduction_count < 1) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
       switch (sort) {
         case "cost_asc": return (a.estimated_cost_usd ?? Infinity) - (b.estimated_cost_usd ?? Infinity);
-        case "repro_desc": return (b.reproducibility_score ?? -1) - (a.reproducibility_score ?? -1);
+        case "repro_desc": return b.successful_reproduction_count - a.successful_reproduction_count || b.reproduction_count - a.reproduction_count;
         case "name": return a.name.localeCompare(b.name);
         default: return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       }
     });
     return list;
-  }, [rows, q, tag, difficulty, sort, params]);
+  }, [rows, q, tag, difficulty, sort, quick]);
 
   const stats = useMemo(() => {
     const costs = rows.map(r => r.estimated_cost_usd).filter((n): n is number => n != null);
-    const repros = rows.map(r => r.reproducibility_score).filter((n): n is number => n != null);
     const weekAgo = Date.now() - 7 * 86400_000;
     return {
       total: rows.length,
       medianCost: median(costs),
-      avgRepro: repros.length ? repros.reduce((a, b) => a + b, 0) / repros.length : null,
+      reproductions: rows.reduce((sum, project) => sum + project.reproduction_count, 0),
+      successes: rows.reduce((sum, project) => sum + project.successful_reproduction_count, 0),
       withBom: rows.filter(r => bomLineCount(r) > 0).length,
       recent: rows.filter(r => new Date(r.updated_at).getTime() > weekAgo).length,
     };
@@ -118,7 +120,7 @@ export default function ProjectsIndex() {
         <div className="flex items-center gap-2">
           <Link to="/rpps" className="btn-ghost btn-sm"><FileJson className="h-3.5 w-3.5" /> RPPS spec</Link>
           {user
-            ? <Link to="/projects/new" className="btn-primary btn-sm"><Plus className="h-3.5 w-3.5" /> New project</Link>
+            ? <><Link to="/builder" className="btn-ghost btn-sm">My reproductions</Link><Link to="/projects/new" className="btn-primary btn-sm"><Plus className="h-3.5 w-3.5" /> New project</Link></>
             : <Link to="/auth" className="btn-primary btn-sm">Sign in to create</Link>}
         </div>
       </div>
@@ -127,7 +129,7 @@ export default function ProjectsIndex() {
       <div className="surface-card mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border">
         <StatCell label="Projects" value={stats.total.toString()} />
         <StatCell label="Median cost" value={stats.medianCost != null ? `$${Math.round(stats.medianCost).toLocaleString()}` : "—"} />
-        <StatCell label="Avg reproducibility" value={stats.avgRepro != null ? `${Math.round(stats.avgRepro)}%` : "—"} />
+        <StatCell label="Reproductions" value={`${stats.reproductions} · ${stats.successes} succeeded`} />
         <StatCell label="With BOM" value={`${stats.withBom}/${stats.total || 0}`} />
         <StatCell label="Updated this week" value={stats.recent.toString()} />
       </div>
@@ -180,6 +182,7 @@ export default function ProjectsIndex() {
         <Chip active={quick.has("repo")} onClick={() => toggleQuick("repo")}>Has repo</Chip>
         <Chip active={quick.has("under1k")} onClick={() => toggleQuick("under1k")}>Under $1k</Chip>
         <Chip active={quick.has("ros")} onClick={() => toggleQuick("ros")}>ROS</Chip>
+        <Chip active={quick.has("reproduced")} onClick={() => toggleQuick("reproduced")}>Independently reproduced</Chip>
         {allTags.length > 0 && <span className="mx-1 text-[11px] text-muted-foreground">·</span>}
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full">
           {allTags.slice(0, 20).map(t => (
@@ -285,7 +288,7 @@ function ProjectCard({ p }: { p: ProjectRow }) {
 
         <div className="mt-2 grid grid-cols-3 gap-1.5 text-[11px]">
           <MetaCell label="Cost" value={p.estimated_cost_usd != null ? `$${p.estimated_cost_usd.toLocaleString()}` : "—"} />
-          <MetaCell label="Repro" value={p.reproducibility_score != null ? `${Math.round(p.reproducibility_score)}%` : "—"} />
+          <MetaCell label="Builds" value={`${p.reproduction_count} · ${p.successful_reproduction_count} ok`} />
           <MetaCell label="BOM" value={bomCount ? `${bomCount} line${bomCount === 1 ? "" : "s"}` : "—"} />
         </div>
 

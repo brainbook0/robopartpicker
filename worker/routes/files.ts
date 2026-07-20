@@ -191,6 +191,12 @@ fileRoutes.post("/files/:id/attachments", loadAuthSession, requireAuth, async (c
       if (!listing.organization_id) throw new AppError(403, "LISTING_ACCESS_DENIED", "You cannot modify this listing.");
       await assertOrganizationPermission(c.env.DB, userId, listing.organization_id, "procure");
     }
+    if (body.purpose !== "media" || file.kind !== "image" || !file.media_type.startsWith("image/")) {
+      throw new AppError(422, "MARKETPLACE_IMAGE_REQUIRED", "Marketplace listing media must be a validated image upload.");
+    }
+    const count = await c.env.DB.prepare("SELECT COUNT(*) AS value FROM marketplace_listing_images WHERE listing_id = ?1")
+      .bind(listing.id).first<{ value: number }>();
+    if (Number(count?.value ?? 0) >= 12) throw new AppError(422, "MARKETPLACE_IMAGE_LIMIT", "A listing can contain at most 12 images.");
     const max = await c.env.DB.prepare("SELECT COALESCE(MAX(sort_order), -1) AS value FROM marketplace_listing_images WHERE listing_id = ?1").bind(listing.id).first<{ value: number }>();
     await c.env.DB.prepare(`INSERT INTO marketplace_listing_images (listing_id, file_id, alt_text, sort_order)
       VALUES (?1, ?2, ?3, ?4) ON CONFLICT(listing_id, file_id) DO UPDATE SET alt_text = excluded.alt_text`)

@@ -12,6 +12,9 @@ import type { BuildDetail, BuildItem } from "@/shared/builds";
 import { attachFile, uploadFile, type FileKind } from "@/lib/api/files";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { AiFormDraft } from "@/components/ai/AiFormDraft";
+import { AiNarrativeComposer } from "@/components/ai/AiNarrativeComposer";
+import { SubmissionQualityCard } from "@/components/ai/SubmissionQualityCard";
+import { reviewSubmission, type SubmissionQualityReview } from "@/lib/assistant";
 
 const money = (minor: number | null, currency = "USD") => minor == null
   ? "—"
@@ -26,10 +29,14 @@ export default function Builder() {
   const addComponentId = search.get("add");
   const consumedAdds = useRef(new Set<string>());
   const [newName, setNewName] = useState("My robot build");
+  const [newDescription, setNewDescription] = useState("");
   const [newOrganizationId, setNewOrganizationId] = useState("");
   const [newVisibility, setNewVisibility] = useState<BuildDetail["visibility"]>("private");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [busy, setBusy] = useState(false);
+  const [qualityReview, setQualityReview] = useState<SubmissionQualityReview | null>(null);
+  const [reviewedFingerprint, setReviewedFingerprint] = useState<string | null>(null);
+  const [reviewUnavailable, setReviewUnavailable] = useState(false);
 
   const builds = useQuery({
     queryKey: ["builds", "mine", user?.id],
@@ -58,17 +65,40 @@ export default function Builder() {
     ]);
   };
 
+  const createFingerprint = JSON.stringify({ name: newName.trim(), description: newDescription.trim(), organizationId: newOrganizationId || null, visibility: newVisibility });
+  const reviewIsCurrent = reviewedFingerprint === createFingerprint && (qualityReview !== null || reviewUnavailable);
+
+  const applyBuildDraft = (draft: Record<string, unknown>) => {
+    if (typeof draft.name === "string") setNewName(draft.name);
+    if (typeof draft.description === "string") setNewDescription(draft.description);
+  };
+
   const createBuild = async () => {
     setBusy(true);
     try {
-      const result = await buildsApi.create({ name: newName, organizationId: newOrganizationId || null, visibility: newVisibility });
+      const result = await buildsApi.create({ name: newName, description: newDescription.trim() || null, organizationId: newOrganizationId || null, visibility: newVisibility });
       const next = new URLSearchParams(search);
       next.set("build", result.item.id);
       setSearch(next);
       toast({ title: "Persistent build created", description: "This build is stored in the Cloudflare D1 database for this environment." });
+      setQualityReview(null); setReviewedFingerprint(null); setReviewUnavailable(false); setNewDescription("");
       await queryClient.invalidateQueries({ queryKey: ["builds"] });
     } catch (error) {
       toast({ title: "Could not create build", description: message(error), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  const reviewBuild = async () => {
+    setBusy(true);
+    setReviewUnavailable(false);
+    try {
+      const result = await reviewSubmission("build", newDescription.trim(), { name: newName.trim(), description: newDescription.trim(), visibility: newVisibility });
+      setQualityReview(result);
+      setReviewedFingerprint(createFingerprint);
+      toast({ title: result.decision === "meets_standard" ? "Build description meets the quality standard" : "AI suggested improvements", description: "Review the report before creating your build passport." });
+    } catch (error) {
+      setQualityReview(null); setReviewUnavailable(true); setReviewedFingerprint(createFingerprint);
+      toast({ title: "AI review unavailable", description: `${message(error)} You can still create the build without an AI review.`, variant: "destructive" });
     } finally { setBusy(false); }
   };
 
@@ -109,6 +139,7 @@ export default function Builder() {
         <div>
           <div className="section-title">Tools · persistent build workspace</div>
           <h1 className="text-[22px] font-bold">{detail.data?.item.name ?? "Your builds"}</h1>
+          {detail.data?.item.description && <p className="mt-1 max-w-3xl text-xs text-muted-foreground">{detail.data.item.description}</p>}
           <p className="text-xs text-muted-foreground">Worker-authorized · D1 persisted · private by default</p>
         </div>
         <div className="flex gap-2">
@@ -123,8 +154,10 @@ export default function Builder() {
       <div className="grid gap-4 lg:grid-cols-[250px_minmax(0,1fr)]">
         <aside className="space-y-3">
           <div className="surface-card p-3">
-            <div className="section-title mb-2">Create build</div>
+            <div className="section-title mb-2">Create reproduction / build</div>
             <input className="input-bare h-9 w-full" value={newName} maxLength={120} onChange={(event) => setNewName(event.target.value)} />
+            <div className="mt-2"><AiNarrativeComposer form="build" value={newDescription} onChange={setNewDescription} current={{ name: newName, description: newDescription }} onApply={applyBuildDraft} title="Describe it naturally" hint="Explain what you are reproducing or building, the intended outcome, known revisions, and current uncertainties." placeholder="I am reproducing release 0.4 with the stock drivetrain, but using a different compute module…" compact rows={5} /></div>
+            <details className="mt-2 rounded border border-border p-2 text-[11px]"><summary className="cursor-pointer font-medium">Ownership and visibility</summary><div className="pt-2">
             <select aria-label="Build organization" value={newOrganizationId} onChange={(event) => {
               const next = event.target.value;
               setNewOrganizationId(next);
@@ -139,7 +172,11 @@ export default function Builder() {
               <option value="unlisted">Unlisted</option>
               <option value="public">Public</option>
             </select>
-            <button disabled={busy || newName.trim().length < 2} onClick={() => void createBuild()} className="btn-primary mt-2 w-full disabled:opacity-50">{busy ? "Creating…" : "Create build"}</button>
+            </div></details>
+            {qualityReview && reviewIsCurrent && <div className="mt-2"><SubmissionQualityCard review={qualityReview} /></div>}
+            {reviewUnavailable && reviewIsCurrent && <p className="mt-2 text-[10.5px] text-muted-foreground">AI review unavailable. No quality claim will be attached.</p>}
+            <button disabled={busy || newName.trim().length < 2 || newDescription.trim().length < 10} onClick={() => void (reviewIsCurrent ? createBuild() : reviewBuild())} className="btn-primary mt-2 w-full disabled:opacity-50">{busy ? (reviewIsCurrent ? "Creating…" : "Reviewing…") : !reviewIsCurrent ? "Review quality with AI" : qualityReview?.decision === "needs_changes" ? "Create with acknowledged changes" : "Create build passport"}</button>
+            {reviewIsCurrent && <button type="button" className="btn-ghost btn-sm mt-1 w-full" onClick={() => { setQualityReview(null); setReviewedFingerprint(null); setReviewUnavailable(false); }}>Revise and review again</button>}
           </div>
           <div className="surface-card overflow-hidden">
             <div className="border-b border-border p-3 section-title">My builds</div>

@@ -4,6 +4,7 @@ export type BuildSummary = {
   id: string;
   slug: string;
   name: string;
+  description: string | null;
   owner_user_id: string | null;
   organization_id: string | null;
   source_project_id: string | null;

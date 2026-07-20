@@ -7,6 +7,8 @@ export type MarketplaceListParams = {
   q?: string;
   category?: string;
   region?: string;
+  condition?: NonNullable<MarketplaceListing["conditionGrade"]>;
+  sort?: "newest" | "price_asc" | "price_desc" | "parts_cost_asc";
   minPrice?: number | null;
   maxPrice?: number | null;
   mine?: boolean;
@@ -19,6 +21,8 @@ export function useMarketplace(params: MarketplaceListParams) {
   if (params.q) search.set("q", params.q);
   if (params.category) search.set("category", params.category);
   if (params.region) search.set("region", params.region);
+  if (params.condition) search.set("condition", params.condition);
+  if (params.sort) search.set("sort", params.sort);
   if (params.minPrice != null) search.set("minPrice", String(params.minPrice));
   if (params.maxPrice != null) search.set("maxPrice", String(params.maxPrice));
   if (params.mine) search.set("mine", "true");
@@ -46,4 +50,5 @@ export const marketplaceApi = {
   status: (id: string, status: MarketplaceListing["status"]) => api.put<{ item: MarketplaceListing; paymentProcessed: false }>(`/api/v1/marketplace/${encodeURIComponent(id)}/status`, { status }),
   save: (id: string, active: boolean) => active ? api.put(`/api/v1/marketplace/${encodeURIComponent(id)}/save`) : api.delete(`/api/v1/marketplace/${encodeURIComponent(id)}/save`),
   inquire: (id: string, message: string, subject?: string) => api.post<{ item: { id: string }; sent: true; deliveryScope: string }>(`/api/v1/marketplace/${encodeURIComponent(id)}/inquiries`, { subject, message }),
+  removeImage: (id: string, fileId: string) => api.delete<void>(`/api/v1/marketplace/${encodeURIComponent(id)}/images/${encodeURIComponent(fileId)}`),
 };

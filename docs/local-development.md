@@ -12,13 +12,14 @@ npm run db:validate
 npm run dev
 ```
 
-The frontend and API share one origin. Authentication cookies therefore require no local cross-origin exception. A clean database applies all 12 sequential migrations and contains no catalog, project, build, Community, or Marketplace fixture records.
+The frontend and API share one origin. Authentication cookies therefore require no local cross-origin exception. A clean database applies all 13 sequential migrations and contains no catalog, project, build, Community, or Marketplace fixture records.
 
 Useful local endpoints are:
 
 - `/api/health` for bindings and capability metadata.
 - `/api/v1/projects/import/analyze` for deterministic text/GitHub import analysis.
 - `/api/v1/projects/import/archive` for authenticated private ZIP analysis.
+- `/api/v1/projects/import/files` for authenticated, owner-scoped analysis of mixed R2 file sets.
 - `/api/v1/ai/form-drafts` for optional server-side form drafting.
 - `/mcp` for public read-only tools and `/mcp/private` for OAuth-scoped user tools.
 - `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` for MCP OAuth discovery.

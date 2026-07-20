@@ -12,7 +12,7 @@ import {
 import type { Env } from "../env";
 import { AppError } from "../http";
 
-export type ProjectImportKind = "github" | "rpps" | "bom" | "urdf" | "archive";
+export type ProjectImportKind = "github" | "rpps" | "bom" | "urdf" | "archive" | "files";
 export type ImportedArtifact = {
   path: string;
   kind: "documentation" | "cad" | "manufacturing" | "urdf" | "mjcf" | "sdf" | "firmware" | "configuration" | "calibration" | "test" | "bom" | "image" | "video" | "other";
@@ -21,8 +21,21 @@ export type ImportedArtifact = {
   sourceUrl?: string;
   sourceRevision?: string;
 };
+export type ExtractedProjectIntelligence = {
+  parts: {
+    sourcePaths: string[];
+    candidates: Array<{ id: string; name: string; quantity: number; unit: string; manufacturer?: string; mpn?: string; fabricated: boolean; optional: boolean; sourcePath: string; confidence: number; extractionMethod: "explicit-bom" | "rpps-manifest" }>;
+    modelCandidates: Array<{ name: string; linkName: string; meshPath: string; classification: "fabricated-or-assembly"; purchasablePartInferred: false; sourcePath: string; confidence: number }>;
+  };
+  model: null | { sourcePath: string; robotName?: string; linkCount: number; jointCount: number; movableJointCount: number; jointTypes: Record<string, number>; joints: Array<{ name: string; type: string; parent?: string; child?: string; axis?: string; lower?: number; upper?: number; effort?: number; velocity?: number }>; meshPaths: string[]; materialNames: string[]; transmissionCount: number };
+  software: { packages: Array<{ ecosystem: "ros" | "npm" | "python" | "cargo" | "platformio"; name: string; version?: string; dependencies: string[]; sourcePath: string }> };
+  configuration: { parameters: Array<{ sourcePath: string; keyPath: string; valueType: "string" | "number" | "boolean" | "null" }> };
+  repository: { readmes: string[]; licenses: string[]; contributionGuides: string[]; changelogs: string[]; ciDefinitions: string[]; testArtifacts: string[]; firmwareArtifacts: string[]; configurationArtifacts: string[]; nativeCadArtifacts: string[]; manufacturingArtifacts: string[] };
+  procedureCandidates: Array<{ id: string; kind: "assembly" | "configuration" | "calibration" | "test" | "operation" | "maintenance"; title: string; steps: string[]; sourcePath: string; confidence: number; heuristic: true }>;
+  previews: { imagePath?: string; modelPath?: string; modelKind?: "urdf" | "gltf" | "glb" | "stl" | "obj" | "step" };
+};
 export type ProjectImportAnalysis = {
-  schemaVersion: "project-import-analysis/2";
+  schemaVersion: "project-import-analysis/3";
   sourceType: ProjectImportKind;
   sourceLabel: string;
   analyzedAt: string;
@@ -43,6 +56,7 @@ export type ProjectImportAnalysis = {
     artifacts: ImportedArtifact[];
   };
   sourceMappings: Array<{ objectType: string; objectStableId: string; sourceUrl?: string; sourcePath: string; sourceRevision?: string; parserId: string; confidence: number }>;
+  extracted: ExtractedProjectIntelligence;
   manifest: PortableRppsManifest;
   manifestYaml: string;
   report: RppsValidationReport;
@@ -51,7 +65,7 @@ export type ProjectImportAnalysis = {
   aiUsed: false;
 };
 
-type InputFile = { path: string; sizeBytes: number; bytes?: Uint8Array; sourceUrl?: string; sourceRevision?: string };
+type InputFile = { path: string; sizeBytes: number; bytes?: Uint8Array; sha256?: string; sourceUrl?: string; sourceRevision?: string };
 
 export async function analyzeProjectInput(env: Env, input: {
   sourceType: Exclude<ProjectImportKind, "archive">;
@@ -112,6 +126,51 @@ export async function analyzeProjectArchive(env: Env, fileId: string, userId: st
   }
   for (const fileEntry of inventory) fileEntry.bytes = extracted[fileEntry.path];
   return analyzeFileSet("archive", file.original_name, inventory, { sourceLabel: file.original_name });
+}
+
+export async function analyzeStoredProjectFiles(env: Env, fileIds: string[], userId: string): Promise<ProjectImportAnalysis> {
+  const uniqueIds = Array.from(new Set(fileIds));
+  if (uniqueIds.length === 0 || uniqueIds.length > 100) throw new AppError(422, "PROJECT_FILES_INVALID", "Select between 1 and 100 project files.");
+  const rows = await env.DB.prepare(`SELECT id, object_key, original_name, media_type, size_bytes, checksum_sha256,
+      owner_user_id, organization_id, status
+    FROM files WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?1))`)
+    .bind(JSON.stringify(uniqueIds)).all<{
+      id: string; object_key: string; original_name: string; media_type: string; size_bytes: number; checksum_sha256: string | null;
+      owner_user_id: string | null; organization_id: string | null; status: string;
+    }>();
+  if (rows.results.length !== uniqueIds.length || rows.results.some((file) => file.status !== "ready")) {
+    throw new AppError(404, "PROJECT_FILES_NOT_FOUND", "Every selected project file must exist and be ready.");
+  }
+  const organizationIds = Array.from(new Set(rows.results.map((file) => file.organization_id).filter((value): value is string => Boolean(value))));
+  const allowedOrganizations = organizationIds.length === 0 ? new Set<string>() : new Set((await env.DB.prepare(`SELECT organization_id
+    FROM organization_members WHERE user_id = ?1 AND status = 'active'
+      AND organization_id IN (SELECT value FROM json_each(?2))`).bind(userId, JSON.stringify(organizationIds)).all<{ organization_id: string }>()).results.map((row) => row.organization_id));
+  if (rows.results.some((file) => file.owner_user_id !== userId && (!file.organization_id || !allowedOrganizations.has(file.organization_id)))) {
+    throw new AppError(403, "PROJECT_FILES_ACCESS_DENIED", "You cannot analyze one or more selected project files.");
+  }
+  if (rows.results.reduce((sum, file) => sum + file.size_bytes, 0) > 100 * 1024 * 1024) {
+    throw new AppError(413, "PROJECT_FILES_TOO_LARGE", "Selected project files are limited to 100 MiB total.");
+  }
+  const names = new Map<string, number>();
+  let extractedBytes = 0;
+  const inputFiles: InputFile[] = [];
+  for (const file of rows.results) {
+    const safeName = safeRelativePath(file.original_name);
+    const duplicateNumber = names.get(safeName) ?? 0;
+    names.set(safeName, duplicateNumber + 1);
+    const path = duplicateNumber === 0 ? safeName : `${duplicateNumber + 1}-${safeName}`;
+    const input: InputFile = { path, sizeBytes: file.size_bytes, sha256: file.checksum_sha256 ?? undefined };
+    if (isRelevantText(path) && file.size_bytes <= 1_048_576 && extractedBytes + file.size_bytes <= 5 * 1024 * 1024) {
+      const object = await env.FILES.get(file.object_key);
+      if (!object) throw new AppError(404, "PROJECT_FILE_OBJECT_NOT_FOUND", `The stored object for ${file.original_name} is missing.`);
+      input.bytes = new Uint8Array(await object.arrayBuffer());
+      extractedBytes += input.bytes.byteLength;
+    }
+    inputFiles.push(input);
+  }
+  return analyzeFileSet("files", `${uniqueIds.length} uploaded project file${uniqueIds.length === 1 ? "" : "s"}`, inputFiles, {
+    sourceLabel: `${uniqueIds.length} uploaded project file${uniqueIds.length === 1 ? "" : "s"}`,
+  });
 }
 
 async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectImportAnalysis> {
@@ -201,11 +260,20 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
     path: file.path,
     kind: artifactKind(file.path),
     sizeBytes: Number.isFinite(file.sizeBytes) ? file.sizeBytes : null,
-    sha256: file.bytes ? await sha256Bytes(file.bytes) : undefined,
+    sha256: file.sha256 ?? (file.bytes ? await sha256Bytes(file.bytes) : undefined),
     sourceUrl: file.sourceUrl,
     sourceRevision: file.sourceRevision,
   })));
-  const components = manifest ? [] : extractComponents(textFiles, warnings, slug);
+  const componentExtraction = manifest
+    ? { components: manifest.components, sourcePath: portableEntry?.[0], extractionMethod: "rpps-manifest" as const }
+    : extractComponents(textFiles, warnings, slug);
+  const components = manifest ? [] : componentExtraction.components;
+  const model = extractModelSummary(textFiles);
+  const software = extractSoftwarePackages(textFiles);
+  const configuration = { parameters: extractConfigurationParameters(textFiles) };
+  const repository = extractRepositorySignals(relevant);
+  const procedureCandidates = extractProcedureCandidates(textFiles, slug);
+  const previews = selectPreviewArtifacts(artifacts);
   if (!manifest) {
     manifest = PortableRppsManifest.parse({
       rpps: "0.1",
@@ -225,6 +293,13 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
       })),
       components,
       interfaces: extractUrdfInterfaces(textFiles, slug),
+      procedures: procedureCandidates.map((candidate) => ({
+        id: candidate.id,
+        kind: candidate.kind,
+        title: candidate.title,
+        artifactRefs: [],
+        steps: candidate.steps.map((instruction, index) => ({ id: `${candidate.id}:step:${index + 1}`, instruction })),
+      })),
       standards: undefined,
       contribution: context.repositoryUrl ? { url: `${context.repositoryUrl.replace(/\/$/u, "")}/blob/${encodeURIComponent(context.revision ?? "HEAD")}/CONTRIBUTING.md`, acceptsStructuredProposals: false } : undefined,
       extensions: { "org.robopartpicker.import": { sourceType, sourceLabel: context.sourceLabel, deterministic: true } },
@@ -245,17 +320,37 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
     license: manifest.licenses.hardware ?? manifest.licenses.software ?? manifest.licenses.documentation,
     tags: Array.from(new Set([...(context.topics ?? []), ...detected])).slice(0, 20),
   };
-  const sourceMappings = artifacts.map((artifact) => ({
-    objectType: "artifact",
-    objectStableId: artifact.id,
-    sourceUrl: artifact.sourceUrl,
-    sourcePath: artifact.path,
-    sourceRevision: artifact.sourceRevision,
-    parserId: parserFor(artifact.path),
-    confidence: artifact.sha256 ? 1 : 0.8,
+  const partCandidates = componentExtraction.components.map((component) => ({
+    ...component,
+    sourcePath: componentExtraction.sourcePath ?? portableEntry?.[0] ?? "unknown",
+    confidence: 1,
+    extractionMethod: componentExtraction.extractionMethod,
   }));
+  const modelCandidates = extractModelPartCandidates(textFiles);
+  const extracted: ExtractedProjectIntelligence = {
+    parts: { sourcePaths: Array.from(new Set(partCandidates.map((part) => part.sourcePath))), candidates: partCandidates, modelCandidates },
+    model,
+    software: { packages: software },
+    configuration,
+    repository,
+    procedureCandidates,
+    previews,
+  };
+  const sourceMappings: ProjectImportAnalysis["sourceMappings"] = [
+    ...artifacts.map((artifact) => ({
+      objectType: "artifact",
+      objectStableId: artifact.id,
+      sourceUrl: artifact.sourceUrl,
+      sourcePath: artifact.path,
+      sourceRevision: artifact.sourceRevision,
+      parserId: parserFor(artifact.path),
+      confidence: artifact.sha256 ? 1 : 0.8,
+    })),
+    ...partCandidates.map((part) => ({ objectType: "component-candidate", objectStableId: part.id, sourcePath: part.sourcePath, parserId: part.extractionMethod, confidence: part.confidence })),
+    ...procedureCandidates.map((procedure) => ({ objectType: "procedure-candidate", objectStableId: procedure.id, sourcePath: procedure.sourcePath, parserId: "markdown-procedure-heuristic-v1", confidence: procedure.confidence })),
+  ];
   return {
-    schemaVersion: "project-import-analysis/2",
+    schemaVersion: "project-import-analysis/3",
     sourceType,
     sourceLabel: context.sourceLabel,
     analyzedAt: new Date().toISOString(),
@@ -268,6 +363,7 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
       artifacts: artifacts.map(({ id: _id, ...artifact }) => artifact),
     },
     sourceMappings,
+    extracted,
     manifest,
     manifestYaml: stringifyPortableRpps(manifest),
     report,
@@ -277,9 +373,13 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
   };
 }
 
-function extractComponents(files: Map<string, string>, warnings: string[], slug: string): PortableRppsManifest["components"] {
+function extractComponents(files: Map<string, string>, warnings: string[], slug: string): {
+  components: PortableRppsManifest["components"];
+  sourcePath?: string;
+  extractionMethod: "explicit-bom";
+} {
   const candidate = [...files].find(([path]) => /(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml)$/iu.test(path));
-  if (!candidate) return [];
+  if (!candidate) return { components: [], extractionMethod: "explicit-bom" };
   let rows: unknown[] = [];
   try {
     if (/\.csv$/iu.test(candidate[0])) rows = parseCsvObjects(candidate[1]);
@@ -290,7 +390,7 @@ function extractComponents(files: Map<string, string>, warnings: string[], slug:
     }
   } catch (error) {
     warnings.push(`BOM parser could not read ${candidate[0]}: ${error instanceof Error ? error.message : "invalid data"}`);
-    return [];
+    return { components: [], sourcePath: candidate[0], extractionMethod: "explicit-bom" };
   }
   const components: PortableRppsManifest["components"] = [];
   for (const [index, raw] of rows.slice(0, 10_000).entries()) {
@@ -315,7 +415,7 @@ function extractComponents(files: Map<string, string>, warnings: string[], slug:
     });
   }
   if (rows.length && !components.length) warnings.push(`BOM file ${candidate[0]} did not expose recognizable name or quantity columns.`);
-  return components;
+  return { components, sourcePath: candidate[0], extractionMethod: "explicit-bom" };
 }
 
 function extractUrdfInterfaces(files: Map<string, string>, slug: string): PortableRppsManifest["interfaces"] {
@@ -331,6 +431,186 @@ function extractUrdfInterfaces(files: Map<string, string>, slug: string): Portab
     evidenceRefs: [],
   }));
 }
+
+function extractModelSummary(files: Map<string, string>): ExtractedProjectIntelligence["model"] {
+  const candidate = [...files].find(([path]) => /\.urdf(?:\.xacro)?$/iu.test(path));
+  if (!candidate) return null;
+  const [sourcePath, text] = candidate;
+  const robotName = text.match(/<robot\s+[^>]*name=["']([^"']+)["']/iu)?.[1];
+  const links = [...text.matchAll(/<link\s+[^>]*name=["']([^"']+)["']/giu)].map((match) => match[1]);
+  const joints = [...text.matchAll(/<joint\b([^>]*)>([\s\S]*?)<\/joint>/giu)].map((match) => {
+    const name = xmlAttribute(match[1], "name") ?? "unnamed-joint";
+    const type = (xmlAttribute(match[1], "type") ?? "unknown").toLowerCase();
+    const parentTag = match[2].match(/<parent\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const childTag = match[2].match(/<child\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const axisTag = match[2].match(/<axis\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const limitTag = match[2].match(/<limit\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    return { name, type, parent: xmlAttribute(parentTag, "link"), child: xmlAttribute(childTag, "link"), axis: xmlAttribute(axisTag, "xyz"),
+      lower: finiteNumber(xmlAttribute(limitTag, "lower")), upper: finiteNumber(xmlAttribute(limitTag, "upper")),
+      effort: finiteNumber(xmlAttribute(limitTag, "effort")), velocity: finiteNumber(xmlAttribute(limitTag, "velocity")) };
+  });
+  const jointTypes = joints.reduce<Record<string, number>>((counts, joint) => {
+    counts[joint.type] = (counts[joint.type] ?? 0) + 1;
+    return counts;
+  }, {});
+  return {
+    sourcePath,
+    robotName,
+    linkCount: links.length,
+    jointCount: joints.length,
+    movableJointCount: joints.filter((joint) => joint.type !== "fixed").length,
+    jointTypes,
+    joints: joints.slice(0, 2_000),
+    meshPaths: Array.from(new Set([...text.matchAll(/<mesh\s+[^>]*filename=["']([^"']+)["']/giu)].map((match) => match[1]))).slice(0, 2_000),
+    materialNames: Array.from(new Set([...text.matchAll(/<material\s+[^>]*name=["']([^"']+)["']/giu)].map((match) => match[1]))).slice(0, 500),
+    transmissionCount: [...text.matchAll(/<transmission\b/giu)].length,
+  };
+}
+
+function extractModelPartCandidates(files: Map<string, string>): ExtractedProjectIntelligence["parts"]["modelCandidates"] {
+  const candidate = [...files].find(([path]) => /\.urdf(?:\.xacro)?$/iu.test(path));
+  if (!candidate) return [];
+  const [sourcePath, text] = candidate;
+  const output: ExtractedProjectIntelligence["parts"]["modelCandidates"] = [];
+  for (const match of text.matchAll(/<link\s+[^>]*name=["']([^"']+)["'][^>]*>([\s\S]*?)<\/link>/giu)) {
+    const linkName = match[1];
+    for (const mesh of match[2].matchAll(/<mesh\s+[^>]*filename=["']([^"']+)["']/giu)) {
+      output.push({ name: linkName.replace(/[_-]+/gu, " "), linkName, meshPath: mesh[1], classification: "fabricated-or-assembly", purchasablePartInferred: false, sourcePath, confidence: 0.8 });
+      if (output.length >= 2_000) return output;
+    }
+  }
+  return output;
+}
+
+function extractSoftwarePackages(files: Map<string, string>): ExtractedProjectIntelligence["software"]["packages"] {
+  const output: ExtractedProjectIntelligence["software"]["packages"] = [];
+  for (const [path, text] of files) {
+    const lower = path.toLowerCase();
+    if (/(^|\/)package\.xml$/u.test(lower)) {
+      const name = xmlValue(text, "name");
+      if (!name) continue;
+      const dependencies = Array.from(new Set([...text.matchAll(/<(?:depend|build_depend|exec_depend|buildtool_depend|test_depend)>\s*([^<]+?)\s*<\//giu)].map((match) => match[1].trim()))).slice(0, 500);
+      output.push({ ecosystem: "ros", name, version: xmlValue(text, "version"), dependencies, sourcePath: path });
+    } else if (/(^|\/)package\.json$/u.test(lower)) {
+      try {
+        const parsed = JSON.parse(text) as unknown;
+        if (!isRecord(parsed)) continue;
+        const dependencies = [parsed.dependencies, parsed.devDependencies, parsed.peerDependencies]
+          .filter(isRecord).flatMap((record) => Object.keys(record)).filter((name, index, values) => values.indexOf(name) === index).slice(0, 500);
+        output.push({ ecosystem: "npm", name: typeof parsed.name === "string" ? parsed.name : path, version: typeof parsed.version === "string" ? parsed.version : undefined, dependencies, sourcePath: path });
+      } catch { /* Invalid package metadata remains inventoried and untrusted. */ }
+    } else if (/(^|\/)requirements(?:[-_.][^/]*)?\.txt$/u.test(lower)) {
+      const dependencies = text.split(/\r?\n/u).map((line) => line.trim()).filter((line) => line && !line.startsWith("#") && !line.startsWith("-")).map((line) => line.split(/[<>=!~;\s[]/u, 1)[0]).filter(Boolean).slice(0, 500);
+      output.push({ ecosystem: "python", name: path, dependencies: Array.from(new Set(dependencies)), sourcePath: path });
+    } else if (/(^|\/)cargo\.toml$/u.test(lower)) {
+      const section = text.match(/\[dependencies\]([\s\S]*?)(?:\n\[|$)/iu)?.[1] ?? "";
+      const dependencies = section.split(/\r?\n/u).map((line) => line.match(/^\s*([A-Za-z0-9_-]+)\s*=/u)?.[1]).filter((name): name is string => Boolean(name)).slice(0, 500);
+      const name = text.match(/\[package\][\s\S]*?\n\s*name\s*=\s*["']([^"']+)["']/iu)?.[1] ?? path;
+      const version = text.match(/\[package\][\s\S]*?\n\s*version\s*=\s*["']([^"']+)["']/iu)?.[1];
+      output.push({ ecosystem: "cargo", name, version, dependencies, sourcePath: path });
+    } else if (/(^|\/)platformio\.ini$/u.test(lower)) {
+      const dependencies = (text.match(/(?:^|\n)\s*lib_deps\s*=([\s\S]*?)(?:\n\[|$)/iu)?.[1] ?? "").split(/\r?\n/u).map((line) => line.trim()).filter(Boolean).slice(0, 500);
+      output.push({ ecosystem: "platformio", name: path, dependencies, sourcePath: path });
+    }
+    if (output.length >= 200) break;
+  }
+  return output;
+}
+
+function extractConfigurationParameters(files: Map<string, string>): ExtractedProjectIntelligence["configuration"]["parameters"] {
+  const output: ExtractedProjectIntelligence["configuration"]["parameters"] = [];
+  for (const [path, text] of files) {
+    if (!/\.(?:json|ya?ml)$/iu.test(path) || /(?:^|\/)(?:rpps(?:\.lock)?|package|bom|parts?)[^/]*\.(?:json|ya?ml)$/iu.test(path)) continue;
+    if (!/(?:^|\/)(?:config|configuration|calibration|params?|settings?)(?:\/|[-_.])/iu.test(path)) continue;
+    try {
+      const parsed = tryParseData(text);
+      collectParameterTypes(parsed, path, "", output, 0);
+    } catch { /* Invalid configuration remains an inventoried artifact. */ }
+    if (output.length >= 500) break;
+  }
+  return output.slice(0, 500);
+}
+
+function collectParameterTypes(value: unknown, sourcePath: string, keyPath: string, output: ExtractedProjectIntelligence["configuration"]["parameters"], depth: number): void {
+  if (output.length >= 500 || depth > 8) return;
+  if (value === null || ["string", "number", "boolean"].includes(typeof value)) {
+    if (keyPath) output.push({ sourcePath, keyPath, valueType: value === null ? "null" : typeof value as "string" | "number" | "boolean" });
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.slice(0, 50).forEach((entry, index) => collectParameterTypes(entry, sourcePath, `${keyPath}[${index}]`, output, depth + 1));
+    return;
+  }
+  if (isRecord(value)) Object.entries(value).slice(0, 200).forEach(([key, entry]) => collectParameterTypes(entry, sourcePath, keyPath ? `${keyPath}.${key}` : key, output, depth + 1));
+}
+
+function extractRepositorySignals(files: InputFile[]): ExtractedProjectIntelligence["repository"] {
+  const paths = files.map((file) => file.path);
+  const byKind = (kind: ImportedArtifact["kind"]) => paths.filter((path) => artifactKind(path) === kind).slice(0, 2_000);
+  return {
+    readmes: paths.filter((path) => /(^|\/)readme(?:\.[^/]*)?$/iu.test(path)).slice(0, 100),
+    licenses: paths.filter((path) => /(^|\/)(?:license|copying|notice)(?:\.[^/]*)?$/iu.test(path)).slice(0, 100),
+    contributionGuides: paths.filter((path) => /(^|\/)(?:contributing|code_of_conduct|governance)(?:\.[^/]*)?$/iu.test(path)).slice(0, 100),
+    changelogs: paths.filter((path) => /(^|\/)(?:changelog|changes|releases?)(?:\.[^/]*)?$/iu.test(path)).slice(0, 100),
+    ciDefinitions: paths.filter((path) => /(^|\/)(?:\.github\/workflows\/[^/]+\.ya?ml|\.gitlab-ci\.ya?ml|Jenkinsfile)$/iu.test(path)).slice(0, 200),
+    testArtifacts: byKind("test"),
+    firmwareArtifacts: byKind("firmware"),
+    configurationArtifacts: byKind("configuration"),
+    nativeCadArtifacts: byKind("cad"),
+    manufacturingArtifacts: byKind("manufacturing"),
+  };
+}
+
+function extractProcedureCandidates(files: Map<string, string>, slug: string): ExtractedProjectIntelligence["procedureCandidates"] {
+  const output: ExtractedProjectIntelligence["procedureCandidates"] = [];
+  for (const [path, text] of files) {
+    if (!/\.md$/iu.test(path)) continue;
+    const lines = text.split(/\r?\n/u);
+    for (let index = 0; index < lines.length; index += 1) {
+      const heading = lines[index].match(/^#{1,6}\s+(.+?)\s*#*$/u)?.[1]?.trim();
+      if (!heading) continue;
+      const kind = procedureKind(heading);
+      if (!kind) continue;
+      const steps: string[] = [];
+      for (let cursor = index + 1; cursor < lines.length && !/^#{1,6}\s+/u.test(lines[cursor]); cursor += 1) {
+        const step = lines[cursor].match(/^\s*(?:\d+[.)]|[-*+])\s+(.+)$/u)?.[1];
+        if (step) steps.push(cleanMarkdownStep(step));
+        if (steps.length >= 200) break;
+      }
+      if (steps.length === 0) continue;
+      output.push({ id: `procedure:${slug}:${slugify(`${path}-${heading}`).slice(0, 100)}`, kind, title: heading.slice(0, 500), steps, sourcePath: path, confidence: 0.65, heuristic: true });
+      if (output.length >= 100) return output;
+    }
+  }
+  return output;
+}
+
+function selectPreviewArtifacts(artifacts: Array<ImportedArtifact & { id: string }>): ExtractedProjectIntelligence["previews"] {
+  const images = artifacts.filter((artifact) => artifact.kind === "image").sort((left, right) => previewImageScore(right.path) - previewImageScore(left.path));
+  const modelPriority: Record<string, number> = { urdf: 7, glb: 6, gltf: 5, stl: 4, obj: 3, step: 2, stp: 2 };
+  const models = artifacts.map((artifact) => ({ artifact, extension: artifact.path.split(".").at(-1)?.toLowerCase() ?? "" }))
+    .filter(({ artifact, extension }) => artifact.kind === "urdf" || extension in modelPriority)
+    .sort((left, right) => (modelPriority[right.extension] ?? 0) - (modelPriority[left.extension] ?? 0));
+  const model = models[0];
+  const kind = model?.artifact.kind === "urdf" ? "urdf" : model?.extension as ExtractedProjectIntelligence["previews"]["modelKind"];
+  return { imagePath: images[0]?.path, modelPath: model?.artifact.path, modelKind: kind };
+}
+
+function xmlValue(text: string, tag: string): string | undefined { return text.match(new RegExp(`<${tag}[^>]*>\\s*([^<]+?)\\s*</${tag}>`, "iu"))?.[1]?.trim(); }
+function xmlAttribute(attributes: string, name: string): string | undefined { return attributes.match(new RegExp(`(?:^|\\s)${name}=["']([^"']+)["']`, "iu"))?.[1]?.trim(); }
+function finiteNumber(value: string | undefined): number | undefined { const parsed = Number(value); return value !== undefined && Number.isFinite(parsed) ? parsed : undefined; }
+function procedureKind(heading: string): ExtractedProjectIntelligence["procedureCandidates"][number]["kind"] | null {
+  const lower = heading.toLowerCase();
+  if (/assembl|mechanical build|putting .* together/u.test(lower)) return "assembly";
+  if (/calibrat|tuning|zeroing/u.test(lower)) return "calibration";
+  if (/\btest|verification|validation/u.test(lower)) return "test";
+  if (/configur|setup|installation|install/u.test(lower)) return "configuration";
+  if (/maintenan|service|repair/u.test(lower)) return "maintenance";
+  if (/operation|usage|running|start(?:ing)?/u.test(lower)) return "operation";
+  return null;
+}
+function cleanMarkdownStep(value: string): string { return value.replace(/\[([^\u005d]+)\]\([^)]+\)/gu, "$1").replace(/[*_`]/gu, "").trim().slice(0, 20_000); }
+function previewImageScore(path: string): number { const lower = path.toLowerCase(); return /(?:^|\/)(?:cover|hero|render|preview|overview|robot)[-_.]/u.test(lower) ? 10 : /cover|hero|render|preview/u.test(lower) ? 5 : 0; }
 
 function parseCsvObjects(text: string): Record<string, string>[] {
   const rows: string[][] = [];
@@ -372,7 +652,7 @@ async function githubJson(url: string, headers: Headers): Promise<unknown> {
 
 function artifactKind(path: string): ImportedArtifact["kind"] {
   const lower = path.toLowerCase();
-  if (/\.(step|stp|iges|igs|fcstd|f3d|sldprt|sldasm|ipt|iam|3dm|blend)$/u.test(lower)) return "cad";
+  if (/\.(step|stp|iges|igs|fcstd|f3d|sldprt|sldasm|ipt|iam|3dm|blend|glb|gltf)$/u.test(lower)) return "cad";
   if (/\.(stl|obj|3mf|gcode|dxf|gerber|gbr)$/u.test(lower)) return "manufacturing";
   if (/\.urdf(?:\.xacro)?$/u.test(lower)) return "urdf";
   if (/\.mjcf$/u.test(lower)) return "mjcf";
@@ -380,7 +660,9 @@ function artifactKind(path: string): ImportedArtifact["kind"] {
   if (/(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml|xlsx)$/u.test(lower)) return "bom";
   if (/(^|\/)(firmware|src|arduino|platformio)(\/|$)|\.(ino|hex|bin|elf)$/u.test(lower)) return "firmware";
   if (/(^|\/)(config|configuration|calibration)(\/|$)|\.(launch|toml)$/u.test(lower)) return lower.includes("calib") ? "calibration" : "configuration";
+  if (/(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-ci\.ya?ml$|(^|\/)jenkinsfile$/u.test(lower)) return "configuration";
   if (/(^|\/)(tests?|evidence)(\/|$)/u.test(lower)) return "test";
+  if (/(^|\/)(package\.json|package\.xml|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|cargo\.toml|platformio\.ini|cmakelists\.txt|\.gitmodules)$/u.test(lower)) return "configuration";
   if (/\.(png|jpe?g|webp|gif)$/u.test(lower)) return "image";
   if (/\.(mp4|webm|mov)$/u.test(lower)) return "video";
   if (/(^|\/)(readme|license|contributing|docs?)(\.|\/|$)|\.(md|pdf)$/u.test(lower)) return "documentation";
@@ -397,7 +679,7 @@ function detectedType(path: string): string | null {
 }
 
 function isProjectMetadata(path: string): boolean {
-  return /(^|\/)(rpps(\.lock)?\.(ya?ml|json)|package\.xml|ros2?\.repos|cyclonedx[^/]*|[^/]*spdx[^/]*|[^/]*oshwa[^/]*)$/iu.test(path);
+  return /(^|\/)(rpps(\.lock)?\.(ya?ml|json)|package\.(xml|json)|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|cargo\.toml|platformio\.ini|cmakelists\.txt|\.gitmodules|ros2?\.repos|cyclonedx[^/]*|[^/]*spdx[^/]*|[^/]*oshwa[^/]*)$/iu.test(path);
 }
 
 function isRelevantText(path: string): boolean {
@@ -409,6 +691,8 @@ function parserFor(path: string): string {
   if (/\.csv$/iu.test(path)) return "csv-bom-rfc4180";
   if (/\.(json|ya?ml)$/iu.test(path) && /bom|parts?/iu.test(path)) return "structured-bom-v1";
   if (/\.urdf(?:\.xacro)?$/iu.test(path)) return "urdf-inventory-v1";
+  if (/(^|\/)(package\.(xml|json)|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|cargo\.toml|platformio\.ini)$/iu.test(path)) return "software-manifest-v1";
+  if (/\.md$/iu.test(path)) return "markdown-procedure-heuristic-v1";
   return "artifact-inventory-v1";
 }
 
