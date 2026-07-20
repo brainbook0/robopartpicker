@@ -28,6 +28,9 @@ Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL
 | `npm run check` | Type-check, lint, run all tests, and build |
 | `npm run test:unit` | Run browser-independent/frontend unit tests |
 | `npm run test:worker` | Run API, auth, D1, R2, authorization, ingestion, Community, Marketplace, AI, and MCP tests |
+| `npm run rpps:validate -- manifest lock` | Validate a portable RPPS manifest/lockfile and print deterministic profile results |
+| `npm run rpps:buildability -- manifest lock` | Print the full RPPS scorecard and findings |
+| `npm run rpps:migrate -- legacy output` | Convert the legacy flat RPPS JSON record to portable YAML without discarding the source record |
 | `npm run db:migration:create -- name` | Create the next D1 migration |
 | `npm run db:migrations:list` | List local migration state |
 | `npm run db:migrate:local` | Apply migrations to Wrangler's local D1 |
@@ -46,11 +49,12 @@ Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL
 
 ## Architecture
 
-- `src/` contains the React UI, typed same-origin API client, Better Auth client, and RPPS schema.
+- `src/` contains the React UI, typed same-origin API client, Better Auth client, and legacy plus portable RPPS cores.
 - `worker/` contains the Worker router, middleware, domain repositories, APIs, ingestion pipeline, R2 access, server-side AI provider boundary, and public read-only MCP endpoint.
 - `migrations/` is the immutable, sequential, SQLite-compatible D1 schema.
 - `scripts/` owns local seed, reset, export, and schema validation workflows.
 - `contracts/` contains versioned machine-readable external schemas.
+- `standards/rpps/` contains the vendor-neutral RPPS draft, interoperability examples, and profile semantics.
 - `tests/worker/` executes against isolated local D1 and R2 bindings.
 
 Detailed references: [backend architecture](docs/backend-architecture.md), [database schema](docs/database-schema.md), [ingestion contract](docs/data-ingestion-contract.md), [local development](docs/local-development.md), and [deployment](docs/deployment.md).
@@ -81,4 +85,4 @@ Do not seed demo fixtures into production unless that is an intentional release 
 
 ## Data honesty
 
-Local seed records carry `is_demo = 1` and the UI labels them as demo/fixture data. Supplier prices, marketplace listings, RFQs, email, AI, scanning, and delivery are never represented as live or completed unless a configured provider confirms the action. RPPS is RoboPartPicker's open project format, not an established industry standard.
+Local seed records carry `is_demo = 1` and the UI labels them as demo/fixture data. Supplier prices, marketplace listings, RFQs, email, AI, scanning, and delivery are never represented as live or completed unless a configured provider confirms the action. RPPS 0.1 is a portable draft, not an established industry standard or engineering certification.

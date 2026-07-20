@@ -75,7 +75,7 @@ Provider keys and calls stay in the Worker. OpenRouter uses `deepseek/deepseek-v
 
 ## Model Context Protocol
 
-`/mcp` implements the current Streamable HTTP transport with the Web Standards MCP SDK. The server is stateless and exposes only public, read-only catalog/project/supplier search, component comparison, managed public project artifacts, and RPPS validation. It cannot read private projects/builds/files or mutate data. Private tools require a later OAuth 2.1 consent flow mapped to RoboPartPicker user and organization permissions; they must not be added to the public server.
+`/mcp` implements the current Streamable HTTP transport with the Web Standards MCP SDK. The server is stateless and exposes only public, read-only catalog/project/supplier search, component comparison, managed public project artifacts, and portable-or-legacy RPPS validation. It cannot read private projects/builds/files or mutate data. Private tools require a later OAuth 2.1 consent flow mapped to RoboPartPicker user and organization permissions; they must not be added to the public server.
 
 ## Notifications
 
@@ -88,6 +88,14 @@ Organization settings and membership are managed through `/api/v1/organizations/
 Projects and builds may be created in an organization by members with the relevant engineering/build permission. Changing an existing organization owner scope or its visibility is a separate administrative action: the Worker requires administrator permission in the current organization and in any destination organization. Project scope updates synchronize the generated BOM owner, organization, and visibility in the same D1 batch.
 
 RPPS technical-record publication is versioned and optimistic: the client submits the current project record version, the Worker rejects stale writes, and a successful publication creates a new immutable `project_versions` row. Required tools and skills are projected into `project_requirements`; RPPS evidence is projected into `evidence` and `evidence_claims` while the complete validated package remains the portable source record.
+
+## Portable RPPS releases
+
+The existing flat `project_versions.rpps_json` record is the legacy application adapter. Portable RPPS 0.1 Draft is implemented as a separate, vendor-neutral manifest and lockfile so current project screens remain compatible while the public format evolves.
+
+`POST /api/v1/rpps/validate` is anonymous, size-bounded, deterministic, and performs no persistence. Authenticated engineers may append releases through `/api/v1/projects/:id/releases`; release rows are immutable and content-addressed. Draft releases are visible only to the project owner or organization members, even when the containing project is public. Published releases inherit project read scope.
+
+The complete normalized YAML remains authoritative. D1 also projects assemblies, interfaces, artifact source mappings, and validation findings for queries. Tables for structured proposals and exact-release build outcomes establish later collaboration without pretending those UI flows are complete. The pure TypeScript core and CLI have no Cloudflare dependency.
 
 ## Cloudflare sources
 

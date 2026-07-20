@@ -1,7 +1,7 @@
 {
   "name": "robopartpicker",
   "private": true,
-  "version": "0.2.9",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -18,6 +18,10 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run contracts:validate && npm run test && npm run build",
     "contracts:validate": "tsx scripts/validate-contracts.ts",
+    "rpps:init": "tsx scripts/rpps-cli.ts init rpps.yaml",
+    "rpps:validate": "tsx scripts/rpps-cli.ts validate",
+    "rpps:buildability": "tsx scripts/rpps-cli.ts buildability",
+    "rpps:migrate": "tsx scripts/rpps-cli.ts migrate",
     "db:migration:create": "wrangler d1 migrations create robopartpicker",
     "db:migrations:list": "wrangler d1 migrations list robopartpicker --local",
     "db:migrations:list:remote": "wrangler d1 migrations list robopartpicker --env production --remote",
@@ -105,6 +109,7 @@
     "three": "^0.160.0",
     "use-stick-to-bottom": "^1.1.6",
     "vaul": "^0.9.9",
+    "yaml": "2.9.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

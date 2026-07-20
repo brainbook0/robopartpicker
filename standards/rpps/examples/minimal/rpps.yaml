@@ -1,0 +1,28 @@
+rpps: "0.1"
+project:
+  id: project:example-robot
+  name: Example Robot
+  slug: example-robot
+release:
+  id: release:example-robot:0.1.0
+  version: 0.1.0
+authors:
+  - id: author:maintainer
+    name: Maintainer
+licenses:
+  hardware: CERN-OHL-S-2.0
+  software: Apache-2.0
+  documentation: CC-BY-4.0
+artifacts:
+  - id: artifact:readme
+    path: README.md
+    kind: documentation
+    sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+components:
+  - id: component:motor
+    name: Example motor
+    quantity: 2
+    manufacturer: Example Robotics
+    mpn: MOTOR-1
+extensions:
+  org.rpps.root-lineage: true

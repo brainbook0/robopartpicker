@@ -1,0 +1,13 @@
+rppsLock: "0.1"
+release:
+  id: release:example-robot:0.1.0
+  version: 0.1.0
+artifacts:
+  - id: artifact:readme
+    sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+components:
+  - id: component:motor
+    manufacturer: Example Robotics
+    mpn: MOTOR-1
+    revision: A
+    quantity: 2

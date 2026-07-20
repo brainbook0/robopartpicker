@@ -3,6 +3,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { z } from "zod";
 import packageJson from "../package.json";
 import { RppsPackage } from "../src/lib/rpps/schema";
+import { parsePortableRpps, parsePortableRppsLock, validatePortableRpps } from "../src/lib/rpps/portable";
 import type { Env } from "./env";
 import { ProjectsRepository } from "./db/repositories/projects";
 
@@ -96,13 +97,22 @@ function createMcpServer(env: Env): McpServer {
 
   server.registerTool("validate_rpps", {
     title: "Validate an RPPS package",
-    description: "Validate a RoboPartPicker Project Standard package without storing or publishing it.",
-    inputSchema: { package: z.record(z.string(), z.unknown()) },
+    description: "Validate a portable RPPS 0.1 Draft YAML/JSON manifest and optional lockfile, or a legacy flat package, without storing or publishing it.",
+    inputSchema: { manifest: z.string().max(1_048_576).optional(), lockfile: z.string().max(1_048_576).optional(), package: z.record(z.string(), z.unknown()).optional() },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-  }, async ({ package: candidate }) => {
+  }, async ({ manifest, lockfile, package: candidate }) => {
+    if (manifest) {
+      const parsed = parsePortableRpps(manifest);
+      if (parsed.ok === false) return jsonResult({ valid: false, format: "portable-0.1-draft", errors: parsed.errors });
+      const locked = lockfile ? parsePortableRppsLock(lockfile) : undefined;
+      if (locked?.ok === false) return jsonResult({ valid: false, format: "portable-0.1-draft", errors: locked.errors });
+      const lock = locked?.ok ? locked.data : undefined;
+      return jsonResult({ valid: true, format: "portable-0.1-draft", manifest: parsed.data, lockfile: lock, report: validatePortableRpps(parsed.data, lock) });
+    }
+    if (!candidate) return toolError("Provide a portable manifest or legacy package.");
     const result = RppsPackage.safeParse(candidate);
     return jsonResult(result.success
-      ? { valid: true, package: result.data }
+      ? { valid: true, format: "legacy-1.0", package: result.data }
       : { valid: false, errors: result.error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })) });
   });
 
