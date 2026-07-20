@@ -23,6 +23,8 @@ type ProjectDatabaseRow = {
   version_label: string | null;
   rpps_schema_version: string | null;
   rpps_json: string | null;
+  reproduction_count: number;
+  successful_reproduction_count: number;
 };
 
 export type ProjectDto = {
@@ -45,6 +47,8 @@ export type ProjectDto = {
   difficulty: "beginner" | "intermediate" | "advanced" | "expert" | null;
   estimated_cost_usd: number | null;
   reproducibility_score: number | null;
+  reproduction_count: number;
+  successful_reproduction_count: number;
   rpps_version: string;
   rpps: RppsPackage;
   is_demo: boolean;
@@ -74,7 +78,15 @@ export type ProjectFileDto = {
 const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p.owner_user_id,
   p.organization_id, p.visibility, p.status, p.license_spdx, p.repository_url, p.difficulty,
   p.estimated_cost_minor, p.estimated_cost_currency, p.is_demo, p.version, p.created_at, p.updated_at,
-  pv.version_label, pv.rpps_schema_version, pv.rpps_json
+  pv.version_label, pv.rpps_schema_version, pv.rpps_json,
+  (SELECT COUNT(*) FROM rpps_build_passports bp
+    JOIN rpps_releases rr ON rr.id = bp.release_id
+    JOIN builds b ON b.id = bp.build_id AND b.deleted_at IS NULL
+    WHERE rr.project_id = p.id) AS reproduction_count,
+  (SELECT COUNT(*) FROM rpps_build_outcomes outcome
+    JOIN rpps_releases rr ON rr.id = outcome.release_id
+    JOIN builds b ON b.id = outcome.build_id AND b.deleted_at IS NULL
+    WHERE rr.project_id = p.id AND outcome.outcome = 'succeeded' AND outcome.independence = 'independent') AS successful_reproduction_count
   FROM projects p LEFT JOIN project_versions pv ON pv.id = p.current_version_id`;
 
 export class ProjectsRepository {
@@ -355,6 +367,8 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     difficulty: (row.difficulty as ProjectDto["difficulty"]) ?? null,
     estimated_cost_usd: row.estimated_cost_minor == null ? null : row.estimated_cost_minor / 100,
     reproducibility_score: null,
+    reproduction_count: Number(row.reproduction_count ?? 0),
+    successful_reproduction_count: Number(row.successful_reproduction_count ?? 0),
     rpps_version: row.rpps_schema_version ?? rpps.rpps_version,
     rpps,
     is_demo: row.is_demo === 1,

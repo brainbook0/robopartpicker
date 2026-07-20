@@ -22,6 +22,8 @@ export type ProjectRow = {
   difficulty: "beginner" | "intermediate" | "advanced" | "expert" | null;
   estimated_cost_usd: number | null;
   reproducibility_score: number | null;
+  reproduction_count: number;
+  successful_reproduction_count: number;
   rpps_version: string;
   rpps: RppsPackage;
   is_demo: boolean;
@@ -142,8 +144,8 @@ export type GithubDraft = {
 };
 
 export type ProjectImportAnalysis = {
-  schemaVersion: "project-import-analysis/2";
-  sourceType: "github" | "rpps" | "bom" | "urdf" | "archive";
+  schemaVersion: "project-import-analysis/3";
+  sourceType: "github" | "rpps" | "bom" | "urdf" | "archive" | "files";
   sourceLabel: string;
   analyzedAt: string;
   draft: GithubDraft;
@@ -155,6 +157,19 @@ export type ProjectImportAnalysis = {
     artifacts: Array<{ path: string; kind: string; sizeBytes: number | null; sha256?: string; sourceUrl?: string; sourceRevision?: string }>;
   };
   sourceMappings: Array<{ objectType: string; objectStableId: string; sourceUrl?: string; sourcePath: string; sourceRevision?: string; parserId: string; confidence: number }>;
+  extracted: {
+    parts: {
+      sourcePaths: string[];
+      candidates: Array<{ id: string; name: string; quantity: number; unit: string; manufacturer?: string; mpn?: string; fabricated: boolean; optional: boolean; sourcePath: string; confidence: number; extractionMethod: "explicit-bom" | "rpps-manifest" }>;
+      modelCandidates: Array<{ name: string; linkName: string; meshPath: string; classification: "fabricated-or-assembly"; purchasablePartInferred: false; sourcePath: string; confidence: number }>;
+    };
+    model: null | { sourcePath: string; robotName?: string; linkCount: number; jointCount: number; movableJointCount: number; jointTypes: Record<string, number>; joints: Array<{ name: string; type: string; parent?: string; child?: string; axis?: string; lower?: number; upper?: number; effort?: number; velocity?: number }>; meshPaths: string[]; materialNames: string[]; transmissionCount: number };
+    software: { packages: Array<{ ecosystem: "ros" | "npm" | "python" | "cargo" | "platformio"; name: string; version?: string; dependencies: string[]; sourcePath: string }> };
+    configuration: { parameters: Array<{ sourcePath: string; keyPath: string; valueType: "string" | "number" | "boolean" | "null" }> };
+    repository: { readmes: string[]; licenses: string[]; contributionGuides: string[]; changelogs: string[]; ciDefinitions: string[]; testArtifacts: string[]; firmwareArtifacts: string[]; configurationArtifacts: string[]; nativeCadArtifacts: string[]; manufacturingArtifacts: string[] };
+    procedureCandidates: Array<{ id: string; kind: "assembly" | "configuration" | "calibration" | "test" | "operation" | "maintenance"; title: string; steps: string[]; sourcePath: string; confidence: number; heuristic: true }>;
+    previews: { imagePath?: string; modelPath?: string; modelKind?: "urdf" | "gltf" | "glb" | "stl" | "obj" | "step" };
+  };
   manifest: PortableRppsManifest;
   manifestYaml: string;
   report: RppsValidationReport;
@@ -169,6 +184,10 @@ export async function analyzeProjectSource(input: { sourceType: "github"; reposi
 
 export async function analyzeProjectArchive(fileId: string): Promise<ProjectImportAnalysis> {
   return (await api.post<{ analysis: ProjectImportAnalysis }>("/api/v1/projects/import/archive", { fileId })).analysis;
+}
+
+export async function analyzeStoredProjectFiles(fileIds: string[]): Promise<ProjectImportAnalysis> {
+  return (await api.post<{ analysis: ProjectImportAnalysis }>("/api/v1/projects/import/files", { fileIds })).analysis;
 }
 
 export async function draftFromGithub(repoUrl: string): Promise<GithubDraft> {

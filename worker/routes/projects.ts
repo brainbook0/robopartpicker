@@ -8,7 +8,7 @@ import { loadAuthSession, requireAuth } from "../middleware/authentication";
 import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId, organizationRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
-import { analyzeProjectArchive, analyzeProjectInput } from "../services/project-import";
+import { analyzeProjectArchive, analyzeProjectInput, analyzeStoredProjectFiles } from "../services/project-import";
 
 const createSchema = z.object({
   visibility: z.enum(["private", "organization", "unlisted", "public"]).default("public"),
@@ -34,6 +34,7 @@ const analysisSchema = z.object({
   if (value.sourceType !== "github" && !value.content?.trim()) context.addIssue({ code: "custom", path: ["content"], message: "File content is required." });
 });
 const archiveAnalysisSchema = z.object({ fileId: z.string().uuid() }).strict();
+const storedFilesAnalysisSchema = z.object({ fileIds: z.array(z.string().uuid()).min(1).max(100) }).strict();
 
 export const projectRoutes = new Hono<AppBindings>();
 
@@ -64,6 +65,14 @@ projectRoutes.post("/projects/import/archive", loadAuthSession, requireAuth, asy
   return c.json({ analysis });
 });
 
+projectRoutes.post("/projects/import/files", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  const { fileIds } = await parseJson(c, storedFilesAnalysisSchema);
+  const analysis = await analyzeStoredProjectFiles(c.env, fileIds, userId);
+  await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "project.files.analyze", entityType: "file_batch", entityId: crypto.randomUUID(), requestId: c.get("requestId"), after: { fileCount: fileIds.length, relevantFiles: analysis.inventory.relevantFiles, profiles: analysis.report.profiles } });
+  return c.json({ analysis });
+});
+
 projectRoutes.post("/projects/import/repository", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const { repositoryUrl } = await parseJson(c, repositoryImportSchema);
@@ -82,7 +91,7 @@ projectRoutes.post("/projects/import/repository", loadAuthSession, requireAuth, 
     c.env.DB.prepare(`INSERT INTO import_jobs
       (id, source_id, batch_id, idempotency_key, schema_version, status, retrieval_timestamp, payload_hash,
        accepted_count, rejected_count, duplicate_count, attempt_count, requested_by_user_id, created_at, updated_at)
-      VALUES (?1, ?2, ?3, ?3, 'project-import-analysis/2', 'review', ?4, ?5, 1, 0, 0, 1, ?6, ?4, ?4)`)
+      VALUES (?1, ?2, ?3, ?3, 'project-import-analysis/3', 'review', ?4, ?5, 1, 0, 0, 1, ?6, ?4, ?4)`)
       .bind(jobId, sourceId, crypto.randomUUID(), now, fingerprint, userId),
     c.env.DB.prepare(`INSERT INTO import_records
       (id, import_job_id, source_id, external_record_id, record_type, source_url, confidence,

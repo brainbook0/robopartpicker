@@ -12,6 +12,11 @@ export type MarketplaceListingDto = {
   isDemo: boolean; createdAt: string; updatedAt: string; publishedAt: string | null;
   seller: { id: string; displayName: string | null; username: string | null; avatarUrl: string | null } | null;
   component: { id: string; slug: string; name: string; category: string } | null;
+  images: Array<{ fileId: string; altText: string | null; sortOrder: number; contentUrl: string }>;
+  partsCost: number | null;
+  partsCostCurrency: string | null;
+  partsCostPricedItems: number;
+  partsCostTotalItems: number;
   details: { runtimeHours: number | null; provenanceText: string | null; sellerDeclaresTestReport: boolean; sellerDeclaresVideo: boolean; sellerAcceptsReturns: boolean; serialAvailable: boolean };
   saved: boolean;
 };
@@ -26,12 +31,31 @@ type ListingRow = {
   component_slug: string | null; component_name: string | null; component_category: string | null;
   runtime_hours: number | null; provenance_text: string | null; seller_declares_test_report: number | null; seller_declares_video: number | null;
   seller_accepts_returns: number | null; serial_available: number | null; saved: number;
+  primary_image_file_id: string | null; primary_image_alt_text: string | null;
+  parts_cost_minor: number | null; parts_cost_currency: string | null; parts_cost_priced_items: number; parts_cost_total_items: number;
 };
 
 const SELECT_LISTING = `SELECT ml.*, p.display_name AS seller_display_name, p.username AS seller_username, p.avatar_url AS seller_avatar_url,
   c.slug AS component_slug, c.name AS component_name, c.category AS component_category,
   md.runtime_hours, md.provenance_text, md.seller_declares_test_report, md.seller_declares_video,
-  md.seller_accepts_returns, md.serial_available`;
+  md.seller_accepts_returns, md.serial_available,
+  (SELECT mli.file_id FROM marketplace_listing_images mli JOIN files image_file ON image_file.id = mli.file_id
+    WHERE mli.listing_id = ml.id AND image_file.deleted_at IS NULL AND image_file.status = 'ready' AND image_file.visibility = 'public'
+    ORDER BY mli.sort_order LIMIT 1) AS primary_image_file_id,
+  (SELECT mli.alt_text FROM marketplace_listing_images mli JOIN files image_file ON image_file.id = mli.file_id
+    WHERE mli.listing_id = ml.id AND image_file.deleted_at IS NULL AND image_file.status = 'ready' AND image_file.visibility = 'public'
+    ORDER BY mli.sort_order LIMIT 1) AS primary_image_alt_text,
+  (SELECT SUM(bi.quantity * CASE WHEN bi.unit_cost_minor IS NOT NULL THEN bi.unit_cost_minor
+      WHEN selected_offer.currency = source_build.currency THEN selected_offer.unit_price_minor END)
+    FROM build_items bi JOIN builds source_build ON source_build.id = bi.build_id
+    LEFT JOIN supplier_offers selected_offer ON selected_offer.id = bi.selected_supplier_offer_id
+    WHERE bi.build_id = ml.source_build_id) AS parts_cost_minor,
+  (SELECT currency FROM builds WHERE id = ml.source_build_id) AS parts_cost_currency,
+  (SELECT COUNT(*) FROM build_items bi JOIN builds source_build ON source_build.id = bi.build_id
+    LEFT JOIN supplier_offers selected_offer ON selected_offer.id = bi.selected_supplier_offer_id
+    WHERE bi.build_id = ml.source_build_id AND (bi.unit_cost_minor IS NOT NULL
+      OR (selected_offer.currency = source_build.currency AND selected_offer.unit_price_minor IS NOT NULL))) AS parts_cost_priced_items,
+  (SELECT COUNT(*) FROM build_items bi WHERE bi.build_id = ml.source_build_id) AS parts_cost_total_items`;
 const JOINS = `FROM marketplace_listings ml LEFT JOIN profiles p ON p.id = ml.seller_user_id
   LEFT JOIN components c ON c.id = ml.source_component_id
   LEFT JOIN marketplace_listing_details md ON md.listing_id = ml.id`;
@@ -39,7 +63,7 @@ const JOINS = `FROM marketplace_listings ml LEFT JOIN profiles p ON p.id = ml.se
 export class MarketplaceRepository {
   constructor(private readonly db: D1Database) {}
 
-  async list(userId: string | null, options: { type?: string; q?: string; category?: string; region?: string; status?: string; mine?: boolean; minPrice?: number; maxPrice?: number; limit: number; offset: number }): Promise<{ items: MarketplaceListingDto[]; total: number }> {
+  async list(userId: string | null, options: { type?: string; q?: string; category?: string; region?: string; condition?: string; sort?: "newest" | "price_asc" | "price_desc" | "parts_cost_asc"; status?: string; mine?: boolean; minPrice?: number; maxPrice?: number; limit: number; offset: number }): Promise<{ items: MarketplaceListingDto[]; total: number }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
     const clauses = ["ml.deleted_at IS NULL"];
@@ -53,14 +77,19 @@ export class MarketplaceRepository {
     if (options.status && options.mine) clauses.push(`ml.status = ${bind(options.status)}`);
     if (options.category) clauses.push(`ml.category = ${bind(options.category)}`);
     if (options.region) clauses.push(`ml.region_code = ${bind(options.region)}`);
+    if (options.condition) clauses.push(`ml.condition_grade = ${bind(options.condition)}`);
     if (options.q) { const term = bind(`%${options.q.toLowerCase()}%`); clauses.push(`(lower(ml.title) LIKE ${term} OR lower(ml.description) LIKE ${term})`); }
     if (options.minPrice !== undefined) clauses.push(`ml.price_minor >= ${bind(Math.round(options.minPrice * 100))}`);
     if (options.maxPrice !== undefined) clauses.push(`ml.price_minor <= ${bind(Math.round(options.maxPrice * 100))}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
     const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM marketplace_listings ml ${where}`).bind(...values).first<{ total: number }>();
     const savedExpression = userId ? `EXISTS (SELECT 1 FROM marketplace_saves ms WHERE ms.listing_id = ml.id AND ms.user_id = ${bind(userId)})` : "0";
+    const order = options.sort === "price_asc" ? "ml.price_minor IS NULL, ml.price_minor ASC, ml.updated_at DESC"
+      : options.sort === "price_desc" ? "ml.price_minor IS NULL, ml.price_minor DESC, ml.updated_at DESC"
+        : options.sort === "parts_cost_asc" ? "parts_cost_minor IS NULL, parts_cost_minor ASC, ml.updated_at DESC"
+          : "ml.updated_at DESC";
     const rows = await this.db.prepare(`${SELECT_LISTING}, ${savedExpression} AS saved ${JOINS} ${where}
-      ORDER BY ml.updated_at DESC LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`).bind(...values, options.limit, options.offset).all<ListingRow>();
+      ORDER BY ${order} LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`).bind(...values, options.limit, options.offset).all<ListingRow>();
     return { items: rows.results.map(mapListing), total: Number(count?.total ?? 0) };
   }
 
@@ -68,7 +97,29 @@ export class MarketplaceRepository {
     const saved = userId ? "EXISTS (SELECT 1 FROM marketplace_saves ms WHERE ms.listing_id = ml.id AND ms.user_id = ?2)" : "0";
     const statement = this.db.prepare(`${SELECT_LISTING}, ${saved} AS saved ${JOINS} WHERE ml.deleted_at IS NULL AND (ml.id = ?1 OR ml.slug = ?1)`);
     const row = userId ? await statement.bind(idOrSlug, userId).first<ListingRow>() : await statement.bind(idOrSlug).first<ListingRow>();
-    return row ? { row, item: mapListing(row) } : null;
+    if (!row) return null;
+    const item = mapListing(row);
+    item.images = await this.listImages(row.id, userId);
+    return { row, item };
+  }
+
+  private async listImages(listingId: string, userId: string | null): Promise<MarketplaceListingDto["images"]> {
+    const rows = await this.db.prepare(`SELECT mli.file_id, mli.alt_text, mli.sort_order
+      FROM marketplace_listing_images mli JOIN files f ON f.id = mli.file_id
+      WHERE mli.listing_id = ?1 AND f.deleted_at IS NULL AND f.status = 'ready'
+        AND (f.visibility = 'public' OR f.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM organization_members om
+          WHERE om.organization_id = f.organization_id AND om.user_id = ?2 AND om.status = 'active'))
+      ORDER BY mli.sort_order LIMIT 12`).bind(listingId, userId).all<{ file_id: string; alt_text: string | null; sort_order: number }>();
+    return rows.results.map((image) => ({ fileId: image.file_id, altText: image.alt_text, sortOrder: Number(image.sort_order), contentUrl: `/api/v1/files/${image.file_id}/content` }));
+  }
+
+  private async assertSourceBuild(userId: string, sourceBuildId: string): Promise<void> {
+    const build = await this.db.prepare(`SELECT b.id FROM builds b WHERE b.id = ?1 AND b.deleted_at IS NULL AND (
+      b.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM build_members bm WHERE bm.build_id = b.id AND bm.user_id = ?2 AND bm.role IN ('owner', 'editor'))
+      OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = b.organization_id AND om.user_id = ?2
+        AND om.status = 'active' AND om.role IN ('owner', 'admin', 'engineer', 'builder', 'procurement')))`)
+      .bind(sourceBuildId, userId).first();
+    if (!build) throw new AppError(403, "SOURCE_BUILD_ACCESS_DENIED", "The selected source build is not available for this listing.");
   }
 
   async assertWrite(userId: string, row: Pick<ListingRow, "seller_user_id" | "organization_id">): Promise<void> {
@@ -78,6 +129,7 @@ export class MarketplaceRepository {
   }
 
   async create(userId: string, input: ListingInput): Promise<MarketplaceListingDto> {
+    if (input.sourceBuildId) await this.assertSourceBuild(userId, input.sourceBuildId);
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const slug = `${slugify(input.title)}-${id.slice(0, 8)}`;
@@ -105,17 +157,22 @@ export class MarketplaceRepository {
     const current = await this.find(id, userId);
     if (!current) throw new AppError(404, "LISTING_NOT_FOUND", "Listing not found.");
     await this.assertWrite(userId, current.row);
+    if (input.sourceBuildId) await this.assertSourceBuild(userId, input.sourceBuildId);
     const old = current.item;
     const now = new Date().toISOString();
     const result = await this.db.prepare(`UPDATE marketplace_listings SET title = ?1, description = ?2, category = ?3,
       condition_grade = ?4, currency = ?5, price_minor = ?6, quantity = ?7, region_code = ?8,
-      visibility = ?9, expires_at = ?10, version = version + 1, updated_at = ?11
-      WHERE id = ?12 AND version = ?13 AND status = 'draft'`)
+      visibility = ?9, expires_at = ?10, source_build_id = ?11, source_component_id = ?12,
+      version = version + 1, updated_at = ?13
+      WHERE id = ?14 AND version = ?15 AND status = 'draft'`)
       .bind(input.title ?? old.title, input.description ?? old.description, input.category ?? old.category,
         input.conditionGrade === undefined ? old.conditionGrade : input.conditionGrade, input.currency ?? old.currency,
         input.price === undefined ? (old.price == null ? null : Math.round(old.price * 100)) : input.price == null ? null : Math.round(input.price * 100),
         input.quantity ?? old.quantity, input.region === undefined ? old.region : input.region, input.visibility ?? old.visibility,
-        input.expiresAt === undefined ? old.expiresAt : input.expiresAt, now, current.row.id, expectedVersion).run();
+        input.expiresAt === undefined ? old.expiresAt : input.expiresAt,
+        input.sourceBuildId === undefined ? old.sourceBuildId : input.sourceBuildId,
+        input.sourceComponentId === undefined ? old.sourceComponentId : input.sourceComponentId,
+        now, current.row.id, expectedVersion).run();
     if (result.meta.changes !== 1) throw new AppError(409, "LISTING_VERSION_CONFLICT", "Only the latest draft version can be updated.");
     await this.db.prepare(`UPDATE marketplace_listing_details SET runtime_hours = ?1, provenance_text = ?2,
       seller_declares_test_report = ?3, seller_declares_video = ?4, seller_accepts_returns = ?5,
@@ -137,9 +194,25 @@ export class MarketplaceRepository {
       throw new AppError(422, "LISTING_INCOMPLETE", "A sell listing needs a title, description, and price before publishing.");
     }
     const now = new Date().toISOString();
-    await this.db.prepare(`UPDATE marketplace_listings SET status = ?1, published_at = CASE WHEN ?1 = 'published' AND published_at IS NULL THEN ?2 ELSE published_at END,
-      updated_at = ?2, version = version + 1 WHERE id = ?3`).bind(status, now, current.row.id).run();
+    const statements = [this.db.prepare(`UPDATE marketplace_listings SET status = ?1,
+      visibility = CASE WHEN ?1 = 'published' THEN 'public' ELSE visibility END,
+      published_at = CASE WHEN ?1 = 'published' AND published_at IS NULL THEN ?2 ELSE published_at END,
+      updated_at = ?2, version = version + 1 WHERE id = ?3`).bind(status, now, current.row.id)];
+    if (status === "published") {
+      statements.push(this.db.prepare(`UPDATE files SET visibility = 'public', updated_at = ?1 WHERE id IN
+        (SELECT file_id FROM marketplace_listing_images WHERE listing_id = ?2)`).bind(now, current.row.id));
+    }
+    await this.db.batch(statements);
     return (await this.find(id, userId))!.item;
+  }
+
+  async removeImage(id: string, userId: string, fileId: string): Promise<void> {
+    const current = await this.find(id, userId);
+    if (!current) throw new AppError(404, "LISTING_NOT_FOUND", "Listing not found.");
+    await this.assertWrite(userId, current.row);
+    const removed = await this.db.prepare("DELETE FROM marketplace_listing_images WHERE listing_id = ?1 AND file_id = ?2")
+      .bind(current.row.id, fileId).run();
+    if (Number(removed.meta.changes) !== 1) throw new AppError(404, "LISTING_IMAGE_NOT_FOUND", "Listing image not found.");
   }
 
   async createInquiry(userId: string, listingId: string, subject: string | null, message: string): Promise<{ id: string; sellerUserId: string; listingTitle: string }> {
@@ -249,6 +322,11 @@ function mapListing(row: ListingRow): MarketplaceListingDto {
     createdAt: row.created_at, updatedAt: row.updated_at, publishedAt: row.published_at,
     seller: row.seller_user_id ? { id: row.seller_user_id, displayName: row.seller_display_name, username: row.seller_username, avatarUrl: row.seller_avatar_url } : null,
     component: row.source_component_id && row.component_slug ? { id: row.source_component_id, slug: row.component_slug, name: row.component_name!, category: row.component_category! } : null,
+    images: row.primary_image_file_id ? [{ fileId: row.primary_image_file_id, altText: row.primary_image_alt_text, sortOrder: 0, contentUrl: `/api/v1/files/${row.primary_image_file_id}/content` }] : [],
+    partsCost: row.parts_cost_minor == null ? null : Number(row.parts_cost_minor) / 100,
+    partsCostCurrency: row.parts_cost_currency,
+    partsCostPricedItems: Number(row.parts_cost_priced_items ?? 0),
+    partsCostTotalItems: Number(row.parts_cost_total_items ?? 0),
     details: { runtimeHours: row.runtime_hours, provenanceText: row.provenance_text, sellerDeclaresTestReport: row.seller_declares_test_report === 1,
       sellerDeclaresVideo: row.seller_declares_video === 1, sellerAcceptsReturns: row.seller_accepts_returns === 1, serialAvailable: row.serial_available === 1 },
     saved: row.saved === 1,

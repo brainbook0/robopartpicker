@@ -24,6 +24,11 @@ export type MarketplaceListing = {
   publishedAt: string | null;
   seller: { id: string; displayName: string | null; username: string | null; avatarUrl: string | null } | null;
   component: { id: string; slug: string; name: string; category: string } | null;
+  images: Array<{ fileId: string; altText: string | null; sortOrder: number; contentUrl: string }>;
+  partsCost: number | null;
+  partsCostCurrency: string | null;
+  partsCostPricedItems: number;
+  partsCostTotalItems: number;
   details: {
     runtimeHours: number | null;
     provenanceText: string | null;

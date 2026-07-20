@@ -86,7 +86,7 @@ const demoCounts = query<{ components: number; suppliers: number; boms: number }
 );
 
 const migrationCount = Number(migrationRows[0]?.count ?? 0);
-const expectedMigrationCount = 12;
+const expectedMigrationCount = 13;
 if (migrationCount !== expectedMigrationCount) {
   throw new Error(`Expected exactly ${expectedMigrationCount} applied migrations; found ${migrationCount}`);
 }

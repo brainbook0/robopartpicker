@@ -10,7 +10,9 @@ The `preview` Wrangler environment is a full-stack Worker deployment with isolat
 - D1: `robopartpicker-preview`
 - R2: `robopartpicker-preview-files`
 - URL: <https://robopartpicker-preview.ludomi2502.workers.dev>
-- Verified 0.4.0 Worker version: `fe68d7f1-25e9-40ea-a6aa-fbcd21011e8b`
+- Verified 0.5.0 Worker version: `156a4542-8bf8-4077-aa8a-322764e79cca`
+- Previous 0.4.0 Worker version: `fe68d7f1-25e9-40ea-a6aa-fbcd21011e8b`
+- Pre-0.5.0 D1 Time Travel bookmark: `0000002f-00000000-000050ae-b9818d0b01eca4029002a9524f4e4929`
 
 It serves the React assets, `/api/*`, the public read-only `/mcp` endpoint, and the OAuth-protected `/mcp/private` endpoint from one origin. Apply migrations, validate the intentionally empty catalog, then deploy:
 
@@ -21,6 +23,10 @@ npm run deploy:preview
 ```
 
 Preview secrets are environment-specific and must be configured with `--env preview`. Catalog population is a separate run; neither preview nor production is seeded by default.
+
+The 0.5.0 preview was deployed on 2026-07-20 after applying migration `0013_build_descriptions.sql`. Remote validation reported 128 tables, 13 migrations, no foreign-key failures, and no optional demo component, supplier, or BOM rows. The public health/API routes, SPA deep links, public MCP initialization and six-tool discovery, private MCP's unauthenticated challenge, and OAuth protected-resource metadata were checked against the deployed URL. Automated in-app browser control was unavailable, so interactive drag/rotate and mobile visual checks remain explicitly unverified.
+
+Use the recorded Worker version for code rollback and the recorded D1 Time Travel bookmark for database rollback. A direct SQL export was attempted before migration but D1 rejected it because the schema contains an FTS5 virtual table; no export file was created and no database mutation occurred during that attempt.
 
 After rotating the OpenRouter key that was shared through chat, enter the replacement without placing it on the command line:
 

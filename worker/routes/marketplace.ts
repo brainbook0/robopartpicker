@@ -12,6 +12,7 @@ import { createInAppNotification } from "../services/notifications";
 const listingTypes = ["sell", "wanted", "service"] as const;
 const grades = ["A", "B", "C", "untested", "for_parts", "not_applicable"] as const;
 const visibilities = ["private", "organization", "unlisted", "public"] as const;
+const listingSorts = ["newest", "price_asc", "price_desc", "parts_cost_asc"] as const;
 const optionalUrl = z.string().datetime().nullable().optional();
 const listingObject = z.object({
   listingType: z.enum(listingTypes), title: z.string().trim().min(4).max(160), description: z.string().trim().min(10).max(20_000),
@@ -38,13 +39,18 @@ marketplaceRoutes.get("/marketplace", loadAuthSession, async (c) => {
   const userId = c.get("authSession")?.user?.id ?? null;
   const type = c.req.query("type");
   if (type && !listingTypes.includes(type as typeof listingTypes[number])) throw new AppError(400, "VALIDATION_ERROR", "Unknown listing type.");
+  const condition = c.req.query("condition");
+  if (condition && !grades.includes(condition as typeof grades[number])) throw new AppError(400, "VALIDATION_ERROR", "Unknown condition grade.");
+  const sort = c.req.query("sort") || "newest";
+  if (!listingSorts.includes(sort as typeof listingSorts[number])) throw new AppError(400, "VALIDATION_ERROR", "Unknown Marketplace sort order.");
   const minPrice = optionalNumber(c.req.query("minPrice"), "minPrice");
   const maxPrice = optionalNumber(c.req.query("maxPrice"), "maxPrice");
   if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) throw new AppError(400, "VALIDATION_ERROR", "minPrice cannot exceed maxPrice.");
   const limit = parsePositiveInt(c.req.query("limit"), 50, 100);
   const page = parsePositiveInt(c.req.query("page"), 1, 10_000);
   const result = await new MarketplaceRepository(c.env.DB).list(userId, {
-    type, q: c.req.query("q")?.trim().slice(0, 100) || undefined, category: c.req.query("category"), region: c.req.query("region"),
+    type, q: c.req.query("q")?.trim().slice(0, 100) || undefined, category: c.req.query("category"), region: c.req.query("region"), condition,
+    sort: sort as typeof listingSorts[number],
     status: c.req.query("status"), mine: c.req.query("mine") === "true", minPrice, maxPrice, limit, offset: (page - 1) * limit,
   });
   return c.json({ ...result, page, limit, pages: Math.max(1, Math.ceil(result.total / limit)), dataMode: result.items.some((item) => item.isDemo) ? "demo" : "live" });
@@ -94,6 +100,13 @@ marketplaceRoutes.put("/marketplace/:id/status", loadAuthSession, requireAuth, a
   const item = await new MarketplaceRepository(c.env.DB).setStatus(c.req.param("id"), userId, body.status);
   await recordAuditEvent(c.env.DB, { actorUserId: userId, organizationId: item.organizationId, action: `marketplace.listing.${body.status}`, entityType: "marketplace_listing", entityId: item.id, requestId: c.get("requestId") });
   return c.json({ item, commercialStateOnly: true, paymentProcessed: false });
+});
+
+marketplaceRoutes.delete("/marketplace/:id/images/:fileId", loadAuthSession, requireAuth, async (c) => {
+  const userId = authenticatedUserId(c);
+  await new MarketplaceRepository(c.env.DB).removeImage(c.req.param("id"), userId, c.req.param("fileId"));
+  await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "marketplace.listing_image.remove", entityType: "marketplace_listing", entityId: c.req.param("id"), requestId: c.get("requestId"), before: { fileId: c.req.param("fileId") } });
+  return c.body(null, 204);
 });
 
 marketplaceRoutes.put("/marketplace/:id/save", loadAuthSession, requireAuth, async (c) => {

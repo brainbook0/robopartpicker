@@ -38,6 +38,8 @@ Portable RPPS 0.1 Draft releases are append-only rows in `rpps_releases`. They r
 
 `rpps_build_passports` binds one persistent build to one exact release and copies the release identity/hash so later project changes cannot silently move the build target. Item/step mapping tables retain RPPS stable IDs. One outcome is allowed per release/build pair; optional outcome evidence must reference files already attached to that build. Proposal status transitions use conditional updates so concurrent review cannot accept/reject the same open proposal twice.
 
+Migration `0013_build_descriptions.sql` adds the narrative `builds.description` field. It keeps a reproduction/build passport understandable without forcing the creator's story into rigid technical columns; normalized parts, steps, tests, firmware, configuration, and evidence remain separate records.
+
 ## Authorization invariants
 
 Private project/build/file/marketplace/import/message reads require ownership, membership with a permitted role, or a platform moderation policy. Organization membership is unique per user and organization. Organization owner is a distinct role and the last active owner cannot be removed without an ownership transfer.

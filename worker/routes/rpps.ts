@@ -165,6 +165,7 @@ rppsRoutes.post("/projects/:id/releases/:releaseId/build-passports", loadAuthSes
   if (manifest.components.length > 2_000 || totalSteps > 2_000) throw new AppError(422, "RPPS_BUILD_EXPANSION_TOO_LARGE", "This release exceeds the 2,000-item or 2,000-step build-passport limit.");
   const item = await new BuildsRepository(c.env.DB).create(userId, {
     name: body.name ?? `${manifest.project.name} ${release.version} build`,
+    description: `Reproduction of ${manifest.project.name} ${release.version}, locked to RPPS release ${release.stableReleaseId}.`,
     organizationId: body.organizationId ?? null,
     sourceProjectId: project.row.id,
     visibility: body.visibility,
