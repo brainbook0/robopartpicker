@@ -2,7 +2,7 @@ import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import { strToU8, zipSync } from "fflate";
 import { emptyRpps } from "../../src/lib/rpps/schema";
-import { selectGithubFetchCandidates } from "../../worker/services/project-import";
+import { classifyGithubProviderError, selectGithubFetchCandidates } from "../../worker/services/project-import";
 
 const origin = "https://example.com";
 const ingestionSecret = "test-only-ingestion-secret-32-characters-minimum";
@@ -89,6 +89,24 @@ describe("GitHub reference import policy", () => {
     ]);
 
     expect(selected.map((entry) => entry.path)).toEqual(["bom.csv"]);
+  });
+
+  it("maps GitHub rate-limit denials to actionable retry errors", () => {
+    const error = classifyGithubProviderError(403, new Headers({ "x-ratelimit-remaining": "0" }), JSON.stringify({ message: "API rate limit exceeded for anonymous access." }));
+
+    expect(error.status).toBe(429);
+    expect(error.code).toBe("REPOSITORY_RATE_LIMITED");
+    expect(error.message).toContain("rate-limited");
+    expect(error.details?.[0].message).toContain("API rate limit exceeded");
+  });
+
+  it("keeps non-rate-limit GitHub 403s distinct from generic provider failures", () => {
+    const error = classifyGithubProviderError(403, new Headers(), JSON.stringify({ message: "Repository access blocked by organization policy." }));
+
+    expect(error.status).toBe(502);
+    expect(error.code).toBe("REPOSITORY_PROVIDER_DENIED");
+    expect(error.message).toContain("denied");
+    expect(error.details?.[0].message).toContain("organization policy");
   });
 });
 
