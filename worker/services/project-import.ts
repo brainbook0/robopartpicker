@@ -718,10 +718,32 @@ async function githubJson(url: string, headers: Headers): Promise<unknown> {
   } catch {
     throw new AppError(502, "REPOSITORY_PROVIDER_UNAVAILABLE", "GitHub could not be reached. Try the import again.");
   }
-  if (!response.ok) throw new AppError(response.status === 404 ? 404 : 502, "REPOSITORY_PROVIDER_ERROR", `GitHub returned ${response.status}.`);
+  if (!response.ok) throw classifyGithubProviderError(response.status, response.headers, await response.text().catch(() => ""));
   const length = Number(response.headers.get("content-length") ?? 0);
   if (length > 8 * 1024 * 1024) throw new AppError(413, "REPOSITORY_TREE_TOO_LARGE", "The repository inventory response is too large.");
   return response.json();
+}
+
+export function classifyGithubProviderError(status: number, headers: Headers, bodyText: string): AppError {
+  const providerMessage = githubProviderMessage(bodyText);
+  const lowerMessage = providerMessage.toLowerCase();
+  const rateLimited = headers.get("x-ratelimit-remaining") === "0" || /rate limit|secondary rate limit|abuse detection/u.test(lowerMessage);
+  if (status === 404) return new AppError(404, "REPOSITORY_NOT_FOUND", "GitHub could not find that public repository.");
+  if (status === 403 && rateLimited) {
+    return new AppError(429, "REPOSITORY_RATE_LIMITED", "GitHub rate-limited this repository import. Try again later or configure a GitHub token for authenticated imports.", providerMessage ? [{ message: `GitHub: ${providerMessage}` }] : undefined);
+  }
+  if (status === 403) {
+    return new AppError(502, "REPOSITORY_PROVIDER_DENIED", "GitHub denied this repository import from the analysis service. Confirm the repository is public and try again later.", providerMessage ? [{ message: `GitHub: ${providerMessage}` }] : undefined);
+  }
+  return new AppError(502, "REPOSITORY_PROVIDER_ERROR", `GitHub returned ${status}.`, providerMessage ? [{ message: `GitHub: ${providerMessage}` }] : undefined);
+}
+
+function githubProviderMessage(bodyText: string): string {
+  try {
+    const parsed = JSON.parse(bodyText) as { message?: unknown };
+    if (typeof parsed.message === "string") return parsed.message.slice(0, 240);
+  } catch { /* GitHub may return non-JSON error pages during incidents. */ }
+  return bodyText.trim().replace(/\s+/gu, " ").slice(0, 240);
 }
 
 function artifactKind(path: string): ImportedArtifact["kind"] {
