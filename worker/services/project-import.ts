@@ -219,7 +219,7 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
   let attemptedCount = 0;
   for (const entry of selectGithubFetchCandidates(relevant)) {
     const target = inputFiles.find((file) => file.path === entry.path);
-    if (!target || !entry.sha || !isRelevantText(entry.path!) || target.sizeBytes > 256 * 1024 || fetchedCount >= 24 || fetchedBytes + target.sizeBytes > 2 * 1024 * 1024) continue;
+    if (!target || !entry.sha || !isRelevantText(entry.path!) || target.sizeBytes > 256 * 1024 || attemptedCount >= 24 || fetchedBytes + target.sizeBytes > 2 * 1024 * 1024) continue;
     const rawHeaders = new Headers(headers);
     rawHeaders.set("Accept", "application/vnd.github.raw+json");
     attemptedCount += 1;
