@@ -160,7 +160,9 @@ export type ProjectImportAnalysis = {
     mode: "reference" | "uploaded" | "inline";
     provider: "github" | "r2" | "request";
     requestCount: number;
+    attemptedFiles: number;
     fetchedFiles: number;
+    failedFiles: number;
     fetchedBytes: number;
     inventoryOnlyFiles: number;
     mirroredFiles: number;
