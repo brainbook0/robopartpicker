@@ -59,7 +59,9 @@ export type ProjectImportAnalysis = {
     mode: "reference" | "uploaded" | "inline";
     provider: "github" | "r2" | "request";
     requestCount: number;
+    attemptedFiles: number;
     fetchedFiles: number;
+    failedFiles: number;
     fetchedBytes: number;
     inventoryOnlyFiles: number;
     mirroredFiles: number;
@@ -214,11 +216,13 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
   }));
   let fetchedBytes = 0;
   let fetchedCount = 0;
+  let attemptedCount = 0;
   for (const entry of selectGithubFetchCandidates(relevant)) {
     const target = inputFiles.find((file) => file.path === entry.path);
     if (!target || !entry.sha || !isRelevantText(entry.path!) || target.sizeBytes > 256 * 1024 || fetchedCount >= 24 || fetchedBytes + target.sizeBytes > 2 * 1024 * 1024) continue;
     const rawHeaders = new Headers(headers);
     rawHeaders.set("Accept", "application/vnd.github.raw+json");
+    attemptedCount += 1;
     let response: Response;
     try {
       response = await fetch(`${base}/git/blobs/${encodeURIComponent(entry.sha)}`, { headers: rawHeaders, redirect: "manual", signal: AbortSignal.timeout(10_000) });
@@ -249,14 +253,14 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
     topics,
     totalFiles: allFiles.length,
     truncated: Boolean(tree.truncated || (tree.tree?.length ?? 0) > 10_000),
-    retrieval: { mode: "reference", provider: "github", requestCount: 2 + fetchedCount, mirroredFiles: 0 },
+    retrieval: { mode: "reference", provider: "github", requestCount: 2 + attemptedCount, attemptedFiles: attemptedCount, mirroredFiles: 0 },
   });
 }
 
 async function analyzeFileSet(sourceType: ProjectImportKind, label: string, files: InputFile[], context: {
   sourceLabel: string; repositoryUrl?: string; revision?: string; name?: string; description?: string; owner?: string;
   license?: string; topics?: string[]; totalFiles?: number; truncated?: boolean;
-  retrieval?: { mode: "reference" | "uploaded" | "inline"; provider: "github" | "r2" | "request"; requestCount: number; mirroredFiles: number };
+  retrieval?: { mode: "reference" | "uploaded" | "inline"; provider: "github" | "r2" | "request"; requestCount: number; attemptedFiles?: number; mirroredFiles: number };
 }): Promise<ProjectImportAnalysis> {
   const relevant = files.filter((file) => artifactKind(file.path) !== "other" || isProjectMetadata(file.path));
   const detected = Array.from(new Set(relevant.map((file) => detectedType(file.path)).filter(Boolean) as string[])).sort();
@@ -333,6 +337,7 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
   const report = validatePortableRpps(manifest);
   if (!portableEntry) warnings.push("No portable rpps.yaml manifest was found; a reviewable draft was generated without AI inference.");
   if (context.truncated) warnings.push("The repository tree was truncated by the provider; the inventory may be incomplete.");
+  if ((context.retrieval?.attemptedFiles ?? fetchedFiles) > fetchedFiles) warnings.push("Some selected repository files could not be fetched; inventory and source references are preserved, but extracted details may be incomplete.");
   if (!detected.includes("bom")) warnings.push("No recognizable BOM file was found.");
   if (!detected.some((item) => ["cad", "manufacturing"].includes(item))) warnings.push("No native CAD or manufacturing artifact was detected.");
   const summary = manifest.project.summary ?? context.description ?? "";
@@ -391,7 +396,9 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
       mode: context.retrieval?.mode ?? "inline",
       provider: context.retrieval?.provider ?? "request",
       requestCount: context.retrieval?.requestCount ?? 0,
+      attemptedFiles: context.retrieval?.attemptedFiles ?? fetchedFiles,
       fetchedFiles,
+      failedFiles: Math.max(0, (context.retrieval?.attemptedFiles ?? fetchedFiles) - fetchedFiles),
       fetchedBytes,
       inventoryOnlyFiles: Math.max(0, relevant.length - fetchedFiles),
       mirroredFiles: context.retrieval?.mirroredFiles ?? 0,

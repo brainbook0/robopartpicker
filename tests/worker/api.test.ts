@@ -270,10 +270,10 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(bom.status).toBe(200);
     const bomAnalysis = (await body<{ analysis: {
       deterministic: boolean; aiUsed: boolean; manifest: { components: Array<{ name: string; quantity: number; mpn?: string }> };
-      inventory: { detected: string[] }; retrieval: { mode: string; provider: string; fetchedFiles: number; mirroredFiles: number }; report: { profiles: { core: { score: number } }; findings: Array<{ ruleId: string }> };
+      inventory: { detected: string[] }; retrieval: { mode: string; provider: string; attemptedFiles: number; fetchedFiles: number; failedFiles: number; mirroredFiles: number }; report: { profiles: { core: { score: number } }; findings: Array<{ ruleId: string }> };
     } }>(bom)).analysis;
     expect(bomAnalysis).toMatchObject({ deterministic: true, aiUsed: false });
-    expect(bomAnalysis.retrieval).toMatchObject({ mode: "inline", provider: "request", fetchedFiles: 1, mirroredFiles: 0 });
+    expect(bomAnalysis.retrieval).toMatchObject({ mode: "inline", provider: "request", attemptedFiles: 1, fetchedFiles: 1, failedFiles: 0, mirroredFiles: 0 });
     expect(bomAnalysis.inventory.detected).toContain("bom");
     expect(bomAnalysis.manifest.components).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: "Drive motor", quantity: 2, mpn: "TM-42" }),
