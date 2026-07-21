@@ -219,7 +219,12 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
     if (!target || !entry.sha || !isRelevantText(entry.path!) || target.sizeBytes > 256 * 1024 || fetchedCount >= 24 || fetchedBytes + target.sizeBytes > 2 * 1024 * 1024) continue;
     const rawHeaders = new Headers(headers);
     rawHeaders.set("Accept", "application/vnd.github.raw+json");
-    const response = await fetch(`${base}/git/blobs/${encodeURIComponent(entry.sha)}`, { headers: rawHeaders, redirect: "manual", signal: AbortSignal.timeout(10_000) });
+    let response: Response;
+    try {
+      response = await fetch(`${base}/git/blobs/${encodeURIComponent(entry.sha)}`, { headers: rawHeaders, redirect: "manual", signal: AbortSignal.timeout(10_000) });
+    } catch {
+      continue;
+    }
     if (!response.ok) continue;
     const bytes = new Uint8Array(await response.arrayBuffer());
     if (bytes.byteLength > 256 * 1024) continue;
@@ -700,7 +705,12 @@ function parseGithubUrl(value: string): { owner: string; repository: string } {
 }
 
 async function githubJson(url: string, headers: Headers): Promise<unknown> {
-  const response = await fetch(url, { headers, redirect: "manual", signal: AbortSignal.timeout(10_000) });
+  let response: Response;
+  try {
+    response = await fetch(url, { headers, redirect: "manual", signal: AbortSignal.timeout(10_000) });
+  } catch {
+    throw new AppError(502, "REPOSITORY_PROVIDER_UNAVAILABLE", "GitHub could not be reached. Try the import again.");
+  }
   if (!response.ok) throw new AppError(response.status === 404 ? 404 : 502, "REPOSITORY_PROVIDER_ERROR", `GitHub returned ${response.status}.`);
   const length = Number(response.headers.get("content-length") ?? 0);
   if (length > 8 * 1024 * 1024) throw new AppError(413, "REPOSITORY_TREE_TOO_LARGE", "The repository inventory response is too large.");
