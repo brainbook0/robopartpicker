@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { analyzeProjectArchive, analyzeProjectSource, analyzeStoredProjectFiles, createProject, type ProjectImportAnalysis } from "@/lib/projects";
 import { attachFile, uploadFile, type FileKind } from "@/lib/api/files";
+import { describeProjectImportRetrieval } from "@/lib/projectImportRetrieval";
 import { createPortableRelease } from "@/lib/rpps/client";
 import { organizationsApi } from "@/lib/api/organizations";
 import { slugify, validateRpps, RPPS_VERSION, type RppsPackage } from "@/lib/rpps/schema";
@@ -417,7 +418,7 @@ export default function ProjectNew() {
           <MethodCard mode={mode} value="manual" onSelect={setMode} icon={<Pencil className="h-3.5 w-3.5" />}
             title="Manual" desc="Start from a blank form. Best when you know your build details firsthand." />
           <MethodCard mode={mode} value="github" onSelect={setMode} icon={<Github className="h-3.5 w-3.5" />}
-            title="From GitHub" desc="Pre-fill from a public repo’s metadata and README. You still review every field." />
+            title="From GitHub" desc="Reference a public repo, selectively read relevant files, and review every extracted field." />
           <MethodCard mode={mode} value="file" onSelect={setMode} icon={<FileArchive className="h-3.5 w-3.5" />}
             title="Project files" desc="Analyze BOMs, robot descriptions, code metadata, documentation, CAD inventory, or a bounded ZIP package." />
           <MethodCard mode={mode} value="paste" onSelect={setMode} icon={<FileJson className="h-3.5 w-3.5" />}
@@ -440,7 +441,7 @@ export default function ProjectNew() {
                 </button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Fetches repo metadata + README from the public GitHub API. All content is untrusted and shown as data only — never executed.
+                References the public GitHub repo directly, fetches only bounded relevant files for analysis, and mirrors no repository files unless you later upload or save files yourself. All content is untrusted data only.
               </p>
               {importedFields.size > 0 && (
                 <div className="text-[11px] flex items-center gap-1 text-primary"><Info className="h-3 w-3" /> Imported fields are highlighted below — review before publishing.</div>
@@ -746,6 +747,7 @@ const DIMENSION_LABELS: Record<keyof ProjectImportAnalysis["report"]["dimensions
 
 const ImportScorecard = ({ analysis, onClear }: { analysis: ProjectImportAnalysis; onClear: () => void }) => {
   const blockers = analysis.report.findings.filter((finding) => finding.severity === "blocker");
+  const retrieval = describeProjectImportRetrieval(analysis.retrieval);
   return (
     <section className="surface-card mb-4 overflow-hidden" aria-labelledby="import-scorecard-title">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
@@ -753,7 +755,7 @@ const ImportScorecard = ({ analysis, onClear }: { analysis: ProjectImportAnalysi
           <div className="section-title">Deterministic import</div>
           <h2 id="import-scorecard-title" className="text-[14px] font-semibold">Buildability scorecard · {analysis.sourceLabel}</h2>
           <p className="mt-1 text-[10.5px] text-muted-foreground">
-            {analysis.inventory.relevantFiles} relevant of {analysis.inventory.totalFiles} inventoried · {analysis.sourceMappings.length} provenance mappings · no AI used
+            {analysis.inventory.relevantFiles} relevant of {analysis.inventory.totalFiles} inventoried · {analysis.sourceMappings.length} provenance mappings · {retrieval.modeLabel} via {retrieval.providerLabel} · no AI used
           </p>
         </div>
         <button type="button" onClick={onClear} className="btn-ghost btn-sm">Clear analysis</button>
@@ -791,6 +793,15 @@ const ImportScorecard = ({ analysis, onClear }: { analysis: ProjectImportAnalysi
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">Model links and meshes are classified as fabricated parts or assemblies; they are not treated as purchasable catalog components until a BOM or reviewed identity supports that claim.</p>
           </div>
+          <div>
+            <div className="section-title mb-2">Retrieval and storage boundary</div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <ExtractionStat label="Import mode" value={retrieval.modeLabel} detail={`${retrieval.providerLabel} · ${retrieval.requestLabel}`} />
+              <ExtractionStat label="Fetched content" value={retrieval.fileReadLabel} detail={`${retrieval.attemptedLabel} · ${retrieval.byteLabel}`} />
+              <ExtractionStat label="Stored copies" value={retrieval.storageLabel} detail={analysis.retrieval.mode === "reference" ? "Repository files remain at their source during analysis" : "Uploaded sources stay private unless published later"} />
+              <ExtractionStat label="Fetch health" value={retrieval.failureLabel} detail={retrieval.inventoryLabel} />
+            </div>
+          </div>
           {analysis.importWarnings.length > 0 && (
             <div className="rounded border border-border bg-muted/30 p-2">
               <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Import notes</div>
@@ -823,7 +834,7 @@ const ImportScorecard = ({ analysis, onClear }: { analysis: ProjectImportAnalysi
   );
 };
 
-const ExtractionStat = ({ label, value, detail }: { label: string; value: number; detail: string }) => (
+const ExtractionStat = ({ label, value, detail }: { label: string; value: React.ReactNode; detail: string }) => (
   <div className="rounded border border-border p-2"><div className="text-[9.5px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="mt-1 font-mono text-[16px] font-semibold">{value}</div><p className="mt-0.5 text-[9.5px] leading-snug text-muted-foreground">{detail}</p></div>
 );
 
