@@ -55,6 +55,16 @@ export type ProjectImportAnalysis = {
     detected: string[];
     artifacts: ImportedArtifact[];
   };
+  retrieval: {
+    mode: "reference" | "uploaded" | "inline";
+    provider: "github" | "r2" | "request";
+    requestCount: number;
+    fetchedFiles: number;
+    fetchedBytes: number;
+    inventoryOnlyFiles: number;
+    mirroredFiles: number;
+    limits: { maxFetchedFiles: number; maxFetchedBytes: number; maxFileBytes: number };
+  };
   sourceMappings: Array<{ objectType: string; objectStableId: string; sourceUrl?: string; sourcePath: string; sourceRevision?: string; parserId: string; confidence: number }>;
   extracted: ExtractedProjectIntelligence;
   manifest: PortableRppsManifest;
@@ -66,6 +76,7 @@ export type ProjectImportAnalysis = {
 };
 
 type InputFile = { path: string; sizeBytes: number; bytes?: Uint8Array; sha256?: string; sourceUrl?: string; sourceRevision?: string };
+type GithubTreeEntry = { path?: string; type?: string; size?: number; sha?: string; url?: string };
 
 export async function analyzeProjectInput(env: Env, input: {
   sourceType: Exclude<ProjectImportKind, "archive">;
@@ -84,6 +95,7 @@ export async function analyzeProjectInput(env: Env, input: {
   const fileName = safeRelativePath(input.fileName || defaultFileName(input.sourceType));
   return analyzeFileSet(input.sourceType, fileName, [{ path: fileName, sizeBytes: bytes.byteLength, bytes }], {
     sourceLabel: fileName,
+    retrieval: { mode: "inline", provider: "request", requestCount: 0, mirroredFiles: 0 },
   });
 }
 
@@ -125,7 +137,10 @@ export async function analyzeProjectArchive(env: Env, fileId: string, userId: st
     throw new AppError(422, "ARCHIVE_INVALID", error instanceof Error ? error.message : "The ZIP archive could not be read.");
   }
   for (const fileEntry of inventory) fileEntry.bytes = extracted[fileEntry.path];
-  return analyzeFileSet("archive", file.original_name, inventory, { sourceLabel: file.original_name });
+  return analyzeFileSet("archive", file.original_name, inventory, {
+    sourceLabel: file.original_name,
+    retrieval: { mode: "uploaded", provider: "r2", requestCount: 1, mirroredFiles: 1 },
+  });
 }
 
 export async function analyzeStoredProjectFiles(env: Env, fileIds: string[], userId: string): Promise<ProjectImportAnalysis> {
@@ -170,6 +185,7 @@ export async function analyzeStoredProjectFiles(env: Env, fileIds: string[], use
   }
   return analyzeFileSet("files", `${uniqueIds.length} uploaded project file${uniqueIds.length === 1 ? "" : "s"}`, inputFiles, {
     sourceLabel: `${uniqueIds.length} uploaded project file${uniqueIds.length === 1 ? "" : "s"}`,
+    retrieval: { mode: "uploaded", provider: "r2", requestCount: uniqueIds.length, mirroredFiles: uniqueIds.length },
   });
 }
 
@@ -185,7 +201,7 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
   const metadata = await githubJson(`${base}`, headers) as Record<string, unknown>;
   const branch = typeof metadata.default_branch === "string" ? metadata.default_branch : "HEAD";
   const tree = await githubJson(`${base}/git/trees/${encodeURIComponent(branch)}?recursive=1`, headers) as {
-    sha?: string; truncated?: boolean; tree?: Array<{ path?: string; type?: string; size?: number; sha?: string; url?: string }>;
+    sha?: string; truncated?: boolean; tree?: GithubTreeEntry[];
   };
   const revision = tree.sha ?? branch;
   const allFiles = (tree.tree ?? []).filter((entry) => entry.type === "blob" && typeof entry.path === "string").slice(0, 10_000);
@@ -198,7 +214,7 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
   }));
   let fetchedBytes = 0;
   let fetchedCount = 0;
-  for (const entry of relevant) {
+  for (const entry of selectGithubFetchCandidates(relevant)) {
     const target = inputFiles.find((file) => file.path === entry.path);
     if (!target || !entry.sha || !isRelevantText(entry.path!) || target.sizeBytes > 256 * 1024 || fetchedCount >= 24 || fetchedBytes + target.sizeBytes > 2 * 1024 * 1024) continue;
     const rawHeaders = new Headers(headers);
@@ -228,16 +244,20 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
     topics,
     totalFiles: allFiles.length,
     truncated: Boolean(tree.truncated || (tree.tree?.length ?? 0) > 10_000),
+    retrieval: { mode: "reference", provider: "github", requestCount: 2 + fetchedCount, mirroredFiles: 0 },
   });
 }
 
 async function analyzeFileSet(sourceType: ProjectImportKind, label: string, files: InputFile[], context: {
   sourceLabel: string; repositoryUrl?: string; revision?: string; name?: string; description?: string; owner?: string;
   license?: string; topics?: string[]; totalFiles?: number; truncated?: boolean;
+  retrieval?: { mode: "reference" | "uploaded" | "inline"; provider: "github" | "r2" | "request"; requestCount: number; mirroredFiles: number };
 }): Promise<ProjectImportAnalysis> {
   const relevant = files.filter((file) => artifactKind(file.path) !== "other" || isProjectMetadata(file.path));
   const detected = Array.from(new Set(relevant.map((file) => detectedType(file.path)).filter(Boolean) as string[])).sort();
   const textFiles = new Map(relevant.filter((file) => file.bytes).map((file) => [file.path, decodeText(file.bytes!)]));
+  const fetchedFiles = relevant.filter((file) => file.bytes).length;
+  const fetchedBytes = relevant.reduce((total, file) => total + (file.bytes?.byteLength ?? 0), 0);
   const warnings: string[] = [];
   const portableEntry = [...textFiles].find(([path]) => /(^|\/)rpps\.(ya?ml|json)$/iu.test(path));
   let manifest: PortableRppsManifest | undefined;
@@ -362,6 +382,20 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
       detected,
       artifacts: artifacts.map(({ id: _id, ...artifact }) => artifact),
     },
+    retrieval: {
+      mode: context.retrieval?.mode ?? "inline",
+      provider: context.retrieval?.provider ?? "request",
+      requestCount: context.retrieval?.requestCount ?? 0,
+      fetchedFiles,
+      fetchedBytes,
+      inventoryOnlyFiles: Math.max(0, relevant.length - fetchedFiles),
+      mirroredFiles: context.retrieval?.mirroredFiles ?? 0,
+      limits: {
+        maxFetchedFiles: sourceType === "github" ? 24 : relevant.length,
+        maxFetchedBytes: sourceType === "github" ? 2 * 1024 * 1024 : 5 * 1024 * 1024,
+        maxFileBytes: sourceType === "github" ? 256 * 1024 : 1024 * 1024,
+      },
+    },
     sourceMappings,
     extracted,
     manifest,
@@ -371,6 +405,29 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
     deterministic: true,
     aiUsed: false,
   };
+}
+
+export function selectGithubFetchCandidates(entries: GithubTreeEntry[]): GithubTreeEntry[] {
+  return entries
+    .filter((entry) => typeof entry.path === "string" && isRelevantText(entry.path))
+    .sort((left, right) => {
+      const priorityDifference = githubFetchPriority(left.path!) - githubFetchPriority(right.path!);
+      if (priorityDifference !== 0) return priorityDifference;
+      const sizeDifference = (left.size ?? Number.MAX_SAFE_INTEGER) - (right.size ?? Number.MAX_SAFE_INTEGER);
+      return sizeDifference !== 0 ? sizeDifference : left.path!.localeCompare(right.path!);
+    });
+}
+
+function githubFetchPriority(path: string): number {
+  const lower = path.toLowerCase();
+  if (/(^|\/)rpps\.(ya?ml|json)$/u.test(lower)) return 0;
+  if (/(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml)$/u.test(lower)) return 1;
+  if (/\.(urdf|xacro|mjcf|sdf)$/u.test(lower)) return 2;
+  if (/(^|\/)(package\.xml|package\.json|pyproject\.toml|requirements[^/]*\.txt|cargo\.toml|platformio\.ini)$/u.test(lower)) return 3;
+  if (/(^|\/)(readme|license|copying|contributing|changelog)(\.|$)/u.test(lower)) return 4;
+  if (/(^|\/)(assembly|build|calibration|testing?|operation|maintenance)([^/]*)\.(md|txt|ya?ml)$/u.test(lower)) return 5;
+  if (/\.(ya?ml|json|toml|ini|cfg|conf)$/u.test(lower)) return 6;
+  return 7;
 }
 
 function extractComponents(files: Map<string, string>, warnings: string[], slug: string): {
