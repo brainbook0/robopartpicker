@@ -82,7 +82,7 @@ projectRoutes.post("/projects/import/repository", loadAuthSession, requireAuth, 
   const jobId = crypto.randomUUID();
   const recordId = crypto.randomUUID();
   const externalId = analysis.sourceLabel;
-  const raw = JSON.stringify({ repositoryUrl, inventory: analysis.inventory, analyzedAt: analysis.analyzedAt });
+  const raw = JSON.stringify({ repositoryUrl, inventory: analysis.inventory, retrieval: analysis.retrieval, analyzedAt: analysis.analyzedAt });
   const fingerprint = await sha256(`${externalId}\n${analysis.manifestYaml}`);
   await c.env.DB.batch([
     c.env.DB.prepare(`INSERT INTO import_sources (id, slug, name, source_type, base_url, priority, trust_weight, status, created_at, updated_at)
@@ -103,7 +103,7 @@ projectRoutes.post("/projects/import/repository", loadAuthSession, requireAuth, 
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7)`)
       .bind(crypto.randomUUID(), recordId, analysis.draft.name, analysis.draft.repo_url ?? repositoryUrl, analysis.draft.license ?? null, JSON.stringify(analysis), now),
   ]);
-  await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "project.repository_import.draft", entityType: "import_job", entityId: jobId, requestId: c.get("requestId"), after: { sourceUrl: repositoryUrl, recordId } });
+  await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "project.repository_import.draft", entityType: "import_job", entityId: jobId, requestId: c.get("requestId"), after: { sourceUrl: repositoryUrl, recordId, retrieval: analysis.retrieval } });
   return c.json({ draft: analysis.draft, analysis, importJobId: jobId, reviewRequired: true });
 });
 

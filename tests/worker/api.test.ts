@@ -2,6 +2,7 @@ import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import { strToU8, zipSync } from "fflate";
 import { emptyRpps } from "../../src/lib/rpps/schema";
+import { selectGithubFetchCandidates } from "../../worker/services/project-import";
 
 const origin = "https://example.com";
 const ingestionSecret = "test-only-ingestion-secret-32-characters-minimum";
@@ -56,6 +57,40 @@ extensions:
   org.example.test:
     preserved: true
 `;
+
+describe("GitHub reference import policy", () => {
+  it("prioritizes portable manifests, BOMs, robot models, and dependencies", () => {
+    const selected = selectGithubFetchCandidates([
+      { path: "config/controllers.yaml", size: 20 },
+      { path: "docs/maintenance.md", size: 20 },
+      { path: "package.json", size: 20 },
+      { path: "robot/description.urdf", size: 20 },
+      { path: "README.md", size: 20 },
+      { path: "bom/parts.csv", size: 20 },
+      { path: "rpps.yaml", size: 20 },
+    ]);
+
+    expect(selected.map((entry) => entry.path)).toEqual([
+      "rpps.yaml",
+      "bom/parts.csv",
+      "robot/description.urdf",
+      "package.json",
+      "README.md",
+      "docs/maintenance.md",
+      "config/controllers.yaml",
+    ]);
+  });
+
+  it("excludes inventory-only binary artifacts from the text fetch queue", () => {
+    const selected = selectGithubFetchCandidates([
+      { path: "cad/chassis.step", size: 2_000 },
+      { path: "meshes/chassis.stl", size: 2_000 },
+      { path: "bom.csv", size: 200 },
+    ]);
+
+    expect(selected.map((entry) => entry.path)).toEqual(["bom.csv"]);
+  });
+});
 
 async function call(path: string, init: RequestInit = {}, cookie?: string) {
   const headers = new Headers(init.headers);
@@ -235,9 +270,10 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(bom.status).toBe(200);
     const bomAnalysis = (await body<{ analysis: {
       deterministic: boolean; aiUsed: boolean; manifest: { components: Array<{ name: string; quantity: number; mpn?: string }> };
-      inventory: { detected: string[] }; report: { profiles: { core: { score: number } }; findings: Array<{ ruleId: string }> };
+      inventory: { detected: string[] }; retrieval: { mode: string; provider: string; fetchedFiles: number; mirroredFiles: number }; report: { profiles: { core: { score: number } }; findings: Array<{ ruleId: string }> };
     } }>(bom)).analysis;
     expect(bomAnalysis).toMatchObject({ deterministic: true, aiUsed: false });
+    expect(bomAnalysis.retrieval).toMatchObject({ mode: "inline", provider: "request", fetchedFiles: 1, mirroredFiles: 0 });
     expect(bomAnalysis.inventory.detected).toContain("bom");
     expect(bomAnalysis.manifest.components).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: "Drive motor", quantity: 2, mpn: "TM-42" }),
@@ -311,11 +347,13 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const analyzed = await call("/api/v1/projects/import/archive", { method: "POST", body: jsonBody({ fileId: upload.file.id }) }, ownerCookie);
     expect(analyzed.status).toBe(200);
     const result = (await body<{ analysis: {
-      schemaVersion: string; sourceType: string; deterministic: boolean; aiUsed: boolean; inventory: { totalFiles: number; relevantFiles: number; detected: string[] };
+      schemaVersion: string; sourceType: string; deterministic: boolean; aiUsed: boolean; inventory: { totalFiles: number; relevantFiles: number; detected: string[] }; retrieval: { mode: string; provider: string; fetchedFiles: number; mirroredFiles: number };
       manifest: { components: Array<{ mpn?: string }>; interfaces: Array<{ kind: string }> }; sourceMappings: unknown[];
       extracted: { model: { robotName: string; linkCount: number; movableJointCount: number; meshPaths: string[]; joints: Array<{ name: string; parent?: string; child?: string }> }; software: { packages: Array<{ name: string; dependencies: string[] }> }; configuration: { parameters: Array<{ keyPath: string; valueType: string }> }; repository: { ciDefinitions: string[]; nativeCadArtifacts: string[] }; procedureCandidates: Array<{ kind: string; steps: string[]; confidence: number }>; previews: { imagePath: string; modelPath: string; modelKind: string } };
     } }>(analyzed)).analysis;
     expect(result).toMatchObject({ schemaVersion: "project-import-analysis/3", sourceType: "archive", deterministic: true, aiUsed: false });
+    expect(result.retrieval).toMatchObject({ mode: "uploaded", provider: "r2", mirroredFiles: 1 });
+    expect(result.retrieval.fetchedFiles).toBeGreaterThan(0);
     expect(result.inventory).toMatchObject({ totalFiles: 8, relevantFiles: 8 });
     expect(result.inventory.detected).toEqual(expect.arrayContaining(["bom", "cad", "documentation", "image", "urdf"]));
     expect(result.manifest.components).toEqual(expect.arrayContaining([expect.objectContaining({ mpn: "TM-42" })]));

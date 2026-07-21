@@ -156,6 +156,16 @@ export type ProjectImportAnalysis = {
     detected: string[];
     artifacts: Array<{ path: string; kind: string; sizeBytes: number | null; sha256?: string; sourceUrl?: string; sourceRevision?: string }>;
   };
+  retrieval: {
+    mode: "reference" | "uploaded" | "inline";
+    provider: "github" | "r2" | "request";
+    requestCount: number;
+    fetchedFiles: number;
+    fetchedBytes: number;
+    inventoryOnlyFiles: number;
+    mirroredFiles: number;
+    limits: { maxFetchedFiles: number; maxFetchedBytes: number; maxFileBytes: number };
+  };
   sourceMappings: Array<{ objectType: string; objectStableId: string; sourceUrl?: string; sourcePath: string; sourceRevision?: string; parserId: string; confidence: number }>;
   extracted: {
     parts: {
