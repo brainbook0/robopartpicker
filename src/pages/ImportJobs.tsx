@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { ApiError } from "@/lib/api/client";
 import { uploadFile, type FileKind } from "@/lib/api/files";
 import { importJobsApi } from "@/lib/api/systems";
+import { DataReviewPanel } from "@/components/admin/data-review/DataReviewPanel";
 
 export default function ImportJobs() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -24,6 +25,7 @@ function ImportJobList() {
     <div className="mb-4"><div className="section-title">Project ingestion</div><h1 className="text-[22px] font-bold">Import and analysis jobs</h1><p className="mt-1 max-w-3xl text-xs text-muted-foreground">Upload robot descriptions, CAD, BOMs, ROS files, archives, documents, or repositories exported as archives. Untrusted scripts and Xacro are inspected as data and never executed in the Worker.</p></div>
     <section className="surface-card mb-5 p-4"><div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end"><label className="block"><span className="mb-1 block text-xs font-medium">Files</span><input type="file" multiple disabled={busy} onChange={(event) => setFiles(Array.from(event.target.files ?? []))} className="block min-h-11 w-full rounded border border-input bg-background p-2 text-xs" /><span className="mt-1 block text-[10px] text-muted-foreground">Large/native formats run asynchronously in an isolated processing container. Archives are inventoried without executing their contents.</span></label><button disabled={busy || files.length === 0} onClick={() => void queue()} className="btn-primary min-h-11 disabled:opacity-50">{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</> : <><FileUp className="h-4 w-4" /> Queue {files.length || ""} file{files.length === 1 ? "" : "s"}</>}</button></div></section>
     <section className="surface-card overflow-hidden"><div className="border-b border-border p-3 section-title">Your jobs</div>{jobs.isLoading && <div className="p-5 text-sm text-muted-foreground">Loading imports…</div>}{jobs.error && <div className="p-5 text-sm text-negative">{message(jobs.error)}</div>}{jobs.data?.items.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">No import jobs yet.</div>}<div className="divide-y divide-border">{jobs.data?.items.map((job) => <Link key={job.id} to={`/imports/${job.id}`} className="grid gap-2 p-3 hover:bg-muted/50 sm:grid-cols-[minmax(0,1fr)_120px_180px] sm:items-center"><div className="min-w-0"><div className="mono truncate text-xs">{job.id}</div><div className="mt-1 text-[11px] text-muted-foreground">{job.current_stage ?? "queued"} · {job.processor_kind ?? "automatic"} processor</div></div><Status value={job.status} /><div><div className="h-2 overflow-hidden rounded bg-muted"><div className="h-full bg-primary" style={{ width: `${job.progress_percent ?? 0}%` }} /></div><div className="mt-1 text-right mono text-[10px]">{job.progress_percent ?? 0}%</div></div></Link>)}</div></section>
+    <DataReviewPanel />
   </main>;
 }
 

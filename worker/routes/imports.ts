@@ -3,11 +3,15 @@ import { z } from "zod";
 import type { AppBindings } from "../env";
 import { AppError } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
-import { authenticatedUserId, requirePlatformRole } from "../middleware/authorization";
+import { authenticatedUserId, hasPlatformRole, requirePlatformRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { matchStatements, normalizedName, recordTypes, sha256, stagingStatements, validateParsedData } from "../services/ingestion";
 import { recordAuditEvent } from "../services/audit";
-import { queueImportForReview } from "../services/scrape-ingestion-jobs";
+import {
+  PermanentScrapeIngestionError,
+  queueImportForReview,
+  resumeScrapeIngestionJob,
+} from "../services/scrape-ingestion-jobs";
 
 const httpUrl = z.string().url().max(2_048).refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Only HTTP(S) URLs are allowed.");
 const sourceSchema = z.object({ name: z.string().trim().min(2).max(200), type: z.string().trim().min(2).max(100), baseUrl: httpUrl.nullable().optional(), priority: z.number().int().min(1).max(1_000).default(100), trustWeight: z.number().min(0).max(1).default(0.5) }).strict();
@@ -87,8 +91,20 @@ export const batchV2Schema = z.object({
   records: z.array(v2RecordSchema).min(1).max(100),
 }).strict();
 type ImportBatch = z.output<typeof batchSchema> | z.output<typeof batchV2Schema>;
-const reviewSchema = z.object({ decision: z.enum(["create", "merge"]).default("create"), canonicalEntityId: z.string().max(200).nullable().optional() }).strict();
+const reviewSchema = z.object({
+  decision: z.enum(["create", "merge"]).default("create"),
+  canonicalEntityId: z.string().max(200).nullable().optional(),
+  expectedDiffHash: z.string().regex(/^[0-9a-f]{64}$/u).optional(),
+}).strict();
 const rejectSchema = z.object({ reason: z.string().trim().min(2).max(2_000) }).strict();
+const deferSchema = z.object({
+  reason: z.string().trim().min(2).max(2_000),
+  reviewAfter: z.string().datetime().nullable().optional(),
+}).strict();
+const conflictSchema = z.object({
+  claimIds: z.array(z.string().trim().min(1).max(200)).min(2).max(20),
+  conflictType: z.string().trim().min(2).max(100).regex(/^[a-z0-9_]+$/u),
+}).strict();
 
 export const importRoutes = new Hono<AppBindings>();
 
@@ -270,16 +286,187 @@ importRoutes.get("/imports", loadAuthSession, requireAuth, async (c) => {
 
 importRoutes.get("/admin/import-records", loadAuthSession, requireAuth, requirePlatformRole("moderator", "administrator"), async (c) => {
   const status = c.req.query("status") ?? "staged";
-  const result = await c.env.DB.prepare(`SELECT ir.*, i.name AS source_name FROM import_records ir
-    JOIN import_sources i ON i.id = ir.source_id WHERE ir.status = ?1 ORDER BY ir.created_at LIMIT 200`).bind(status).all<Record<string, unknown>>();
-  return c.json({ items: result.results.map((row) => ({ ...row, raw_payload_json: undefined, parsedData: JSON.parse(String(row.parsed_data_json)), parsed_data_json: undefined })) });
+  if (!["pending", "staged", "review", "approved", "rejected", "withdrawn", "failed"].includes(status)) {
+    throw new AppError(422, "INVALID_REVIEW_STATUS", "The requested review status is invalid.");
+  }
+  const predicate = status === "pending" ? "ir.status IN ('staged', 'review')" : "ir.status = ?1";
+  const statement = c.env.DB.prepare(`
+    SELECT ir.*, source.name AS source_name, job.schema_version
+    FROM import_records AS ir
+    JOIN import_sources AS source ON source.id = ir.source_id
+    JOIN import_jobs AS job ON job.id = ir.import_job_id
+    WHERE ${predicate}
+    ORDER BY ir.created_at LIMIT 200
+  `);
+  const result = status === "pending"
+    ? await statement.all<Record<string, unknown>>()
+    : await statement.bind(status).all<Record<string, unknown>>();
+  const canMutate = await hasPlatformRole(c.env.DB, authenticatedUserId(c), ["administrator"]);
+  return c.json({
+    permissions: { canRead: true as const, canMutate },
+    items: result.results.map((row) => ({
+      ...row,
+      raw_payload_json: undefined,
+      parsedData: JSON.parse(String(row.parsed_data_json)),
+      parsed_data_json: undefined,
+    })),
+  });
+});
+
+importRoutes.get("/admin/import-records/:id", loadAuthSession, requireAuth, requirePlatformRole("moderator", "administrator"), async (c) => {
+  const canMutate = await hasPlatformRole(c.env.DB, authenticatedUserId(c), ["administrator"]);
+  const record = await loadReviewRecord(c.env.DB, c.req.param("id"));
+  const [claims, snapshots, candidates, conflicts, audit, collectionLifecycle] = await Promise.all([
+    c.env.DB.prepare(`
+      SELECT id, claim_key, original_value_json, normalized_value_json, unit, confidence, evidence_locator,
+             classification, language, region_code, applicable_revision, extraction_method, extractor_version, created_at
+      FROM field_claims WHERE import_record_id = ?1
+      ORDER BY claim_key, classification, id
+    `).bind(record.id).all<Record<string, unknown>>(),
+    c.env.DB.prepare(`
+      SELECT ss.id, ss.source_policy_revision_id, ss.source_class, ss.source_url, ss.original_published_at,
+             ss.retrieved_at, ss.language, ss.region_code, ss.applicable_revision, ss.declared_media_type,
+             ss.detected_media_type, ss.byte_size, ss.content_sha256, ss.file_id, ss.immutable_external_url,
+             ss.copyright_reuse_status, ss.retention_state, ss.withdrawn_at,
+             spr.robots_status, spr.terms_status, spr.reuse_status, spr.decision AS policy_decision
+      FROM source_snapshots AS ss
+      JOIN source_policy_revisions AS spr ON spr.id = ss.source_policy_revision_id
+      WHERE ss.import_record_id = ?1 ORDER BY ss.retrieved_at, ss.id
+    `).bind(record.id).all<Record<string, unknown>>(),
+    c.env.DB.prepare(`
+      SELECT id, canonical_entity_type, canonical_entity_id, match_method, score, explanation_json, decision, created_at
+      FROM canonical_match_candidates WHERE import_record_id = ?1
+      ORDER BY score DESC, canonical_entity_type, canonical_entity_id
+    `).bind(record.id).all<Record<string, unknown>>(),
+    c.env.DB.prepare(`
+      SELECT cs.id, cs.field_key, cs.conflict_type, cs.status, cs.resolution_notes, cs.created_at,
+             cm.field_claim_id, cm.member_role
+      FROM claim_conflict_sets AS cs
+      LEFT JOIN claim_conflict_members AS cm ON cm.conflict_set_id = cs.id
+      WHERE cs.import_record_id = ?1 ORDER BY cs.created_at, cs.id, cm.field_claim_id
+    `).bind(record.id).all<Record<string, unknown>>(),
+    c.env.DB.prepare(`
+      SELECT id, event_type, actor_user_id, actor_service_id, before_json, after_json, trace_id, created_at
+      FROM import_audit_events WHERE import_record_id = ?1
+      ORDER BY created_at, id
+    `).bind(record.id).all<Record<string, unknown>>(),
+    c.env.DB.prepare(`
+      SELECT id, event_type, from_status, to_status, reason, details_json, trace_id, occurred_at
+      FROM collection_lifecycle_events WHERE import_job_id = ?1
+      ORDER BY occurred_at, id
+    `).bind(record.import_job_id).all<Record<string, unknown>>(),
+  ]);
+  const decision = c.req.query("decision") === "merge" ? "merge" : "create";
+  const canonicalEntityId = c.req.query("canonicalEntityId") ?? null;
+  if (decision === "merge" && !canonicalEntityId) {
+    throw new AppError(422, "CANONICAL_ENTITY_REQUIRED", "A canonical entity is required to preview a merge.");
+  }
+  if (decision === "merge") await ensureCanonical(c.env.DB, String(record.record_type), canonicalEntityId!);
+  const mutation = await proposedReviewMutation(record, decision, canonicalEntityId);
+  const rawPreview = boundedUtf8Preview(String(record.raw_payload_json), 16_384);
+  const latestDecision = [...audit.results].reverse().find((event) =>
+    ["record.approved", "record.rejected", "record.deferred"].includes(String(event.event_type)));
+  const groupedConflicts = groupReviewConflicts(conflicts.results);
+  return c.json({
+    permissions: { canRead: true as const, canMutate },
+    record: {
+      id: record.id,
+      importJobId: record.import_job_id,
+      sourceId: record.source_id,
+      sourceName: record.source_name,
+      externalRecordId: record.external_record_id,
+      recordType: record.record_type,
+      sourceUrl: record.source_url,
+      confidence: record.confidence,
+      status: record.status,
+      reviewState: latestDecision ? String(latestDecision.event_type).replace("record.", "") : "pending",
+      traceId: record.trace_id,
+      schemaVersion: record.schema_version,
+      parsedData: JSON.parse(String(record.parsed_data_json)),
+      createdAt: record.created_at,
+      updatedAt: record.updated_at,
+    },
+    claims: claims.results.map((claim) => ({
+      id: claim.id,
+      claimKey: claim.claim_key,
+      originalValue: parseStoredJson(claim.original_value_json),
+      normalizedValue: parseStoredJson(claim.normalized_value_json),
+      unit: claim.unit,
+      confidence: claim.confidence,
+      evidenceLocator: claim.evidence_locator,
+      classification: claim.classification,
+      aiInferred: claim.classification === "ai_inferred",
+      language: claim.language,
+      region: claim.region_code,
+      applicableRevision: claim.applicable_revision,
+      extractionMethod: claim.extraction_method,
+      extractorVersion: claim.extractor_version,
+      createdAt: claim.created_at,
+    })),
+    evidence: snapshots.results.map((snapshot) => ({
+      id: snapshot.id,
+      sourcePolicyRevisionId: snapshot.source_policy_revision_id,
+      sourceClass: snapshot.source_class,
+      sourceUrl: snapshot.source_url,
+      immutableExternalUrl: snapshot.immutable_external_url,
+      originalPublishedAt: snapshot.original_published_at,
+      retrievedAt: snapshot.retrieved_at,
+      language: snapshot.language,
+      region: snapshot.region_code,
+      applicableRevision: snapshot.applicable_revision,
+      declaredMediaType: snapshot.declared_media_type,
+      detectedMediaType: snapshot.detected_media_type,
+      byteSize: snapshot.byte_size,
+      contentSha256: snapshot.content_sha256,
+      fileId: snapshot.file_id,
+      authorizedContentUrl: snapshot.file_id ? `/api/v1/files/${encodeURIComponent(String(snapshot.file_id))}/content` : null,
+      copyrightReuseStatus: snapshot.copyright_reuse_status,
+      retentionState: snapshot.retention_state,
+      withdrawnAt: snapshot.withdrawn_at,
+      policy: {
+        robotsStatus: snapshot.robots_status,
+        termsStatus: snapshot.terms_status,
+        reuseStatus: snapshot.reuse_status,
+        decision: snapshot.policy_decision,
+      },
+    })),
+    previews: [{
+      kind: "raw_payload_json",
+      text: rawPreview.text,
+      byteSize: rawPreview.byteSize,
+      originalByteSize: rawPreview.originalByteSize,
+      truncated: rawPreview.truncated,
+    }],
+    candidates: candidates.results.map((candidate) => ({
+      ...candidate,
+      explanation: parseStoredJson(candidate.explanation_json),
+      explanation_json: undefined,
+    })),
+    conflicts: groupedConflicts,
+    lifecycle: [
+      ...audit.results.map((event) => ({
+        ...event,
+        timestamp: event.created_at,
+        before: parseStoredJson(event.before_json),
+        after: parseStoredJson(event.after_json),
+        before_json: undefined,
+        after_json: undefined,
+      })),
+      ...collectionLifecycle.results.map((event) => ({
+        ...event,
+        timestamp: event.occurred_at,
+        details: parseStoredJson(event.details_json),
+        details_json: undefined,
+      })),
+    ].sort((left, right) => String(left.timestamp).localeCompare(String(right.timestamp))),
+    proposedMutation: mutation,
+  });
 });
 
 importRoutes.post("/admin/import-records/:id/approve", loadAuthSession, requireAuth, requirePlatformRole("administrator"), async (c) => {
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, reviewSchema);
-  const record = await c.env.DB.prepare("SELECT * FROM import_records WHERE id = ?1 AND status IN ('staged', 'review')").bind(c.req.param("id")).first<Record<string, unknown>>();
-  if (!record) throw new AppError(404, "IMPORT_RECORD_NOT_FOUND", "Pending import record not found.");
+  const record = await loadReviewRecord(c.env.DB, c.req.param("id"));
   const recordType = String(record.record_type);
   const parsed = JSON.parse(String(record.parsed_data_json)) as Record<string, unknown>;
   const now = new Date().toISOString();
@@ -291,16 +478,26 @@ importRoutes.post("/admin/import-records/:id/approve", loadAuthSession, requireA
   } else {
     if (["teardown", "commercial_robot", "marketplace_reference"].includes(recordType)) canonicalId = String(record.id);
     else {
+      if (record.schema_version === "2.0") canonicalId = String(record.id);
       const prepared = await prepareCanonical(c.env.DB, recordType, parsed, {
         importRecordId: String(record.id),
         sourceId: String(record.source_id),
         sourceUrl: String(record.source_url ?? "") || null,
         userId,
         now,
+        canonicalId,
+        stableIds: record.schema_version === "2.0",
       });
       canonicalId = prepared.id;
       canonicalStatements = prepared.statements;
     }
+  }
+  const mutation = await proposedReviewMutation(record, body.decision, canonicalId);
+  if (record.schema_version === "2.0" && !body.expectedDiffHash) {
+    throw new AppError(422, "EXPECTED_DIFF_HASH_REQUIRED", "A v2 approval requires the displayed expectedDiffHash.");
+  }
+  if (record.schema_version === "2.0" && body.expectedDiffHash !== mutation.hash) {
+    throw new AppError(409, "STALE_REVIEW_DIFF", "The proposed mutation changed after it was displayed. Refresh before approving.");
   }
   const stagingTable = stagingTableFor(recordType);
   const statements: D1PreparedStatement[] = [
@@ -310,9 +507,10 @@ importRoutes.post("/admin/import-records/:id/approve", loadAuthSession, requireA
     c.env.DB.prepare(`UPDATE canonical_match_candidates SET decision = CASE WHEN canonical_entity_id = ?1 THEN 'accepted' ELSE 'rejected' END,
       decided_by_user_id = ?2, decided_at = ?3 WHERE import_record_id = ?4`).bind(canonicalId, userId, now, record.id),
     c.env.DB.prepare(`INSERT INTO import_audit_events
-      (id, import_job_id, import_record_id, actor_user_id, event_type, after_json, created_at)
-      VALUES (?1, ?2, ?3, ?4, 'record.approved', ?5, ?6)`)
-      .bind(crypto.randomUUID(), record.import_job_id, record.id, userId, JSON.stringify({ decision: body.decision, canonicalId }), now),
+      (id, import_job_id, import_record_id, actor_user_id, event_type, after_json, trace_id, created_at)
+      VALUES (?1, ?2, ?3, ?4, 'record.approved', ?5, ?6, ?7)`)
+      .bind(crypto.randomUUID(), record.import_job_id, record.id, userId,
+        JSON.stringify({ decision: body.decision, canonicalId, diffHash: mutation.hash }), record.trace_id, now),
   ];
   if (stagingTable) statements.push(c.env.DB.prepare(`UPDATE ${stagingTable} SET review_status = ?1 WHERE import_record_id = ?2`).bind(body.decision === "merge" ? "merged" : "approved", record.id));
   await c.env.DB.batch(statements);
@@ -320,19 +518,143 @@ importRoutes.post("/admin/import-records/:id/approve", loadAuthSession, requireA
   return c.json({ importRecordId: record.id, canonicalEntityType: recordType, canonicalEntityId: canonicalId, decision: body.decision });
 });
 
-importRoutes.post("/admin/import-records/:id/reject", loadAuthSession, requireAuth, requirePlatformRole("moderator", "administrator"), async (c) => {
+importRoutes.post("/admin/import-records/:id/reject", loadAuthSession, requireAuth, requirePlatformRole("administrator"), async (c) => {
   const userId = authenticatedUserId(c); const body = await parseJson(c, rejectSchema); const now = new Date().toISOString();
-  const record = await c.env.DB.prepare("SELECT * FROM import_records WHERE id = ?1 AND status IN ('staged', 'review')").bind(c.req.param("id")).first<Record<string, unknown>>();
-  if (!record) throw new AppError(404, "IMPORT_RECORD_NOT_FOUND", "Pending import record not found.");
+  const record = await loadReviewRecord(c.env.DB, c.req.param("id"));
   const stagingTable = stagingTableFor(String(record.record_type));
   const statements = [
     c.env.DB.prepare("UPDATE import_records SET status = 'rejected', updated_at = ?1 WHERE id = ?2").bind(now, record.id),
-    c.env.DB.prepare(`INSERT INTO import_audit_events (id, import_job_id, import_record_id, actor_user_id, event_type, after_json, created_at)
-      VALUES (?1, ?2, ?3, ?4, 'record.rejected', ?5, ?6)`).bind(crypto.randomUUID(), record.import_job_id, record.id, userId, JSON.stringify({ reason: body.reason }), now),
+    c.env.DB.prepare(`INSERT INTO import_audit_events
+      (id, import_job_id, import_record_id, actor_user_id, event_type, after_json, trace_id, created_at)
+      VALUES (?1, ?2, ?3, ?4, 'record.rejected', ?5, ?6, ?7)`)
+      .bind(crypto.randomUUID(), record.import_job_id, record.id, userId, JSON.stringify({ reason: body.reason }), record.trace_id, now),
   ];
   if (stagingTable) statements.push(c.env.DB.prepare(`UPDATE ${stagingTable} SET review_status = 'rejected' WHERE import_record_id = ?1`).bind(record.id));
   await c.env.DB.batch(statements);
   return c.json({ rejected: true });
+});
+
+importRoutes.post("/admin/import-records/:id/defer", loadAuthSession, requireAuth, requirePlatformRole("administrator"), async (c) => {
+  const userId = authenticatedUserId(c);
+  const body = await parseJson(c, deferSchema);
+  const record = await loadReviewRecord(c.env.DB, c.req.param("id"));
+  const now = new Date().toISOString();
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      UPDATE import_records SET status = 'review', updated_at = ?1
+      WHERE id = ?2 AND status IN ('staged', 'review')
+    `).bind(now, record.id),
+    c.env.DB.prepare(`
+      INSERT INTO import_audit_events
+        (id, import_job_id, import_record_id, actor_user_id, event_type, after_json, trace_id, created_at)
+      VALUES (?, ?, ?, ?, 'record.deferred', ?, ?, ?)
+    `).bind(
+      crypto.randomUUID(),
+      record.import_job_id,
+      record.id,
+      userId,
+      JSON.stringify({ reason: body.reason, reviewAfter: body.reviewAfter ?? null }),
+      record.trace_id,
+      now,
+    ),
+  ]);
+  return c.json({ deferred: true, reviewAfter: body.reviewAfter ?? null });
+});
+
+importRoutes.post("/admin/import-records/:id/conflicts", loadAuthSession, requireAuth, requirePlatformRole("administrator"), async (c) => {
+  const userId = authenticatedUserId(c);
+  const body = await parseJson(c, conflictSchema);
+  const record = await loadReviewRecord(c.env.DB, c.req.param("id"));
+  const claimIds = [...new Set(body.claimIds)].sort();
+  if (claimIds.length < 2) throw new AppError(422, "CONFLICT_CLAIMS_REQUIRED", "At least two distinct claims are required.");
+  const placeholders = claimIds.map((_, index) => `?${index + 2}`).join(", ");
+  const claims = await c.env.DB.prepare(`
+    SELECT id, claim_key, normalized_value_json
+    FROM field_claims
+    WHERE import_record_id = ?1 AND id IN (${placeholders})
+    ORDER BY id
+  `).bind(record.id, ...claimIds).all<{ id: string; claim_key: string; normalized_value_json: string | null }>();
+  if (claims.results.length !== claimIds.length) {
+    throw new AppError(422, "CONFLICT_CLAIM_MISMATCH", "Every conflict claim must belong to this import record.");
+  }
+  const fieldKeys = new Set(claims.results.map((claim) => claim.claim_key));
+  if (fieldKeys.size !== 1) throw new AppError(422, "CONFLICT_FIELD_MISMATCH", "Conflict claims must describe one field.");
+  const values = new Set(claims.results.map((claim) => canonicalJson(parseStoredJson(claim.normalized_value_json))));
+  if (values.size < 2) throw new AppError(422, "CONFLICT_VALUES_IDENTICAL", "Conflict claims must contain different normalized values.");
+  const conflictId = await sha256(canonicalJson({
+    schemaVersion: "claim-conflict/1",
+    importRecordId: record.id,
+    fieldKey: claims.results[0]!.claim_key,
+    conflictType: body.conflictType,
+    claimIds,
+  }));
+  const now = new Date().toISOString();
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      INSERT OR IGNORE INTO claim_conflict_sets
+        (id, source_id, import_record_id, entity_type, entity_external_id, field_key, conflict_type, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?)
+    `).bind(
+      conflictId,
+      record.source_id,
+      record.id,
+      record.record_type,
+      record.external_record_id,
+      claims.results[0]!.claim_key,
+      body.conflictType,
+      now,
+    ),
+    ...claimIds.map((claimId) => c.env.DB.prepare(`
+      INSERT OR IGNORE INTO claim_conflict_members
+        (conflict_set_id, field_claim_id, member_role, created_at)
+      VALUES (?, ?, 'claim', ?)
+    `).bind(conflictId, claimId, now)),
+    c.env.DB.prepare(`
+      UPDATE import_records SET status = 'review', updated_at = ?1
+      WHERE id = ?2 AND status IN ('staged', 'review')
+    `).bind(now, record.id),
+    c.env.DB.prepare(`
+      INSERT INTO import_audit_events
+        (id, import_job_id, import_record_id, actor_user_id, event_type, after_json, trace_id, created_at)
+      VALUES (?, ?, ?, ?, 'record.conflict_recorded', ?, ?, ?)
+    `).bind(
+      crypto.randomUUID(),
+      record.import_job_id,
+      record.id,
+      userId,
+      JSON.stringify({ conflictId, claimIds, conflictType: body.conflictType }),
+      record.trace_id,
+      now,
+    ),
+  ]);
+  return c.json({ id: conflictId, status: "open" }, 201);
+});
+
+importRoutes.post("/admin/collection-jobs/:id/resume", loadAuthSession, requireAuth, requirePlatformRole("administrator"), async (c) => {
+  if (!c.env.SCRAPE_INGEST_QUEUE) {
+    throw new AppError(503, "SCRAPE_QUEUE_UNAVAILABLE", "The scrape-ingestion Queue binding is unavailable.");
+  }
+  try {
+    const outcome = await resumeScrapeIngestionJob({
+      db: c.env.DB,
+      queue: c.env.SCRAPE_INGEST_QUEUE,
+      jobId: c.req.param("id"),
+      actorUserId: authenticatedUserId(c),
+      actorRole: "administrator",
+      now: new Date().toISOString(),
+    });
+    return c.json(outcome);
+  } catch (error) {
+    if (error instanceof PermanentScrapeIngestionError) {
+      const missing = error.message.includes("not found");
+      throw new AppError(
+        missing ? 404 : 422,
+        missing ? "COLLECTION_JOB_NOT_FOUND" : "COLLECTION_JOB_RESUME_REJECTED",
+        error.message,
+      );
+    }
+    throw error;
+  }
 });
 
 async function parseImportBatch(request: Request): Promise<{ body: ImportBatch }> {
@@ -624,6 +946,166 @@ function canonicalJson(value: unknown): string {
   return JSON.stringify(normalize(value));
 }
 
+type ReviewRecord = {
+  id: string;
+  import_job_id: string;
+  source_id: string;
+  source_name: string;
+  external_record_id: string;
+  record_type: string;
+  source_url: string | null;
+  confidence: number;
+  raw_payload_json: string;
+  parsed_data_json: string;
+  status: string;
+  trace_id: string | null;
+  schema_version: string;
+  created_at: string;
+  updated_at: string;
+};
+
+async function loadReviewRecord(db: D1Database, id: string): Promise<ReviewRecord> {
+  const record = await db.prepare(`
+    SELECT ir.*, ij.schema_version, source.name AS source_name
+    FROM import_records AS ir
+    JOIN import_jobs AS ij ON ij.id = ir.import_job_id
+    JOIN import_sources AS source ON source.id = ir.source_id
+    WHERE ir.id = ?1 AND ir.status IN ('staged', 'review')
+  `).bind(id).first<ReviewRecord>();
+  if (!record) throw new AppError(404, "IMPORT_RECORD_NOT_FOUND", "Pending import record not found.");
+  return record;
+}
+
+async function proposedReviewMutation(
+  record: ReviewRecord,
+  decision: "create" | "merge",
+  canonicalEntityId: string | null,
+): Promise<{ diff: Record<string, unknown>; hash: string }> {
+  const parsedData = JSON.parse(record.parsed_data_json) as Record<string, unknown>;
+  const targetId = decision === "create" ? record.id : canonicalEntityId;
+  const diff = {
+    schemaVersion: "review-mutation/1",
+    operation: decision,
+    importRecordId: record.id,
+    recordType: record.record_type,
+    canonicalEntityId: targetId,
+    sourceId: record.source_id,
+    sourceUrl: record.source_url,
+    parsedData,
+    targets: [
+      ...(decision === "create" ? reviewMutationTargets(record.record_type, targetId, parsedData) : []),
+      { table: "import_records", keys: [record.id] },
+      { table: "canonical_match_candidates", keys: [record.id] },
+      { table: "import_audit_events", keys: [record.id] },
+    ],
+  };
+  return { diff, hash: await sha256(canonicalJson(diff)) };
+}
+
+function reviewMutationTargets(
+  type: string,
+  canonicalId: string | null,
+  parsed: Record<string, unknown>,
+): Array<{ table: string; keys: string[] }> {
+  if (!canonicalId) return [];
+  if (type === "manufacturer") return [{ table: "manufacturers", keys: [canonicalId] }];
+  if (type === "supplier") {
+    const regions = [...new Set(Array.isArray(parsed.regions) ? parsed.regions.map(String) : [])].sort();
+    return [
+      { table: "suppliers", keys: [canonicalId] },
+      ...regions.map((region) => ({ table: "supplier_regions", keys: [canonicalId, region] })),
+    ];
+  }
+  if (type === "component") return [{ table: "components", keys: [canonicalId] }];
+  if (type === "evidence") return [{ table: "evidence", keys: [canonicalId] }];
+  if (type === "offer") {
+    return [
+      { table: "supplier_offers", keys: [canonicalId] },
+      { table: "offer_price_history", keys: [`${canonicalId}:price`] },
+    ];
+  }
+  if (type === "project") {
+    return [
+      { table: "projects", keys: [canonicalId] },
+      { table: "project_versions", keys: [`${canonicalId}:version`] },
+      { table: "project_maintainers", keys: [canonicalId] },
+    ];
+  }
+  if (type === "bom") {
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
+    return [
+      { table: "boms", keys: [canonicalId] },
+      { table: "bom_versions", keys: [`${canonicalId}:version`] },
+      ...items.map((_, index) => ({ table: "bom_items", keys: [`${canonicalId}:item:${index}`] })),
+    ];
+  }
+  if (type === "integration") {
+    const entities = Array.isArray(parsed.entities) ? parsed.entities : [];
+    return [
+      { table: "integrations", keys: [canonicalId] },
+      ...entities.map((_, index) => ({ table: "integration_entities", keys: [canonicalId, String(index)] })),
+    ];
+  }
+  return [{ table: "manual_review_link", keys: [canonicalId] }];
+}
+
+function boundedUtf8Preview(value: string, maxBytes: number): {
+  text: string;
+  byteSize: number;
+  originalByteSize: number;
+  truncated: boolean;
+} {
+  const encoded = new TextEncoder().encode(value);
+  const truncated = encoded.byteLength > maxBytes;
+  let text = value;
+  if (truncated) {
+    let boundary = maxBytes;
+    while (boundary > 0) {
+      try {
+        text = new TextDecoder("utf-8", { fatal: true }).decode(encoded.slice(0, boundary));
+        break;
+      } catch {
+        boundary -= 1;
+      }
+    }
+  }
+  const byteSize = new TextEncoder().encode(text).byteLength;
+  return { text, byteSize, originalByteSize: encoded.byteLength, truncated };
+}
+
+function parseStoredJson(value: unknown): unknown {
+  if (typeof value !== "string") return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function groupReviewConflicts(rows: Record<string, unknown>[]) {
+  const grouped = new Map<string, Record<string, unknown> & { members: Array<Record<string, unknown>> }>();
+  for (const row of rows) {
+    const id = String(row.id);
+    let conflict = grouped.get(id);
+    if (!conflict) {
+      conflict = {
+        id,
+        fieldKey: row.field_key,
+        conflictType: row.conflict_type,
+        status: row.status,
+        resolutionNotes: row.resolution_notes,
+        createdAt: row.created_at,
+        members: [],
+      };
+      grouped.set(id, conflict);
+    }
+    if (row.field_claim_id) {
+      conflict.members.push({ claimId: row.field_claim_id, role: row.member_role });
+    }
+  }
+  return [...grouped.values()];
+}
+
 function summarizeJob(row: Record<string, unknown>) { return { id: row.id, batchId: row.batch_id, status: row.status, schemaVersion: row.schema_version, acceptedCount: row.accepted_count, rejectedCount: row.rejected_count, duplicateCount: row.duplicate_count, createdAt: row.created_at, completedAt: row.completed_at }; }
 function slugify(value: string): string { return value.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "").slice(0, 80) || "source"; }
 function constantTime(left: string, right: string): boolean { if (left.length !== right.length) return false; let value = 0; for (let index = 0; index < left.length; index += 1) value |= left.charCodeAt(index) ^ right.charCodeAt(index); return value === 0; }
@@ -635,11 +1117,20 @@ async function ensureCanonical(db: D1Database, type: string, id: string): Promis
   await validateCanonicalId(db, type as keyof typeof canonicalTables, id);
 }
 
-type CanonicalContext = { importRecordId: string; sourceId: string; sourceUrl: string | null; userId: string; now: string };
+type CanonicalContext = {
+  importRecordId: string;
+  sourceId: string;
+  sourceUrl: string | null;
+  userId: string;
+  now: string;
+  canonicalId?: string | null;
+  stableIds?: boolean;
+};
 type PreparedCanonical = { id: string; statements: D1PreparedStatement[] };
 
 async function prepareCanonical(db: D1Database, type: string, parsed: Record<string, unknown>, context: CanonicalContext): Promise<PreparedCanonical> {
-  const id = crypto.randomUUID();
+  const id = context.canonicalId ?? crypto.randomUUID();
+  const derivedId = (suffix: string) => context.stableIds ? `${id}:${suffix}` : crypto.randomUUID();
   const slug = `${slugify(String(parsed.name ?? parsed.title ?? type)).slice(0, 71)}-${id.slice(0, 8)}`;
   const statements: D1PreparedStatement[] = [];
   if (type === "manufacturer") {
@@ -676,9 +1167,9 @@ async function prepareCanonical(db: D1Database, type: string, parsed: Record<str
     statements.push(db.prepare(`INSERT INTO offer_price_history
       (id, supplier_offer_id, currency, unit_price_minor, observed_at, source_import_record_id)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`)
-      .bind(crypto.randomUUID(), id, parsed.currency, parsed.unitPriceMinor, parsed.observedAt, context.importRecordId));
+      .bind(derivedId("price"), id, parsed.currency, parsed.unitPriceMinor, parsed.observedAt, context.importRecordId));
   } else if (type === "project") {
-    const versionId = crypto.randomUUID();
+    const versionId = derivedId("version");
     const extracted = asRecord(parsed.extracted);
     const summary = optionalString(parsed.summary) ?? optionalString(extracted.summary);
     const description = optionalString(parsed.description) ?? optionalString(extracted.description);
@@ -698,7 +1189,7 @@ async function prepareCanonical(db: D1Database, type: string, parsed: Record<str
         VALUES (?1, ?2, 'owner', ?3)`).bind(id, context.userId, context.now),
     );
   } else if (type === "bom") {
-    const versionId = crypto.randomUUID();
+    const versionId = derivedId("version");
     const version = optionalString(parsed.version) ?? "0.1.0";
     const currency = optionalString(parsed.currency) ?? "USD";
     statements.push(
@@ -724,7 +1215,7 @@ async function prepareCanonical(db: D1Database, type: string, parsed: Record<str
       statements.push(db.prepare(`INSERT INTO bom_items
         (id, bom_version_id, component_id, slot_key, description, quantity, unit, notes, sort_order)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`)
-        .bind(crypto.randomUUID(), versionId, componentId, slot, item.name, item.quantity ?? item.qty, item.unit ?? "each", item.notes ?? null, index));
+        .bind(derivedId(`item:${index}`), versionId, componentId, slot, item.name, item.quantity ?? item.qty, item.unit ?? "each", item.notes ?? null, index));
     }
   } else if (type === "integration") {
     statements.push(db.prepare(`INSERT INTO integrations
