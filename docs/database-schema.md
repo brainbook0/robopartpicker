@@ -26,6 +26,7 @@ Remote D1 bootstrap preserves the immutable migration files. Cloudflare's remote
 | Community | `forum_categories`, `forum_threads`, `forum_posts`, `forum_reactions`, `forum_bookmarks`, `forum_reports`, `forum_moderation_actions` |
 | Marketplace | `marketplace_listings`, `marketplace_listing_images`, `marketplace_listing_items`, `marketplace_saves`, `marketplace_inquiries`, `marketplace_offers`, `marketplace_messages`, `marketplace_reports`, `marketplace_moderation_actions`, `marketplace_transactions` |
 | Imports | `import_sources`, `import_jobs`, `import_records`, `staging_components`, `staging_manufacturers`, `staging_suppliers`, `staging_offers`, `staging_projects`, `staging_integrations`, `canonical_match_candidates`, `import_errors`, `import_audit_events` |
+| Data collection | `source_collection_profiles`, `source_policy_revisions`, `source_snapshots`, `field_claims`, `temporal_observations`, `collection_missing_information`, `claim_conflict_sets`, `claim_conflict_members`, `collection_jobs`, `collection_budget_ledger`, `collection_lifecycle_events` |
 | AI and notifications | `ai_conversations`, `ai_messages`, `ai_tool_calls`, `ai_usage`, `project_memory`, `notifications`, `notification_preferences` |
 | Administration | `audit_events`, `rate_limit_events`, `feature_entitlements`, `subscriptions`, `usage_counters` |
 | Files | `files` centralizes R2 metadata and ownership; domain-specific file tables reference it. |
@@ -39,6 +40,14 @@ Portable RPPS 0.1 Draft releases are append-only rows in `rpps_releases`. They r
 `rpps_build_passports` binds one persistent build to one exact release and copies the release identity/hash so later project changes cannot silently move the build target. Item/step mapping tables retain RPPS stable IDs. One outcome is allowed per release/build pair; optional outcome evidence must reference files already attached to that build. Proposal status transitions use conditional updates so concurrent review cannot accept/reject the same open proposal twice.
 
 Migration `0013_build_descriptions.sql` adds the narrative `builds.description` field. It keeps a reproduction/build passport understandable without forcing the creator's story into rigid technical columns; normalized parts, steps, tests, firmware, configuration, and evidence remain separate records.
+
+Migration `0015_data_collection_provenance.sql` adds the source-scoped acquisition substrate without changing canonical ownership. `import_sources` remains the source identity owner; `collection_jobs` owns pre-ingestion discovery/acquisition state and links to `import_jobs` only after handoff. `files` remains the R2 object owner, while `source_snapshots` stores bounded metadata or an immutable external reference. `field_claims`, source conflicts, and collection missing-information rows remain pre-promotion facts with nullable links to canonical `evidence_claims`, `data_conflicts`, and `missing_information_requests`.
+
+Source policy revisions, snapshots, field claims, observations, lifecycle events, and budget entries are append-only history enforced by `BEFORE UPDATE` and `BEFORE DELETE` abort triggers. Their parent references restrict deletion so a source, import record, or collection job cannot erase provenance indirectly. Price, stock, availability, specifications, firmware, releases, project versions, policy changes, delisting, supersession, and withdrawal must create new rows rather than silently replace older facts. The six claim classifications are `official`, `reported`, `measured`, `calculated`, `estimated`, and `ai_inferred`.
+
+`record_versions` continues to own canonical application-entity version snapshots. `technical_records` continues to own canonical project/build/component outcome evidence. `offer_price_history` continues to own promoted supplier-offer history. Migration `0015` does not duplicate or alter those contracts.
+
+The complete source inventory through line 1693 and the known line-1694 provenance prefix are represented by this source/import-scoped model. The unknown truncated suffix of line 1694 remains explicitly deferred and is not inferred. Capacity and source-partitioning gates are documented in `docs/database/data-collection-capacity.md`.
 
 ## Authorization invariants
 

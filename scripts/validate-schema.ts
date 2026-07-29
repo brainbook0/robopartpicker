@@ -25,8 +25,15 @@ const requiredTables = [
   "audit_events",
   "boms",
   "builds",
+  "claim_conflict_members",
+  "claim_conflict_sets",
+  "collection_budget_ledger",
+  "collection_jobs",
+  "collection_lifecycle_events",
+  "collection_missing_information",
   "components",
   "evidence",
+  "field_claims",
   "files",
   "forum_threads",
   "import_jobs",
@@ -60,9 +67,13 @@ const requiredTables = [
   "rpps_source_mappings",
   "rpps_validation_findings",
   "session",
+  "source_collection_profiles",
+  "source_policy_revisions",
+  "source_snapshots",
   "supplier_offers",
   "suppliers",
   "technical_records",
+  "temporal_observations",
   "user",
   "verification",
 ];
@@ -104,7 +115,7 @@ const demoCounts = query<{ components: number; suppliers: number; boms: number }
 );
 
 const migrationCount = Number(migrationRows[0]?.count ?? 0);
-const expectedMigrationCount = 14;
+const expectedMigrationCount = 15;
 if (migrationCount !== expectedMigrationCount) {
   throw new Error(`Expected exactly ${expectedMigrationCount} applied migrations; found ${migrationCount}`);
 }
