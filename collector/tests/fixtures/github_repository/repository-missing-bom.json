@@ -1,0 +1,34 @@
+{
+  "fixtureSchemaVersion": "1.0",
+  "retrievedAt": "2026-07-29T15:00:00Z",
+  "apiVersion": "2026-03-10",
+  "source": {
+    "externalSourceId": "github",
+    "name": "GitHub",
+    "type": "repository",
+    "baseUrl": "https://api.github.com",
+    "language": "en",
+    "countryOrRegion": "global"
+  },
+  "repository": {
+    "id": 100000002,
+    "fullName": "robopartpicker/fixture-no-bom",
+    "htmlUrl": "https://github.com/robopartpicker/fixture-no-bom",
+    "defaultBranch": "main",
+    "description": "Synthetic repository fixture without a BOM",
+    "archived": false,
+    "license": {"spdxId": "MIT", "name": "MIT License"},
+    "commit": {
+      "sha": "2222222222222222222222222222222222222222",
+      "committedAt": "2026-07-28T11:00:00Z"
+    },
+    "release": null
+  },
+  "tree": {
+    "truncated": false,
+    "entries": [
+      {"path": "README.md", "mode": "100644", "type": "blob", "size": 38, "sha": "abababababababababababababababababababab", "content": "# Fixture project without a BOM\n"},
+      {"path": "vendor/controller", "mode": "160000", "type": "commit", "size": 0, "sha": "3333333333333333333333333333333333333333"}
+    ]
+  }
+}

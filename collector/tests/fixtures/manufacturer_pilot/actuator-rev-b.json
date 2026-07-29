@@ -1,0 +1,41 @@
+{
+  "fixtureSchemaVersion": "1.0",
+  "retrievedAt": "2026-07-30T12:00:00Z",
+  "source": {
+    "externalSourceId": "robotis-emanual-dynamixel",
+    "name": "Robotis e-Manual and Dynamixel documentation",
+    "type": "manufacturer",
+    "baseUrl": "https://emanual.robotis.com",
+    "language": "en",
+    "countryOrRegion": "KR"
+  },
+  "product": {
+    "externalRecordId": "robotis:rpp-fixture-x1:rev-b",
+    "sourceUrl": "https://emanual.robotis.com/docs/en/dxl/x/rpp-fixture-x1/?revision=rev-b",
+    "name": "RPP Fixture Actuator X1",
+    "manufacturer": "ROBOTIS",
+    "manufacturerPartNumber": "RPP-FIXTURE-X1",
+    "family": "DYNAMIXEL X",
+    "revision": "rev-b",
+    "originalPublishedAt": "2026-07-30T00:00:00Z",
+    "datasheetUrl": "https://emanual.robotis.com/docs/en/dxl/x/rpp-fixture-x1/",
+    "claims": [
+      {"claimKey": "actuator.product_name", "originalValue": "RPP Fixture Actuator X1", "normalizedValue": "RPP Fixture Actuator X1", "unit": null, "evidenceLocator": "json:/product/name"},
+      {"claimKey": "actuator.manufacturer", "originalValue": "ROBOTIS", "normalizedValue": "ROBOTIS", "unit": null, "evidenceLocator": "json:/product/manufacturer"},
+      {"claimKey": "actuator.manufacturer_part_number", "originalValue": "RPP-FIXTURE-X1", "normalizedValue": "RPP-FIXTURE-X1", "unit": null, "evidenceLocator": "json:/product/manufacturerPartNumber"},
+      {"claimKey": "actuator.product_family", "originalValue": "DYNAMIXEL X", "normalizedValue": "DYNAMIXEL X", "unit": null, "evidenceLocator": "json:/product/family"},
+      {"claimKey": "actuator.revision", "originalValue": "rev-b", "normalizedValue": "rev-b", "unit": null, "evidenceLocator": "json:/product/revision"},
+      {"claimKey": "actuator.stall_torque", "originalValue": "4.3 N.m", "normalizedValue": 4.3, "unit": "N.m", "evidenceLocator": "json:/product/specifications/stallTorque"},
+      {"claimKey": "actuator.no_load_speed", "originalValue": "46 rpm", "normalizedValue": 46, "unit": "rpm", "evidenceLocator": "json:/product/specifications/noLoadSpeed"},
+      {"claimKey": "actuator.weight", "originalValue": "82 g", "normalizedValue": 82, "unit": "g", "evidenceLocator": "json:/product/specifications/weight"},
+      {"claimKey": "actuator.nominal_voltage", "originalValue": "12 V", "normalizedValue": 12, "unit": "V", "evidenceLocator": "json:/product/specifications/nominalVoltage"},
+      {"claimKey": "actuator.stall_current", "originalValue": "2.3 A", "normalizedValue": 2.3, "unit": "A", "evidenceLocator": "json:/product/specifications/stallCurrent"},
+      {"claimKey": "actuator.gear_ratio", "originalValue": "353.5:1", "normalizedValue": 353.5, "unit": "ratio", "evidenceLocator": "json:/product/specifications/gearRatio"},
+      {"claimKey": "actuator.encoder_resolution", "originalValue": "4096 pulse/rev", "normalizedValue": 4096, "unit": "pulse/rev", "evidenceLocator": "json:/product/specifications/encoderResolution"},
+      {"claimKey": "actuator.communication_protocols", "originalValue": ["TTL", "RS-485"], "normalizedValue": ["TTL", "RS-485"], "unit": null, "evidenceLocator": "json:/product/specifications/communicationProtocols"}
+    ],
+    "missingInformation": [
+      {"fieldKey": "actuator.ip_rating", "reasonCode": "missing", "status": "open"}
+    ]
+  }
+}

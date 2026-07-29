@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot name="fixture_robot">
+  <link name="base_link">
+    <inertial>
+      <mass value="3.5"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.3"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://fixture_description/meshes/base.stl"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="arm_link"/>
+  <joint name="shoulder" type="revolute">
+    <parent link="base_link"/>
+    <child link="arm_link"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.57" upper="1.57" effort="20" velocity="2"/>
+  </joint>
+</robot>

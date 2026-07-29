@@ -1,0 +1,29 @@
+{
+  "fixtureSchemaVersion": "1.0",
+  "retrievedAt": "2026-07-30T12:00:00Z",
+  "source": {
+    "externalSourceId": "digikey",
+    "name": "DigiKey",
+    "type": "supplier",
+    "baseUrl": "https://www.digikey.com",
+    "language": "en",
+    "countryOrRegion": "US"
+  },
+  "offer": {
+    "sourceSupplierId": "digikey",
+    "sourceManufacturerId": "fixture-motion",
+    "supplierSku": "RPP-X1-DK",
+    "manufacturerPartNumber": "RPP-X1",
+    "listingUrl": "https://www.digikey.com/en/products/detail/fixture-motion/RPP-X1/10000001",
+    "productTitle": "Fixture Motion RPP-X1 Integrated Actuator",
+    "price": {"amount": 124.99, "currency": "USD", "originalLabel": "$124.99"},
+    "stock": {"status": "out_of_stock", "quantityAvailable": 0, "originalLabel": "0 In Stock"},
+    "leadTime": {"days": null, "originalLabel": "Not available"},
+    "locale": "en-US",
+    "region": "US",
+    "seller": "DigiKey",
+    "authorizationState": "authorized_distributor",
+    "condition": "new",
+    "listingStatus": "delisted"
+  }
+}

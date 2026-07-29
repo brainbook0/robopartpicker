@@ -1,0 +1,45 @@
+{
+  "fixtureSchemaVersion": "1.0",
+  "retrievedAt": "2026-07-29T14:00:00Z",
+  "apiVersion": "2026-03-10",
+  "source": {
+    "externalSourceId": "github",
+    "name": "GitHub",
+    "type": "repository",
+    "baseUrl": "https://api.github.com",
+    "language": "en",
+    "countryOrRegion": "global"
+  },
+  "repository": {
+    "id": 100000001,
+    "fullName": "robopartpicker/fixture-humanoid",
+    "htmlUrl": "https://github.com/robopartpicker/fixture-humanoid",
+    "defaultBranch": "main",
+    "description": "Synthetic humanoid repository fixture",
+    "archived": false,
+    "license": {"spdxId": "Apache-2.0", "name": "Apache License 2.0"},
+    "commit": {
+      "sha": "1111111111111111111111111111111111111111",
+      "committedAt": "2026-07-28T10:00:00Z"
+    },
+    "release": {
+      "tagName": "v1.0.0",
+      "publishedAt": "2026-07-28T12:00:00Z",
+      "htmlUrl": "https://github.com/robopartpicker/fixture-humanoid/releases/tag/v1.0.0"
+    }
+  },
+  "tree": {
+    "truncated": true,
+    "entries": [
+      {"path": "README.md", "mode": "100644", "type": "blob", "size": 91, "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "content": "# Fixture Humanoid\n\nBuild instructions and ROS 2 integration notes.\n"},
+      {"path": "LICENSE", "mode": "100644", "type": "blob", "size": 18, "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "content": "Apache License 2.0"},
+      {"path": "BOM.csv", "mode": "100644", "type": "blob", "size": 181, "sha": "cccccccccccccccccccccccccccccccccccccccc", "content": "part_name,manufacturer_part_number,quantity,unit_price,currency\nFixture actuator,RPP-X1,2,129.99,USD\nM3 socket screw,M3X8,12,0.08,USD\n"},
+      {"path": "robot_description/fixture.urdf", "mode": "100644", "type": "blob", "size": 112, "sha": "dddddddddddddddddddddddddddddddddddddddd", "content": "<robot name=\"fixture\"><link name=\"base_link\"/><joint name=\"fixed\" type=\"fixed\"><parent link=\"base_link\"/><child link=\"tool\"/></joint><link name=\"tool\"/></robot>"},
+      {"path": "cad/full-assembly.step", "mode": "100644", "type": "blob", "size": 2097152, "sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+      {"path": "release/archive.zip", "mode": "100644", "type": "blob", "size": 20000, "sha": "ffffffffffffffffffffffffffffffffffffffff"},
+      {"path": "vendor/controller", "mode": "160000", "type": "commit", "size": 0, "sha": "1212121212121212121212121212121212121212"},
+      {"path": "latest", "mode": "120000", "type": "blob", "size": 9, "sha": "1313131313131313131313131313131313131313", "content": "README.md"},
+      {"path": "../outside.yaml", "mode": "100644", "type": "blob", "size": 10, "sha": "1414141414141414141414141414141414141414", "content": "unsafe: 1"}
+    ]
+  }
+}
