@@ -1,0 +1,56 @@
+schema_version: 1.0.0
+live_access_gate: A source_policy_revision must be approved_live and enabled separately before any network contact.
+monthly_incremental_ai_budget_usd: 50
+pilots:
+  manufacturer_pilot:
+    candidate_source_family: Robotis e-Manual and Dynamixel documentation
+    enabled: false
+    policy_state: unreviewed
+    adapter_family: official_web
+    access_method: official_https
+    cost_class: cloudflare_infra
+    required_policy_preflight_evidence: &a1
+      - base_url_and_source_identity
+      - robots_txt_review
+      - terms_of_service_review
+      - copyright_or_reuse_review
+      - rate_and_cost_budget
+      - user_agent_and_contact
+      - owner_approval
+    fixture_directory: collector/tests/fixtures/manufacturer_pilot
+  distributor_pilot:
+    candidate_source_family: DigiKey
+    enabled: false
+    policy_state: unreviewed
+    adapter_family: distributor_catalog
+    access_method: official_api_or_catalog
+    cost_class: paid_source_api
+    required_policy_preflight_evidence: *a1
+    fixture_directory: collector/tests/fixtures/distributor_pilot
+  github_repository_pilot:
+    candidate_source_family: GitHub
+    enabled: false
+    policy_state: unreviewed
+    adapter_family: repository_api
+    access_method: official_api
+    cost_class: cloudflare_infra
+    required_policy_preflight_evidence: *a1
+    fixture_directory: collector/tests/fixtures/github_repository_pilot
+  ros_bom_pilot:
+    candidate_source_family: Poppy Project
+    enabled: false
+    policy_state: unreviewed
+    adapter_family: repository_api
+    access_method: public_repository_reference
+    cost_class: cloudflare_infra
+    required_policy_preflight_evidence: *a1
+    fixture_directory: collector/tests/fixtures/ros_bom_pilot
+  volatile_offer_pilot:
+    candidate_source_family: RobotShop
+    enabled: false
+    policy_state: unreviewed
+    adapter_family: marketplace_listing
+    access_method: public_catalog_listing
+    cost_class: cloudflare_infra
+    required_policy_preflight_evidence: *a1
+    fixture_directory: collector/tests/fixtures/volatile_offer_pilot

@@ -1,0 +1,131 @@
+schema_version: 1.0.0
+protocol:
+  name: SourceAdapter
+  capability_flags: &a1
+    - discover
+    - acquire
+    - snapshot
+    - extract
+    - normalize
+    - submit
+  lifecycle_order: *a1
+  rule: Every adapter declares all six flags; unsupported stages fail closed instead of being omitted.
+families:
+  official_web:
+    description: Official manufacturer or project web and document sources.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - html
+      - json
+      - pdf
+  distributor_catalog:
+    description: Authorized distributor catalogs and APIs.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - json
+      - html
+      - csv
+      - pdf
+  repository_api:
+    description: Repository, package, and ROS indexes with bounded file acquisition.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - json
+      - markdown
+      - csv
+      - tsv
+      - yaml
+      - xml
+  marketplace_listing:
+    description: Volatile offer and marketplace metadata; retention is policy-dependent.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - json
+      - html
+  community_reference:
+    description: Community facts and permitted excerpts stored as attributed claims and links.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - json
+      - html
+      - markdown
+  media_metadata:
+    description: Media metadata and permitted transcript references; no media mirroring.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - json
+      - html
+      - transcript
+  publication_document:
+    description: Research, standards, reports, and bounded documents.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - json
+      - html
+      - pdf
+  cad_reference:
+    description: CAD portal metadata and bounded approved file manifests.
+    capabilities:
+      discover: true
+      acquire: true
+      snapshot: true
+      extract: true
+      normalize: true
+      submit: true
+    formats:
+      - json
+      - html
+      - cad_metadata
+  metadata_only:
+    description: Reference-only source used when acquisition or reuse is not approved.
+    capabilities:
+      discover: true
+      acquire: false
+      snapshot: false
+      extract: false
+      normalize: true
+      submit: true
+    formats:
+      - metadata

@@ -1,0 +1,5155 @@
+schema_version: 1.0.0
+inventory:
+  sha256: ec9336c4f8ddd32d1cb64868037d2b5b34023185ac637ea9cae1b87d70f1e7e0
+  line_count: 1694
+  scope: complete_lines_1_through_1693_and_known_line_1694_prefix
+sections:
+  - section_id: 1
+    title: Universal metadata for every scraped record
+    field_count: 22
+    term_count: 6
+    source_occurrence_count: 0
+    wave: foundation
+    owner: data_collection
+  - section_id: 2
+    title: Actuators, motors, and integrated joints
+    field_count: 58
+    term_count: 0
+    source_occurrence_count: 15
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 3
+    title: Hands, grippers, and end effectors
+    field_count: 36
+    term_count: 0
+    source_occurrence_count: 13
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 4
+    title: Sensors
+    field_count: 39
+    term_count: 16
+    source_occurrence_count: 18
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 5
+    title: Compute modules, embedded computers, and motor controllers
+    field_count: 51
+    term_count: 0
+    source_occurrence_count: 11
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 6
+    title: Reducers, gearboxes, and transmissions
+    field_count: 30
+    term_count: 0
+    source_occurrence_count: 10
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 7
+    title: Batteries, BMS, and power systems
+    field_count: 24
+    term_count: 15
+    source_occurrence_count: 8
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 8
+    title: Structural components and fabrication stock
+    field_count: 15
+    term_count: 13
+    source_occurrence_count: 7
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 9
+    title: Bearings, shafts, fasteners, and mechanical hardware
+    field_count: 18
+    term_count: 0
+    source_occurrence_count: 6
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 10
+    title: Wheels, tracks, mobile bases, and drivetrain components
+    field_count: 18
+    term_count: 0
+    source_occurrence_count: 6
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 11
+    title: Cables, connectors, and wiring
+    field_count: 21
+    term_count: 0
+    source_occurrence_count: 8
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 12
+    title: Microcontrollers and embedded boards
+    field_count: 28
+    term_count: 0
+    source_occurrence_count: 8
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 13
+    title: Safety systems
+    field_count: 15
+    term_count: 10
+    source_occurrence_count: 6
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 14
+    title: Software, SDKs, drivers, and firmware
+    field_count: 25
+    term_count: 0
+    source_occurrence_count: 8
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 15
+    title: CAD, robot-description files, and digital twins
+    field_count: 38
+    term_count: 19
+    source_occurrence_count: 8
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 16
+    title: Fabrication services
+    field_count: 19
+    term_count: 0
+    source_occurrence_count: 7
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 17
+    title: Tools and test equipment
+    field_count: 10
+    term_count: 14
+    source_occurrence_count: 5
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 18
+    title: Commercial complete robots
+    field_count: 38
+    term_count: 0
+    source_occurrence_count: 13
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 19
+    title: Open-source robot projects
+    field_count: 41
+    term_count: 0
+    source_occurrence_count: 10
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 20
+    title: Repository contents
+    field_count: 42
+    term_count: 0
+    source_occurrence_count: 0
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 21
+    title: BOM records
+    field_count: 43
+    term_count: 0
+    source_occurrence_count: 13
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 22
+    title: Build instructions and recipes
+    field_count: 24
+    term_count: 0
+    source_occurrence_count: 7
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 23
+    title: Reproductions, forks, and variants
+    field_count: 28
+    term_count: 0
+    source_occurrence_count: 7
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 24
+    title: Integration bundles and reference architectures
+    field_count: 28
+    term_count: 0
+    source_occurrence_count: 8
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 25
+    title: Substitutions and alternatives
+    field_count: 18
+    term_count: 0
+    source_occurrence_count: 7
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 26
+    title: Normalization and compatibility reference data
+    field_count: 17
+    term_count: 0
+    source_occurrence_count: 0
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 27
+    title: Teardowns
+    field_count: 24
+    term_count: 0
+    source_occurrence_count: 12
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 28
+    title: Manufacturers
+    field_count: 18
+    term_count: 0
+    source_occurrence_count: 5
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 29
+    title: Suppliers and vendors
+    field_count: 20
+    term_count: 0
+    source_occurrence_count: 11
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 30
+    title: Supplier offers
+    field_count: 27
+    term_count: 0
+    source_occurrence_count: 18
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 31
+    title: Marketplace listings
+    field_count: 23
+    term_count: 0
+    source_occurrence_count: 10
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 32
+    title: Build logs
+    field_count: 14
+    term_count: 0
+    source_occurrence_count: 6
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 33
+    title: Component reviews and real-world experience
+    field_count: 17
+    term_count: 0
+    source_occurrence_count: 5
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 34
+    title: BOM corrections
+    field_count: 12
+    term_count: 0
+    source_occurrence_count: 4
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 35
+    title: Supplier experiences
+    field_count: 13
+    term_count: 0
+    source_occurrence_count: 4
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 36
+    title: Measured component performance
+    field_count: 17
+    term_count: 0
+    source_occurrence_count: 5
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 37
+    title: Community discussions and annotations
+    field_count: 15
+    term_count: 0
+    source_occurrence_count: 11
+    wave: inventory_backlog
+    owner: data_collection
+  - section_id: 38
+    title: Papers, articles, and reports
+    field_count: 16
+    term_count: 10
+    source_occurrence_count: 9
+    wave: inventory_backlog
+    owner: data_collection
+sources:
+  - source_id: 1x
+    source_name: 1X
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 851
+    deferment_reason: null
+  - source_id: 80_20
+    source_name: 80/20
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 8
+        inventory_line: 461
+    deferment_reason: null
+  - source_id: active_robots
+    source_name: Active Robots
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 29
+        inventory_line: 1307
+      - section_id: 30
+        inventory_line: 1353
+    deferment_reason: null
+  - source_id: adafruit
+    source_name: Adafruit
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 254
+      - section_id: 12
+        inventory_line: 587
+    deferment_reason: null
+  - source_id: agility_robotics
+    source_name: Agility Robotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 846
+    deferment_reason: null
+  - source_id: alibaba_rfq
+    source_name: Alibaba RFQ
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1360
+    deferment_reason: null
+  - source_id: aliexpress
+    source_name: AliExpress
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 119
+      - section_id: 7
+        inventory_line: 422
+      - section_id: 8
+        inventory_line: 464
+      - section_id: 10
+        inventory_line: 518
+      - section_id: 30
+        inventory_line: 1354
+      - section_id: 31
+        inventory_line: 1392
+    deferment_reason: null
+  - source_id: aliexpress_foc_controller_listings
+    source_name: AliExpress FOC-controller listings
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 326
+    deferment_reason: null
+  - source_id: aliexpress_reducer_listings
+    source_name: AliExpress reducer listings
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 370
+    deferment_reason: null
+  - source_id: aliexpress_stores
+    source_name: AliExpress stores
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 29
+        inventory_line: 1308
+    deferment_reason: null
+  - source_id: amazon
+    source_name: Amazon
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 17
+        inventory_line: 792
+      - section_id: 30
+        inventory_line: 1355
+      - section_id: 31
+        inventory_line: 1394
+    deferment_reason: null
+  - source_id: amphenol
+    source_name: Amphenol
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 11
+        inventory_line: 547
+    deferment_reason: null
+  - source_id: analog_devices_trinamic
+    source_name: Analog Devices Trinamic
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 323
+    deferment_reason: null
+  - source_id: andymark
+    source_name: AndyMark
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 10
+        inventory_line: 514
+    deferment_reason: null
+  - source_id: apex_dynamics
+    source_name: Apex Dynamics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 369
+    deferment_reason: null
+  - source_id: apptronik
+    source_name: Apptronik
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 850
+    deferment_reason: null
+  - source_id: arduino
+    source_name: Arduino
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 12
+        inventory_line: 583
+    deferment_reason: null
+  - source_id: arxiv
+    source_name: arXiv
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 38
+        inventory_line: 1604
+    deferment_reason: null
+  - source_id: ati_industrial_automation
+    source_name: ATI Industrial Automation
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 238
+    deferment_reason: null
+  - source_id: banner_engineering
+    source_name: Banner Engineering
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 13
+        inventory_line: 623
+    deferment_reason: null
+  - source_id: barrett_technology
+    source_name: Barrett Technology
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 166
+    deferment_reason: null
+  - source_id: battery_and_bms_manufacturers
+    source_name: Battery and BMS manufacturers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 7
+        inventory_line: 423
+    deferment_reason: null
+  - source_id: batteryspace
+    source_name: BatterySpace
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 7
+        inventory_line: 418
+    deferment_reason: null
+  - source_id: bolt_depot
+    source_name: Bolt Depot
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 9
+        inventory_line: 491
+    deferment_reason: null
+  - source_id: boston_dynamics
+    source_name: Boston Dynamics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 849
+    deferment_reason: null
+  - source_id: build_logs
+    source_name: Build logs
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 25
+        inventory_line: 1172
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: build_reports
+    source_name: Build reports
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 36
+        inventory_line: 1533
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: builder_forums
+    source_name: Builder forums
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 37
+        inventory_line: 1567
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: bunnie_studios
+    source_name: Bunnie Studios
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1243
+    deferment_reason: null
+  - source_id: clone_robotics
+    source_name: Clone Robotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 171
+    deferment_reason: null
+  - source_id: cnet
+    source_name: CNET
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1239
+    deferment_reason: null
+  - source_id: community_build_logs
+    source_name: Community build logs
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 22
+        inventory_line: 1063
+      - section_id: 23
+        inventory_line: 1101
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: community_wikis
+    source_name: Community wikis
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 36
+        inventory_line: 1530
+    deferment_reason: null
+  - source_id: connector_manufacturers
+    source_name: Connector manufacturers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 11
+        inventory_line: 551
+    deferment_reason: null
+  - source_id: construction_physics
+    source_name: Construction Physics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1238
+      - section_id: 38
+        inventory_line: 1611
+    deferment_reason: null
+  - source_id: contactile
+    source_name: Contactile
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 246
+    deferment_reason: null
+  - source_id: cubemars
+    source_name: CubeMars
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 107
+    deferment_reason: null
+  - source_id: dakota_lithium
+    source_name: Dakota Lithium
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 7
+        inventory_line: 419
+    deferment_reason: null
+  - source_id: digikey
+    source_name: DigiKey
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 117
+      - section_id: 4
+        inventory_line: 251
+      - section_id: 5
+        inventory_line: 324
+      - section_id: 7
+        inventory_line: 420
+      - section_id: 11
+        inventory_line: 544
+      - section_id: 12
+        inventory_line: 589
+      - section_id: 13
+        inventory_line: 624
+      - section_id: 17
+        inventory_line: 793
+      - section_id: 29
+        inventory_line: 1303
+    deferment_reason: null
+  - source_id: digikey_api
+    source_name: DigiKey API
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1346
+    deferment_reason: null
+  - source_id: direct_manufacturer_rfq_forms
+    source_name: Direct manufacturer RFQ forms
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1362
+    deferment_reason: null
+  - source_id: direct_manufacturer_sites
+    source_name: Direct manufacturer sites
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 28
+        inventory_line: 1267
+    deferment_reason: null
+  - source_id: distributor_listings
+    source_name: Distributor listings
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 372
+    deferment_reason: null
+  - source_id: distributor_manufacturer_directories
+    source_name: Distributor manufacturer directories
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 28
+        inventory_line: 1269
+    deferment_reason: null
+  - source_id: diy_robocars
+    source_name: DIY Robocars
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 37
+        inventory_line: 1566
+    deferment_reason: null
+  - source_id: dynamixel_workbench
+    source_name: Dynamixel Workbench
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1142
+    deferment_reason: null
+  - source_id: ebay
+    source_name: eBay
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1356
+      - section_id: 31
+        inventory_line: 1393
+    deferment_reason: null
+  - source_id: elmo_motion_control
+    source_name: Elmo Motion Control
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 321
+    deferment_reason: null
+  - source_id: esp32
+    source_name: ESP32
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 12
+        inventory_line: 585
+    deferment_reason: null
+  - source_id: fabrication_service_catalogs
+    source_name: Fabrication-service catalogs
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 8
+        inventory_line: 465
+    deferment_reason: null
+  - source_id: farnell
+    source_name: Farnell
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 29
+        inventory_line: 1305
+      - section_id: 30
+        inventory_line: 1348
+    deferment_reason: null
+  - source_id: fcc_filings_and_internal_photos
+    source_name: FCC filings and internal photos
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1241
+    deferment_reason: null
+  - source_id: figure
+    source_name: Figure
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 847
+    deferment_reason: null
+  - source_id: forums
+    source_name: Forums
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 33
+        inventory_line: 1456
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: fourier_intelligence
+    source_name: Fourier Intelligence
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 845
+    deferment_reason: null
+  - source_id: gelsight
+    source_name: GelSight
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 245
+    deferment_reason: null
+  - source_id: generation_robots
+    source_name: Generation Robots
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 29
+        inventory_line: 1306
+      - section_id: 30
+        inventory_line: 1352
+    deferment_reason: null
+  - source_id: github
+    source_name: GitHub
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 654
+      - section_id: 15
+        inventory_line: 723
+    deferment_reason: null
+  - source_id: github_analysis_repositories
+    source_name: GitHub analysis repositories
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1242
+    deferment_reason: null
+  - source_id: github_benchmarks
+    source_name: GitHub benchmarks
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 36
+        inventory_line: 1531
+    deferment_reason: null
+  - source_id: github_bom_search
+    source_name: GitHub BOM search
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1011
+    deferment_reason: null
+  - source_id: github_discussions
+    source_name: GitHub Discussions
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1143
+      - section_id: 32
+        inventory_line: 1426
+      - section_id: 37
+        inventory_line: 1563
+    deferment_reason: null
+  - source_id: github_forks
+    source_name: GitHub forks
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 23
+        inventory_line: 1098
+    deferment_reason: null
+  - source_id: github_humanoid_robot_topics
+    source_name: GitHub humanoid-robot topics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 901
+    deferment_reason: null
+  - source_id: github_issues
+    source_name: GitHub Issues
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 25
+        inventory_line: 1169
+      - section_id: 34
+        inventory_line: 1478
+    deferment_reason: null
+  - source_id: github_open_source_robot_topics
+    source_name: GitHub open-source-robot topics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 902
+    deferment_reason: null
+  - source_id: github_robot_stack_repositories
+    source_name: GitHub robot-stack repositories
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1139
+    deferment_reason: null
+  - source_id: github_robot_topics
+    source_name: GitHub robot topics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1016
+    deferment_reason: null
+  - source_id: gitlab
+    source_name: GitLab
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 655
+      - section_id: 15
+        inventory_line: 724
+      - section_id: 19
+        inventory_line: 903
+    deferment_reason: null
+  - source_id: govdeals
+    source_name: GovDeals
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1359
+    deferment_reason: null
+  - source_id: grabcad
+    source_name: GrabCAD
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: other
+    adapter_family: cad_reference
+    extraction_methods:
+      - metadata_reference
+      - bounded_file_manifest
+    formats:
+      - html
+      - cad_metadata
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 15
+        inventory_line: 725
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: hackaday_io
+    source_name: Hackaday.io
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 904
+      - section_id: 21
+        inventory_line: 1017
+      - section_id: 32
+        inventory_line: 1424
+      - section_id: 37
+        inventory_line: 1562
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: hackaday_io_instructions
+    source_name: Hackaday.io instructions
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 22
+        inventory_line: 1059
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: hackaday_remixes
+    source_name: Hackaday remixes
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 23
+        inventory_line: 1099
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: harmonic_drive
+    source_name: Harmonic Drive
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 112
+      - section_id: 6
+        inventory_line: 363
+    deferment_reason: null
+  - source_id: harmonic_drive_ag
+    source_name: Harmonic Drive AG
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 364
+    deferment_reason: null
+  - source_id: hobbyking
+    source_name: HobbyKing
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 7
+        inventory_line: 416
+    deferment_reason: null
+  - source_id: ieee_publications
+    source_name: IEEE publications
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 38
+        inventory_line: 1605
+    deferment_reason: null
+  - source_id: ieee_ras
+    source_name: IEEE RAS
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 38
+        inventory_line: 1607
+    deferment_reason: null
+  - source_id: ieee_robotics_and_automation_society_communities
+    source_name: IEEE Robotics and Automation Society communities
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 37
+        inventory_line: 1565
+    deferment_reason: null
+  - source_id: ieee_spectrum
+    source_name: IEEE Spectrum
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 855
+      - section_id: 27
+        inventory_line: 1236
+      - section_id: 38
+        inventory_line: 1606
+    deferment_reason: null
+  - source_id: ifixit
+    source_name: iFixit
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1244
+    deferment_reason: null
+  - source_id: indiamart
+    source_name: IndiaMART
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1361
+    deferment_reason: null
+  - source_id: industrial_distributors
+    source_name: Industrial distributors
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 9
+        inventory_line: 492
+    deferment_reason: null
+  - source_id: inmoov
+    source_name: InMoov
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 907
+      - section_id: 21
+        inventory_line: 1014
+    deferment_reason: null
+  - source_id: innfos
+    source_name: INNFOS
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 109
+    deferment_reason: null
+  - source_id: inspire_robots
+    source_name: Inspire Robots
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 167
+    deferment_reason: null
+  - source_id: instructables
+    source_name: Instructables
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 905
+      - section_id: 21
+        inventory_line: 1018
+      - section_id: 22
+        inventory_line: 1060
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: instructables_variations
+    source_name: Instructables variations
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 23
+        inventory_line: 1100
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: intel_nuc
+    source_name: Intel NUC
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 318
+    deferment_reason: null
+  - source_id: intel_realsense
+    source_name: Intel RealSense
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 241
+    deferment_reason: null
+  - source_id: jlcpcb
+    source_name: JLCPCB
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 16
+        inventory_line: 759
+    deferment_reason: null
+  - source_id: jst
+    source_name: JST
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 11
+        inventory_line: 549
+    deferment_reason: null
+  - source_id: kollmorgen
+    source_name: Kollmorgen
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 114
+    deferment_reason: null
+  - source_id: labx
+    source_name: LabX
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1357
+      - section_id: 31
+        inventory_line: 1400
+    deferment_reason: null
+  - source_id: leaderdrive
+    source_name: Leaderdrive
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 365
+    deferment_reason: null
+  - source_id: lipomall
+    source_name: LiPoMall
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 7
+        inventory_line: 417
+    deferment_reason: null
+  - source_id: luxonis
+    source_name: Luxonis
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 242
+    deferment_reason: null
+  - source_id: maintainer_documentation
+    source_name: Maintainer documentation
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 25
+        inventory_line: 1174
+    deferment_reason: null
+  - source_id: maintainer_release_notes
+    source_name: Maintainer release notes
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 34
+        inventory_line: 1481
+    deferment_reason: null
+  - source_id: manufacturer_cad_portals
+    source_name: Manufacturer CAD portals
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: other
+    adapter_family: cad_reference
+    extraction_methods:
+      - metadata_reference
+      - bounded_file_manifest
+    formats:
+      - html
+      - cad_metadata
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 15
+        inventory_line: 728
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: manufacturer_datasheets
+    source_name: Manufacturer datasheets
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 371
+    deferment_reason: null
+  - source_id: manufacturer_github_organizations
+    source_name: Manufacturer GitHub organizations
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 657
+      - section_id: 28
+        inventory_line: 1271
+    deferment_reason: null
+  - source_id: manufacturer_github_organizations_and_ros_packages
+    source_name: Manufacturer GitHub organizations and ROS packages
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 255
+    deferment_reason: null
+  - source_id: manufacturer_product_pages
+    source_name: Manufacturer product pages
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 853
+    deferment_reason: null
+  - source_id: manufacturer_reference_designs
+    source_name: Manufacturer reference designs
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1140
+    deferment_reason: null
+  - source_id: manufacturer_stores
+    source_name: Manufacturer stores
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1345
+    deferment_reason: null
+  - source_id: manufacturer_technical_papers
+    source_name: Manufacturer technical papers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 38
+        inventory_line: 1612
+    deferment_reason: null
+  - source_id: marketplace_feedback
+    source_name: Marketplace feedback
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 35
+        inventory_line: 1503
+    deferment_reason: null
+  - source_id: maxon
+    source_name: Maxon
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 111
+    deferment_reason: null
+  - source_id: mcmaster_carr
+    source_name: McMaster-Carr
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 8
+        inventory_line: 459
+      - section_id: 9
+        inventory_line: 487
+      - section_id: 11
+        inventory_line: 546
+      - section_id: 17
+        inventory_line: 791
+    deferment_reason: null
+  - source_id: misumi
+    source_name: Misumi
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 8
+        inventory_line: 460
+      - section_id: 9
+        inventory_line: 490
+    deferment_reason: null
+  - source_id: mit_biomimetics
+    source_name: MIT Biomimetics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1012
+    deferment_reason: null
+  - source_id: mjbots_and_moteus
+    source_name: MJBots and Moteus
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 320
+    deferment_reason: null
+  - source_id: mobile_robot_manufacturers
+    source_name: Mobile-robot manufacturers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 10
+        inventory_line: 519
+    deferment_reason: null
+  - source_id: molex
+    source_name: Molex
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 11
+        inventory_line: 548
+    deferment_reason: null
+  - source_id: mouser
+    source_name: Mouser
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 118
+      - section_id: 4
+        inventory_line: 252
+      - section_id: 5
+        inventory_line: 325
+      - section_id: 7
+        inventory_line: 421
+      - section_id: 11
+        inventory_line: 545
+      - section_id: 12
+        inventory_line: 590
+      - section_id: 29
+        inventory_line: 1304
+    deferment_reason: null
+  - source_id: mouser_api
+    source_name: Mouser API
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1347
+    deferment_reason: null
+  - source_id: myactuator
+    source_name: MYACTUATOR
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 108
+    deferment_reason: null
+  - source_id: nabtesco
+    source_name: Nabtesco
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 366
+    deferment_reason: null
+  - source_id: neugart
+    source_name: Neugart
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 368
+    deferment_reason: null
+  - source_id: niche_robotics_vendors
+    source_name: Niche robotics vendors
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 29
+        inventory_line: 1311
+    deferment_reason: null
+  - source_id: npm_where_relevant
+    source_name: npm where relevant
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 659
+    deferment_reason: null
+  - source_id: nsk
+    source_name: NSK
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 9
+        inventory_line: 489
+    deferment_reason: null
+  - source_id: nvidia_isaac_packages
+    source_name: NVIDIA Isaac packages
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1138
+    deferment_reason: null
+  - source_id: nvidia_jetson
+    source_name: NVIDIA Jetson
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 316
+    deferment_reason: null
+  - source_id: octopart
+    source_name: Octopart
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1349
+    deferment_reason: null
+  - source_id: odrive
+    source_name: ODrive
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 319
+    deferment_reason: null
+  - source_id: official_sdk_portals
+    source_name: Official SDK portals
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 661
+    deferment_reason: null
+  - source_id: omron
+    source_name: Omron
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 13
+        inventory_line: 622
+    deferment_reason: null
+  - source_id: onshape_public
+    source_name: Onshape Public
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: other
+    adapter_family: cad_reference
+    extraction_methods:
+      - metadata_reference
+      - bounded_file_manifest
+    formats:
+      - html
+      - cad_metadata
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 15
+        inventory_line: 727
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: openbuilds
+    source_name: OpenBuilds
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 8
+        inventory_line: 462
+    deferment_reason: null
+  - source_id: orbbec
+    source_name: Orbbec
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 243
+    deferment_reason: null
+  - source_id: package_repositories
+    source_name: Package repositories
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 660
+    deferment_reason: null
+  - source_id: pcbway
+    source_name: PCBWay
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 16
+        inventory_line: 760
+    deferment_reason: null
+  - source_id: pilz
+    source_name: Pilz
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 13
+        inventory_line: 620
+    deferment_reason: null
+  - source_id: poppy_project
+    source_name: Poppy Project
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 906
+      - section_id: 21
+        inventory_line: 1013
+    deferment_reason: null
+  - source_id: project_build_reports
+    source_name: Project build reports
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 33
+        inventory_line: 1457
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: project_documentation
+    source_name: Project documentation
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1144
+    deferment_reason: null
+  - source_id: project_forks
+    source_name: Project forks
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 25
+        inventory_line: 1173
+    deferment_reason: null
+  - source_id: project_forums
+    source_name: Project forums
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 23
+        inventory_line: 1103
+      - section_id: 32
+        inventory_line: 1427
+      - section_id: 34
+        inventory_line: 1480
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: project_readmes
+    source_name: Project READMEs
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 22
+        inventory_line: 1057
+    deferment_reason: null
+  - source_id: project_websites
+    source_name: Project websites
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: other
+    adapter_family: cad_reference
+    extraction_methods:
+      - metadata_reference
+      - bounded_file_manifest
+    formats:
+      - html
+      - cad_metadata
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 15
+        inventory_line: 729
+      - section_id: 19
+        inventory_line: 908
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: project_wikis
+    source_name: Project wikis
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1022
+    deferment_reason: null
+  - source_id: protolabs
+    source_name: Protolabs
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 16
+        inventory_line: 757
+    deferment_reason: null
+  - source_id: psyonic
+    source_name: Psyonic
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 168
+    deferment_reason: null
+  - source_id: pull_request_comments
+    source_name: Pull-request comments
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 34
+        inventory_line: 1479
+    deferment_reason: null
+  - source_id: pull_requests
+    source_name: Pull requests
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 25
+        inventory_line: 1170
+    deferment_reason: null
+  - source_id: pypi
+    source_name: PyPI
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 658
+    deferment_reason: null
+  - source_id: qbrobotics
+    source_name: qbrobotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 170
+    deferment_reason: null
+  - source_id: raspberry_pi
+    source_name: Raspberry Pi
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 317
+    deferment_reason: null
+  - source_id: readme_tables
+    source_name: README tables
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1023
+    deferment_reason: null
+  - source_id: reddit
+    source_name: Reddit
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 25
+        inventory_line: 1168
+      - section_id: 27
+        inventory_line: 1240
+      - section_id: 32
+        inventory_line: 1425
+      - section_id: 33
+        inventory_line: 1455
+      - section_id: 35
+        inventory_line: 1500
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: reddit_buy_sell_trade_posts
+    source_name: Reddit buy/sell/trade posts
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 31
+        inventory_line: 1398
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: reddit_r_humanoidrobots
+    source_name: Reddit r/humanoidrobots
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 37
+        inventory_line: 1558
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: reddit_r_robotics
+    source_name: Reddit r/robotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 37
+        inventory_line: 1557
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: reddit_r_roboticsengineering
+    source_name: Reddit r/roboticsengineering
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 37
+        inventory_line: 1559
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: reddit_robotics_communities
+    source_name: Reddit robotics communities
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1020
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: regional_fabrication_providers
+    source_name: Regional fabrication providers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 16
+        inventory_line: 762
+    deferment_reason: null
+  - source_id: renishaw
+    source_name: Renishaw
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 250
+    deferment_reason: null
+  - source_id: research_paper_appendices_and_technical_papers
+    source_name: Research-paper appendices and technical papers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 175
+    deferment_reason: null
+  - source_id: research_papers
+    source_name: Research papers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 36
+        inventory_line: 1532
+    deferment_reason: null
+  - source_id: roboception
+    source_name: Roboception
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 244
+    deferment_reason: null
+  - source_id: robotforum
+    source_name: RobotForum
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1021
+      - section_id: 32
+        inventory_line: 1423
+      - section_id: 35
+        inventory_line: 1502
+      - section_id: 37
+        inventory_line: 1561
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: robotforum_classifieds
+    source_name: RobotForum classifieds
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 31
+        inventory_line: 1399
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: robotiq
+    source_name: Robotiq
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 165
+      - section_id: 4
+        inventory_line: 239
+    deferment_reason: null
+  - source_id: robotis_e_manual_and_dynamixel_documentation
+    source_name: Robotis e-Manual and Dynamixel documentation
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 110
+    deferment_reason: null
+  - source_id: robotshop
+    source_name: RobotShop
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 115
+      - section_id: 3
+        inventory_line: 173
+      - section_id: 29
+        inventory_line: 1301
+      - section_id: 30
+        inventory_line: 1350
+      - section_id: 31
+        inventory_line: 1395
+    deferment_reason: null
+  - source_id: robotshop_reviews
+    source_name: RobotShop reviews
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 33
+        inventory_line: 1453
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: ros_compatible_actuator_databases_and_repositories
+    source_name: ROS-compatible actuator databases and repositories
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 120
+    deferment_reason: null
+  - source_id: ros_discourse
+    source_name: ROS Discourse
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1019
+      - section_id: 22
+        inventory_line: 1062
+      - section_id: 23
+        inventory_line: 1102
+      - section_id: 25
+        inventory_line: 1171
+      - section_id: 32
+        inventory_line: 1422
+      - section_id: 35
+        inventory_line: 1501
+      - section_id: 37
+        inventory_line: 1560
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: ros_discourse_marketplace
+    source_name: ROS Discourse Marketplace
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 31
+        inventory_line: 1397
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: ros_discourse_prebuilt_stacks
+    source_name: ROS Discourse prebuilt stacks
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1137
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: ros_discourse_project_threads
+    source_name: ROS Discourse project threads
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 910
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: ros_discourse_vendor_announcements
+    source_name: ROS Discourse vendor announcements
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: community
+    adapter_family: community_reference
+    extraction_methods:
+      - permitted_excerpt
+      - structured_claim
+    formats:
+      - html
+      - json
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 29
+        inventory_line: 1310
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: ros_index
+    source_name: ROS Index
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 14
+        inventory_line: 656
+    deferment_reason: null
+  - source_id: ros_packages
+    source_name: ROS packages
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 15
+        inventory_line: 730
+    deferment_reason: null
+  - source_id: safety_component_manufacturers
+    source_name: Safety-component manufacturers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 13
+        inventory_line: 625
+    deferment_reason: null
+  - source_id: sanctuary_ai
+    source_name: Sanctuary AI
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 852
+    deferment_reason: null
+  - source_id: schunk
+    source_name: Schunk
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 164
+    deferment_reason: null
+  - source_id: seed_robotics
+    source_name: Seed Robotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 172
+    deferment_reason: null
+  - source_id: sendcutsend
+    source_name: SendCutSend
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 8
+        inventory_line: 463
+      - section_id: 16
+        inventory_line: 756
+    deferment_reason: null
+  - source_id: servocity
+    source_name: ServoCity
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 10
+        inventory_line: 516
+    deferment_reason: null
+  - source_id: shadow_robot
+    source_name: Shadow Robot
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 163
+    deferment_reason: null
+  - source_id: shapeways
+    source_name: Shapeways
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 16
+        inventory_line: 761
+    deferment_reason: null
+  - source_id: sick
+    source_name: SICK
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 13
+        inventory_line: 621
+    deferment_reason: null
+  - source_id: skf
+    source_name: SKF
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 9
+        inventory_line: 488
+    deferment_reason: null
+  - source_id: sparkfun
+    source_name: SparkFun
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 253
+      - section_id: 12
+        inventory_line: 588
+      - section_id: 17
+        inventory_line: 794
+    deferment_reason: null
+  - source_id: stanford_student_robotics
+    source_name: Stanford Student Robotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 21
+        inventory_line: 1015
+    deferment_reason: null
+  - source_id: stereolabs
+    source_name: Stereolabs
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 240
+    deferment_reason: null
+  - source_id: stm32
+    source_name: STM32
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 12
+        inventory_line: 584
+    deferment_reason: null
+  - source_id: sumitomo_drive
+    source_name: Sumitomo Drive
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 6
+        inventory_line: 367
+    deferment_reason: null
+  - source_id: superdroid_robots
+    source_name: SuperDroid Robots
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 10
+        inventory_line: 517
+    deferment_reason: null
+  - source_id: syntouch
+    source_name: SynTouch
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 247
+    deferment_reason: null
+  - source_id: t_motor
+    source_name: T-Motor
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 106
+    deferment_reason: null
+  - source_id: te_connectivity
+    source_name: TE Connectivity
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 11
+        inventory_line: 550
+    deferment_reason: null
+  - source_id: technosoft
+    source_name: Technosoft
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 5
+        inventory_line: 322
+    deferment_reason: null
+  - source_id: teensy
+    source_name: Teensy
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 12
+        inventory_line: 586
+    deferment_reason: null
+  - source_id: tesla_optimus
+    source_name: Tesla Optimus
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 848
+    deferment_reason: null
+  - source_id: the_robot_report
+    source_name: The Robot Report
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 856
+      - section_id: 27
+        inventory_line: 1237
+      - section_id: 38
+        inventory_line: 1610
+    deferment_reason: null
+  - source_id: thingiverse
+    source_name: Thingiverse
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: other
+    adapter_family: cad_reference
+    extraction_methods:
+      - metadata_reference
+      - bounded_file_manifest
+    formats:
+      - html
+      - cad_metadata
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 15
+        inventory_line: 726
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: thomasnet
+    source_name: ThomasNet
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 28
+        inventory_line: 1268
+      - section_id: 29
+        inventory_line: 1309
+    deferment_reason: null
+  - source_id: tool_manufacturers
+    source_name: Tool manufacturers
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 17
+        inventory_line: 795
+    deferment_reason: null
+  - source_id: tq_robodrive
+    source_name: TQ-RoboDrive
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 113
+    deferment_reason: null
+  - source_id: trade_directories
+    source_name: Trade directories
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 28
+        inventory_line: 1270
+    deferment_reason: null
+  - source_id: trossen_robotics
+    source_name: Trossen Robotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: authorized_distributor
+    adapter_family: distributor_catalog
+    extraction_methods:
+      - api_json
+      - structured_html
+    formats:
+      - json
+      - html
+      - pdf
+    cadence: daily
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 2
+        inventory_line: 116
+      - section_id: 3
+        inventory_line: 174
+      - section_id: 29
+        inventory_line: 1302
+      - section_id: 30
+        inventory_line: 1351
+      - section_id: 31
+        inventory_line: 1396
+    deferment_reason: null
+  - source_id: unitree
+    source_name: Unitree
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 844
+    deferment_reason: null
+  - source_id: unitree_sdk_examples
+    source_name: Unitree SDK examples
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 24
+        inventory_line: 1141
+    deferment_reason: null
+  - source_id: university_repositories
+    source_name: University repositories
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 38
+        inventory_line: 1608
+    deferment_reason: null
+  - source_id: university_robotics_groups
+    source_name: University robotics groups
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 19
+        inventory_line: 909
+    deferment_reason: null
+  - source_id: university_surplus
+    source_name: University surplus
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 30
+        inventory_line: 1358
+    deferment_reason: null
+  - source_id: used_equipment_and_surplus_platforms
+    source_name: Used-equipment and surplus platforms
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: marketplace
+    adapter_family: marketplace_listing
+    extraction_methods:
+      - structured_listing
+      - metadata_reference
+    formats:
+      - html
+      - json
+    cadence: daily
+    risk: high
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 31
+        inventory_line: 1401
+    deferment_reason: null
+  - source_id: vectornav
+    source_name: VectorNav
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 249
+    deferment_reason: null
+  - source_id: vex_pro
+    source_name: VEX Pro
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 10
+        inventory_line: 515
+    deferment_reason: null
+  - source_id: wevolver
+    source_name: Wevolver
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: standards_reference
+    adapter_family: publication_document
+    extraction_methods:
+      - metadata
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: semi_structured
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1235
+      - section_id: 38
+        inventory_line: 1609
+    deferment_reason: null
+  - source_id: wikipedia_comparison_tables
+    source_name: Wikipedia comparison tables
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 18
+        inventory_line: 854
+    deferment_reason: null
+  - source_id: wikis
+    source_name: Wikis
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: repository
+    adapter_family: repository_api
+    extraction_methods:
+      - api_json
+      - bounded_repository_files
+    formats:
+      - json
+      - markdown
+      - repository_metadata
+    cadence: weekly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 22
+        inventory_line: 1058
+    deferment_reason: null
+  - source_id: wonik_robotics
+    source_name: Wonik Robotics
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 3
+        inventory_line: 169
+    deferment_reason: null
+  - source_id: x_robotics_discussions
+    source_name: X robotics discussions
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 37
+        inventory_line: 1564
+    deferment_reason: null
+  - source_id: xometry
+    source_name: Xometry
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 16
+        inventory_line: 758
+    deferment_reason: null
+  - source_id: xsens
+    source_name: Xsens
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: official_manufacturer
+    adapter_family: official_web
+    extraction_methods:
+      - structured_html
+      - bounded_document
+    formats:
+      - html
+      - pdf
+      - json
+    cadence: monthly
+    risk: medium
+    wave: structured_expansion
+    inventory_occurrences:
+      - section_id: 4
+        inventory_line: 248
+    deferment_reason: null
+  - source_id: youtube_build_series
+    source_name: YouTube build series
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: media
+    adapter_family: media_metadata
+    extraction_methods:
+      - permitted_metadata
+      - transcript_reference
+    formats:
+      - html
+      - transcript
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 23
+        inventory_line: 1104
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: youtube_comments
+    source_name: YouTube comments
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: media
+    adapter_family: media_metadata
+    extraction_methods:
+      - permitted_metadata
+      - transcript_reference
+    formats:
+      - html
+      - transcript
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1234
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: youtube_review_transcripts
+    source_name: YouTube review transcripts
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: media
+    adapter_family: media_metadata
+    extraction_methods:
+      - permitted_metadata
+      - transcript_reference
+    formats:
+      - html
+      - transcript
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 33
+        inventory_line: 1454
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: youtube_teardown_videos_and_transcripts
+    source_name: YouTube teardown videos and transcripts
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: media
+    adapter_family: media_metadata
+    extraction_methods:
+      - permitted_metadata
+      - transcript_reference
+    formats:
+      - html
+      - transcript
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 27
+        inventory_line: 1233
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: youtube_tests
+    source_name: YouTube tests
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: media
+    adapter_family: media_metadata
+    extraction_methods:
+      - permitted_metadata
+      - transcript_reference
+    formats:
+      - html
+      - transcript
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 36
+        inventory_line: 1529
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+  - source_id: youtube_transcripts
+    source_name: YouTube transcripts
+    policy_state: unreviewed
+    owner: data_collection
+    source_tier: media
+    adapter_family: media_metadata
+    extraction_methods:
+      - permitted_metadata
+      - transcript_reference
+    formats:
+      - html
+      - transcript
+    cadence: monthly
+    risk: high
+    wave: unstructured_deferred
+    inventory_occurrences:
+      - section_id: 22
+        inventory_line: 1061
+    deferment_reason: Deferred pending source-specific policy approval and bounded unstructured extraction.
+source_tiers:
+  - tier: tier_1_structured
+    wave: structured_expansion
+    entries:
+      - inventory_line: 1629
+        inventory_label: Manufacturer product pages
+      - inventory_line: 1630
+        inventory_label: Manufacturer datasheets
+      - inventory_line: 1631
+        inventory_label: Distributor catalogs and APIs
+      - inventory_line: 1632
+        inventory_label: E-commerce listings
+      - inventory_line: 1633
+        inventory_label: GitHub repositories
+      - inventory_line: 1634
+        inventory_label: ROS Index
+      - inventory_line: 1635
+        inventory_label: Wikipedia comparison tables
+      - inventory_line: 1636
+        inventory_label: FCC filings
+      - inventory_line: 1637
+        inventory_label: GrabCAD
+      - inventory_line: 1638
+        inventory_label: Thingiverse
+      - inventory_line: 1639
+        inventory_label: Public CAD portals
+  - tier: tier_2_semi_structured
+    wave: semi_structured
+    entries:
+      - inventory_line: 1641
+        inventory_label: YouTube transcripts
+      - inventory_line: 1642
+        inventory_label: ROS Discourse
+      - inventory_line: 1643
+        inventory_label: Reddit
+      - inventory_line: 1644
+        inventory_label: Hackaday.io
+      - inventory_line: 1645
+        inventory_label: Instructables
+      - inventory_line: 1646
+        inventory_label: IEEE Spectrum
+      - inventory_line: 1647
+        inventory_label: The Robot Report
+      - inventory_line: 1648
+        inventory_label: Wevolver
+  - tier: tier_3_unstructured
+    wave: unstructured_deferred
+    entries:
+      - inventory_line: 1650
+        inventory_label: Project wikis
+      - inventory_line: 1651
+        inventory_label: README files
+      - inventory_line: 1652
+        inventory_label: Forum build threads
+      - inventory_line: 1653
+        inventory_label: PDF datasheets
+      - inventory_line: 1654
+        inventory_label: YouTube comments
+      - inventory_line: 1655
+        inventory_label: X threads
+      - inventory_line: 1656
+        inventory_label: Community corrections
+      - inventory_line: 1657
+        inventory_label: Video descriptions
+      - inventory_line: 1658
+        inventory_label: Images and teardown photographs
+initial_scale:
+  - inventory_line: 1617
+    inventory_label: "40+ manufacturer catalogs: structured HTML and PDF datasheets"
+  - inventory_line: 1618
+    inventory_label: "7 distributor catalogs: filterable product catalogs and APIs"
+  - inventory_line: 1619
+    inventory_label: "4 e-commerce marketplaces: prices and listings"
+  - inventory_line: 1620
+    inventory_label: "100+ GitHub repositories: Markdown, CSV, YAML, files, issues, and releases"
+  - inventory_line: 1621
+    inventory_label: "6+ community forums: discussions and build logs"
+  - inventory_line: 1622
+    inventory_label: "500+ YouTube videos: teardown, review, tutorial, and build transcripts"
+  - inventory_line: 1623
+    inventory_label: 5+ technical publications
+  - inventory_line: 1624
+    inventory_label: 3+ Wikipedia comparison resources
+  - inventory_line: 1625
+    inventory_label: 4+ relevant subreddits
+  - inventory_line: 1626
+    inventory_label: 10+ companies’ FCC filings
+canonical_object_types:
+  - inventory_line: 1666
+    inventory_label: Manufacturer
+    object_type: manufacturer
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1667
+    inventory_label: Supplier
+    object_type: supplier
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1668
+    inventory_label: Component
+    object_type: component
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1669
+    inventory_label: Component revision
+    object_type: component_revision
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1670
+    inventory_label: Supplier offer
+    object_type: supplier_offer
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1671
+    inventory_label: Price observation
+    object_type: price_observation
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1672
+    inventory_label: Stock observation
+    object_type: stock_observation
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1673
+    inventory_label: Project
+    object_type: project
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1674
+    inventory_label: Project version
+    object_type: project_version
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1675
+    inventory_label: Repository
+    object_type: repository
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1676
+    inventory_label: File
+    object_type: file
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1677
+    inventory_label: BOM
+    object_type: bom
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1678
+    inventory_label: BOM version
+    object_type: bom_version
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1679
+    inventory_label: BOM item
+    object_type: bom_item
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1680
+    inventory_label: Robot
+    object_type: robot
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1681
+    inventory_label: Build recipe
+    object_type: build_recipe
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1682
+    inventory_label: Build reproduction
+    object_type: build_reproduction
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1683
+    inventory_label: Integration
+    object_type: integration
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1684
+    inventory_label: Substitution
+    object_type: substitution
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1685
+    inventory_label: Evidence
+    object_type: evidence
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1686
+    inventory_label: Teardown
+    object_type: teardown
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1687
+    inventory_label: Technical test
+    object_type: technical_test
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1688
+    inventory_label: Supplier report
+    object_type: supplier_report
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1689
+    inventory_label: Marketplace reference
+    object_type: marketplace_reference
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1690
+    inventory_label: Community-derived engineering claim
+    object_type: community_derived_engineering_claim
+    coverage_state: supported
+    storage_path: existing_canonical_or_typed_claim
+  - inventory_line: 1691
+    inventory_label: Data conflict
+    object_type: data_conflict
+    coverage_state: supported
+    storage_path: claim_conflict_sets
+  - inventory_line: 1692
+    inventory_label: Missing-information record
+    object_type: missing_information_record
+    coverage_state: supported
+    storage_path: collection_missing_information
+deferred_unknown_tail:
+  inventory_line: 1694
+  known_prefix: Every extracted object should remain linked to the exact source, date, applicable version, and extraction
+  state: deferred
+  reason: The canonical inventory ends mid-sentence; no suffix is invented.
