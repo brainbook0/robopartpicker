@@ -3,6 +3,7 @@ export interface Env {
   FILES: R2Bucket;
   ASSETS: Fetcher;
   IMPORT_QUEUE?: Queue<ImportQueueMessage>;
+  SCRAPE_INGEST_QUEUE?: Queue<ScrapeIngestionQueueMessage>;
   Sandbox?: DurableObjectNamespace<import("@cloudflare/sandbox").Sandbox>;
   APP_ENV: "development" | "preview" | "production" | "test";
   APP_NAME: string;
@@ -30,6 +31,9 @@ export type ImportQueueMessage = {
   jobId?: string;
   evaluationRunId?: string;
 };
+
+export type ScrapeIngestionQueueMessage = import("./services/scrape-ingestion-jobs").ScrapeIngestionQueueMessage;
+export type WorkerQueueMessage = ImportQueueMessage | ScrapeIngestionQueueMessage;
 
 export type AuthSession = Awaited<
   ReturnType<ReturnType<typeof import("./auth").createAuth>["api"]["getSession"]>

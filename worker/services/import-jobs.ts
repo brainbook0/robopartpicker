@@ -1,6 +1,7 @@
 import { getSandbox } from "@cloudflare/sandbox";
 import type { Env, ImportQueueMessage } from "../env";
 import { analyzeStoredProjectFiles, type ProjectImportAnalysis } from "./project-import";
+import { assertQueueMessageMatchesQueue } from "./scrape-ingestion-jobs";
 
 const SANDBOX_FORMATS = new Set(["xlsx", "pdf", "zip", "tar", "tgz", "tar_gz", "step", "stp", "iges", "igs", "stl", "obj", "gltf", "glb", "dae", "usd", "usdz"]);
 const WORKER_FORMATS = new Set([
@@ -47,6 +48,7 @@ export function classifyImportFormat(name: string, mediaType = ""): ImportFormat
 export async function processQueueBatch(batch: MessageBatch<ImportQueueMessage>, env: Env): Promise<void> {
   for (const message of batch.messages) {
     try {
+      assertQueueMessageMatchesQueue(batch.queue, message.body);
       if (message.body.kind === "project-import" && message.body.jobId) await processProjectImportJob(env, message.body.jobId);
       else if (message.body.kind === "ai-evaluation" && message.body.evaluationRunId) await processEvaluationRun(env.DB, message.body.evaluationRunId);
       message.ack();

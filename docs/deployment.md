@@ -69,6 +69,47 @@ npm run deploy:dry-run
 
 The container image and `@cloudflare/sandbox` package are pinned to `0.12.4`. Keep these versions aligned. When the account lacks Containers, keep the environment's container, Durable Object, and migration arrays empty; do not silently process native formats in the Worker. Imported scripts, launch files, and Xacro content are never executed by the Worker; the container only invokes the repository-owned allowlisted static processor when that binding is available.
 
+The external data pipeline adds a separate pointer-only Queue and DLQ per
+environment:
+
+```powershell
+npx wrangler queues create robopartpicker-scrape-ingestion-preview
+npx wrangler queues create robopartpicker-scrape-ingestion-preview-dlq
+npx wrangler queues create robopartpicker-scrape-ingestion-production
+npx wrangler queues create robopartpicker-scrape-ingestion-production-dlq
+```
+
+These commands are one-time external mutations. Do not run them, deploy the
+new bindings, or enable a producer until the preview canary is approved. The
+Wrangler declarations can be dry-run without creating the queues.
+
+Scrape messages contain only collection/import identifiers, the payload hash,
+generation, trace ID, and optional W3C traceparent. Raw evidence, normalized
+records, credentials, and source payloads are rejected. RoboPartPicker enforces
+a 65,536-byte internal cap. Cloudflare currently documents a 128 KB
+(128,000-byte) platform maximum and charges Queue operations in 64 KB chunks,
+so production pointers are intentionally far smaller than either boundary.
+
+Consumers checkpoint D1 before `ack()` or `retry()`. Transient failures use
+bounded delayed retry; terminal failures remain failed in D1 and request one
+final delivery so the configured DLQ, rather than an early acknowledgement,
+owns poison-message retention. Manual resume is administrator-only,
+generation-based, and idempotent.
+
+Queue references:
+
+- <https://developers.cloudflare.com/queues/platform/limits/>
+- <https://developers.cloudflare.com/queues/configuration/batching-retries/>
+- <https://developers.cloudflare.com/queues/configuration/dead-letter-queues/>
+
+The Cloudflare Vite plugin intentionally copies the selected `.dev.vars` into
+the Worker build directory for `vite preview`. Cloudflare documents that this
+file is not deployed, and the generated client `.assetsignore` excludes
+`.dev.vars` and `wrangler.json` from static assets. Before release, still scan
+the compiled Worker and client assets for local secret values without printing
+those values. Reference:
+<https://developers.cloudflare.com/workers/vite-plugin/reference/secrets/>.
+
 Model routing can use `AI_PROVIDER_KEYS_JSON` for provider-key-to-credential mapping. `AI_PROVIDER_KEY` remains the environment fallback. `AI_DATA_SENSITIVITY_POLICY` controls which data classes that fallback may receive. Candidate prompt or routing changes still require a passing live regression evaluation before activation.
 
 ## Local mobile workflow validation

@@ -7,6 +7,7 @@ import { authenticatedUserId, requirePlatformRole } from "../middleware/authoriz
 import { parseJson } from "../validation";
 import { matchStatements, normalizedName, recordTypes, sha256, stagingStatements, validateParsedData } from "../services/ingestion";
 import { recordAuditEvent } from "../services/audit";
+import { queueImportForReview } from "../services/scrape-ingestion-jobs";
 
 const httpUrl = z.string().url().max(2_048).refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Only HTTP(S) URLs are allowed.");
 const sourceSchema = z.object({ name: z.string().trim().min(2).max(200), type: z.string().trim().min(2).max(100), baseUrl: httpUrl.nullable().optional(), priority: z.number().int().min(1).max(1_000).default(100), trustWeight: z.number().min(0).max(1).default(0.5) }).strict();
@@ -212,15 +213,52 @@ importRoutes.post("/imports/batches", async (c) => {
     }
   }
   const finalStatus = rejected === 0 ? "staged" : accepted + duplicates > 0 ? "partial" : "failed";
+  const completedAt = new Date().toISOString();
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE import_jobs SET status = ?1, accepted_count = ?2, rejected_count = ?3, duplicate_count = ?4,
-      updated_at = ?5, completed_at = ?5 WHERE id = ?6`).bind(finalStatus, accepted, rejected, duplicates, new Date().toISOString(), jobId),
+      updated_at = ?5, completed_at = ?5 WHERE id = ?6`).bind(finalStatus, accepted, rejected, duplicates, completedAt, jobId),
     c.env.DB.prepare(`INSERT INTO import_audit_events
       (id, import_job_id, actor_service_id, event_type, after_json, trace_id, created_at)
       VALUES (?1, ?2, 'external-ingestion', 'batch.completed', ?3, ?4, ?5)`)
-      .bind(crypto.randomUUID(), jobId, JSON.stringify({ status: finalStatus, accepted, rejected, duplicates }), traceId, new Date().toISOString()),
+      .bind(crypto.randomUUID(), jobId, JSON.stringify({ status: finalStatus, accepted, rejected, duplicates }), traceId, completedAt),
   ]);
-  return c.json({ duplicate: false, traceId, job: { id: jobId, status: finalStatus, acceptedCount: accepted, rejectedCount: rejected, duplicateCount: duplicates }, records: outcomes }, finalStatus === "failed" ? 422 : 202);
+  let collectionJob: Record<string, unknown> | null = null;
+  if (isV2 && finalStatus !== "failed" && c.env.SCRAPE_INGEST_QUEUE) {
+    try {
+      const queued = await queueImportForReview({
+        db: c.env.DB,
+        queue: c.env.SCRAPE_INGEST_QUEUE,
+        importJobId: jobId,
+        now: completedAt,
+        sourcePolicyRevisionId,
+        ...(body.traceparent ? { traceparent: body.traceparent } : {}),
+      });
+      collectionJob = { id: queued.collectionJobId, status: queued.enqueued ? "submitting" : "already_enqueued" };
+    } catch {
+      const failedCollection = await c.env.DB.prepare(`
+        SELECT id, status FROM collection_jobs WHERE import_job_id = ?1
+        ORDER BY created_at DESC LIMIT 1
+      `).bind(jobId).first<{ id: string; status: string }>();
+      collectionJob = {
+        id: failedCollection?.id ?? null,
+        status: "failed",
+        error: "Queue submission failed; recovery is available from the durable collection job.",
+      };
+    }
+  }
+  return c.json({
+    duplicate: false,
+    traceId,
+    job: {
+      id: jobId,
+      status: finalStatus,
+      acceptedCount: accepted,
+      rejectedCount: rejected,
+      duplicateCount: duplicates,
+    },
+    collectionJob,
+    records: outcomes,
+  }, finalStatus === "failed" ? 422 : 202);
 });
 
 importRoutes.get("/imports", loadAuthSession, requireAuth, async (c) => {

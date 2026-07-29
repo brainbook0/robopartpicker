@@ -28,6 +28,10 @@
       {
         "binding": "IMPORT_QUEUE",
         "queue": "robopartpicker-imports-development"
+      },
+      {
+        "binding": "SCRAPE_INGEST_QUEUE",
+        "queue": "robopartpicker-scrape-ingestion-development"
       }
     ],
     "consumers": [
@@ -37,6 +41,14 @@
         "max_batch_timeout": 5,
         "max_retries": 3,
         "dead_letter_queue": "robopartpicker-imports-development-dlq"
+      },
+      {
+        "queue": "robopartpicker-scrape-ingestion-development",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "robopartpicker-scrape-ingestion-development-dlq",
+        "retry_delay": 15
       }
     ]
   },
@@ -102,6 +114,10 @@
           {
             "binding": "IMPORT_QUEUE",
             "queue": "robopartpicker-imports-preview"
+          },
+          {
+            "binding": "SCRAPE_INGEST_QUEUE",
+            "queue": "robopartpicker-scrape-ingestion-preview"
           }
         ],
         "consumers": [
@@ -111,6 +127,14 @@
             "max_batch_timeout": 5,
             "max_retries": 3,
             "dead_letter_queue": "robopartpicker-imports-preview-dlq"
+          },
+          {
+            "queue": "robopartpicker-scrape-ingestion-preview",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "dead_letter_queue": "robopartpicker-scrape-ingestion-preview-dlq",
+            "retry_delay": 15
           }
         ]
       },
@@ -161,6 +185,10 @@
           {
             "binding": "IMPORT_QUEUE",
             "queue": "robopartpicker-imports-production"
+          },
+          {
+            "binding": "SCRAPE_INGEST_QUEUE",
+            "queue": "robopartpicker-scrape-ingestion-production"
           }
         ],
         "consumers": [
@@ -170,6 +198,14 @@
             "max_batch_timeout": 5,
             "max_retries": 5,
             "dead_letter_queue": "robopartpicker-imports-production-dlq"
+          },
+          {
+            "queue": "robopartpicker-scrape-ingestion-production",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "dead_letter_queue": "robopartpicker-scrape-ingestion-production-dlq",
+            "retry_delay": 15
           }
         ]
       },
