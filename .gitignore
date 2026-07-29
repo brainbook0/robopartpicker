@@ -24,6 +24,7 @@ test-results/
 exports/
 RoboPart Picker Hub.zip
 *.tsbuildinfo
+.agent-planning/
 
 # Editor directories and files
 .vscode/*

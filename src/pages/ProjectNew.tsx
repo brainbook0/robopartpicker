@@ -486,7 +486,7 @@ export default function ProjectNew() {
             <div className="surface-card p-4 space-y-2">
               <label className="text-[11px] text-muted-foreground flex items-center gap-1"><FileJson className="h-3 w-3" /> RPPS package JSON</label>
               <textarea value={pasted} onChange={e => setPasted(e.target.value)} rows={18}
-                className="input-bare font-mono text-[11px] w-full"
+                className="input-bare h-auto min-h-[24rem] w-full resize-y font-mono text-[11px]"
                 placeholder='{"rpps_version":"1.0.0","name":"…","slug":"…","version":"0.1.0","bom":[]}' />
               <PasteFeedback state={pasteState} />
               <div className="pt-2">
@@ -531,9 +531,6 @@ export default function ProjectNew() {
                 </Grid>
                 <Field label={`Summary (${summary.length}/280)`} error={errors.summary} imported={importedFields.has("summary")} onEdit={() => clearImported("summary")}>
                   <input maxLength={280} value={summary} onChange={e => { setSummary(e.target.value); clearImported("summary"); }} className="input-bare w-full" />
-                </Field>
-                <Field label="Description (markdown ok)" imported={importedFields.has("description")} onEdit={() => clearImported("description")}>
-                  <textarea rows={8} value={description} onChange={e => { setDescription(e.target.value); clearImported("description"); }} className="input-bare w-full text-[12px]" />
                 </Field>
                 <Field label="Tags (comma separated)" imported={importedFields.has("tags")} onEdit={() => clearImported("tags")}>
                   <input value={tags} onChange={e => { setTags(e.target.value); clearImported("tags"); }} placeholder="humanoid, arm, ros2" className="input-bare w-full" />

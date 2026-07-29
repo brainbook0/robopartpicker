@@ -14,6 +14,7 @@ import { useMarketplace } from "@/lib/api/marketplace";
 import { toast } from "@/hooks/use-toast";
 import { Info } from "lucide-react";
 import { AiFormDraft } from "@/components/ai/AiFormDraft";
+import { RichTechnicalEditor } from "@/components/common/RichTechnicalEditor";
 
 type FieldDef = { key: string; label: string; placeholder?: string; multiline?: boolean };
 
@@ -317,13 +318,13 @@ export default function ForumNewThread() {
           </div>
 
           <div>
-            <label className="text-[11px] text-muted-foreground" htmlFor="body">Body (required)</label>
-            <textarea id="body" className="w-full min-h-56 rounded border border-input bg-background p-2 text-[13px] outline-none focus:ring-1 focus:ring-ring/40 focus:border-ring mt-0.5 font-mono" value={body} onChange={e => setBody(e.target.value)} placeholder="Context, what you've tried, what you're optimizing for…" />
+            <div className="mb-1 text-[11px] text-muted-foreground">Body (required)</div>
+            <RichTechnicalEditor value={body} onChange={setBody} label="Thread body" maxLength={40_000} minRows={10}
+              autosaveKey={`community-thread-${threadType}`} placeholder="Context, what you've tried, what you're optimizing for…" />
             <div className="flex items-center justify-between">
               {errors.body
                 ? <div className="text-[10.5px] text-destructive mt-0.5">{errors.body}</div>
-                : <div className="text-[10.5px] text-muted-foreground mt-0.5">Plain text with preserved line breaks. Markdown syntax is not rendered.</div>}
-              <div className="text-[10px] text-muted-foreground mono">{body.length} chars</div>
+                : <div className="text-[10.5px] text-muted-foreground mt-0.5">Safe Markdown is supported; raw HTML is ignored.</div>}
             </div>
           </div>
 
@@ -354,7 +355,7 @@ export default function ForumNewThread() {
                         value={structuredValues[f.key] ?? ""}
                         onChange={e => setSV(f.key, e.target.value)}
                         placeholder={f.placeholder}
-                        className="w-full rounded border border-input bg-background p-1.5 text-[12px] font-mono outline-none focus:ring-1 focus:ring-ring/40" />
+                        className="min-h-24 w-full resize-y rounded border border-input bg-background p-2 text-[12px] font-mono outline-none focus:ring-1 focus:ring-ring/40" />
                     ) : (
                       <input id={`sf-${f.key}`}
                         value={structuredValues[f.key] ?? ""}

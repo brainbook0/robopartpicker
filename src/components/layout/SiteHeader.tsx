@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Moon, Sun, Search, Bell, GitPullRequest, Activity, LogOut, User as UserIcon, Sparkles, ChevronDown, Building2 } from "lucide-react";
+import { Moon, Sun, Search, Bell, GitPullRequest, Activity, LogOut, User as UserIcon, Sparkles, ChevronDown, Building2, MessageCircle, FileUp, Brain, ShieldCheck, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { profileInitials, profileName } from "@/lib/profile-display";
 import logoUrl from "@/assets/logo.png";
@@ -25,6 +25,8 @@ const moreItems: { label: string; to: string }[] = [
   { label: "Teardowns", to: "/teardowns" },
   { label: "Guided finder", to: "/finder/actuator" },
   { label: "RPPS spec", to: "/rpps" },
+  { label: "Import files", to: "/imports" },
+  { label: "Robot part-outs", to: "/marketplace/part-outs" },
 ];
 
 const partCats: PartCategory[] = ["actuator","hand","sensor","compute","driver","reducer"];
@@ -58,6 +60,7 @@ export const SiteHeader = () => {
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -65,7 +68,7 @@ export const SiteHeader = () => {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-10 max-w-[1400px] items-center gap-3 px-4">
+      <div className="mx-auto flex min-h-14 max-w-[1400px] items-center gap-2 px-4 md:h-10 md:min-h-0 md:gap-3">
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <img src={logoUrl} alt="Robopartpicker" className="h-6 w-6 rounded-full" />
           <span className="text-[13px] font-bold tracking-tight">robopartpicker</span>
@@ -109,12 +112,16 @@ export const SiteHeader = () => {
           <Link to="/marketplace/wanted/new" className="hidden lg:inline-flex btn-ghost btn-sm"><GitPullRequest className="h-3.5 w-3.5" /> RFQ</Link>
           {user && <Link to="/notifications" className="relative hidden sm:inline-flex btn-ghost btn-sm" aria-label={`${notificationCount.data?.unreadCount ?? 0} unread notifications`}><Bell className="h-3.5 w-3.5" />{Boolean(notificationCount.data?.unreadCount) && <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[9px] font-bold text-primary-foreground">{Math.min(notificationCount.data!.unreadCount, 99)}</span>}</Link>}
           <button onClick={() => setDark(!dark)} aria-label="Toggle theme"
-            className="rounded border border-border p-1 hover:bg-muted">
+            className="grid min-h-11 min-w-11 place-items-center rounded border border-border hover:bg-muted md:min-h-0 md:min-w-0 md:p-1">
             {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          </button>
+          <button type="button" onClick={() => setMobileNavOpen((value) => !value)} aria-label="Toggle navigation" aria-expanded={mobileNavOpen}
+            className="grid min-h-11 min-w-11 place-items-center rounded border border-border hover:bg-muted md:hidden">
+            {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
           {user ? (
             <div className="relative">
-              <button onClick={() => setMenuOpen(v => !v)} className="flex items-center gap-1.5 rounded border border-border bg-background pl-1 pr-2 py-0.5 hover:bg-muted">
+              <button onClick={() => setMenuOpen(v => !v)} aria-label="Account menu" className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded border border-border bg-background px-1 hover:bg-muted md:min-h-0 md:min-w-0 md:justify-start md:pl-1 md:pr-2 md:py-0.5">
                 {profile?.avatar_url
                   ? <img src={profile.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
                   : <span className="h-5 w-5 rounded-full bg-primary/15 text-primary border border-primary/30 grid place-items-center text-[9px] font-semibold">{profileInitials(profile)}</span>}
@@ -131,6 +138,10 @@ export const SiteHeader = () => {
                     <Link to="/community" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><UserIcon className="h-3.5 w-3.5" /> Forum</Link>
                     <Link to="/organizations" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><Building2 className="h-3.5 w-3.5" /> Organizations</Link>
                     <Link to="/notifications" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><Bell className="h-3.5 w-3.5" /> Notifications{Boolean(notificationCount.data?.unreadCount) && <span className="ml-auto badge-neutral mono">{notificationCount.data?.unreadCount}</span>}</Link>
+                    <Link to="/messages" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><MessageCircle className="h-3.5 w-3.5" /> Messages</Link>
+                    <Link to="/imports" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><FileUp className="h-3.5 w-3.5" /> Imports</Link>
+                    <Link to="/settings/ai-improvement" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><Brain className="h-3.5 w-3.5" /> AI improvement records</Link>
+                    <Link to="/admin/operations" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted"><ShieldCheck className="h-3.5 w-3.5" /> Operations</Link>
                     <button onClick={() => { setMenuOpen(false); signOut(); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-muted text-destructive"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
                   </div>
                 </>
@@ -142,6 +153,19 @@ export const SiteHeader = () => {
         </div>
       </div>
 
+      {mobileNavOpen && (
+        <nav aria-label="Mobile navigation" className="grid grid-cols-2 gap-2 border-t border-border bg-background p-3 md:hidden">
+          {[...navItems, ...moreItems].map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.to === "/"} onClick={() => setMobileNavOpen(false)}
+              className={({ isActive }) => `flex min-h-11 items-center rounded border px-3 text-xs font-medium ${isActive ? "border-primary/50 bg-primary/10 text-foreground" : "border-border bg-surface text-foreground/80"}`}>
+              {item.label}
+            </NavLink>
+          ))}
+          <Link to="/assistant" onClick={() => setMobileNavOpen(false)} className="flex min-h-11 items-center gap-2 rounded border border-border bg-surface px-3 text-xs font-medium"><Sparkles className="h-4 w-4 text-primary" /> Ask AI</Link>
+          {user && <Link to="/messages" onClick={() => setMobileNavOpen(false)} className="flex min-h-11 items-center gap-2 rounded border border-border bg-surface px-3 text-xs font-medium"><MessageCircle className="h-4 w-4 text-primary" /> Messages</Link>}
+        </nav>
+      )}
+
       {/* Secondary nav: part categories — always visible, density-first */}
       <div className="border-t border-border bg-surface/60">
         <div className="mx-auto flex max-w-[1400px] items-center gap-1 overflow-x-auto px-4 py-1 text-[12px] no-scrollbar">
@@ -150,18 +174,18 @@ export const SiteHeader = () => {
             const active = onParts && loc.pathname === `/parts/${c}`;
             return (
               <Link key={c} to={`/parts/${c}`}
-                className={`shrink-0 rounded px-2 py-0.5 ${active ? "bg-primary/15 text-foreground border border-primary/40" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
+                className={`flex min-h-11 shrink-0 items-center rounded px-2 py-0.5 md:min-h-0 ${active ? "bg-primary/15 text-foreground border border-primary/40" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
                 {categoryLabel[c]}
               </Link>
             );
           })}
           <span className="mx-2 h-3 w-px shrink-0 bg-border" />
-          <Link to="/parts/actuator?os=true" className="shrink-0 text-muted-foreground hover:text-foreground">Open source</Link>
-          <Link to="/parts/actuator?ros=true" className="shrink-0 text-muted-foreground hover:text-foreground">ROS native</Link>
-          <Link to="/marketplace" className="shrink-0 text-muted-foreground hover:text-foreground">Used deals</Link>
-          <Link to="/suppliers" className="shrink-0 text-muted-foreground hover:text-foreground">Suppliers</Link>
-          <Link to="/teardowns" className="shrink-0 text-muted-foreground hover:text-foreground">Teardowns</Link>
-          <span className="ml-auto hidden md:inline shrink-0 mono text-[10px] text-muted-foreground">v0.2 · Worker + D1 · demo data</span>
+          <Link to="/parts/actuator?os=true" className="flex min-h-11 shrink-0 items-center text-muted-foreground hover:text-foreground md:min-h-0">Open source</Link>
+          <Link to="/parts/actuator?ros=true" className="flex min-h-11 shrink-0 items-center text-muted-foreground hover:text-foreground md:min-h-0">ROS native</Link>
+          <Link to="/marketplace" className="flex min-h-11 shrink-0 items-center text-muted-foreground hover:text-foreground md:min-h-0">Used deals</Link>
+          <Link to="/suppliers" className="flex min-h-11 shrink-0 items-center text-muted-foreground hover:text-foreground md:min-h-0">Suppliers</Link>
+          <Link to="/teardowns" className="flex min-h-11 shrink-0 items-center text-muted-foreground hover:text-foreground md:min-h-0">Teardowns</Link>
+          <span className="ml-auto hidden shrink-0 mono text-[10px] text-muted-foreground md:inline">v0.6 · Worker + D1 · sample data</span>
         </div>
       </div>
 

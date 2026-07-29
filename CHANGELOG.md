@@ -2,6 +2,50 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [Unreleased]
+
+### Added
+
+- Production-facing Terms of Service, Privacy Policy, Community Guidelines, legal overview, footer navigation, and explicit account-creation acknowledgement.
+- Public reproduction attribution on the project reproducibility page, with release/outcome/evidence context and anonymity preserved for private builds.
+
+### Changed
+
+- The RPPS explanation is now a compact note at the bottom of the homepage so featured projects and core platform data remain the primary focus.
+- The homepage now explains the RoboPartPicker Project Standard in plain language, ranks a dedicated featured-project section from project completeness and reproduction evidence, and makes the component, supplier, project, and BOM metrics navigable.
+- RPPS is expanded as “RoboPartPicker Project Standard” on discovery and specification pages.
+
+### Security
+
+- Public reproduction responses expose only outcome metadata and show builder identity only when the associated build is public; private build details remain undisclosed.
+
+## [0.6.0] - 2026-07-21
+
+### Added
+
+- Contextual AI actions with preview, field/source/fact/inference/confidence/missing-information disclosure, apply/edit/reject/undo controls, high-impact confirmation, and model/prompt/tool/latency/cost audit records.
+- Server-configurable provider/model registry, task routing, budgets, timeouts, fallbacks, caching, usage tracking, prompt versions, regression-gated activation, and a versioned robotics evaluation suite.
+- Privacy-aware AI-friction records with user inspection/deletion and protected operational clustering and resolution queues.
+- Queue-backed, persistent project import jobs and isolated native-format processing for robot descriptions, CAD, archives, documents, BOMs, manifests, and configuration files without executing imported scripts or Xacro.
+- Robot link/joint/geometry extraction, interactive hierarchy browsing, missing-asset reporting, and explicit human review of purchasable, fabricated, assembly, or unresolved candidates.
+- Rich sanitized Markdown editors, technical records, resolvable missing-information requests, BOM verification states and immutable corrections, versioned reproductions, project roles, contribution review, notifications, and safe direct messaging.
+- Private creator analytics, complete-robot part-out inventory and pricing ranges, individual draft listings, protected operations interfaces, and responsive workflow screens.
+- Isolated Pixel 5 end-to-end coverage for mobile navigation, filters, upload/import progress, build checklists and Technical Records, part-out and listing creation, full-screen editor focus, message requests/replies, improvement-record privacy, and administration denial.
+
+### Changed
+
+- Mobile editor grids now contain wide tables and toolbars without page overflow; Preview and Full screen remain immediately tappable, and shared dialogs are viewport-centered with explicit focus restoration.
+
+### Security
+
+- Imported code and Xacro are never evaluated in the Worker; native/archive processing uses fixed trusted commands in an isolated service.
+- Project evidence, uploads, part-out sources, conversations, and administrative queues are authorized server-side. Analytics use rotating hashes and coarse geography, and AI-improvement records omit unnecessary full conversations and source files.
+- Prompt and routing candidates cannot be promoted without a passing regression evaluation. High-impact AI changes remain explicit user-confirmed proposals.
+
+### Deployment
+
+- Not deployed by this change. Queue, dead-letter queue, container, Durable Object, D1 migration, R2, provider secrets, and evaluation runner must be provisioned and validated per environment before release.
+
 ## [0.5.0] - 2026-07-20
 
 ### Added

@@ -12,6 +12,7 @@ import type { MarketplaceListing, MarketplaceListingInput } from "@/shared/marke
 import { AiNarrativeComposer } from "@/components/ai/AiNarrativeComposer";
 import { SubmissionQualityCard } from "@/components/ai/SubmissionQualityCard";
 import { reviewSubmission, type SubmissionQualityReview } from "@/lib/assistant";
+import { RichTechnicalEditor } from "@/components/common/RichTechnicalEditor";
 
 const grades: NonNullable<MarketplaceListing["conditionGrade"]>[] = ["A", "B", "C", "untested", "for_parts", "not_applicable"];
 
@@ -156,8 +157,8 @@ export default function ListingEditorD1() {
     <p className="mt-1 text-[12px] text-muted-foreground">Start naturally. The assistant can organize your facts into a technical listing, but you control the final wording and every evidence declaration.</p>
     <div className="surface-card mt-3 flex gap-2 border-warning/30 bg-warning/5 p-2 text-[11.5px] text-muted-foreground"><AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" /> RoboPartPicker does not verify identity, serial numbers, payment, escrow, shipping, or inspection. Seller declarations remain clearly labeled.</div>
 
-    <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void persist(false); }}>
+    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <form className="min-w-0 space-y-4" onSubmit={(event) => { event.preventDefault(); void persist(false); }}>
         <AiNarrativeComposer form="marketplace_listing" value={description} onChange={setDescription} current={{ title, description, category, conditionGrade: grade, price, quantity, region, runtimeHours, provenance }} onApply={applyAiDraft} title="Describe the item in your own words" hint="Include what it is, exact model or revision, what is included, condition, defects, history, evidence, location, delivery constraints, and asking price. The assistant only organizes facts you provide." placeholder="Example: I’m selling my completed 12-DOF research robot after one semester of lab use…" rows={9} />
 
         <section className="surface-card p-4 space-y-3">
@@ -183,7 +184,7 @@ export default function ListingEditorD1() {
             {sourceBuildId && <div className="rounded border border-border bg-muted/30 p-2 text-[11px]"><span className="font-medium">Known build parts cost:</span> {partsCost == null ? "not priced" : `${partsCurrency} ${partsCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} {partsCoverage && <span className="text-muted-foreground">· {partsCoverage}</span>}<p className="mt-1 text-muted-foreground">This is an aggregate of recorded build-item costs or selected same-currency internal supplier offers, not a live market quote.</p></div>}
             <Field label="Catalog component (optional)"><select className="input-bare" value={componentId} onChange={(event) => setComponentId(event.target.value)}><option value="">No linked catalog component</option>{(components.data?.items ?? []).map((component) => <option key={component.id} value={component.id}>{component.name} — {component.maker}</option>)}</select></Field>
             <div className="grid gap-3 sm:grid-cols-2"><Field label="Region"><select className="input-bare" value={region} onChange={(event) => setRegion(event.target.value)}>{["US", "EU", "CN", "JP", "KR", "Global"].map((value) => <option key={value}>{value}</option>)}</select></Field><Field label="Runtime hours"><input className="input-bare mono" inputMode="numeric" value={runtimeHours} onChange={(event) => setRuntimeHours(event.target.value)} /></Field></div>
-            <Field label="Provenance and maintenance"><textarea className="input-bare min-h-24" value={provenance} onChange={(event) => setProvenance(event.target.value)} placeholder="Origin, exact revision, usage, modifications, maintenance, ownership, and traceability…" /></Field>
+            <div><span className="section-title mb-1 block">Provenance and maintenance</span><RichTechnicalEditor value={provenance} onChange={setProvenance} label="Listing provenance and maintenance" minRows={6} maxLength={20_000} autosaveKey={`marketplace-listing-provenance-${draftId ?? "new"}`} placeholder="Origin, exact revision, usage, modifications, maintenance, ownership, and traceability…" /></div>
             <fieldset className="border-t border-border/60 pt-3"><legend className="section-title mb-2">Seller declarations</legend><div className="grid gap-2 text-[12px] sm:grid-cols-2"><Check label="Test report available" value={testReport} onChange={setTestReport} /><Check label="Video available" value={video} onChange={setVideo} /><Check label="Returns accepted" value={returns} onChange={setReturns} /><Check label="Serial available to buyer" value={serial} onChange={setSerial} /></div></fieldset>
           </div>
         </details>
@@ -193,7 +194,7 @@ export default function ListingEditorD1() {
         <div className="flex flex-wrap gap-2"><button type="submit" disabled={busy || errors.length > 0} className="btn-ghost">{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save private draft</button><button type="button" disabled={busy || errors.length > 0} onClick={() => void persist(true)} className="btn-primary">{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {reviewedFingerprint === fingerprint || reviewUnavailable ? "Publish listing" : "Review before publishing"}</button><Link to="/marketplace" className="btn-ghost ml-auto">Cancel</Link></div>
       </form>
 
-      <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
+      <aside className="min-w-0 space-y-3 lg:sticky lg:top-4 lg:self-start">
         <div className="surface-card p-3"><div className="section-title mb-2">Price context</div><dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12px]"><Row k="Asking" v={price ? `USD ${Number(price).toLocaleString()}` : "not set"} /><Row k="Known parts" v={partsCost == null ? "not linked" : `${partsCurrency} ${partsCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} /><Row k="Difference" v={partsCost == null || !price || partsCurrency !== "USD" ? "—" : `USD ${(Number(price) - partsCost).toLocaleString(undefined, { maximumFractionDigits: 2 })}`} /></dl><p className="mt-2 text-[10px] text-muted-foreground">Parts cost excludes unpriced or cross-currency lines, labor, tooling, fabrication, shipping, tax, risk, and seller value. It is context, not a valuation.</p></div>
         <div className="surface-card p-3"><div className="section-title mb-2">Publication state</div><dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12px]"><Row k="Records" v="D1" /><Row k="Images" v="R2" /><Row k="Draft" v="Private listing" /><Row k="Payments" v="Not configured" /><Row k="AI" v="Draft + advisory review" /></dl></div>
       </aside>

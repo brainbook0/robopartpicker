@@ -12,6 +12,10 @@ EMAIL_FROM=RoboPartPicker <no-reply@example.invalid>
 GITHUB_TOKEN=
 AI_PROVIDER_URL=https://openrouter.ai/api/v1
 AI_PROVIDER_KEY=
+# Optional name for the environment fallback and a JSON map for multiple registry providers.
+AI_PROVIDER_NAME=configured-openai-compatible
+AI_PROVIDER_KEYS_JSON=
+AI_DATA_SENSITIVITY_POLICY=public,private
 AI_MODEL=deepseek/deepseek-v4-pro
 AI_DAILY_TOKEN_LIMIT=150000
 AI_MAX_OUTPUT_TOKENS=2048

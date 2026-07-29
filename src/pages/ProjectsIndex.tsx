@@ -114,7 +114,7 @@ export default function ProjectsIndex() {
             <Package className="h-4 w-4 text-primary" /> Discover robotics projects
           </h1>
           <p className="text-[12px] text-muted-foreground max-w-[720px] mt-0.5">
-            Structured, reproducible DIY robotics builds. Every project is a portable RPPS package with a BOM, files, and integration evidence.
+            Structured DIY robotics builds. RPPS (RoboPartPicker Project Standard) packages connect each project’s BOM, files, procedures, exact release, and integration evidence.
           </p>
         </div>
         <div className="flex items-center gap-2">

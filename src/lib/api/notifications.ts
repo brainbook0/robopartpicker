@@ -15,6 +15,8 @@ export type NotificationPreference = {
   notificationType: string;
   inAppEnabled: number;
   emailEnabled: number;
+  pushEnabled: number;
+  deliverySchedule: "individual" | "batched" | "daily_digest" | "weekly_digest" | "off";
   updatedAt: string;
 };
 
@@ -23,6 +25,6 @@ export const notificationsApi = {
   markRead: (id: string) => api.patch<{ updated: boolean }>(`/api/v1/notifications/${encodeURIComponent(id)}/read`),
   markAllRead: () => api.post<{ updated: number }>("/api/v1/notifications/read-all"),
   preferences: (signal?: AbortSignal) => api.get<{ items: NotificationPreference[] }>("/api/v1/notifications/preferences", { signal }),
-  updatePreference: (input: { notificationType: string; inAppEnabled: boolean; emailEnabled: boolean }) =>
+  updatePreference: (input: { notificationType: string; inAppEnabled: boolean; emailEnabled: boolean; pushEnabled?: boolean; deliverySchedule?: NotificationPreference["deliverySchedule"] }) =>
     api.put<{ updated: boolean }>("/api/v1/notifications/preferences", input),
 };

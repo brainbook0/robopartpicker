@@ -36,6 +36,16 @@ import Search from "./pages/Search.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import Organizations from "./pages/Organizations.tsx";
 import OrganizationDetail from "./pages/OrganizationDetail.tsx";
+import ImportJobs from "./pages/ImportJobs.tsx";
+import Messages from "./pages/Messages.tsx";
+import Operations from "./pages/Operations.tsx";
+import ImprovementRecords from "./pages/ImprovementRecords.tsx";
+import ProjectAnalytics from "./pages/ProjectAnalytics.tsx";
+import ProjectKnowledge from "./pages/ProjectKnowledge.tsx";
+import InformationGap from "./pages/InformationGap.tsx";
+import BomVerification from "./pages/BomVerification.tsx";
+import PartOutEditor from "./pages/marketplace/PartOutEditor.tsx";
+import Legal from "./pages/Legal.tsx";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -55,6 +65,12 @@ const App = () => (
             <Route path="/parts/compare" element={<PartCompare />} />
             <Route path="/search" element={<Search />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:conversationId" element={<Messages />} />
+            <Route path="/imports" element={<ImportJobs />} />
+            <Route path="/imports/:jobId" element={<ImportJobs />} />
+            <Route path="/settings/ai-improvement" element={<ImprovementRecords />} />
+            <Route path="/admin/operations" element={<Operations />} />
             <Route path="/organizations" element={<Organizations />} />
             <Route path="/organizations/:id" element={<OrganizationDetail />} />
             <Route path="/parts/:category" element={<PartsCatalog />} />
@@ -62,17 +78,28 @@ const App = () => (
             <Route path="/projects" element={<ProjectsIndex />} />
             <Route path="/projects/new" element={<ProjectNew />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
+            <Route path="/projects/:slug/analytics" element={<ProjectAnalytics />} />
+            <Route path="/projects/:slug/records" element={<ProjectKnowledge />} />
             <Route path="/projects/:slug/:aspect" element={<ProjectInsight />} />
+            <Route path="/information-gaps/:id" element={<InformationGap />} />
             <Route path="/rpps" element={<RppsSpec />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/terms" element={<Legal document="terms" />} />
+            <Route path="/privacy" element={<Legal document="privacy" />} />
+            <Route path="/community-guidelines" element={<Legal document="guidelines" />} />
+            <Route path="/acceptable-use" element={<Legal document="guidelines" />} />
             <Route path="/assistant" element={<Assistant />} />
             <Route path="/assistant/:threadId" element={<Assistant />} />
             <Route path="/finder/:type" element={<Finder />} />
             <Route path="/builder" element={<Builder />} />
             <Route path="/boms" element={<BomsIndex />} />
             <Route path="/boms/:slug" element={<BomDetail />} />
+            <Route path="/bom-verifications/:id" element={<BomVerification />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/marketplace/new" element={<ListingNew />} />
             <Route path="/marketplace/wanted/new" element={<WantedNew />} />
+            <Route path="/marketplace/part-outs" element={<PartOutEditor />} />
+            <Route path="/marketplace/part-outs/:id" element={<PartOutEditor />} />
             <Route path="/marketplace/:id" element={<ListingDetail />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/suppliers/:slug" element={<SupplierDetail />} />

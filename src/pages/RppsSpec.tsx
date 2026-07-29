@@ -103,7 +103,7 @@ export default function RppsSpec() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 py-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div><div className="section-title">Portable robotics releases</div><h1 className="text-[22px] font-bold tracking-tight">RPPS <span className="mono text-primary">0.1 Draft</span></h1><p className="mt-1 max-w-3xl text-[12.5px] leading-5 text-muted-foreground">A vendor-neutral manifest and lockfile for exchanging buildable robotics releases. It coordinates native CAD, firmware, configuration, BOMs, instructions and evidence without replacing those formats or requiring RoboPartPicker.</p></div>
+        <div><div className="section-title">Portable robotics releases</div><h1 className="text-[22px] font-bold tracking-tight">RoboPartPicker Project Standard <span className="mono text-primary">RPPS 0.1 Draft</span></h1><p className="mt-1 max-w-3xl text-[12.5px] leading-5 text-muted-foreground">RPPS is RoboPartPicker’s open, vendor-neutral manifest and lockfile format for exchanging buildable robotics releases. It coordinates native CAD, firmware, configuration, BOMs, instructions, tests, and evidence without replacing those formats or requiring this website.</p></div>
         <button className="btn-ghost btn-sm" onClick={() => download("rpps.yaml", manifestExample)}><Download className="h-3.5 w-3.5" /> Example package</button>
       </div>
 

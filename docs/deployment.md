@@ -1,6 +1,20 @@
 # Cloudflare deployment
 
-The isolated preview has been deployed and verified. Production deployment remains explicit and must be verified against its resulting endpoint.
+Preview and production are isolated full-stack Worker deployments. Production was first deployed on 2026-07-23 and must remain independently verified after every release.
+
+## Live production environment
+
+- Worker: `robopartpicker-production`
+- D1: `robopartpicker-production` (`10c57e79-e34f-4643-8c4e-4f0c7968a74d`)
+- R2: `robopartpicker-files`
+- Queue: `robopartpicker-imports-production`
+- Dead-letter queue: `robopartpicker-imports-production-dlq`
+- URL: <https://robopartpicker-production.ludomi2502.workers.dev>
+- Verified Worker version: `032e2294-face-4c0e-a234-29adf91ceba4`
+
+The initial production database has all 14 migrations, 184 tables, no foreign-key failures, and no demo component, supplier, or BOM rows. The Workers Free account does not have Containers access, so production deliberately omits the `Sandbox` Durable Object and native CAD/ROS/archive processing. Worker-native safe parsers remain enabled, and unsupported native jobs fail closed.
+
+The production health endpoint, SPA homepage and legal deep links, empty project API, public MCP initialization and six-tool discovery, OAuth resource metadata, and private MCP challenge were verified against the live origin. AI remains fail-closed until a rotated provider credential is configured; do not reuse a credential exposed through chat.
 
 ## Live preview environment
 
@@ -40,6 +54,33 @@ The preview deploy script passes `--env preview` explicitly. It cannot silently 
 
 The migration command includes the guarded remote-D1 compatibility bootstrap documented in `docs/database-schema.md`; it does not edit previously applied migration files.
 
+## 0.6 infrastructure prerequisites
+
+Version 0.6 adds migration `0014_cross_product_systems.sql`, a Queue consumer, dead-letter queues, and the `Sandbox` container/Durable Object used for fixed-command native file inspection. Provision the queues once, then regenerate types and run the dry run before a release:
+
+```powershell
+npx wrangler queues create robopartpicker-imports-preview
+npx wrangler queues create robopartpicker-imports-preview-dlq
+npx wrangler queues create robopartpicker-imports-production
+npx wrangler queues create robopartpicker-imports-production-dlq
+npm run cf:types
+npm run deploy:dry-run
+```
+
+The container image and `@cloudflare/sandbox` package are pinned to `0.12.4`. Keep these versions aligned. When the account lacks Containers, keep the environment's container, Durable Object, and migration arrays empty; do not silently process native formats in the Worker. Imported scripts, launch files, and Xacro content are never executed by the Worker; the container only invokes the repository-owned allowlisted static processor when that binding is available.
+
+Model routing can use `AI_PROVIDER_KEYS_JSON` for provider-key-to-credential mapping. `AI_PROVIDER_KEY` remains the environment fallback. `AI_DATA_SENSITIVITY_POLICY` controls which data classes that fallback may receive. Candidate prompt or routing changes still require a passing live regression evaluation before activation.
+
+## Local mobile workflow validation
+
+Run the isolated Pixel 5 workflow suite before a release:
+
+```powershell
+npm run test:e2e:mobile
+```
+
+The harness resets only `.wrangler/e2e-state`, applies all migrations there, starts the same-origin Worker/Vite application, and creates synthetic local accounts. It does not alter the normal local D1 state. The isolated Windows test configuration disables local Containers while exercising the safe Worker-native URDF path. Preview and production also keep Containers disabled on the current Workers Free account. The Playwright configuration uses the installed stable Chrome channel.
+
 ## One-time production resources
 
 ```powershell
@@ -48,20 +89,19 @@ npx wrangler d1 create robopartpicker-production
 npx wrangler r2 bucket create robopartpicker-files
 ```
 
-Copy the created D1 ID into the production binding in `wrangler.jsonc`. Keep local bindings local; do not add `remote: true` to the default development configuration.
+The current production D1 ID is already recorded in `wrangler.jsonc`. Keep local bindings local; do not add `remote: true` to the default development configuration.
 
 ## Secrets
 
-At minimum, configure:
+The three required production secrets are:
 
 ```powershell
 npx wrangler secret put BETTER_AUTH_SECRET --env production
 npx wrangler secret put BETTER_AUTH_URL --env production
 npx wrangler secret put INGESTION_SECRET --env production
-npx wrangler secret put AI_PROVIDER_KEY --env production
 ```
 
-The authentication and ingestion names are declared under `secrets.required` in the production Wrangler environment. The AI route fails closed when its provider key is absent. OpenRouter's base URL and `deepseek/deepseek-v4-pro` model ID are non-secret Wrangler vars; the credential is entered only through Wrangler's interactive secret prompt.
+The authentication and ingestion names are declared under `secrets.required` in the production Wrangler environment. AI is optional and fails closed while its provider key is absent. After rotating the previously exposed credential, configure it interactively with `npx wrangler secret put AI_PROVIDER_KEY --env production`. OpenRouter's base URL and model ID are non-secret Wrangler vars; the credential is entered only through Wrangler's interactive secret prompt.
 
 Add email provider, OAuth, repository provider, AI provider, and malware scanner credentials only for features that are configured. Secrets are environment-specific, so every production secret command includes `--env production`. Never put them in `vars`, `VITE_*`, source control, or client code.
 
@@ -79,11 +119,11 @@ npm run deploy
 
 Remote migrations are an explicit production action. Do not seed demo fixtures into production unless that is an intentional release decision.
 
-The normal `npm run build` selects the named Cloudflare `production` environment at Vite build time and generates a flattened deploy configuration with `APP_ENV=production`. Local `npm run dev` continues to use the top-level development bindings. Replace the production D1 placeholder ID before either remote migrations or deployment.
+The normal `npm run build` selects the named Cloudflare `production` environment at Vite build time and generates a flattened deploy configuration with `APP_ENV=production`. Local `npm run dev` continues to use the top-level development bindings.
 
 ## Verification
 
-After deploy, verify the health endpoint, SPA deep links, signup/sign-in/sign-out, private-resource isolation, organization roles, file authorization, malformed/duplicate imports, deterministic project analysis, AI provider failure behavior, public MCP initialization/tool discovery, private MCP's unauthenticated challenge, OAuth discovery metadata, and the custom domain. Confirm the catalog is empty unless an intentional population run occurred. A deploy command alone is not evidence that deployment succeeded.
+After deploy, verify the health endpoint, SPA deep links, signup/sign-in/sign-out, private-resource isolation, organization roles, file authorization, malformed/duplicate imports, deterministic project analysis, AI provider failure behavior, public MCP initialization/tool discovery, private MCP's unauthenticated challenge, OAuth discovery metadata, the mobile primary workflows, and any configured custom domain. Confirm the catalog is empty unless an intentional population run occurred. Local Playwright results do not replace deployed-environment checks, and a deploy command alone is not evidence that deployment succeeded.
 
 Cloudflare references:
 

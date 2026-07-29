@@ -23,6 +23,45 @@
       "bucket_name": "robopartpicker-files"
     }
   ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "IMPORT_QUEUE",
+        "queue": "robopartpicker-imports-development"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "robopartpicker-imports-development",
+        "max_batch_size": 5,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "robopartpicker-imports-development-dlq"
+      }
+    ]
+  },
+  "containers": [
+    {
+      "class_name": "Sandbox",
+      "image": "./Dockerfile",
+      "instance_type": "lite",
+      "max_instances": 2
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "Sandbox",
+        "class_name": "Sandbox"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "sandbox-v1",
+      "new_sqlite_classes": ["Sandbox"]
+    }
+  ],
   "vars": {
     "APP_ENV": "development",
     "APP_NAME": "RoboPartPicker",
@@ -58,6 +97,30 @@
           "bucket_name": "robopartpicker-preview-files"
         }
       ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "IMPORT_QUEUE",
+            "queue": "robopartpicker-imports-preview"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "robopartpicker-imports-preview",
+            "max_batch_size": 5,
+            "max_batch_timeout": 5,
+            "max_retries": 3,
+            "dead_letter_queue": "robopartpicker-imports-preview-dlq"
+          }
+        ]
+      },
+      // The live account is currently on Workers Free. Keep native processing
+      // disabled until Containers are available on the account.
+      "containers": [],
+      "durable_objects": {
+        "bindings": []
+      },
+      "migrations": [],
       "vars": {
         "APP_ENV": "preview",
         "APP_NAME": "RoboPartPicker",
@@ -71,6 +134,9 @@
       }
     },
     "production": {
+      "name": "robopartpicker-production",
+      "workers_dev": true,
+      "preview_urls": true,
       "assets": {
         "binding": "ASSETS",
         "not_found_handling": "single-page-application",
@@ -80,7 +146,7 @@
         {
           "binding": "DB",
           "database_name": "robopartpicker-production",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "10c57e79-e34f-4643-8c4e-4f0c7968a74d",
           "migrations_dir": "migrations"
         }
       ],
@@ -90,6 +156,30 @@
           "bucket_name": "robopartpicker-files"
         }
       ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "IMPORT_QUEUE",
+            "queue": "robopartpicker-imports-production"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "robopartpicker-imports-production",
+            "max_batch_size": 5,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "dead_letter_queue": "robopartpicker-imports-production-dlq"
+          }
+        ]
+      },
+      // Native CAD/ROS/archive processing stays unavailable until this account
+      // has Workers Containers. Worker-native safe parsers remain enabled.
+      "containers": [],
+      "durable_objects": {
+        "bindings": []
+      },
+      "migrations": [],
       "vars": {
         "APP_ENV": "production",
         "APP_NAME": "RoboPartPicker",

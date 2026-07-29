@@ -1,0 +1,23 @@
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, BarChart3, Loader2 } from "lucide-react";
+import { getProjectBySlug } from "@/lib/projects";
+import { projectSystemsApi } from "@/lib/api/systems";
+
+const metrics = [
+  ["uniqueViews", "Unique views"], ["returningVisitors", "Returning visitors"], ["saves", "Saves"], ["forks", "Forks"],
+  ["buildStarts", "Build starts"], ["completedBuilds", "Completed builds"], ["verifiedReproductions", "Verified reproductions"],
+  ["bomExports", "BOM exports"], ["rppsExports", "RPPS exports"], ["marketplaceReferrals", "Marketplace referrals"],
+  ["questions", "Questions"], ["missingInformationRequests", "Information gaps"], ["versionAdoption", "Version adoption"], ["substitutions", "Substitutions"],
+] as const;
+
+export default function ProjectAnalytics() {
+  const { slug = "" } = useParams<{ slug: string }>(); const project = useQuery({ queryKey: ["project", slug], queryFn: () => getProjectBySlug(slug), enabled: Boolean(slug) }); const analytics = useQuery({ queryKey: ["project-analytics", project.data?.id], queryFn: ({ signal }) => projectSystemsApi.analytics(project.data!.id, 30, signal), enabled: Boolean(project.data?.id), retry: false });
+  if (project.isLoading) return <State><Loader2 className="h-5 w-5 animate-spin" /> Loading project…</State>;
+  if (project.error || !project.data) return <State>{project.error ? message(project.error) : "Project not found."}</State>;
+  return <main className="mx-auto max-w-6xl px-4 py-5"><Link to={`/projects/${project.data.slug}`} className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" /> {project.data.name}</Link><div className="mb-4"><div className="section-title">Private creator analytics · live data</div><h1 className="text-[22px] font-bold">Project analytics</h1><p className="text-xs text-muted-foreground">Thirty-day creator metrics. Public reproduction counters, sample metrics, and private analytics are explicitly separated.</p></div>
+    {analytics.isLoading && <div className="surface-card p-5 text-sm text-muted-foreground"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Loading analytics…</div>}{analytics.error && <div className="surface-card p-5 text-sm text-negative">{message(analytics.error)}</div>}{analytics.data && <><section className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{metrics.map(([key, label]) => <div key={key} className="surface-card p-3"><div className="text-[10px] uppercase text-muted-foreground">{label}</div><div className="mt-1 mono text-lg font-bold">{Number(analytics.data.privateMetrics[key] ?? 0).toLocaleString()}</div></div>)}<div className="surface-card p-3"><div className="text-[10px] uppercase text-muted-foreground">Completion rate</div><div className="mt-1 mono text-lg font-bold">{Math.round(Number(analytics.data.privateMetrics.buildCompletionRate ?? 0) * 100)}%</div></div></section><section className="surface-card overflow-hidden"><div className="flex items-center gap-2 border-b border-border p-3"><BarChart3 className="h-4 w-4 text-primary" /><span className="section-title">Daily event series</span></div><div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-xs"><thead className="bg-muted/50 text-[10px] uppercase text-muted-foreground"><tr><th className="p-3">Day</th><th className="p-3">Event</th><th className="p-3">Total</th><th className="p-3">Unique</th><th className="p-3">Returning</th></tr></thead><tbody>{analytics.data.series.map((row, index) => <tr key={String(row.day) + String(row.event_type) + index} className="border-t border-border"><td className="p-3">{String(row.day)}</td><td className="p-3">{String(row.event_type).replaceAll("_", " ")}</td><td className="p-3 mono">{String(row.total_count)}</td><td className="p-3 mono">{String(row.unique_count)}</td><td className="p-3 mono">{String(row.returning_count)}</td></tr>)}</tbody></table></div>{analytics.data.series.length === 0 && <p className="p-6 text-center text-xs text-muted-foreground">No private analytics events in this period.</p>}</section><p className="mt-3 text-[10px] text-muted-foreground">Privacy: {String(analytics.data.privacy)} Geographic summaries are country-level only.</p></>}
+  </main>;
+}
+function State({ children }: { children: React.ReactNode }) { return <main className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center gap-3 px-4 text-center">{children}</main>; }
+function message(error: unknown): string { return error instanceof Error ? error.message : "Unexpected error."; }

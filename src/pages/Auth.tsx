@@ -23,6 +23,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function Auth() {
       }
 
       if (mode === "sign-up") {
+        if (!acceptedTerms) throw new Error("Accept the Terms of Service and Privacy Policy to create an account.");
         const result = await authClient.signUp.email({
           email,
           password,
@@ -85,7 +87,7 @@ export default function Auth() {
                 key={item}
                 type="button"
                 onClick={() => setMode(item)}
-                className={`flex-1 rounded px-2 py-1 ${mode === item ? "bg-background font-medium shadow-sm" : "text-muted-foreground"}`}
+                className={`min-h-11 flex-1 rounded px-2 py-1 md:min-h-7 ${mode === item ? "bg-background font-medium shadow-sm" : "text-muted-foreground"}`}
               >
                 {item === "sign-in" ? "Sign in" : "Create account"}
               </button>
@@ -139,7 +141,11 @@ export default function Auth() {
               />
             </div>
           )}
-          <button disabled={busy} className="btn-primary mt-3 w-full justify-center">
+          {mode === "sign-up" && <label className="flex cursor-pointer items-start gap-2 rounded border border-border bg-muted/20 p-2 text-[11px] leading-4 text-muted-foreground">
+            <input type="checkbox" required checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" />
+            <span>I agree to the <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link> and acknowledge the <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link> and <Link to="/community-guidelines" className="text-primary hover:underline">Community Guidelines</Link>.</span>
+          </label>}
+          <button disabled={busy || (mode === "sign-up" && !acceptedTerms)} className="btn-primary mt-3 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50">
             {busy ? "Working…" : mode === "sign-in" ? "Sign in" : mode === "sign-up" ? "Create account" : "Request reset"}
           </button>
         </form>
@@ -155,9 +161,7 @@ export default function Auth() {
           </button>
         )}
 
-        <p className="mt-4 text-center text-[11px] text-muted-foreground">
-          By continuing you agree to the community guidelines. Be excellent to each other.
-        </p>
+        <p className="mt-4 text-center text-[11px] text-muted-foreground">Your account is protected by the <Link to="/terms" className="hover:text-primary">Terms</Link> and <Link to="/privacy" className="hover:text-primary">Privacy Policy</Link>.</p>
       </div>
     </div>
   );

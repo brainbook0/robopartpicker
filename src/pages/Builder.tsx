@@ -14,6 +14,7 @@ import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { AiFormDraft } from "@/components/ai/AiFormDraft";
 import { AiNarrativeComposer } from "@/components/ai/AiNarrativeComposer";
 import { SubmissionQualityCard } from "@/components/ai/SubmissionQualityCard";
+import { RichTechnicalEditor } from "@/components/common/RichTechnicalEditor";
 import { reviewSubmission, type SubmissionQualityReview } from "@/lib/assistant";
 
 const money = (minor: number | null, currency = "USD") => minor == null
@@ -151,8 +152,8 @@ export default function Builder() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="space-y-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[250px_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-3">
           <div className="surface-card p-3">
             <div className="section-title mb-2">Create reproduction / build</div>
             <input className="input-bare h-9 w-full" value={newName} maxLength={120} onChange={(event) => setNewName(event.target.value)} />
@@ -286,7 +287,7 @@ function BuildWorkspace({ build, organizations, userId, catalogQuery, setCatalog
         {!catalogLoading && catalog.length === 0 && <div className="p-3 text-xs text-muted-foreground">No matching components.</div>}
       </div>}
     </div>
-    <EngineeringRecords build={build} onRefresh={onRefresh} />
+    <BuildEvidence build={build} onRefresh={onRefresh} />
     <div className="surface-card p-3">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="section-title">Build files · R2</div><p className="text-[11px] text-muted-foreground">CAD, URDF/MJCF, firmware, configurations, documents, images, and test evidence.</p></div><label className={`btn-primary btn-sm inline-flex cursor-pointer items-center gap-1 ${uploading ? "pointer-events-none opacity-50" : ""}`}><FileUp className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : "Upload file"}<input type="file" className="sr-only" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ""; }} /></label></div>
       {build.files.length === 0 ? <div className="mt-3 text-xs text-muted-foreground">No attached files.</div> : <div className="mt-3 grid gap-2 sm:grid-cols-2">{build.files.map((file) => <a key={file.id} href={`/api/v1/files/${encodeURIComponent(file.id)}/content`} className="rounded border border-border p-2 hover:border-primary/50"><div className="truncate text-sm font-medium">{file.originalName}</div><div className="mt-1 text-[10px] text-muted-foreground">{file.kind} · {formatBytes(file.sizeBytes)} · {file.visibility}</div></a>)}</div>}
@@ -354,7 +355,7 @@ function BuildSettings({ build, organizations, canManageScope, onRefresh }: {
   );
 }
 
-function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefresh: () => Promise<void> }) {
+function BuildEvidence({ build, onRefresh }: { build: BuildDetail; onRefresh: () => Promise<void> }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [configuration, setConfiguration] = useState({ name: "", format: "yaml", contentText: "" });
   const [firmware, setFirmware] = useState({ name: "", repositoryUrl: "", revision: "", licenseSpdx: "", notes: "" });
@@ -395,49 +396,49 @@ function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefres
 
   return <div className="surface-card p-3">
     <div className="mb-3 flex items-start justify-between gap-3">
-      <div><div className="section-title">Engineering records</div><p className="text-[11px] text-muted-foreground">Versioned configuration plus traceable firmware, calibration, and verification results.</p></div>
+      <div><div className="section-title">Build evidence and technical records</div><p className="text-[11px] text-muted-foreground">Versioned configuration plus traceable firmware, calibration, and verification results.</p></div>
       <AiFormDraft form="build_record" current={{ configuration, firmware, calibration, test }} onApply={applyAiDraft} hint="Describe one configuration, firmware reference, calibration procedure, or verification test. State the record type and include only known values." />
     </div>
-    <div className="grid gap-3 xl:grid-cols-2">
-      <section className="rounded border border-border p-3">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+      <section className="min-w-0 rounded border border-border p-3">
         <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Configurations</h3><span className="badge-neutral mono">{build.configurations.length}</span></div>
-        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("configuration", () => buildsApi.addConfiguration(build.id, configuration), "Configuration saved", () => setConfiguration({ name: "", format: "yaml", contentText: "" })); }}>
-          <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-2"><input aria-label="Configuration name" required maxLength={200} value={configuration.name} onChange={(event) => setConfiguration({ ...configuration, name: event.target.value })} placeholder="Motor controller" className="input-bare h-9" /><select aria-label="Configuration format" value={configuration.format} onChange={(event) => setConfiguration({ ...configuration, format: event.target.value })} className="input-bare h-9"><option>yaml</option><option>json</option><option>toml</option><option>xml</option><option>text</option></select></div>
-          <textarea aria-label="Configuration content" required maxLength={200000} rows={4} value={configuration.contentText} onChange={(event) => setConfiguration({ ...configuration, contentText: event.target.value })} placeholder="motor:\n  current_limit: 12" className="input-bare resize-y p-2 mono text-xs" />
+        <form className="grid min-w-0 grid-cols-1 gap-2" onSubmit={(event) => { event.preventDefault(); void run("configuration", () => buildsApi.addConfiguration(build.id, configuration), "Configuration saved", () => setConfiguration({ name: "", format: "yaml", contentText: "" })); }}>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_110px]"><input aria-label="Configuration name" required maxLength={200} value={configuration.name} onChange={(event) => setConfiguration({ ...configuration, name: event.target.value })} placeholder="Motor controller" className="input-bare h-9" /><select aria-label="Configuration format" value={configuration.format} onChange={(event) => setConfiguration({ ...configuration, format: event.target.value })} className="input-bare h-9"><option>yaml</option><option>json</option><option>toml</option><option>xml</option><option>text</option></select></div>
+          <RichTechnicalEditor value={configuration.contentText} onChange={(value) => setConfiguration({ ...configuration, contentText: value })} label="Configuration content" placeholder="motor:\n  current_limit: 12" maxLength={200_000} minRows={6} autosaveKey={`build-${build.id}-configuration`} mono />
           <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Save configuration</button>
         </form>
         <div className="mt-3 space-y-2">{build.configurations.map((item) => <RecordRow key={item.id} title={item.name} meta={`${item.format} · v${item.version}`} detail={item.contentText ?? "Attached file"} busy={busy === `delete-${item.id}`} onDelete={() => void remove("configuration", item.id, item.name)} />)}</div>
       </section>
 
-      <section className="rounded border border-border p-3">
+      <section className="min-w-0 rounded border border-border p-3">
         <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Firmware</h3><span className="badge-neutral mono">{build.firmware.length}</span></div>
-        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("firmware", () => buildsApi.addFirmware(build.id, { ...firmware, repositoryUrl: firmware.repositoryUrl || null, revision: firmware.revision || null, licenseSpdx: firmware.licenseSpdx || null, notes: firmware.notes || null }), "Firmware reference saved", () => setFirmware({ name: "", repositoryUrl: "", revision: "", licenseSpdx: "", notes: "" })); }}>
+        <form className="grid min-w-0 grid-cols-1 gap-2" onSubmit={(event) => { event.preventDefault(); void run("firmware", () => buildsApi.addFirmware(build.id, { ...firmware, repositoryUrl: firmware.repositoryUrl || null, revision: firmware.revision || null, licenseSpdx: firmware.licenseSpdx || null, notes: firmware.notes || null }), "Firmware reference saved", () => setFirmware({ name: "", repositoryUrl: "", revision: "", licenseSpdx: "", notes: "" })); }}>
           <input aria-label="Firmware name" required maxLength={200} value={firmware.name} onChange={(event) => setFirmware({ ...firmware, name: event.target.value })} placeholder="Drive firmware" className="input-bare h-9" />
           <input aria-label="Firmware repository URL" required type="url" maxLength={2048} value={firmware.repositoryUrl} onChange={(event) => setFirmware({ ...firmware, repositoryUrl: event.target.value })} placeholder="https://github.com/org/firmware" className="input-bare h-9" />
-          <div className="grid grid-cols-2 gap-2"><input aria-label="Firmware revision" maxLength={200} value={firmware.revision} onChange={(event) => setFirmware({ ...firmware, revision: event.target.value })} placeholder="Revision / tag" className="input-bare h-9" /><input aria-label="Firmware license" maxLength={100} value={firmware.licenseSpdx} onChange={(event) => setFirmware({ ...firmware, licenseSpdx: event.target.value })} placeholder="SPDX license" className="input-bare h-9" /></div>
-          <input aria-label="Firmware notes" maxLength={10000} value={firmware.notes} onChange={(event) => setFirmware({ ...firmware, notes: event.target.value })} placeholder="Reproducibility notes" className="input-bare h-9" />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><input aria-label="Firmware revision" maxLength={200} value={firmware.revision} onChange={(event) => setFirmware({ ...firmware, revision: event.target.value })} placeholder="Revision / tag" className="input-bare h-9" /><input aria-label="Firmware license" maxLength={100} value={firmware.licenseSpdx} onChange={(event) => setFirmware({ ...firmware, licenseSpdx: event.target.value })} placeholder="SPDX license" className="input-bare h-9" /></div>
+          <RichTechnicalEditor value={firmware.notes} onChange={(value) => setFirmware({ ...firmware, notes: value })} label="Firmware reproducibility notes" placeholder="Pinned dependencies, flashing method, configuration, and known limitations" maxLength={10_000} minRows={4} autosaveKey={`build-${build.id}-firmware-notes`} />
           <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Save firmware</button>
         </form>
         <div className="mt-3 space-y-2">{build.firmware.map((item) => <RecordRow key={item.id} title={item.name} meta={[item.revision, item.licenseSpdx].filter(Boolean).join(" · ") || "Unpinned"} detail={item.repositoryUrl ?? item.notes ?? "Attached file"} href={item.repositoryUrl} busy={busy === `delete-${item.id}`} onDelete={() => void remove("firmware", item.id, item.name)} />)}</div>
       </section>
 
-      <section className="rounded border border-border p-3">
+      <section className="min-w-0 rounded border border-border p-3">
         <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Calibrations</h3><span className="badge-neutral mono">{build.calibrations.length}</span></div>
-        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("calibration", () => buildsApi.addCalibration(build.id, { name: calibration.name, procedureText: calibration.procedureText || null, resultData: calibration.resultNotes ? { notes: calibration.resultNotes } : {}, status: calibration.status }), "Calibration recorded", () => setCalibration({ name: "", procedureText: "", resultNotes: "", status: "pending" })); }}>
-          <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-2"><input aria-label="Calibration name" required maxLength={200} value={calibration.name} onChange={(event) => setCalibration({ ...calibration, name: event.target.value })} placeholder="Encoder zero" className="input-bare h-9" /><select aria-label="Calibration status" value={calibration.status} onChange={(event) => setCalibration({ ...calibration, status: event.target.value as typeof calibration.status })} className="input-bare h-9"><option value="pending">Pending</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="superseded">Superseded</option></select></div>
-          <textarea aria-label="Calibration procedure" maxLength={20000} rows={2} value={calibration.procedureText} onChange={(event) => setCalibration({ ...calibration, procedureText: event.target.value })} placeholder="Procedure" className="input-bare resize-y p-2 text-xs" />
-          <input aria-label="Calibration result notes" maxLength={10000} value={calibration.resultNotes} onChange={(event) => setCalibration({ ...calibration, resultNotes: event.target.value })} placeholder="Result measurements / notes" className="input-bare h-9" />
+        <form className="grid min-w-0 grid-cols-1 gap-2" onSubmit={(event) => { event.preventDefault(); void run("calibration", () => buildsApi.addCalibration(build.id, { name: calibration.name, procedureText: calibration.procedureText || null, resultData: calibration.resultNotes ? { notes: calibration.resultNotes } : {}, status: calibration.status }), "Calibration recorded", () => setCalibration({ name: "", procedureText: "", resultNotes: "", status: "pending" })); }}>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_120px]"><input aria-label="Calibration name" required maxLength={200} value={calibration.name} onChange={(event) => setCalibration({ ...calibration, name: event.target.value })} placeholder="Encoder zero" className="input-bare h-9" /><select aria-label="Calibration status" value={calibration.status} onChange={(event) => setCalibration({ ...calibration, status: event.target.value as typeof calibration.status })} className="input-bare h-9"><option value="pending">Pending</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="superseded">Superseded</option></select></div>
+          <RichTechnicalEditor value={calibration.procedureText} onChange={(value) => setCalibration({ ...calibration, procedureText: value })} label="Calibration procedure" placeholder="Method, equipment, conditions, and units" maxLength={20_000} minRows={5} autosaveKey={`build-${build.id}-calibration-procedure`} />
+          <RichTechnicalEditor value={calibration.resultNotes} onChange={(value) => setCalibration({ ...calibration, resultNotes: value })} label="Calibration result and measurements" placeholder="Measured result, units, uncertainty, and evidence" maxLength={10_000} minRows={4} autosaveKey={`build-${build.id}-calibration-result`} />
           <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Record calibration</button>
         </form>
         <div className="mt-3 space-y-2">{build.calibrations.map((item) => <RecordRow key={item.id} title={item.name} meta={item.status} detail={item.procedureText ?? JSON.stringify(item.resultData)} busy={busy === `delete-${item.id}`} onDelete={() => void remove("calibration", item.id, item.name)} />)}</div>
       </section>
 
-      <section className="rounded border border-border p-3">
+      <section className="min-w-0 rounded border border-border p-3">
         <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Verification tests</h3><span className="badge-neutral mono">{build.tests.length}</span></div>
-        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("test", () => buildsApi.addTest(build.id, { ...test, expectedText: test.expectedText || null, observedText: test.observedText || null, evidenceFileId: test.evidenceFileId || null }), "Test result recorded", () => setTest({ name: "", methodText: "", expectedText: "", observedText: "", result: "pending", evidenceFileId: "" })); }}>
-          <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-2"><input aria-label="Test name" required maxLength={200} value={test.name} onChange={(event) => setTest({ ...test, name: event.target.value })} placeholder="No-load spin" className="input-bare h-9" /><select aria-label="Test result" value={test.result} onChange={(event) => setTest({ ...test, result: event.target.value as typeof test.result })} className="input-bare h-9"><option value="pending">Pending</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="inconclusive">Inconclusive</option></select></div>
-          <textarea aria-label="Test method" required maxLength={20000} rows={2} value={test.methodText} onChange={(event) => setTest({ ...test, methodText: event.target.value })} placeholder="Method and conditions" className="input-bare resize-y p-2 text-xs" />
-          <div className="grid grid-cols-2 gap-2"><input aria-label="Expected test result" maxLength={20000} value={test.expectedText} onChange={(event) => setTest({ ...test, expectedText: event.target.value })} placeholder="Expected" className="input-bare h-9" /><input aria-label="Observed test result" maxLength={20000} value={test.observedText} onChange={(event) => setTest({ ...test, observedText: event.target.value })} placeholder="Observed" className="input-bare h-9" /></div>
+        <form className="grid min-w-0 grid-cols-1 gap-2" onSubmit={(event) => { event.preventDefault(); void run("test", () => buildsApi.addTest(build.id, { ...test, expectedText: test.expectedText || null, observedText: test.observedText || null, evidenceFileId: test.evidenceFileId || null }), "Test result recorded", () => setTest({ name: "", methodText: "", expectedText: "", observedText: "", result: "pending", evidenceFileId: "" })); }}>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_120px]"><input aria-label="Test name" required maxLength={200} value={test.name} onChange={(event) => setTest({ ...test, name: event.target.value })} placeholder="No-load spin" className="input-bare h-9" /><select aria-label="Test result" value={test.result} onChange={(event) => setTest({ ...test, result: event.target.value as typeof test.result })} className="input-bare h-9"><option value="pending">Pending</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="inconclusive">Inconclusive</option></select></div>
+          <RichTechnicalEditor value={test.methodText} onChange={(value) => setTest({ ...test, methodText: value })} label="Test method and conditions" placeholder="Method, setup, conditions, units, and acceptance criteria" maxLength={20_000} minRows={5} autosaveKey={`build-${build.id}-test-method`} />
+          <div className="grid grid-cols-1 gap-2 xl:grid-cols-2"><RichTechnicalEditor value={test.expectedText} onChange={(value) => setTest({ ...test, expectedText: value })} label="Expected test result" maxLength={20_000} minRows={4} autosaveKey={`build-${build.id}-test-expected`} /><RichTechnicalEditor value={test.observedText} onChange={(value) => setTest({ ...test, observedText: value })} label="Observed test result" maxLength={20_000} minRows={4} autosaveKey={`build-${build.id}-test-observed`} /></div>
           <select aria-label="Test evidence file" value={test.evidenceFileId} onChange={(event) => setTest({ ...test, evidenceFileId: event.target.value })} className="input-bare h-9"><option value="">No evidence file</option>{build.files.map((file) => <option key={file.id} value={file.id}>{file.originalName}</option>)}</select>
           <button disabled={busy !== null} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Record test</button>
         </form>

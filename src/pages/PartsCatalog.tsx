@@ -9,6 +9,7 @@ import { PartsTable } from "@/components/parts/PartsTable";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CatalogDataNotice } from "@/components/parts/CatalogDataNotice";
 import { CompareTray } from "@/components/parts/CompareTray";
+import { Filter, X } from "lucide-react";
 
 const allCats: PartCategory[] = ["actuator","hand","sensor","compute","driver","reducer"];
 const joints = ["shoulder","elbow","wrist","hip","knee","ankle","neck","gripper"];
@@ -52,6 +53,7 @@ export default function PartsCatalog() {
   const cat = (allCats.includes(category as PartCategory) ? category : "actuator") as PartCategory;
   const [sp, setSp] = useSearchParams();
   const [wsTick, setWsTick] = useState(0);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const getStr = (k: string) => sp.get(k) ?? "";
   const getNum = (k: string, opts: { allowNegative?: boolean } = {}) => {
@@ -232,11 +234,15 @@ export default function PartsCatalog() {
           <Stat label="Median lead (fixture)" value={overview.medianLead != null ? `${overview.medianLead}d` : "—"} />
         </div>
 
+        <button type="button" onClick={() => setMobileFiltersOpen(true)} aria-expanded={mobileFiltersOpen} className="btn-ghost mb-3 w-full lg:hidden">
+          <Filter className="h-4 w-4" /> Filters {activeCount > 0 && <span className="badge-neutral">{activeCount}</span>}
+        </button>
+        {mobileFiltersOpen && <button type="button" aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)} className="fixed inset-0 z-40 bg-black/45 lg:hidden" />}
         <div className="grid gap-3 lg:grid-cols-[212px_1fr]">
-          <aside className="surface-card p-2.5 h-fit lg:sticky lg:top-[112px] max-h-[calc(100vh-120px)] overflow-y-auto">
+          <aside aria-label="Catalog filters" className={`${mobileFiltersOpen ? "fixed inset-y-0 left-0 z-50 block w-[min(88vw,340px)] rounded-none p-4" : "hidden"} surface-card h-fit max-h-dvh overflow-y-auto lg:sticky lg:top-[112px] lg:block lg:w-auto lg:max-h-[calc(100vh-120px)] lg:p-2.5`}>
             <div className="flex items-center justify-between mb-2">
               <div className="section-title">Filters {activeCount > 0 && <span className="ml-1 pill pill-yellow">{activeCount}</span>}</div>
-              {activeCount > 0 && <button onClick={clearAll} className="text-[11px] text-muted-foreground hover:text-primary">clear</button>}
+              <div className="flex items-center gap-1">{activeCount > 0 && <button onClick={clearAll} className="min-h-11 px-2 text-[11px] text-muted-foreground hover:text-primary lg:min-h-0">clear</button>}<button type="button" aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)} className="grid min-h-11 min-w-11 place-items-center rounded hover:bg-muted lg:hidden"><X className="h-4 w-4" /></button></div>
             </div>
 
             <Section title="Search" count={q ? 1 : 0}>

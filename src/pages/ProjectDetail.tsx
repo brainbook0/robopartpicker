@@ -13,6 +13,9 @@ import { attachFile, detachProjectFile, listProjectFiles, uploadFile, type FileK
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 import { createReleaseBuildPassport, listPortableReleases, type PortableRppsReleaseSummary } from "@/lib/rpps/client";
 import { ReleaseCollaborationPanel } from "@/components/projects/ReleaseCollaborationPanel";
+import { ProjectAiPanel } from "@/components/projects/ProjectAiPanel";
+import { ProjectPeoplePanel } from "@/components/projects/ProjectPeoplePanel";
+import { projectSystemsApi } from "@/lib/api/systems";
 
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 
@@ -22,6 +25,13 @@ export default function ProjectDetail() {
   const nav = useNavigate();
   const [p, setP] = useState<ProjectRow | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!p?.id) return;
+    let sessionId = sessionStorage.getItem("rpp-analytics-session");
+    if (!sessionId) { sessionId = crypto.randomUUID(); sessionStorage.setItem("rpp-analytics-session", sessionId); }
+    void projectSystemsApi.recordAnalytics(p.id, "view", sessionId).catch(() => undefined);
+  }, [p?.id]);
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [managedFiles, setManagedFiles] = useState<ProjectFile[]>([]);
@@ -458,6 +468,9 @@ export default function ProjectDetail() {
 
         {/* Sticky technical summary */}
         <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
+          <ProjectAiPanel projectId={p.id} projectName={p.name} />
+          <ProjectPeoplePanel projectId={p.id} organizationId={p.organization_id} canManage={canEditRpps} />
+          <div className="surface-card grid grid-cols-2 gap-2 p-3"><Link to={`/projects/${p.slug}/records`} className="btn-ghost min-h-10 justify-center">Technical records</Link>{canEditRpps && <Link to={`/projects/${p.slug}/analytics`} className="btn-ghost min-h-10 justify-center">Creator analytics</Link>}<Link to="/imports" className="btn-ghost min-h-10 justify-center">Import files</Link><Link to={`/community/new?relatedType=project&relatedId=${p.id}`} className="btn-ghost min-h-10 justify-center">Ask community</Link></div>
           <Section title="Hardware">
             <KV rows={[
               ["DoF", p.rpps.hardware?.dof],

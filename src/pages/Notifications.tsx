@@ -12,6 +12,19 @@ const preferenceTypes = [
   ["community_reply", "Community replies"],
   ["marketplace_inquiry", "Marketplace inquiries"],
   ["import_review", "Import review"],
+  ["mention", "Mentions"],
+  ["message", "Direct messages"],
+  ["message_request", "Message requests"],
+  ["accepted_answer", "Accepted answers"],
+  ["project_change", "Project changes"],
+  ["contribution_proposal", "Contribution proposals"],
+  ["contribution_review", "Review decisions"],
+  ["reproduction", "Reproductions and forks"],
+  ["missing_information_resolution", "Resolved information gaps"],
+  ["import_completion", "Import completion"],
+  ["bom_verification_result", "Verification results"],
+  ["saved_search_match", "Saved-search matches"],
+  ["availability_change", "Availability and price changes"],
 ] as const;
 
 export default function Notifications() {
@@ -70,17 +83,18 @@ export default function Notifications() {
 
 function Preferences({ items, busy, setBusy, onSaved }: { items: NotificationPreference[]; busy: string | null; setBusy: (value: string | null) => void; onSaved: () => Promise<void> }) {
   const byType = new Map(items.map((item) => [item.notificationType, item]));
-  const update = async (notificationType: string, channel: "inAppEnabled" | "emailEnabled", enabled: boolean) => {
+  const update = async (notificationType: string, channel: "inAppEnabled" | "emailEnabled" | "pushEnabled", enabled: boolean) => {
     const current = byType.get(notificationType);
     setBusy(`preference-${notificationType}`);
     try {
-      await notificationsApi.updatePreference({ notificationType, inAppEnabled: channel === "inAppEnabled" ? enabled : current?.inAppEnabled !== 0, emailEnabled: channel === "emailEnabled" ? enabled : current?.emailEnabled === 1 });
+      await notificationsApi.updatePreference({ notificationType, inAppEnabled: channel === "inAppEnabled" ? enabled : current?.inAppEnabled !== 0, emailEnabled: channel === "emailEnabled" ? enabled : current?.emailEnabled === 1, pushEnabled: channel === "pushEnabled" ? enabled : current?.pushEnabled === 1, deliverySchedule: current?.deliverySchedule ?? "individual" });
       await onSaved();
       toast({ title: "Notification preference saved" });
     } catch (error) { toast({ title: "Could not save preference", description: message(error), variant: "destructive" }); }
     finally { setBusy(null); }
   };
-  return <aside className="surface-card self-start p-3"><div className="section-title mb-1">Preferences</div><p className="mb-3 text-[11px] text-muted-foreground">Email switches store intent only; delivery starts when the email provider is configured.</p><div className="space-y-3">{preferenceTypes.map(([type, label]) => { const item = byType.get(type); const disabled = busy === `preference-${type}`; return <div key={type} className="rounded border border-border p-2"><div className="mb-2 text-xs font-medium">{label}</div><label className="mr-4 inline-flex items-center gap-1.5 text-[11px]"><input type="checkbox" disabled={disabled} checked={item?.inAppEnabled !== 0} onChange={(event) => void update(type, "inAppEnabled", event.target.checked)} /> In app</label><label className="inline-flex items-center gap-1.5 text-[11px]"><input type="checkbox" disabled={disabled} checked={item?.emailEnabled === 1} onChange={(event) => void update(type, "emailEnabled", event.target.checked)} /> Email</label></div>; })}</div></aside>;
+  const schedule = async (notificationType: string, deliverySchedule: NotificationPreference["deliverySchedule"]) => { const current = byType.get(notificationType); setBusy(`preference-${notificationType}`); try { await notificationsApi.updatePreference({ notificationType, inAppEnabled: current?.inAppEnabled !== 0, emailEnabled: current?.emailEnabled === 1, pushEnabled: current?.pushEnabled === 1, deliverySchedule }); await onSaved(); } catch (error) { toast({ title: "Could not save preference", description: message(error), variant: "destructive" }); } finally { setBusy(null); } };
+  return <aside className="surface-card self-start p-3"><div className="section-title mb-1">Preferences</div><p className="mb-3 text-[11px] text-muted-foreground">Choose individual, batched, or digest delivery. Email and push require configured providers.</p><div className="space-y-3">{preferenceTypes.map(([type, label]) => { const item = byType.get(type); const disabled = busy === `preference-${type}`; return <div key={type} className="rounded border border-border p-2"><div className="mb-2 text-xs font-medium">{label}</div><div className="flex flex-wrap gap-3"><label className="inline-flex items-center gap-1.5 text-[11px]"><input type="checkbox" disabled={disabled} checked={item?.inAppEnabled !== 0} onChange={(event) => void update(type, "inAppEnabled", event.target.checked)} /> In app</label><label className="inline-flex items-center gap-1.5 text-[11px]"><input type="checkbox" disabled={disabled} checked={item?.emailEnabled === 1} onChange={(event) => void update(type, "emailEnabled", event.target.checked)} /> Email</label><label className="inline-flex items-center gap-1.5 text-[11px]"><input type="checkbox" disabled={disabled} checked={item?.pushEnabled === 1} onChange={(event) => void update(type, "pushEnabled", event.target.checked)} /> Push</label></div><select aria-label={`${label} delivery schedule`} disabled={disabled} className="input-bare mt-2 text-[11px]" value={item?.deliverySchedule ?? "individual"} onChange={(event) => void schedule(type, event.target.value as NotificationPreference["deliverySchedule"])}><option value="individual">Individual</option><option value="batched">Batched</option><option value="daily_digest">Daily digest</option><option value="weekly_digest">Weekly digest</option><option value="off">Off</option></select></div>; })}</div></aside>;
 }
 
 function Centered({ children }: { children: React.ReactNode }) { return <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center gap-3 px-4 text-center">{children}</div>; }

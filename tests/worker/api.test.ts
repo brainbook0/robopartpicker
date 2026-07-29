@@ -157,8 +157,8 @@ beforeAll(async () => {
 describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
-    expect(Number(migrations?.value)).toBe(13);
-    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.5.0" });
+    expect(Number(migrations?.value)).toBe(14);
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.6.0" });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
     const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
@@ -564,6 +564,22 @@ extensions:`);
     expect((await body<{ item: { reproduction_count: number; successful_reproduction_count: number } }>(projectAfterOutcome)).item)
       .toMatchObject({ reproduction_count: 1, successful_reproduction_count: 1 });
 
+    const privateAttribution = await call(`/api/v1/projects/${projectId}/reproductions`);
+    expect(privateAttribution.status).toBe(200);
+    expect(await body(privateAttribution)).toMatchObject({
+      publicAttributionCount: 0,
+      privateAttributionCount: 1,
+      items: [expect.objectContaining({ outcome: "succeeded", independence: "independent", builder_name: null, attribution_public: 0 })],
+    });
+    await env.DB.prepare("UPDATE builds SET visibility = 'public' WHERE id = ?1").bind(startedBody.item.id).run();
+    const publicAttribution = await call(`/api/v1/projects/${projectId}/reproductions`);
+    expect(publicAttribution.status).toBe(200);
+    expect(await body(publicAttribution)).toMatchObject({
+      publicAttributionCount: 1,
+      privateAttributionCount: 0,
+      items: [expect.objectContaining({ outcome: "succeeded", builder_name: "Other User", attribution_public: 1 })],
+    });
+
     const proposal = await call(`/api/v1/projects/${projectId}/releases/${release.id}/proposals`, { method: "POST", body: jsonBody({
       type: "correct_component_identity", targetComponentId: "component:motor", manufacturer: "Test Motors", mpn: "TM-42-R2",
       rationale: "The independently built unit used the R2 manufacturer revision and the manifest should preserve that exact identity.",
@@ -920,5 +936,70 @@ extensions:`);
     const signin = await call("/api/auth/sign-in/email", { method: "POST", body: jsonBody({ email, password }) });
     expect(signin.status).toBe(200); const renewedCookie = cookies(signin);
     const after = await call("/api/v1/me", {}, renewedCookie); expect(after.status).toBe(200);
+  });
+
+  it("persists technical evidence, resolves information gaps, and protects private project records", async () => {
+    const created = await call("/api/v1/projects", { method: "POST", body: jsonBody({ visibility: "public", rpps: emptyRpps({ name: "Evidence Workflow Robot", slug: `evidence-workflow-${crypto.randomUUID().slice(0, 8)}` }) }) }, ownerCookie);
+    expect(created.status).toBe(201); const project = (await body<{ item: { id: string } }>(created)).item;
+    const privateRecord = await call("/api/v1/technical-records", { method: "POST", body: jsonBody({ recordType: "test_result", projectId: project.id, title: "Private drivetrain test", resultText: "Observed 4.2 A peak current under a 2 kg load.", confidence: 0.9, visibility: "private" }) }, ownerCookie);
+    expect(privateRecord.status).toBe(201);
+    const collaborators = await call(`/api/v1/projects/${project.id}/collaborators`, {}, ownerCookie);
+    expect(collaborators.status).toBe(200);
+    expect((await body<{ items: Array<{ user_id: string; role: string; status: string }> }>(collaborators)).items)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ user_id: ownerId, role: "owner", status: "active" })]));
+    const ownerRecords = await call(`/api/v1/technical-records?projectId=${project.id}`, {}, ownerCookie); expect(ownerRecords.status).toBe(200); expect((await body<{ items: unknown[] }>(ownerRecords)).items).toHaveLength(1);
+    const publicRecords = await call(`/api/v1/technical-records?projectId=${project.id}`, {}, otherCookie); expect(publicRecords.status).toBe(200); expect((await body<{ items: unknown[] }>(publicRecords)).items).toHaveLength(0);
+
+    const gap = await call(`/api/v1/projects/${project.id}/missing-information`, { method: "POST", body: jsonBody({ question: "Which encoder firmware revision was tested?", missingFields: ["firmware revision"], reliabilityReason: "No configuration snapshot names the encoder firmware.", suggestedSources: ["firmware manifest"], visibility: "project" }) }, ownerCookie);
+    expect(gap.status).toBe(201); const gapId = (await body<{ id: string }>(gap)).id;
+    const response = await call(`/api/v1/missing-information/${gapId}/responses`, { method: "POST", body: jsonBody({ responseText: "The attached build log identifies encoder firmware revision 2.3.1.", sources: [{ type: "build-log", revision: "2.3.1" }], fileIds: [] }) }, otherCookie);
+    expect(response.status).toBe(201); const responseId = (await body<{ id: string }>(response)).id;
+    const approved = await call(`/api/v1/missing-information/responses/${responseId}/review`, { method: "POST", body: jsonBody({ decision: "approve", notes: "Revision is explicitly recorded." }) }, ownerCookie);
+    expect(approved.status).toBe(200); expect((await body<{ status: string }>(approved)).status).toBe("resolved");
+    const resolved = await call(`/api/v1/missing-information/${gapId}`, {}, ownerCookie); expect(resolved.status).toBe(200); expect((await body<{ item: { status: string } }>(resolved)).item.status).toBe("resolved");
+
+    const friction = await call("/api/v1/ai/friction", { method: "POST", body: jsonBody({ category: "user_correction", feature: "technical-record", context: { field: "firmware" }, userCorrection: "Revision is 2.3.1", projectId: project.id }) }, ownerCookie);
+    expect(friction.status).toBe(201); const frictionId = (await body<{ id: string }>(friction)).id;
+    const listed = await call("/api/v1/ai/friction", {}, ownerCookie); expect(listed.status).toBe(200); expect((await body<{ items: Array<{ id: string }> }>(listed)).items.some((item) => item.id === frictionId)).toBe(true);
+    const removed = await call(`/api/v1/ai/friction/${frictionId}`, { method: "DELETE" }, ownerCookie); expect(removed.status).toBe(204);
+
+    const analytics = await call(`/api/v1/projects/${project.id}/analytics/events`, { method: "POST", body: jsonBody({ eventType: "view", sessionId: "worker-test-session", metadata: { surface: "project" } }) }); expect(analytics.status).toBe(201);
+    const creatorAnalytics = await call(`/api/v1/projects/${project.id}/analytics`, {}, ownerCookie); expect(creatorAnalytics.status).toBe(200); expect((await body<{ privateMetrics: { uniqueViews: number } }>(creatorAnalytics)).privateMetrics.uniqueViews).toBeGreaterThanOrEqual(1);
+  });
+
+  it("enforces message requests and creates safe active conversations", async () => {
+    const requested = await call("/api/v1/messages/conversations", { method: "POST", body: jsonBody({ recipientUserId: otherId, contextType: "general", message: "Could we compare actuator test evidence?" }) }, ownerCookie);
+    expect(requested.status).toBe(201); const conversation = await body<{ id: string; status: string }>(requested); expect(conversation.status).toBe("requested");
+    const pending = await call(`/api/v1/messages/conversations/${conversation.id}`, {}, otherCookie); expect(pending.status).toBe(200); expect((await body<{ membership: { request_status: string } }>(pending)).membership.request_status).toBe("pending");
+    const accepted = await call(`/api/v1/messages/conversations/${conversation.id}/respond`, { method: "POST", body: jsonBody({ accept: true }) }, otherCookie); expect(accepted.status).toBe(200);
+    const sent = await call(`/api/v1/messages/conversations/${conversation.id}/messages`, { method: "POST", body: jsonBody({ bodyMarkdown: "Yes—please send the **measured conditions**." }) }, ownerCookie); expect(sent.status).toBe(201); expect((await body<{ status: string }>(sent)).status).toBe("sent");
+    const inbox = await call("/api/v1/messages/conversations", {}, otherCookie); expect(inbox.status).toBe(200); expect((await body<{ items: Array<{ id: string }> }>(inbox)).items.some((item) => item.id === conversation.id)).toBe(true);
+  });
+
+  it("queues static robot imports and bounds the job to its owner", async () => {
+    const fileId = await uploadTestFile("test-robot.urdf", `<robot name="safe"><link name="base"/><link name="arm"/><joint name="axis" type="revolute"><parent link="base"/><child link="arm"/></joint></robot>`, ownerCookie, "urdf");
+    const queued = await call("/api/v1/imports/project-jobs", { method: "POST", body: jsonBody({ fileIds: [fileId], idempotencyKey: `worker-import-${crypto.randomUUID()}` }) }, ownerCookie);
+    expect(queued.status).toBe(202); const jobId = (await body<{ item: { id: string } }>(queued)).item.id;
+    const detail = await call(`/api/v1/imports/project-jobs/${jobId}`, {}, ownerCookie); expect(detail.status).toBe(200); expect((await body<{ files: Array<{ format_key: string }> }>(detail)).files[0].format_key).toBe("urdf");
+    const denied = await call(`/api/v1/imports/project-jobs/${jobId}`, {}, otherCookie); expect(denied.status).toBe(404);
+  });
+
+  it("tracks exact BOM verification versions and robot part-out drafts", async () => {
+    const projectResponse = await call("/api/v1/projects", { method: "POST", body: jsonBody({ visibility: "private", rpps: emptyRpps({ name: "Verification Robot", slug: `verification-${crypto.randomUUID().slice(0, 8)}`, bom: [{ name: "TM-42 Motor", qty: 2, mpn: "TM-42" }] }) }) }, ownerCookie);
+    expect(projectResponse.status).toBe(201); const projectId = (await body<{ item: { id: string } }>(projectResponse)).item.id;
+    const verification = await call("/api/v1/bom-verifications", { method: "POST", body: jsonBody({ projectId, sourceType: "manual", snapshot: { title: "Original" }, lines: [{ lineKey: "motor", rawText: "2x TM-42 Motor", identity: { mpn: "TM-42" }, quantity: 2, status: "unresolved", confidence: 0.6 }] }) }, ownerCookie);
+    expect(verification.status).toBe(201); const verificationId = (await body<{ id: string }>(verification)).id;
+    const correction = await call(`/api/v1/bom-verifications/${verificationId}/versions`, { method: "POST", body: jsonBody({ snapshot: { title: "Corrected" }, changeDescription: "Confirmed manufacturer part number", lines: [{ lineKey: "motor", rawText: "2x TM-42 Motor", componentId: "c-test", identity: { mpn: "TM-42" }, quantity: 2, status: "resolved", confidence: 1 }] }) }, ownerCookie); expect(correction.status).toBe(201);
+    expect((await call(`/api/v1/bom-verifications/${verificationId}/submit`, { method: "POST" }, ownerCookie)).status).toBe(200);
+    expect((await call(`/api/v1/bom-verifications/${verificationId}/reviews`, { method: "POST", body: jsonBody({ decision: "verify", notes: "Component identity matches the catalog." }) }, ownerCookie)).status).toBe(200);
+    const verificationDetail = await call(`/api/v1/bom-verifications/${verificationId}`, {}, ownerCookie); expect(verificationDetail.status).toBe(200); const verificationBody = await body<{ item: { status: string }; versions: unknown[] }>(verificationDetail); expect(verificationBody.item.status).toBe("verified"); expect(verificationBody.versions).toHaveLength(2);
+
+    const build = await call("/api/v1/builds", { method: "POST", body: jsonBody({ name: "Part-out source robot", visibility: "private" }) }, ownerCookie); expect(build.status).toBe(201); const sourceBuildId = (await body<{ item: { id: string } }>(build)).item.id;
+    expect((await call(`/api/v1/builds/${sourceBuildId}/items`, { method: "POST", body: jsonBody({ componentId: "c-test", description: "TM-42 Motor", quantity: 2 }) }, ownerCookie)).status).toBe(201);
+    const partOut = await call("/api/v1/marketplace/part-outs", { method: "POST", body: jsonBody({ sourceBuildId, currency: "USD" }) }, ownerCookie); expect(partOut.status).toBe(201); const partOutId = (await body<{ id: string }>(partOut)).id;
+    const inventory = await call(`/api/v1/marketplace/part-outs/${partOutId}`, {}, ownerCookie); expect(inventory.status).toBe(200); const itemId = (await body<{ items: Array<{ id: string }> }>(inventory)).items[0].id;
+    expect((await call(`/api/v1/marketplace/part-outs/${partOutId}/items/${itemId}`, { method: "PATCH", body: jsonBody({ presenceStatus: "present", conditionGrade: "B", testEvidence: [{ method: "spin test", result: "passed" }], pricing: { askingMinor: 12000 } }) }, ownerCookie)).status).toBe(200);
+    const estimate = await call(`/api/v1/marketplace/part-outs/${partOutId}/estimates`, { method: "POST", body: jsonBody({ shippingComplexity: "medium", estimatedFeeRate: 0.13, ageAssumptionYears: 2 }) }, ownerCookie); expect(estimate.status).toBe(200); expect((await body<{ estimates: unknown[] }>(estimate)).estimates).toHaveLength(2);
+    const drafts = await call(`/api/v1/marketplace/part-outs/${partOutId}/draft-listings`, { method: "POST", body: jsonBody({ itemIds: [itemId], bundleIds: [] }) }, ownerCookie); expect(drafts.status).toBe(201); expect((await body<{ items: unknown[] }>(drafts)).items).toHaveLength(1);
   });
 });

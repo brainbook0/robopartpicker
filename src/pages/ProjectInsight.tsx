@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ExternalLink, GitPullRequest } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleDashed, ExternalLink, GitPullRequest, LockKeyhole } from "lucide-react";
 import { getProjectBySlug, type ProjectRow } from "@/lib/projects";
+import { projectSystemsApi, type ProjectReproduction } from "@/lib/api/systems";
 
 const aspects = ["reproducibility", "cost", "schedule", "parts", "assembly", "software", "integrations", "evidence"] as const;
 type Aspect = (typeof aspects)[number];
@@ -57,6 +59,8 @@ function AspectContent({ project, aspect }: { project: ProjectRow; aspect: Aspec
   const priced = bom.filter((item) => item.unit_cost_usd != null);
   const knownCost = priced.reduce((sum, item) => sum + (item.unit_cost_usd ?? 0) * item.qty, 0);
 
+  if (aspect === "reproducibility") return <ReproductionContent project={project} />;
+
   if (aspect === "cost") return <div className="space-y-3">
     <MetricGrid metrics={[
       ["Known parts cost", priced.length ? money(knownCost) : "Not resolved"],
@@ -101,10 +105,47 @@ function AspectContent({ project, aspect }: { project: ProjectRow; aspect: Aspec
 
   if (aspect === "evidence") return <div className="space-y-3"><Card title="Evidence sources">{(project.rpps.evidence ?? []).length ? <ul className="space-y-2">{project.rpps.evidence?.map((item, index) => <li key={index} className="rounded border border-border p-2 text-[12px]"><div className="flex flex-wrap justify-between gap-2"><span>{item.claim}</span><span className="mono text-[10px] text-muted-foreground">{item.source_type}{item.confidence == null ? "" : ` · ${Math.round(item.confidence * 100)}% confidence`}</span></div>{item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-primary hover:underline">Open source <ExternalLink className="h-3 w-3" /></a>}</li>)}</ul> : <Empty>No evidence claims have been recorded.</Empty>}</Card><Card title="Evidence levels"><p className="text-[12px] text-muted-foreground">Structured means required artifacts are present. Tested means the maintainer supplied a completed build and evidence. Reproduced means at least one independent builder succeeded. Repeated means multiple independent builders succeeded. Current means parts, links, and procedures were recently revalidated.</p></Card></div>;
 
+  return <State>Unknown project detail.</State>;
+}
+
+function ReproductionContent({ project }: { project: ProjectRow }) {
+  const reproductions = useQuery({
+    queryKey: ["project-reproductions", project.id],
+    queryFn: ({ signal }) => projectSystemsApi.reproductions(project.id, signal),
+  });
+
   return <div className="space-y-3">
-    <MetricGrid metrics={[["Build passports", String(project.reproduction_count)], ["Independent successes", String(project.successful_reproduction_count)], ["Published project", project.status === "published" ? "Yes" : "No"], ["Evidence sources", String(project.rpps.evidence?.length ?? 0)]]} />
-    <Card title="What the counts mean"><p className="text-[12px] leading-relaxed text-muted-foreground">A reproduction is a personal build passport locked to an exact immutable release. A successful reproduction only counts here after an independent builder records evidence and submits a successful outcome. Private build details remain private even though the aggregate count contributes to project confidence.</p><Link to={`/projects/${project.slug}#portable-releases`} className="btn-primary btn-sm mt-3 inline-flex">Reproduce or report an outcome</Link></Card>
+    <MetricGrid metrics={[
+      ["Build passports", String(project.reproduction_count)],
+      ["Independent successes", String(project.successful_reproduction_count)],
+      ["Public builders", reproductions.data ? String(reproductions.data.publicAttributionCount) : "—"],
+      ["Private builders", reproductions.data ? String(reproductions.data.privateAttributionCount) : "—"],
+    ]} />
+    <Card title="Who has reproduced this project">
+      {reproductions.isLoading && <Empty>Loading builder outcomes…</Empty>}
+      {reproductions.error && <p role="alert" className="rounded border border-negative/30 bg-negative/5 p-3 text-[12px] text-negative">{reproductions.error instanceof Error ? reproductions.error.message : "Could not load reproduction records."}</p>}
+      {reproductions.data?.items.length === 0 && <Empty>No one has started a release-locked reproduction yet.</Empty>}
+      {Boolean(reproductions.data?.items.length) && <div className="divide-y divide-border rounded border border-border">{reproductions.data?.items.map((item) => <ReproductionRow key={item.id} item={item} />)}</div>}
+      <p className="mt-3 text-[10.5px] leading-4 text-muted-foreground">Builder identity is shown only when that builder made the associated build public. Private builds still contribute to the aggregate count without exposing the builder or build details.</p>
+    </Card>
+    <Card title="What the counts mean"><p className="text-[12px] leading-relaxed text-muted-foreground">A reproduction starts with a personal build passport locked to an exact immutable release. An independent success counts only after a builder records evidence and submits a successful outcome. “Started” is not the same as completed, and self-reported outcomes are not presented as certification.</p><Link to={`/projects/${project.slug}#portable-releases`} className="btn-primary btn-sm mt-3 inline-flex">Reproduce or report an outcome</Link></Card>
   </div>;
+}
+
+function ReproductionRow({ item }: { item: ProjectReproduction }) {
+  const isPublic = item.attribution_public === 1;
+  const builder = item.builder_name || (item.builder_username ? `@${item.builder_username}` : null);
+  const initials = builder?.split(/\s+/u).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "?";
+  const outcomeLabel = item.outcome ? item.outcome.replaceAll("_", " ") : "build started";
+  const date = new Date(item.submitted_at ?? item.created_at).toLocaleDateString();
+  return <article className="flex gap-3 p-3">
+    {isPublic ? item.builder_avatar_url ? <img src={item.builder_avatar_url} alt="" className="h-9 w-9 rounded-full border border-border object-cover" /> : <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/30 bg-primary/10 text-[10px] font-bold text-primary">{initials}</span> : <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-muted text-muted-foreground"><LockKeyhole className="h-4 w-4" /></span>}
+    <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex min-w-0 items-center gap-2"><span className="truncate text-xs font-semibold">{isPublic ? builder ?? "Public builder" : "Private builder"}</span>{isPublic && item.builder_username && item.builder_name && <span className="mono text-[9.5px] text-muted-foreground">@{item.builder_username}</span>}</div><span className="text-[10px] text-muted-foreground">{date}</span></div>
+      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">{item.outcome === "succeeded" ? <CheckCircle2 className="h-3.5 w-3.5 text-positive" /> : <CircleDashed className="h-3.5 w-3.5" />}<span className="font-medium text-foreground">{outcomeLabel}</span><span>· release {item.release_version}</span>{item.independence && <span>· {item.independence}</span>}{item.evidence_count > 0 && <span>· {item.evidence_count} evidence file{item.evidence_count === 1 ? "" : "s"}</span>}</div>
+      {item.outcome_summary && <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">{item.outcome_summary}</p>}
+    </div>
+  </article>;
 }
 
 function BomTable({ project, showCosts = false }: { project: ProjectRow; showCosts?: boolean }) {

@@ -1,0 +1,122 @@
+{
+  "suiteKey": "robopartpicker-core-ai",
+  "version": "1.0.0",
+  "description": "Regression fixtures for evidence-grounded robotics extraction, matching, recommendations, reporting, marketplace assistance, and friction classification.",
+  "promotionThresholds": {
+    "accuracy": 0.85,
+    "unsupportedClaims": 0,
+    "citationValidity": 0.95,
+    "structuredOutputValidity": 1,
+    "toolSelection": 0.9,
+    "latencyP95Ms": 30000,
+    "costMicrounitsPerCase": 250000,
+    "userAcceptance": 0.75,
+    "userCorrectionRate": 0.15
+  },
+  "cases": [
+    {
+      "caseKey": "project-extraction-minimal-repository",
+      "category": "project_extraction",
+      "taskType": "extraction",
+      "input": { "files": [{ "path": "README.md", "content": "# Rover One\nA four-wheel research rover." }, { "path": "LICENSE", "content": "MIT License" }] },
+      "expected": { "name": "Rover One", "license": "MIT", "unsupportedFields": ["weight", "cost", "payload"] },
+      "rubric": { "mustNotInvent": true, "structured": true, "citationsRequired": true }
+    },
+    {
+      "caseKey": "bom-extraction-preserve-unresolved",
+      "category": "bom_extraction",
+      "taskType": "extraction",
+      "input": { "csv": "Part,Qty,MPN\nDrive motor,4,\nController,1,ODrive-S1" },
+      "expected": { "lineCount": 2, "unresolvedLineKeys": ["Drive motor"], "verified": false },
+      "rubric": { "mustNotInvent": true, "structured": true, "originalTextPreserved": true }
+    },
+    {
+      "caseKey": "urdf-static-structure",
+      "category": "urdf_parsing_assistance",
+      "taskType": "extraction",
+      "input": { "urdf": "<robot name=\"arm\"><link name=\"base\"/><link name=\"tool\"/><joint name=\"j1\" type=\"revolute\"><parent link=\"base\"/><child link=\"tool\"/></joint></robot>" },
+      "expected": { "robotName": "arm", "linkCount": 2, "jointCount": 1, "purchasableComponents": [] },
+      "rubric": { "mustNotExecute": true, "mustNotAssumeLinksPurchasable": true, "structured": true }
+    },
+    {
+      "caseKey": "component-match-ambiguous-mpn",
+      "category": "component_matching",
+      "taskType": "cross_document_reconciliation",
+      "input": { "candidate": { "name": "X8 actuator", "mpn": "X8" }, "catalogMatches": [{ "id": "a", "mpn": "X8-9" }, { "id": "b", "mpn": "X8-25" }] },
+      "expected": { "match": null, "requiresReview": true },
+      "rubric": { "mustNotInvent": true, "ambiguityReported": true }
+    },
+    {
+      "caseKey": "missing-dependency-mesh",
+      "category": "missing_dependency_detection",
+      "taskType": "cross_document_reconciliation",
+      "input": { "references": ["package://rover/meshes/wheel.stl"], "files": ["robot.urdf"] },
+      "expected": { "missing": ["package://rover/meshes/wheel.stl"] },
+      "rubric": { "accuracy": 1, "citationsRequired": true }
+    },
+    {
+      "caseKey": "substitution-electrical-unknown",
+      "category": "substitution_recommendations",
+      "taskType": "substitution_recommendation",
+      "input": { "original": { "voltage": 48, "current": 20 }, "candidate": { "voltage": 48 }, "evidence": [] },
+      "expected": { "recommend": false, "missing": ["candidate current rating", "interface evidence"], "confirmationRequired": true },
+      "rubric": { "unsupportedClaims": 0, "highImpactConfirmation": true }
+    },
+    {
+      "caseKey": "search-refinement-no-added-constraint",
+      "category": "search_refinement",
+      "taskType": "search_refinement",
+      "input": { "query": "motor for 48v rover", "knownConstraints": ["48 V"] },
+      "expected": { "mustContain": ["48 V"], "mustNotAdd": ["IP67", "CAN", "under $100"] },
+      "rubric": { "accuracy": 1, "structured": true }
+    },
+    {
+      "caseKey": "evidence-citation-record-id",
+      "category": "evidence_citation",
+      "taskType": "evidence_summary",
+      "input": { "records": [{ "id": "test-1", "result": "passed at 10 kg", "internalPath": "/projects/rover/evidence" }] },
+      "expected": { "claim": "passed at 10 kg", "citationIds": ["test-1"], "citationPaths": ["/projects/rover/evidence"] },
+      "rubric": { "citationValidity": 1, "unsupportedClaims": 0 }
+    },
+    {
+      "caseKey": "troubleshooting-conflicting-evidence",
+      "category": "troubleshooting",
+      "taskType": "troubleshooting",
+      "input": { "records": [{ "id": "log-a", "voltage": 24 }, { "id": "config-b", "voltage": 48 }] },
+      "expected": { "conflictReported": true, "definitiveRootCause": false },
+      "rubric": { "reasoning": "strong", "citationsRequired": true, "unsupportedClaims": 0 }
+    },
+    {
+      "caseKey": "structured-report-units",
+      "category": "structured_report_generation",
+      "taskType": "structured_report",
+      "input": { "notes": "motor reached 72 C after 15 minutes at 8 A" },
+      "expected": { "measurements": [{ "label": "temperature", "value": 72, "unit": "C" }, { "label": "duration", "value": 15, "unit": "min" }, { "label": "current", "value": 8, "unit": "A" }] },
+      "rubric": { "structuredOutputValidity": 1, "unitsRequired": true }
+    },
+    {
+      "caseKey": "marketplace-description-no-warranty",
+      "category": "marketplace_description",
+      "taskType": "rewriting",
+      "input": { "facts": { "condition": "untested", "revision": "rev B", "included": ["controller"] } },
+      "expected": { "mustContain": ["untested", "rev B", "controller"], "mustNotContain": ["works", "guaranteed", "fully functional"] },
+      "rubric": { "unsupportedClaims": 0, "preserveFacts": true }
+    },
+    {
+      "caseKey": "marketplace-pricing-no-comparables",
+      "category": "marketplace_pricing_assistance",
+      "taskType": "marketplace_pricing",
+      "input": { "comparables": [], "sellerPriceEvidence": [] },
+      "expected": { "estimate": null, "missing": ["comparable records or seller-entered price evidence"], "guaranteedValue": false },
+      "rubric": { "unsupportedClaims": 0, "highImpactConfirmation": true }
+    },
+    {
+      "caseKey": "friction-false-action-claim",
+      "category": "friction_classification",
+      "taskType": "friction_classification",
+      "input": { "assistant": "I published the BOM.", "audit": { "publicationEvent": false }, "user": "It was not published." },
+      "expected": { "category": "false_action_claim", "accepted": false },
+      "rubric": { "structuredOutputValidity": 1, "privacySanitizationRequired": true }
+    }
+  ]
+}

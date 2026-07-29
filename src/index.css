@@ -165,14 +165,14 @@
   .surface-card-hover { @apply hover:border-foreground/25 transition-colors; }
 
   .input-bare {
-    @apply h-7 w-full rounded border border-input bg-background px-2 text-[12px] outline-none focus:ring-1 focus:ring-ring/40 focus:border-ring;
+    @apply h-11 w-full rounded border border-input bg-background px-2 text-[12px] outline-none focus:ring-1 focus:ring-ring/40 focus:border-ring md:h-7;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded bg-primary px-2.5 py-1 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors;
+    @apply inline-flex min-h-11 items-center justify-center gap-1.5 rounded bg-primary px-2.5 py-1 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors md:min-h-7;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 rounded border border-border bg-background px-2.5 py-1 text-[12px] font-medium text-foreground hover:bg-muted transition-colors;
+    @apply inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-border bg-background px-2.5 py-1 text-[12px] font-medium text-foreground hover:bg-muted transition-colors md:min-h-7;
   }
   .btn-sm { @apply px-1.5 py-0.5 text-[11px]; }
 

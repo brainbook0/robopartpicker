@@ -27,7 +27,41 @@ export type ExtractedProjectIntelligence = {
     candidates: Array<{ id: string; name: string; quantity: number; unit: string; manufacturer?: string; mpn?: string; fabricated: boolean; optional: boolean; sourcePath: string; confidence: number; extractionMethod: "explicit-bom" | "rpps-manifest" }>;
     modelCandidates: Array<{ name: string; linkName: string; meshPath: string; classification: "fabricated-or-assembly"; purchasablePartInferred: false; sourcePath: string; confidence: number }>;
   };
-  model: null | { sourcePath: string; robotName?: string; linkCount: number; jointCount: number; movableJointCount: number; jointTypes: Record<string, number>; joints: Array<{ name: string; type: string; parent?: string; child?: string; axis?: string; lower?: number; upper?: number; effort?: number; velocity?: number }>; meshPaths: string[]; materialNames: string[]; transmissionCount: number };
+  model: null | {
+    sourcePath: string;
+    format: "urdf" | "xacro" | "sdf" | "srdf" | "mjcf";
+    robotName?: string;
+    linkCount: number;
+    jointCount: number;
+    movableJointCount: number;
+    jointTypes: Record<string, number>;
+    links: Array<{
+      name: string;
+      parent?: string;
+      mass?: number;
+      inertia: Record<string, number>;
+      materials: string[];
+      visualGeometries: Array<{ type: string; mesh?: string; size?: string; radius?: number; length?: number }>;
+      collisionGeometries: Array<{ type: string; mesh?: string; size?: string; radius?: number; length?: number }>;
+      meshPaths: string[];
+      missingAssets: string[];
+    }>;
+    joints: Array<{
+      name: string; type: string; parent?: string; child?: string; axis?: string;
+      lower?: number; upper?: number; effort?: number; velocity?: number;
+      origin?: { xyz?: string; rpy?: string };
+      dynamics?: { damping?: number; friction?: number };
+      mimic?: { joint?: string; multiplier?: number; offset?: number };
+    }>;
+    meshPaths: string[];
+    missingAssets: string[];
+    materialNames: string[];
+    transmissions: Array<{ name: string; type?: string }>;
+    sensors: Array<{ name: string; type?: string }>;
+    plugins: Array<{ name?: string; filename?: string }>;
+    configurationReferences: string[];
+    transmissionCount: number;
+  };
   software: { packages: Array<{ ecosystem: "ros" | "npm" | "python" | "cargo" | "platformio"; name: string; version?: string; dependencies: string[]; sourcePath: string }> };
   configuration: { parameters: Array<{ sourcePath: string; keyPath: string; valueType: "string" | "number" | "boolean" | "null" }> };
   repository: { readmes: string[]; licenses: string[]; contributionGuides: string[]; changelogs: string[]; ciDefinitions: string[]; testArtifacts: string[]; firmwareArtifacts: string[]; configurationArtifacts: string[]; nativeCadArtifacts: string[]; manufacturingArtifacts: string[] };
@@ -502,11 +536,18 @@ function extractUrdfInterfaces(files: Map<string, string>, slug: string): Portab
 }
 
 function extractModelSummary(files: Map<string, string>): ExtractedProjectIntelligence["model"] {
-  const candidate = [...files].find(([path]) => /\.urdf(?:\.xacro)?$/iu.test(path));
+  const candidate = [...files].find(([path]) => /\.(?:urdf(?:\.xacro)?|xacro|sdf|srdf|mjcf)$/iu.test(path));
   if (!candidate) return null;
   const [sourcePath, text] = candidate;
-  const robotName = text.match(/<robot\s+[^>]*name=["']([^"']+)["']/iu)?.[1];
-  const links = [...text.matchAll(/<link\s+[^>]*name=["']([^"']+)["']/giu)].map((match) => match[1]);
+  const lowerPath = sourcePath.toLowerCase();
+  const format: NonNullable<ExtractedProjectIntelligence["model"]>["format"] = lowerPath.endsWith(".xacro")
+    ? "xacro" : lowerPath.endsWith(".sdf") ? "sdf" : lowerPath.endsWith(".srdf") ? "srdf" : lowerPath.endsWith(".mjcf") ? "mjcf" : "urdf";
+  const robotName = text.match(/<(?:robot|model|mujoco)\s+[^>]*(?:name|model)=["']([^"']+)["']/iu)?.[1];
+  const linkNames = [...text.matchAll(/<(?:link|body)\s+[^>]*name=["']([^"']+)["']/giu)].map((match) => match[1]);
+  const availablePaths = new Set([...files.keys()].map((path) => path.replace(/^\.\//u, "").toLowerCase()));
+  const linkBodies = new Map([...text.matchAll(/<(link|body)\s+([^>]*)>([\s\S]*?)<\/\1>/giu)]
+    .map((match) => [xmlAttribute(match[2], "name") ?? "unnamed-link", match[3]]));
+  const parentByChild = new Map<string, string>();
   const joints = [...text.matchAll(/<joint\b([^>]*)>([\s\S]*?)<\/joint>/giu)].map((match) => {
     const name = xmlAttribute(match[1], "name") ?? "unnamed-joint";
     const type = (xmlAttribute(match[1], "type") ?? "unknown").toLowerCase();
@@ -514,9 +555,41 @@ function extractModelSummary(files: Map<string, string>): ExtractedProjectIntell
     const childTag = match[2].match(/<child\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
     const axisTag = match[2].match(/<axis\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
     const limitTag = match[2].match(/<limit\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
-    return { name, type, parent: xmlAttribute(parentTag, "link"), child: xmlAttribute(childTag, "link"), axis: xmlAttribute(axisTag, "xyz"),
+    const originTag = match[2].match(/<origin\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const dynamicsTag = match[2].match(/<dynamics\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const mimicTag = match[2].match(/<mimic\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const parent = xmlAttribute(parentTag, "link") ?? xmlValue(match[2], "parent");
+    const child = xmlAttribute(childTag, "link") ?? xmlValue(match[2], "child");
+    if (parent && child) parentByChild.set(child, parent);
+    return { name, type, parent, child, axis: xmlAttribute(axisTag, "xyz") ?? xmlValue(match[2], "axis"),
       lower: finiteNumber(xmlAttribute(limitTag, "lower")), upper: finiteNumber(xmlAttribute(limitTag, "upper")),
-      effort: finiteNumber(xmlAttribute(limitTag, "effort")), velocity: finiteNumber(xmlAttribute(limitTag, "velocity")) };
+      effort: finiteNumber(xmlAttribute(limitTag, "effort")), velocity: finiteNumber(xmlAttribute(limitTag, "velocity")),
+      origin: compactObject({ xyz: xmlAttribute(originTag, "xyz"), rpy: xmlAttribute(originTag, "rpy") }),
+      dynamics: compactObject({ damping: finiteNumber(xmlAttribute(dynamicsTag, "damping")), friction: finiteNumber(xmlAttribute(dynamicsTag, "friction")) }),
+      mimic: compactObject({ joint: xmlAttribute(mimicTag, "joint"), multiplier: finiteNumber(xmlAttribute(mimicTag, "multiplier")), offset: finiteNumber(xmlAttribute(mimicTag, "offset")) }),
+    };
+  });
+  const meshPaths = Array.from(new Set([...text.matchAll(/<mesh\s+[^>]*(?:filename|uri|file)=["']([^"']+)["']/giu)].map((match) => match[1]))).slice(0, 2_000);
+  const missingAssets = meshPaths.filter((path) => {
+    const normalized = path.replace(/^(?:package|model):\/\/[^/]+\//u, "").replace(/^file:\/\//u, "").replace(/^\.\//u, "").toLowerCase();
+    return !availablePaths.has(normalized) && ![...availablePaths].some((candidatePath) => candidatePath.endsWith(`/${normalized}`));
+  });
+  const links = Array.from(new Set(linkNames)).slice(0, 2_000).map((name) => {
+    const body = linkBodies.get(name) ?? "";
+    const massTag = body.match(/<mass\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const inertiaTag = body.match(/<inertia\b([^>]*)\/?\s*>/iu)?.[1] ?? "";
+    const linkMeshes = Array.from(new Set([...body.matchAll(/<mesh\s+[^>]*(?:filename|uri|file)=["']([^"']+)["']/giu)].map((match) => match[1])));
+    return {
+      name,
+      parent: parentByChild.get(name),
+      mass: finiteNumber(xmlAttribute(massTag, "value") ?? xmlValue(body, "mass")),
+      inertia: compactObject(Object.fromEntries(["ixx", "ixy", "ixz", "iyy", "iyz", "izz"].map((key) => [key, finiteNumber(xmlAttribute(inertiaTag, key))]))) as Record<string, number>,
+      materials: Array.from(new Set([...body.matchAll(/<material\s+[^>]*name=["']([^"']+)["']/giu)].map((match) => match[1]))),
+      visualGeometries: extractGeometries(body, "visual"),
+      collisionGeometries: extractGeometries(body, "collision"),
+      meshPaths: linkMeshes,
+      missingAssets: linkMeshes.filter((mesh) => missingAssets.includes(mesh)),
+    };
   });
   const jointTypes = joints.reduce<Record<string, number>>((counts, joint) => {
     counts[joint.type] = (counts[joint.type] ?? 0) + 1;
@@ -524,16 +597,45 @@ function extractModelSummary(files: Map<string, string>): ExtractedProjectIntell
   }, {});
   return {
     sourcePath,
+    format,
     robotName,
     linkCount: links.length,
     jointCount: joints.length,
     movableJointCount: joints.filter((joint) => joint.type !== "fixed").length,
     jointTypes,
+    links,
     joints: joints.slice(0, 2_000),
-    meshPaths: Array.from(new Set([...text.matchAll(/<mesh\s+[^>]*filename=["']([^"']+)["']/giu)].map((match) => match[1]))).slice(0, 2_000),
+    meshPaths,
+    missingAssets,
     materialNames: Array.from(new Set([...text.matchAll(/<material\s+[^>]*name=["']([^"']+)["']/giu)].map((match) => match[1]))).slice(0, 500),
+    transmissions: [...text.matchAll(/<transmission\b([^>]*)>([\s\S]*?)<\/transmission>/giu)].slice(0, 500)
+      .map((match) => ({ name: xmlAttribute(match[1], "name") ?? "unnamed-transmission", type: xmlValue(match[2], "type") })),
+    sensors: [...text.matchAll(/<sensor\b([^>]*)/giu)].slice(0, 500)
+      .map((match) => ({ name: xmlAttribute(match[1], "name") ?? "unnamed-sensor", type: xmlAttribute(match[1], "type") })),
+    plugins: [...text.matchAll(/<plugin\b([^>]*)/giu)].slice(0, 500)
+      .map((match) => ({ name: xmlAttribute(match[1], "name"), filename: xmlAttribute(match[1], "filename") })),
+    configurationReferences: Array.from(new Set([...text.matchAll(/(?:filename|uri|file)=["']([^"']+\.(?:ya?ml|json|xml|cfg|ini|launch))["']/giu)].map((match) => match[1]))).slice(0, 500),
     transmissionCount: [...text.matchAll(/<transmission\b/giu)].length,
   };
+}
+
+function extractGeometries(body: string, section: "visual" | "collision"): Array<{ type: string; mesh?: string; size?: string; radius?: number; length?: number }> {
+  return [...body.matchAll(new RegExp(`<${section}\\b[^>]*>([\\s\\S]*?)<\\/${section}>`, "giu"))].slice(0, 100).flatMap((match) => {
+    const geometry = match[1].match(/<geometry\b[^>]*>([\s\S]*?)<\/geometry>/iu)?.[1] ?? match[1];
+    const mesh = geometry.match(/<mesh\b([^>]*)/iu)?.[1];
+    if (mesh) return [{ type: "mesh", mesh: xmlAttribute(mesh, "filename") ?? xmlAttribute(mesh, "uri") ?? xmlAttribute(mesh, "file") }];
+    const box = geometry.match(/<box\b([^>]*)/iu)?.[1];
+    if (box) return [{ type: "box", size: xmlAttribute(box, "size") ?? xmlValue(geometry, "size") }];
+    const cylinder = geometry.match(/<cylinder\b([^>]*)/iu)?.[1];
+    if (cylinder) return [{ type: "cylinder", radius: finiteNumber(xmlAttribute(cylinder, "radius") ?? xmlValue(geometry, "radius")), length: finiteNumber(xmlAttribute(cylinder, "length") ?? xmlValue(geometry, "length")) }];
+    const sphere = geometry.match(/<sphere\b([^>]*)/iu)?.[1];
+    if (sphere) return [{ type: "sphere", radius: finiteNumber(xmlAttribute(sphere, "radius") ?? xmlValue(geometry, "radius")) }];
+    return [{ type: "unknown" }];
+  });
+}
+
+function compactObject<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
 }
 
 function extractModelPartCandidates(files: Map<string, string>): ExtractedProjectIntelligence["parts"]["modelCandidates"] {
@@ -750,9 +852,10 @@ function artifactKind(path: string): ImportedArtifact["kind"] {
   const lower = path.toLowerCase();
   if (/\.(step|stp|iges|igs|fcstd|f3d|sldprt|sldasm|ipt|iam|3dm|blend|glb|gltf)$/u.test(lower)) return "cad";
   if (/\.(stl|obj|3mf|gcode|dxf|gerber|gbr)$/u.test(lower)) return "manufacturing";
-  if (/\.urdf(?:\.xacro)?$/u.test(lower)) return "urdf";
+  if (/\.(?:urdf(?:\.xacro)?|xacro|srdf)$/u.test(lower)) return "urdf";
   if (/\.mjcf$/u.test(lower)) return "mjcf";
   if (/\.sdf$/u.test(lower)) return "sdf";
+  if (/\.(?:usd|usdz)$/u.test(lower)) return "cad";
   if (/(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml|xlsx)$/u.test(lower)) return "bom";
   if (/(^|\/)(firmware|src|arduino|platformio)(\/|$)|\.(ino|hex|bin|elf)$/u.test(lower)) return "firmware";
   if (/(^|\/)(config|configuration|calibration)(\/|$)|\.(launch|toml)$/u.test(lower)) return lower.includes("calib") ? "calibration" : "configuration";
@@ -779,14 +882,15 @@ function isProjectMetadata(path: string): boolean {
 }
 
 function isRelevantText(path: string): boolean {
-  return isProjectMetadata(path) || /\.(md|txt|csv|json|ya?ml|xml|urdf|xacro|sdf|mjcf|toml|launch|ini|cfg)$/iu.test(path);
+  return isProjectMetadata(path) || /(?:^|\/)(?:dockerfile|cmakelists\.txt|[^/]*(?:install|setup)[^/]*\.sh)$/iu.test(path)
+    || /\.(md|txt|csv|tsv|json|ya?ml|xml|urdf|xacro|srdf|sdf|mjcf|usd|toml|launch|ini|cfg|net|kicad_(?:sch|pcb))$/iu.test(path);
 }
 
 function parserFor(path: string): string {
   if (/rpps\./iu.test(path)) return "rpps-portable-0.1";
   if (/\.csv$/iu.test(path)) return "csv-bom-rfc4180";
   if (/\.(json|ya?ml)$/iu.test(path) && /bom|parts?/iu.test(path)) return "structured-bom-v1";
-  if (/\.urdf(?:\.xacro)?$/iu.test(path)) return "urdf-inventory-v1";
+  if (/\.(?:urdf(?:\.xacro)?|xacro|srdf|sdf|mjcf)$/iu.test(path)) return "robot-structure-static-v2";
   if (/(^|\/)(package\.(xml|json)|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|cargo\.toml|platformio\.ini)$/iu.test(path)) return "software-manifest-v1";
   if (/\.md$/iu.test(path)) return "markdown-procedure-heuristic-v1";
   return "artifact-inventory-v1";

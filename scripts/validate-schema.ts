@@ -15,6 +15,13 @@ if (remote && !environment) throw new Error("Remote schema validation requires a
 const requiredTables = [
   "account",
   "ai_conversations",
+  "ai_action_proposals",
+  "ai_evaluation_runs",
+  "ai_friction_events",
+  "ai_model_registry",
+  "ai_provider_registry",
+  "ai_routing_rules",
+  "ai_task_runs",
   "audit_events",
   "boms",
   "builds",
@@ -23,14 +30,24 @@ const requiredTables = [
   "files",
   "forum_threads",
   "import_jobs",
+  "import_job_events",
+  "import_job_files",
   "import_records",
   "manufacturers",
   "marketplace_listings",
+  "marketplace_part_outs",
+  "marketplace_price_estimates",
+  "missing_information_requests",
   "notifications",
   "organization_members",
   "organizations",
   "profiles",
   "projects",
+  "project_analytics_daily",
+  "project_collaborators",
+  "record_versions",
+  "reproductions",
+  "robot_structure_snapshots",
   "rpps_build_outcome_evidence",
   "rpps_build_outcomes",
   "rpps_build_passport_items",
@@ -45,6 +62,7 @@ const requiredTables = [
   "session",
   "supplier_offers",
   "suppliers",
+  "technical_records",
   "user",
   "verification",
 ];
@@ -86,7 +104,7 @@ const demoCounts = query<{ components: number; suppliers: number; boms: number }
 );
 
 const migrationCount = Number(migrationRows[0]?.count ?? 0);
-const expectedMigrationCount = 13;
+const expectedMigrationCount = 14;
 if (migrationCount !== expectedMigrationCount) {
   throw new Error(`Expected exactly ${expectedMigrationCount} applied migrations; found ${migrationCount}`);
 }

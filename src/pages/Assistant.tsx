@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Bot, Check, Loader2, Plus, Sparkle, Trash2, Wrench, Cpu, Package, FolderKanban, X } from "lucide-react";
@@ -38,6 +38,8 @@ export default function Assistant() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { threadId } = useParams<{ threadId?: string }>();
+  const [searchParams] = useSearchParams();
+  const starter = searchParams.get("starter") ?? "";
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(null);
   const [loadingThreads, setLoadingThreads] = useState(true);
@@ -165,7 +167,7 @@ export default function Assistant() {
       {/* Chat pane */}
       <main className="flex min-w-0 flex-1 flex-col">
         {threadId && initialMessages !== null ? (
-          <ChatWindow key={threadId} threadId={threadId} initialMessages={initialMessages} onFirstReply={refreshThreads} />
+          <ChatWindow key={threadId} threadId={threadId} initialMessages={initialMessages} onFirstReply={refreshThreads} starter={starter} projectScoped={Boolean(threads.find((item) => item.id === threadId)?.projectId)} />
         ) : (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -218,10 +220,14 @@ function ChatWindow({
   threadId,
   initialMessages,
   onFirstReply,
+  starter,
+  projectScoped,
 }: {
   threadId: string;
   initialMessages: UIMessage[];
   onFirstReply: () => void;
+  starter: string;
+  projectScoped: boolean;
 }) {
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const transport = useMemo(
@@ -251,6 +257,13 @@ function ChatWindow({
   useEffect(() => { composerRef.current?.focus(); }, [threadId]);
 
   const isBusy = status === "submitted" || status === "streaming";
+  const starterSentRef = useRef(false);
+
+  useEffect(() => {
+    if (!starter || initialMessages.length > 0 || starterSentRef.current) return;
+    starterSentRef.current = true;
+    void sendMessage({ text: starter.slice(0, 4_000) });
+  }, [initialMessages.length, sendMessage, starter]);
 
   const handleSubmit = async ({ text }: { text: string }) => {
     const t = text.trim();
@@ -289,7 +302,7 @@ function ChatWindow({
           <PromptInput onSubmit={handleSubmit}>
             <PromptInputTextarea
               ref={composerRef as any}
-              placeholder="Ask about parts, projects, or BOM cost…"
+              placeholder={projectScoped ? "Ask about this project's BOM, evidence, builds, failures, or next step…" : "Ask about parts, projects, or BOM cost…"}
               disabled={isBusy}
             />
             <PromptInputFooter className="justify-end">
@@ -297,7 +310,7 @@ function ChatWindow({
             </PromptInputFooter>
           </PromptInput>
           <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            The assistant can look up parts, projects, and estimate BOM costs. Verify pricing before ordering.
+            {projectScoped ? "Project answers cite internal records and call out missing or conflicting evidence. General knowledge is labeled separately." : "The assistant can look up parts, projects, and estimate BOM costs. Verify pricing before ordering."}
           </p>
         </div>
       </div>

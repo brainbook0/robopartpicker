@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { marketplaceApi } from "@/lib/api/marketplace";
 import { AiFormDraft } from "@/components/ai/AiFormDraft";
+import { RichTechnicalEditor } from "@/components/common/RichTechnicalEditor";
 
 export default function WantedEditorD1() {
   const { user, loading } = useAuth();
@@ -49,7 +50,7 @@ export default function WantedEditorD1() {
   return <main className="mx-auto max-w-[850px] px-4 py-6"><div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / wanted</div><div className="mt-1 flex items-center justify-between gap-3"><h1 className="text-[22px] font-bold tracking-tight">Create a wanted request</h1><AiFormDraft form="marketplace_wanted" current={{ title, description, category, quantity, budget, region }} onApply={applyAiDraft} hint="Describe the required component or service, acceptable revisions, quantity, evidence, destination, deadline, and budget." /></div><p className="text-[12px] text-muted-foreground mt-1">Publish demand to the internal Marketplace. This does not send an RFQ or contact suppliers automatically.</p>
     <form className="surface-card mt-4 p-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void save(false); }}>
       <Field label="Title"><input className="input-bare" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="e.g. Need 12× RMD-X8 Pro, matched revision" /></Field>
-      <Field label="Technical requirements"><textarea className="input-bare min-h-32" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Acceptable models/revisions, condition, test evidence, destination, and deadline…" /></Field>
+      <div><span className="section-title mb-1 block">Technical requirements</span><RichTechnicalEditor value={description} onChange={setDescription} label="Wanted request technical requirements" minRows={7} maxLength={20_000} autosaveKey="marketplace-wanted-requirements" placeholder="Acceptable models/revisions, condition, test evidence, destination, and deadline…" /></div>
       <div className="grid sm:grid-cols-2 gap-3"><Field label="Category"><select className="input-bare" value={category} onChange={(event) => setCategory(event.target.value)}>{["actuator", "hand", "sensor", "compute", "driver", "reducer", "robot", "fabrication", "service"].map((value) => <option key={value}>{value}</option>)}</select></Field><Field label="Quantity"><input className="input-bare mono" type="number" min="0.001" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} /></Field></div>
       <div className="grid sm:grid-cols-2 gap-3"><Field label="Maximum total budget (USD, optional)"><input className="input-bare mono" type="number" min="0" step="0.01" value={budget} onChange={(event) => setBudget(event.target.value)} /></Field><Field label="Destination region"><select className="input-bare" value={region} onChange={(event) => setRegion(event.target.value)}>{["US", "EU", "CN", "JP", "KR", "Global"].map((value) => <option key={value}>{value}</option>)}</select></Field></div>
       {errors.length > 0 && <ul className="text-[11px] text-negative list-disc pl-4" role="alert">{errors.map((error) => <li key={error}>{error}</li>)}</ul>}
