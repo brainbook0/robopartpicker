@@ -171,6 +171,11 @@ describe("external import contract v2", () => {
     expect(unsupportedResponse.status).toBe(422);
     expect(await responseBody<{ error: { code: string } }>(unsupportedResponse))
       .toMatchObject({ error: { code: "UNSUPPORTED_RECORD_TYPE" } });
+
+    const arbitraryRetainedKey = validV2("v2-arbitrary-retained-key");
+    (arbitraryRetainedKey.records[0]!.snapshot as Record<string, unknown>).retainedObjectKey = "source-evidence/caller-selected";
+    const retainedKeyResponse = await call(arbitraryRetainedKey);
+    expect(retainedKeyResponse.status).toBe(422);
   });
 
   it("distinguishes exact replay from an idempotency conflict", async () => {
@@ -216,6 +221,32 @@ describe("external import contract v2", () => {
       WHERE s.slug = 'concurrent-replay-manufacturer' AND j.batch_id = ?
     `).bind(payload.batchId).first<{ count: number }>();
     expect(jobs?.count).toBe(1);
+  });
+
+  it("keeps untrusted source assertions from superseding an approved policy revision", async () => {
+    const first = validV2("v2-policy-lane-first");
+    first.records[0]!.externalRecordId = "policy-lane-first";
+    expect((await call(first)).status).toBe(202);
+    const source = await env.DB.prepare("SELECT id FROM import_sources WHERE slug = 'fixture-manufacturer'")
+      .first<{ id: string }>();
+    expect(source).not.toBeNull();
+
+    const approvedPolicyId = crypto.randomUUID();
+    await env.DB.prepare(`
+      INSERT INTO source_policy_revisions
+        (id, source_id, robots_status, robots_checked_at, terms_status, reuse_status, decision, decision_notes,
+         approval_authority_reference, effective_at, created_at)
+      VALUES (?, ?, 'allowed', ?, 'approved', 'retention_approved', 'approved_fixture_only',
+              'Independent approved fixture policy', 'tests/worker/import-contract-v2.test.ts', ?, ?)
+    `).bind(approvedPolicyId, source!.id, timestamp, timestamp, timestamp).run();
+
+    const second = validV2("v2-policy-lane-second");
+    second.records[0]!.externalRecordId = "policy-lane-second";
+    expect((await call(second)).status).toBe(202);
+    const superseded = await env.DB.prepare(`
+      SELECT count(*) AS value FROM source_policy_revisions WHERE supersedes_policy_revision_id = ?
+    `).bind(approvedPolicyId).first<{ value: number }>();
+    expect(superseded?.value).toBe(0);
   });
 
   it("enforces exact v1 compatibility boundaries independent of Content-Length", () => {

@@ -4,7 +4,8 @@ import { AppError } from "../http";
 
 export const apiRequestSizeLimit = createMiddleware<AppBindings>(async (c, next) => {
   const isFileBody = c.req.method === "PUT" && /^\/api\/v1\/files\/uploads\/[^/]+$/u.test(c.req.path);
-  if (["POST", "PUT", "PATCH"].includes(c.req.method) && !c.req.path.endsWith("/content") && !isFileBody) {
+  const isEvidenceBody = c.req.method === "PUT" && /^\/api\/v1\/source-evidence\/objects\/[0-9a-f]{64}$/u.test(c.req.path);
+  if (["POST", "PUT", "PATCH"].includes(c.req.method) && !c.req.path.endsWith("/content") && !isFileBody && !isEvidenceBody) {
     const length = Number(c.req.header("content-length") ?? 0);
     if (Number.isFinite(length) && length > 1_048_576) {
       const isImportBatch = c.req.path === "/api/v1/imports/batches";

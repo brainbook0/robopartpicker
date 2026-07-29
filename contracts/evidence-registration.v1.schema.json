@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://robopartpicker.com/contracts/evidence-registration.v1.schema.json",
+  "title": "RoboPartPicker immutable evidence registration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "externalRegistrationId",
+    "mode",
+    "sourceId",
+    "sourcePolicyRevisionId",
+    "sourceClass",
+    "evidenceClass",
+    "sourceUrl",
+    "retrievedAt",
+    "applicableRevision",
+    "declaredMediaType",
+    "detectedMediaType",
+    "byteSize",
+    "contentSha256",
+    "retrievalMetadata",
+    "copyrightReuseStatus"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "externalRegistrationId": { "type": "string", "minLength": 1, "maxLength": 300 },
+    "mode": { "enum": ["retained_bytes", "external_reference", "metadata_only", "rejected"] },
+    "sourceId": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "importRecordId": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
+    "sourcePolicyRevisionId": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "sourceClass": { "enum": ["official", "reported", "measured", "calculated", "estimated", "ai_inferred"] },
+    "evidenceClass": { "enum": ["structured_text", "document", "image", "archive_or_cad", "media_or_other"] },
+    "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+    "immutableExternalUrl": { "$ref": "#/$defs/httpsUrl" },
+    "originalPublishedAt": { "type": ["string", "null"], "format": "date-time" },
+    "retrievedAt": { "type": "string", "format": "date-time" },
+    "language": { "type": ["string", "null"], "maxLength": 35 },
+    "countryOrRegion": { "type": ["string", "null"], "maxLength": 80 },
+    "applicableRevision": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "declaredMediaType": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "detectedMediaType": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "byteSize": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "contentSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "retrievalMetadata": { "type": "object", "maxProperties": 256 },
+    "copyrightReuseStatus": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "rejectionCode": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "rejectionReason": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "supersedesSnapshotId": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
+    "traceId": { "type": ["string", "null"], "pattern": "^[0-9a-f]{32}$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "const": "external_reference" } }, "required": ["mode"] },
+      "then": { "required": ["immutableExternalUrl"] },
+      "else": { "not": { "required": ["immutableExternalUrl"] } }
+    },
+    {
+      "if": { "properties": { "mode": { "const": "rejected" } }, "required": ["mode"] },
+      "then": { "required": ["rejectionCode", "rejectionReason"] }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": { "const": "retained_bytes" },
+          "evidenceClass": { "const": "structured_text" }
+        },
+        "required": ["mode", "evidenceClass"]
+      },
+      "then": {
+        "properties": { "byteSize": { "maximum": 8388608 } },
+        "allOf": [{ "$ref": "#/$defs/structuredTextMimePair" }]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": { "const": "retained_bytes" },
+          "evidenceClass": { "const": "document" }
+        },
+        "required": ["mode", "evidenceClass"]
+      },
+      "then": {
+        "properties": { "byteSize": { "maximum": 26214400 } },
+        "allOf": [{ "$ref": "#/$defs/documentMimePair" }]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": { "const": "retained_bytes" },
+          "evidenceClass": { "const": "image" }
+        },
+        "required": ["mode", "evidenceClass"]
+      },
+      "then": {
+        "properties": { "byteSize": { "maximum": 10485760 } },
+        "allOf": [{ "$ref": "#/$defs/imageMimePair" }]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": { "const": "retained_bytes" },
+          "evidenceClass": { "const": "archive_or_cad" }
+        },
+        "required": ["mode", "evidenceClass"]
+      },
+      "then": {
+        "properties": { "byteSize": { "maximum": 52428800 } },
+        "allOf": [{ "$ref": "#/$defs/archiveOrCadMimePair" }]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": { "const": "retained_bytes" },
+          "evidenceClass": { "const": "media_or_other" }
+        },
+        "required": ["mode", "evidenceClass"]
+      },
+      "then": false
+    }
+  ],
+  "$defs": {
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://[^/@?#]+(?::[0-9]+)?(?:[/?#]|$)",
+      "maxLength": 2048
+    },
+    "structuredTextMimePair": {
+      "oneOf": [
+        { "$ref": "#/$defs/applicationJsonPair" },
+        { "$ref": "#/$defs/applicationLdJsonPair" },
+        { "$ref": "#/$defs/applicationXmlPair" },
+        { "$ref": "#/$defs/applicationYamlPair" },
+        { "$ref": "#/$defs/textCsvPair" },
+        { "$ref": "#/$defs/textHtmlPair" },
+        { "$ref": "#/$defs/textMarkdownPair" },
+        { "$ref": "#/$defs/textPlainPair" },
+        { "$ref": "#/$defs/textTsvPair" },
+        { "$ref": "#/$defs/textXmlPair" },
+        { "$ref": "#/$defs/textYamlPair" }
+      ]
+    },
+    "documentMimePair": {
+      "oneOf": [
+        { "$ref": "#/$defs/applicationPdfPair" },
+        { "$ref": "#/$defs/applicationXlsxPair" },
+        { "$ref": "#/$defs/applicationDocxPair" }
+      ]
+    },
+    "imageMimePair": {
+      "oneOf": [
+        { "$ref": "#/$defs/imageGifPair" },
+        { "$ref": "#/$defs/imageJpegPair" },
+        { "$ref": "#/$defs/imagePngPair" },
+        { "$ref": "#/$defs/imageWebpPair" }
+      ]
+    },
+    "archiveOrCadMimePair": {
+      "oneOf": [
+        { "$ref": "#/$defs/applicationGzipPair" },
+        { "$ref": "#/$defs/applicationOctetStreamPair" },
+        { "$ref": "#/$defs/applicationZipPair" },
+        { "$ref": "#/$defs/modelGltfJsonPair" },
+        { "$ref": "#/$defs/modelGltfBinaryPair" },
+        { "$ref": "#/$defs/modelIgesPair" },
+        { "$ref": "#/$defs/modelStepPair" },
+        { "$ref": "#/$defs/modelStlPair" }
+      ]
+    },
+    "applicationJsonPair": { "$ref": "#/$defs/pair-application~1json" },
+    "applicationLdJsonPair": { "$ref": "#/$defs/pair-application~1ld+json" },
+    "applicationXmlPair": { "$ref": "#/$defs/pair-application~1xml" },
+    "applicationYamlPair": { "$ref": "#/$defs/pair-application~1yaml" },
+    "textCsvPair": { "$ref": "#/$defs/pair-text~1csv" },
+    "textHtmlPair": { "$ref": "#/$defs/pair-text~1html" },
+    "textMarkdownPair": { "$ref": "#/$defs/pair-text~1markdown" },
+    "textPlainPair": { "$ref": "#/$defs/pair-text~1plain" },
+    "textTsvPair": { "$ref": "#/$defs/pair-text~1tab-separated-values" },
+    "textXmlPair": { "$ref": "#/$defs/pair-text~1xml" },
+    "textYamlPair": { "$ref": "#/$defs/pair-text~1yaml" },
+    "applicationPdfPair": { "$ref": "#/$defs/pair-application~1pdf" },
+    "applicationXlsxPair": { "$ref": "#/$defs/pair-application~1vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+    "applicationDocxPair": { "$ref": "#/$defs/pair-application~1vnd.openxmlformats-officedocument.wordprocessingml.document" },
+    "imageGifPair": { "$ref": "#/$defs/pair-image~1gif" },
+    "imageJpegPair": { "$ref": "#/$defs/pair-image~1jpeg" },
+    "imagePngPair": { "$ref": "#/$defs/pair-image~1png" },
+    "imageWebpPair": { "$ref": "#/$defs/pair-image~1webp" },
+    "applicationGzipPair": { "$ref": "#/$defs/pair-application~1gzip" },
+    "applicationOctetStreamPair": { "$ref": "#/$defs/pair-application~1octet-stream" },
+    "applicationZipPair": { "$ref": "#/$defs/pair-application~1zip" },
+    "modelGltfJsonPair": { "$ref": "#/$defs/pair-model~1gltf+json" },
+    "modelGltfBinaryPair": { "$ref": "#/$defs/pair-model~1gltf-binary" },
+    "modelIgesPair": { "$ref": "#/$defs/pair-model~1iges" },
+    "modelStepPair": { "$ref": "#/$defs/pair-model~1step" },
+    "modelStlPair": { "$ref": "#/$defs/pair-model~1stl" },
+    "pair-application/json": {
+      "properties": { "declaredMediaType": { "const": "application/json" }, "detectedMediaType": { "const": "application/json" } }
+    },
+    "pair-application/ld+json": {
+      "properties": { "declaredMediaType": { "const": "application/ld+json" }, "detectedMediaType": { "const": "application/ld+json" } }
+    },
+    "pair-application/xml": {
+      "properties": { "declaredMediaType": { "const": "application/xml" }, "detectedMediaType": { "const": "application/xml" } }
+    },
+    "pair-application/yaml": {
+      "properties": { "declaredMediaType": { "const": "application/yaml" }, "detectedMediaType": { "const": "application/yaml" } }
+    },
+    "pair-text/csv": {
+      "properties": { "declaredMediaType": { "const": "text/csv" }, "detectedMediaType": { "const": "text/csv" } }
+    },
+    "pair-text/html": {
+      "properties": { "declaredMediaType": { "const": "text/html" }, "detectedMediaType": { "const": "text/html" } }
+    },
+    "pair-text/markdown": {
+      "properties": { "declaredMediaType": { "const": "text/markdown" }, "detectedMediaType": { "const": "text/markdown" } }
+    },
+    "pair-text/plain": {
+      "properties": { "declaredMediaType": { "const": "text/plain" }, "detectedMediaType": { "const": "text/plain" } }
+    },
+    "pair-text/tab-separated-values": {
+      "properties": { "declaredMediaType": { "const": "text/tab-separated-values" }, "detectedMediaType": { "const": "text/tab-separated-values" } }
+    },
+    "pair-text/xml": {
+      "properties": { "declaredMediaType": { "const": "text/xml" }, "detectedMediaType": { "const": "text/xml" } }
+    },
+    "pair-text/yaml": {
+      "properties": { "declaredMediaType": { "const": "text/yaml" }, "detectedMediaType": { "const": "text/yaml" } }
+    },
+    "pair-application/pdf": {
+      "properties": { "declaredMediaType": { "const": "application/pdf" }, "detectedMediaType": { "const": "application/pdf" } }
+    },
+    "pair-application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+      "properties": {
+        "declaredMediaType": { "const": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+        "detectedMediaType": { "const": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+      }
+    },
+    "pair-application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+      "properties": {
+        "declaredMediaType": { "const": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+        "detectedMediaType": { "const": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
+      }
+    },
+    "pair-image/gif": {
+      "properties": { "declaredMediaType": { "const": "image/gif" }, "detectedMediaType": { "const": "image/gif" } }
+    },
+    "pair-image/jpeg": {
+      "properties": { "declaredMediaType": { "const": "image/jpeg" }, "detectedMediaType": { "const": "image/jpeg" } }
+    },
+    "pair-image/png": {
+      "properties": { "declaredMediaType": { "const": "image/png" }, "detectedMediaType": { "const": "image/png" } }
+    },
+    "pair-image/webp": {
+      "properties": { "declaredMediaType": { "const": "image/webp" }, "detectedMediaType": { "const": "image/webp" } }
+    },
+    "pair-application/gzip": {
+      "properties": { "declaredMediaType": { "const": "application/gzip" }, "detectedMediaType": { "const": "application/gzip" } }
+    },
+    "pair-application/octet-stream": {
+      "properties": { "declaredMediaType": { "const": "application/octet-stream" }, "detectedMediaType": { "const": "application/octet-stream" } }
+    },
+    "pair-application/zip": {
+      "properties": { "declaredMediaType": { "const": "application/zip" }, "detectedMediaType": { "const": "application/zip" } }
+    },
+    "pair-model/gltf+json": {
+      "properties": { "declaredMediaType": { "const": "model/gltf+json" }, "detectedMediaType": { "const": "model/gltf+json" } }
+    },
+    "pair-model/gltf-binary": {
+      "properties": { "declaredMediaType": { "const": "model/gltf-binary" }, "detectedMediaType": { "const": "model/gltf-binary" } }
+    },
+    "pair-model/iges": {
+      "properties": { "declaredMediaType": { "const": "model/iges" }, "detectedMediaType": { "const": "model/iges" } }
+    },
+    "pair-model/step": {
+      "properties": { "declaredMediaType": { "const": "model/step" }, "detectedMediaType": { "const": "model/step" } }
+    },
+    "pair-model/stl": {
+      "properties": { "declaredMediaType": { "const": "model/stl" }, "detectedMediaType": { "const": "model/stl" } }
+    }
+  }
+}

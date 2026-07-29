@@ -59,3 +59,16 @@ U-002 is blocked. Execution may resume only after all of the following are evide
 7. Run a Jcode build that satisfies the plan's APS compatibility requirement.
 
 External-service cost incurred by U-001: **USD 0.00**.
+
+## Execution authorization update — 2026-07-29
+
+The original signed preflight above remains an immutable record of the initial STOP state. Subsequent checks cleared the repository, Cloudflare authentication, migration-history, recovery-bookmark, and credential-rotation gates before implementation began.
+
+The user explicitly enabled metered R2 Standard overage on 2026-07-29 with these account rates:
+
+- first 10 GB-month, 1 million Class A operations, and 10 million Class B operations included;
+- storage overage at USD 0.015/GB-month;
+- Class A overage at USD 4.50/million operations;
+- Class B overage at USD 0.36/million operations.
+
+This authorizes bounded, policy-approved evidence retention under application budget controls. It is not unlimited-spend authority and does not authorize a Workers Paid upgrade or full-expansion D1 write throughput. The five-source pilot may use the existing R2 binding after offline and preview gates pass.

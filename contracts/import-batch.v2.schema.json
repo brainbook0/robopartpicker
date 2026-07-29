@@ -109,21 +109,16 @@
     "snapshot": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sourceClass", "declaredMediaType", "detectedMediaType", "byteSize", "contentSha256", "retrievalMetadata"],
+      "required": ["sourceClass", "declaredMediaType", "detectedMediaType", "byteSize", "contentSha256", "immutableExternalUrl", "retrievalMetadata"],
       "properties": {
         "sourceClass": { "$ref": "#/$defs/classification" },
         "declaredMediaType": { "type": "string", "minLength": 1, "maxLength": 200 },
         "detectedMediaType": { "type": "string", "minLength": 1, "maxLength": 200 },
         "byteSize": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
         "contentSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "retainedObjectKey": { "type": "string", "minLength": 1, "maxLength": 1024 },
         "immutableExternalUrl": { "$ref": "#/$defs/httpUrl" },
         "retrievalMetadata": { "type": "object", "maxProperties": 256 }
-      },
-      "anyOf": [
-        { "required": ["retainedObjectKey"] },
-        { "required": ["immutableExternalUrl"] }
-      ]
+      }
     },
     "claim": {
       "type": "object",

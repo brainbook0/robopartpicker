@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "externalRegistrationId": "manufacturer-actuator-a-rev-a-datasheet",
+  "mode": "retained_bytes",
+  "sourceId": "manufacturer-pilot",
+  "importRecordId": "019c1111-2222-7333-8444-555566667777",
+  "sourcePolicyRevisionId": "019c8888-9999-7aaa-8bbb-ccccdddd0000",
+  "sourceClass": "official",
+  "evidenceClass": "document",
+  "sourceUrl": "https://manufacturer.example/actuator-a/datasheet.pdf",
+  "originalPublishedAt": "2026-07-01T00:00:00.000Z",
+  "retrievedAt": "2026-07-29T12:00:00.000Z",
+  "language": "en",
+  "countryOrRegion": "CA",
+  "applicableRevision": "rev-a",
+  "declaredMediaType": "application/pdf",
+  "detectedMediaType": "application/pdf",
+  "byteSize": 1048576,
+  "contentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "retrievalMetadata": {
+    "httpStatus": 200,
+    "etag": "datasheet-rev-a",
+    "collectorVersion": "collector-v1"
+  },
+  "copyrightReuseStatus": "retention_approved",
+  "traceId": "89abcdef0123456789abcdef01234567"
+}

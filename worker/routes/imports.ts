@@ -55,12 +55,9 @@ const v2RecordSchema = recordEnvelope.safeExtend({
     detectedMediaType: z.string().trim().min(1).max(200),
     byteSize: z.number().int().nonnegative().max(2_147_483_647),
     contentSha256: z.string().regex(/^[0-9a-f]{64}$/u),
-    retainedObjectKey: z.string().trim().min(1).max(1_024).optional(),
-    immutableExternalUrl: httpUrl.optional(),
+    immutableExternalUrl: httpUrl,
     retrievalMetadata: z.record(z.string(), z.unknown()),
-  }).strict().refine((snapshot) => Boolean(snapshot.retainedObjectKey || snapshot.immutableExternalUrl), {
-    message: "A retained object key or immutable external URL is required.",
-  }),
+  }).strict(),
   claims: z.array(v2ClaimSchema).max(256),
   lifecycleEvents: z.array(z.object({
     eventType: z.string().trim().min(1).max(100),
@@ -384,7 +381,9 @@ async function ensureUntrustedSourcePolicy(
   now: string,
 ): Promise<string> {
   const previous = await db.prepare(`
-    SELECT id FROM source_policy_revisions WHERE source_id = ? ORDER BY effective_at DESC, created_at DESC LIMIT 1
+    SELECT id FROM source_policy_revisions
+    WHERE source_id = ? AND decision = 'unreviewed' AND approval_authority_reference = 'external-ingestion-untrusted'
+    ORDER BY effective_at DESC, created_at DESC LIMIT 1
   `).bind(sourceId).first<{ id: string }>();
   const id = crypto.randomUUID();
   await db.prepare(`
@@ -445,7 +444,7 @@ function v2ProvenanceStatements(db: D1Database, context: V2ProvenanceContext): D
       record.snapshot.detectedMediaType,
       record.snapshot.byteSize,
       record.snapshot.contentSha256,
-      record.snapshot.retainedObjectKey ?? null,
+      null,
       record.snapshot.immutableExternalUrl ?? null,
       JSON.stringify({
         ...record.snapshot.retrievalMetadata,
@@ -456,7 +455,7 @@ function v2ProvenanceStatements(db: D1Database, context: V2ProvenanceContext): D
         traceparent: body.traceparent ?? null,
       }),
       record.provenance.copyrightReuseStatus,
-      record.snapshot.retainedObjectKey ? "retained" : "external_reference",
+      "external_reference",
       now,
     ),
   ];

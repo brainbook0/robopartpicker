@@ -43,7 +43,27 @@ Accepted record types are `manufacturer`, `supplier`, `component`, `offer`, `pro
 
 Version 2 adds one lowercase 32-hex `traceId`, an optional W3C version-00 `traceparent`, source policy metadata, universal record provenance, an immutable snapshot manifest, field-level claims, and lifecycle events. Source-submitted robots/terms/reuse metadata is stored as an **unreviewed** policy revision; it never grants live collection approval.
 
-Every v2 accepted record retains the same trace ID on its import job, import record, errors, and audit events. Staging rows resolve trace context through `import_record_id`. Snapshot bytes are not accepted by this endpoint: the manifest must reference a retained R2 object key or immutable external URL.
+Every v2 accepted record retains the same trace ID on its import job, import record, errors, and audit events. Staging rows resolve trace context through `import_record_id`. Snapshot bytes are not accepted by this endpoint. A batch snapshot must use an immutable external URL; an external collector cannot assert that an arbitrary R2 key is retained.
+
+## Immutable evidence registration
+
+Policy-approved evidence bytes use the separate `contracts/evidence-registration.v1.schema.json` contract:
+
+1. The collector sends bytes to `PUT /api/v1/source-evidence/objects/{sha256}` with the ingestion credential, exact `Content-Length`, declared and detected MIME types, evidence class, and an approved source-policy revision.
+2. The Worker streams the body directly to the private `FILES` R2 binding and supplies the declared SHA-256 to R2 for integrity verification. It never buffers an entire document or accepts a caller-selected object key.
+3. The object key is derived as `source-evidence/sha256/{first-two-hex}/{sha256}`. Identical bytes reuse that object.
+4. The collector sends the checked-in registration manifest to `POST /api/v1/source-evidence/registrations`. Retained registrations are accepted only after the exact object exists. External-reference, metadata-only, and typed rejection modes store no hidden bytes.
+
+Retention caps are 8 MiB for structured text, 25 MiB for documents, 10 MiB for images, and 50 MiB for archives or CAD. `media_or_other` is external-reference or metadata-only. Each retained class has an explicit MIME allowlist and requires its declared and detected MIME types to match.
+
+Source-submitted policy fields in an import batch remain untrusted. Their append-only revisions supersede only earlier external-untrusted assertions, never an independently approved policy revision. Retention requires a current, separately approved policy revision with `retention_approved` reuse. Production additionally requires an enabled `approved_live` source profile. Fixture approvals work only in test and development.
+
+Evidence metadata and content endpoints are under `/api/v1/admin/source-evidence/{snapshotId}` and require a platform moderator or administrator. Responses never expose an arbitrary R2 key. An administrator can append `takedown_pending` and then `takedown_complete` snapshot revisions; each transition creates a durable collection job and lifecycle event. Superseded bytes become inaccessible immediately. Takedown completion uses durable access restriction rather than a racy physical delete; content-addressed bytes remain non-enumerable for deduplication and no completed lineage can retrieve them.
+
+Collector handoff hashes for evidence-registration v1:
+
+- JSON Schema: `e636dd8574abe8d655a1998a5c712e17871baff1e1f890e130dc11c198fe63e3`
+- Canonical example: `667be52488490a3c7bef8cc89da8cfec72f3b049c07f6851e2e67b0db51907c9`
 
 ## Semantics
 
