@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "2.0",
+  "batchId": "manufacturer-fixture-2026-07-29-001",
+  "idempotencyKey": "manufacturer-fixture-2026-07-29-001",
+  "retrievalTimestamp": "2026-07-29T12:00:00.000Z",
+  "traceId": "89abcdef0123456789abcdef01234567",
+  "traceparent": "00-89abcdef0123456789abcdef01234567-0123456789abcdef-01",
+  "source": {
+    "externalSourceId": "fixture-manufacturer",
+    "name": "Fixture Manufacturer",
+    "type": "manufacturer",
+    "baseUrl": "https://manufacturer.example",
+    "language": "en",
+    "countryOrRegion": "CA",
+    "policy": {
+      "robotsStatus": "allowed",
+      "termsStatus": "approved",
+      "reuseStatus": "metadata_and_facts"
+    }
+  },
+  "records": [
+    {
+      "externalRecordId": "actuator-a-rev-a",
+      "recordType": "component",
+      "sourceUrl": "https://manufacturer.example/actuator-a",
+      "rawPayload": {
+        "name": "Actuator A",
+        "ratedTorque": "12 N.m"
+      },
+      "parsedData": {
+        "name": "Actuator A",
+        "category": "actuator",
+        "manufacturerPartNumber": "A-12"
+      },
+      "confidence": 0.97,
+      "provenance": {
+        "originalPublishedAt": "2026-07-01T00:00:00.000Z",
+        "lastSuccessfulCheckAt": "2026-07-29T12:00:00.000Z",
+        "applicableRevision": "rev-a",
+        "extractionMethod": "fixture-json",
+        "scraperVersion": "collector-example-v1",
+        "copyrightReuseStatus": "metadata_and_facts"
+      },
+      "snapshot": {
+        "sourceClass": "official",
+        "declaredMediaType": "application/json",
+        "detectedMediaType": "application/json",
+        "byteSize": 128,
+        "contentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "immutableExternalUrl": "https://manufacturer.example/actuator-a?revision=rev-a",
+        "retrievalMetadata": {
+          "status": 200
+        }
+      },
+      "claims": [
+        {
+          "claimKey": "actuator.rated_torque",
+          "originalValue": "12 N.m",
+          "normalizedValue": 12,
+          "unit": "N.m",
+          "confidence": 0.97,
+          "evidenceLocator": "json:$.ratedTorque",
+          "classification": "official"
+        }
+      ],
+      "lifecycleEvents": [
+        {
+          "eventType": "observed",
+          "occurredAt": "2026-07-29T12:00:00.000Z",
+          "reason": "fixture acquisition",
+          "details": {}
+        }
+      ]
+    }
+  ]
+}

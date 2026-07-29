@@ -2,7 +2,7 @@
 
 The scraper agent submits versioned batches to `POST /api/v1/imports/batches`. It authenticates with a dedicated service credential in `Authorization: Bearer <credential>` and does not use a user session. The raw credential is a Worker secret and is never stored in D1; audit records store only a credential identifier.
 
-The machine-readable contract is `contracts/import-batch.v1.schema.json`; an accepted example is `contracts/examples/import-batch.v1.json`. This document is the operational companion.
+The machine-readable contracts are `contracts/import-batch.v1.schema.json` and `contracts/import-batch.v2.schema.json`; accepted examples live beside them in `contracts/examples/`. Version 1 remains the bounded compatibility contract. New provenance-aware collectors use version 2.
 
 ## Interactive project import is separate
 
@@ -41,14 +41,30 @@ The public GitHub path accepts only canonical repository URLs and reads reposito
 
 Accepted record types are `manufacturer`, `supplier`, `component`, `offer`, `project`, `bom`, `integration`, `evidence`, `teardown`, `commercial_robot`, and `marketplace_reference`.
 
+Version 2 adds one lowercase 32-hex `traceId`, an optional W3C version-00 `traceparent`, source policy metadata, universal record provenance, an immutable snapshot manifest, field-level claims, and lifecycle events. Source-submitted robots/terms/reuse metadata is stored as an **unreviewed** policy revision; it never grants live collection approval.
+
+Every v2 accepted record retains the same trace ID on its import job, import record, errors, and audit events. Staging rows resolve trace context through `import_record_id`. Snapshot bytes are not accepted by this endpoint: the manifest must reference a retained R2 object key or immutable external URL.
+
 ## Semantics
 
 - `batchId`, `idempotencyKey`, and `(source, externalRecordId, recordType)` provide independent deduplication boundaries.
-- `retrievedAt` is when the source was observed, not when the batch was uploaded.
+- `retrievalTimestamp` is when the source was observed, not when the batch was uploaded.
 - `sourceUrl` must be HTTP(S), pass URL normalization, and is never fetched during ingestion.
 - `rawPayload` is retained as untrusted evidence. `parsedData` is validated against the record-type schema.
 - `confidence` is a source assertion in `[0,1]`; it never bypasses canonical review policy.
 - Withdrawal is a new import event referencing the external identity; history is not deleted.
+- Reusing a batch ID or idempotency key with the same normalized body returns the prior result. Reusing either with different content returns `IDEMPOTENCY_CONFLICT`.
+- Claimed canonical IDs are checked against the correct entity table before staging. Missing and wrong-type IDs return `CANONICAL_REFERENCE_NOT_FOUND` or `CANONICAL_REFERENCE_TYPE_MISMATCH`.
+
+## Record disposition
+
+| Record type | Pre-promotion disposition |
+| --- | --- |
+| `manufacturer`, `supplier`, `component`, `offer`, `project`, `bom`, `integration` | Typed staging table plus optional deterministic match candidates |
+| `evidence` | Typed parsed import record in mandatory review; canonical evidence is created only after approval |
+| `teardown`, `commercial_robot`, `marketplace_reference` | Typed parsed reference record in mandatory review; never projected into an unrelated catalog table |
+
+No accepted type is treated as an unreviewable raw-only success. Unsupported schema versions or record types fail with stable typed errors.
 
 ## Response
 
@@ -83,6 +99,10 @@ Offers, BOM items, and integration entities can refer to an already-approved rec
 
 Canonical merge operations retain the import-to-canonical linkage so an administrator can reassess the association. Source priority and freshness influence review, but never silently erase conflicting evidence.
 
-## Security limits
+## Security and compatibility limits
 
-The Worker enforces a maximum of 100 records per batch, the global API request-size limit, per-field sizes, HTTP(S)-only URLs, service authentication, API rate limits, and schema version. Repository content, scraped text, and documents are never placed in system/developer prompts and cannot request tools or alter policy.
+Both versions are limited to 1 MiB of actual UTF-8 request bytes, independent of `Content-Length`, and 100 records. JSON is limited to depth 10, 256 properties per object, 64 KiB per string, and 64 KiB of serialized `rawPayload` per record. Version 2 additionally caps claims at 256 and lifecycle events at 20 per record. Oversized source bodies belong in R2; they never spill into D1 metadata or privileged prompts.
+
+Stable contract error codes include `UNSUPPORTED_SCHEMA_VERSION`, `INVALID_TRACE_ID`, `INVALID_TRACEPARENT`, `PAYLOAD_TOO_LARGE`, `RAW_PAYLOAD_TOO_LARGE`, `STRING_TOO_LARGE`, `OBJECT_TOO_DEEP`, `TOO_MANY_PROPERTIES`, `CANONICAL_REFERENCE_NOT_FOUND`, `CANONICAL_REFERENCE_TYPE_MISMATCH`, `UNSUPPORTED_RECORD_TYPE`, and `IDEMPOTENCY_CONFLICT`.
+
+Repository content, scraped text, and documents are untrusted data. The ingestion endpoint never fetches a submitted URL, executes source content, places it in system/developer prompts, or lets it request tools or alter policy.

@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://robopartpicker.com/contracts/import-batch.v2.schema.json",
+  "title": "RoboPartPicker provenance-first external ingestion batch v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "batchId", "idempotencyKey", "retrievalTimestamp", "traceId", "source", "records"],
+  "properties": {
+    "schemaVersion": { "const": "2.0" },
+    "batchId": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 200 },
+    "retrievalTimestamp": { "type": "string", "format": "date-time" },
+    "traceId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "traceparent": { "type": "string", "pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$", "maxLength": 55 },
+    "source": { "$ref": "#/$defs/source" },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/record" }
+    }
+  },
+  "$defs": {
+    "httpUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://",
+      "maxLength": 2048
+    },
+    "classification": {
+      "enum": ["official", "reported", "measured", "calculated", "estimated", "ai_inferred"]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalSourceId", "name", "type", "policy"],
+      "properties": {
+        "externalSourceId": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "name": { "type": "string", "minLength": 2, "maxLength": 200 },
+        "type": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "baseUrl": {
+          "oneOf": [{ "$ref": "#/$defs/httpUrl" }, { "type": "null" }]
+        },
+        "priority": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 },
+        "trustWeight": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.5 },
+        "language": { "type": ["string", "null"], "maxLength": 35 },
+        "countryOrRegion": { "type": ["string", "null"], "maxLength": 80 },
+        "policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["robotsStatus", "termsStatus", "reuseStatus"],
+          "properties": {
+            "robotsStatus": { "enum": ["unknown", "allowed", "disallowed", "not_applicable"] },
+            "termsStatus": { "enum": ["unknown", "approved", "denied", "requires_review", "not_applicable"] },
+            "reuseStatus": { "enum": ["unknown", "metadata_only", "metadata_and_facts", "retention_approved", "denied"] }
+          }
+        }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalRecordId", "recordType", "sourceUrl", "rawPayload", "parsedData", "confidence", "provenance", "snapshot", "claims"],
+      "properties": {
+        "externalRecordId": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "recordType": {
+          "enum": ["manufacturer", "supplier", "component", "offer", "project", "bom", "integration", "evidence", "teardown", "commercial_robot", "marketplace_reference"]
+        },
+        "sourceUrl": { "$ref": "#/$defs/httpUrl" },
+        "rawPayload": {},
+        "parsedData": { "type": "object", "maxProperties": 256 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "action": { "enum": ["upsert", "withdraw"], "default": "upsert" },
+        "withdrawalOfExternalRecordId": { "type": ["string", "null"], "minLength": 1, "maxLength": 500 },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "snapshot": { "$ref": "#/$defs/snapshot" },
+        "claims": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/claim" }
+        },
+        "lifecycleEvents": {
+          "type": "array",
+          "maxItems": 20,
+          "default": [],
+          "items": { "$ref": "#/$defs/lifecycleEvent" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "const": "withdraw" } }, "required": ["action"] },
+          "then": { "required": ["withdrawalOfExternalRecordId"] }
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lastSuccessfulCheckAt", "applicableRevision", "extractionMethod", "scraperVersion", "copyrightReuseStatus"],
+      "properties": {
+        "originalPublishedAt": { "type": ["string", "null"], "format": "date-time" },
+        "lastSuccessfulCheckAt": { "type": "string", "format": "date-time" },
+        "applicableRevision": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "extractionMethod": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "scraperVersion": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "copyrightReuseStatus": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceClass", "declaredMediaType", "detectedMediaType", "byteSize", "contentSha256", "retrievalMetadata"],
+      "properties": {
+        "sourceClass": { "$ref": "#/$defs/classification" },
+        "declaredMediaType": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "detectedMediaType": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "byteSize": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "contentSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "retainedObjectKey": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "immutableExternalUrl": { "$ref": "#/$defs/httpUrl" },
+        "retrievalMetadata": { "type": "object", "maxProperties": 256 }
+      },
+      "anyOf": [
+        { "required": ["retainedObjectKey"] },
+        { "required": ["immutableExternalUrl"] }
+      ]
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claimKey", "originalValue", "confidence", "evidenceLocator", "classification"],
+      "properties": {
+        "claimKey": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "originalValue": {},
+        "normalizedValue": {},
+        "unit": { "type": ["string", "null"], "maxLength": 80 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidenceLocator": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "classification": { "$ref": "#/$defs/classification" },
+        "language": { "type": ["string", "null"], "maxLength": 35 },
+        "countryOrRegion": { "type": ["string", "null"], "maxLength": 80 },
+        "applicableRevision": { "type": ["string", "null"], "maxLength": 200 },
+        "extractionMethod": { "type": "string", "maxLength": 200 }
+      }
+    },
+    "lifecycleEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eventType", "occurredAt"],
+      "properties": {
+        "eventType": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "occurredAt": { "type": "string", "format": "date-time" },
+        "reason": { "type": ["string", "null"], "maxLength": 2000 },
+        "details": { "type": "object", "maxProperties": 256, "default": {} }
+      }
+    }
+  }
+}

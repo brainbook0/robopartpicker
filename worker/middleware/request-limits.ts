@@ -7,7 +7,12 @@ export const apiRequestSizeLimit = createMiddleware<AppBindings>(async (c, next)
   if (["POST", "PUT", "PATCH"].includes(c.req.method) && !c.req.path.endsWith("/content") && !isFileBody) {
     const length = Number(c.req.header("content-length") ?? 0);
     if (Number.isFinite(length) && length > 1_048_576) {
-      throw new AppError(413, "REQUEST_TOO_LARGE", "API request bodies are limited to 1 MiB.");
+      const isImportBatch = c.req.path === "/api/v1/imports/batches";
+      throw new AppError(
+        413,
+        isImportBatch ? "PAYLOAD_TOO_LARGE" : "REQUEST_TOO_LARGE",
+        isImportBatch ? "Import batches are limited to 1 MiB." : "API request bodies are limited to 1 MiB.",
+      );
     }
   }
   await next();
