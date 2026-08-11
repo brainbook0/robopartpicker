@@ -29,10 +29,15 @@ export type ProjectRow = {
   is_demo: boolean;
   created_at: string;
   updated_at: string;
+  githubStars: number | null;
 };
 
 export async function listPublicProjects(): Promise<ProjectRow[]> {
-  return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?limit=100")).items;
+  return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?limit=1000&sort=popularity")).items;
+}
+
+export async function listProjectsPage(page: number, limit = 1000): Promise<{ items: ProjectRow[]; total: number }> {
+  return await api.get<{ items: ProjectRow[]; total: number }>(`/api/v1/projects?limit=${limit}&sort=popularity&page=${page}`);
 }
 
 export async function listMyProjects(userId: string): Promise<ProjectRow[]> {

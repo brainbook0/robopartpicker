@@ -40,11 +40,15 @@ export const projectRoutes = new Hono<AppBindings>();
 
 projectRoutes.get("/projects", loadAuthSession, async (c) => {
   const userId = c.get("authSession")?.user?.id ?? null;
-  const limit = parsePositiveInt(c.req.query("limit"), 50, 100);
+  const limit = parsePositiveInt(c.req.query("limit"), 50, 1000);
   const page = parsePositiveInt(c.req.query("page"), 1, 10_000);
+  const sort = ["popularity", "updated", "name"].includes(c.req.query("sort") ?? "")
+    ? (c.req.query("sort") as "popularity" | "updated" | "name")
+    : "popularity";
   const result = await new ProjectsRepository(c.env.DB).listVisible(userId, {
     q: c.req.query("q")?.trim().slice(0, 100) || undefined,
     mine: c.req.query("mine") === "true",
+    sort,
     limit,
     offset: (page - 1) * limit,
   });
