@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Search, FileJson, GitBranch, Package, X, Cpu, Boxes, Clock } from "lucide-react";
-import { listPublicProjects, type ProjectRow } from "@/lib/projects";
+import { Plus, Search, FileJson, GitBranch, Package, X, Cpu, Boxes, Clock, Star } from "lucide-react";
+import { listProjectsPage, type ProjectRow } from "@/lib/projects";
 import { useAuth } from "@/contexts/AuthContext";
 
-type SortKey = "updated" | "cost_asc" | "repro_desc" | "name";
+type SortKey = "popularity" | "updated" | "cost_asc" | "repro_desc" | "name";
 
 const median = (nums: number[]) => {
   if (nums.length === 0) return null;
@@ -18,6 +18,13 @@ const rosSupport = (p: ProjectRow) => p.rpps?.software?.ros_support;
 const hasRos = (p: ProjectRow) => {
   const r = rosSupport(p);
   return r === "native" || r === "community";
+};
+
+const fmtStars = (n: number | null | undefined) => {
+  if (n == null) return null;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`;
+  return `${n}`;
 };
 
 const relTime = (iso: string) => {
@@ -35,12 +42,15 @@ export default function ProjectsIndex() {
   const [params, setParams] = useSearchParams();
   const [rows, setRows] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [err, setErr] = useState<string | null>(null);
 
   const q = params.get("q") ?? "";
   const tag = params.get("tag");
   const difficulty = params.get("difficulty") ?? "";
-  const sort = (params.get("sort") as SortKey) || "updated";
+  const sort = (params.get("sort") as SortKey) || "popularity";
   const quickParam = params.get("f") ?? "";
   const quick = useMemo(() => new Set(quickParam.split(",").filter(Boolean)), [quickParam]);
 
@@ -57,9 +67,22 @@ export default function ProjectsIndex() {
   const clearFilters = () => setParams(new URLSearchParams(), { replace: false });
 
   useEffect(() => {
-    listPublicProjects().then(r => { setRows(r); setLoading(false); })
-      .catch(e => { setErr(e.message); setLoading(false); });
+    listProjectsPage(1).then(r => {
+      setRows(r.items); setTotal(r.total); setPage(1); setLoading(false);
+    }).catch(e => { setErr(e.message); setLoading(false); });
   }, []);
+
+  const loadMore = () => {
+    if (loading) return;
+    setLoadingMore(true);
+    listProjectsPage(page + 1).then(r => {
+      setRows(prev => {
+        const seen = new Set(prev.map(p => p.id));
+        return [...prev, ...r.items.filter(p => !seen.has(p.id))];
+      });
+      setTotal(r.total); setPage(pg => pg + 1); setLoadingMore(false);
+    }).catch(() => setLoadingMore(false));
+  };
 
   const allTags = useMemo(() => Array.from(new Set(rows.flatMap(r => r.tags))).sort(), [rows]);
 
@@ -77,6 +100,7 @@ export default function ProjectsIndex() {
     });
     list = [...list].sort((a, b) => {
       switch (sort) {
+        case "popularity": return (b.githubStars ?? -1) - (a.githubStars ?? -1) || new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
         case "cost_asc": return (a.estimated_cost_usd ?? Infinity) - (b.estimated_cost_usd ?? Infinity);
         case "repro_desc": return b.successful_reproduction_count - a.successful_reproduction_count || b.reproduction_count - a.reproduction_count;
         case "name": return a.name.localeCompare(b.name);
@@ -164,6 +188,7 @@ export default function ProjectsIndex() {
         <select value={sort} onChange={e => setParam("sort", e.target.value === "updated" ? null : e.target.value)}
           aria-label="Sort projects"
           className="h-7 rounded border border-input bg-surface px-2 text-[12px]">
+          <option value="popularity">Most popular</option>
           <option value="updated">Recently updated</option>
           <option value="cost_asc">Lowest cost</option>
           <option value="repro_desc">Highest reproducibility</option>
@@ -225,6 +250,18 @@ export default function ProjectsIndex() {
           {filtered.map(p => <ProjectCard key={p.id} p={p} />)}
         </div>
       )}
+
+      {!loading && rows.length > 0 && rows.length < total && !noMatches && (
+        <div className="mt-4 flex justify-center">
+          {filtered.length < rows.length
+            ? <span className="text-[11px] text-muted-foreground">{filtered.length} shown after filters · loading more lets you search deeper</span>
+            : (
+              <button onClick={loadMore} disabled={loadingMore} className="btn-ghost btn-sm">
+                {loadingMore ? "Loading…" : `Load more (${rows.length.toLocaleString()} of ${total.toLocaleString()})`}
+              </button>
+            )}
+        </div>
+      )}
     </div>
   );
 }
@@ -282,7 +319,14 @@ function ProjectCard({ p }: { p: ProjectRow }) {
             <div className="text-[13px] font-semibold truncate">{p.name}</div>
             <div className="text-[11px] text-muted-foreground mono truncate">v{p.version} · {p.status}</div>
           </div>
-          {p.repo_url && <GitBranch className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-label="Has repository" />}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {p.githubStars != null && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground" aria-label={`${p.githubStars} GitHub stars`}>
+                <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" /> {fmtStars(p.githubStars)}
+              </span>
+            )}
+            {p.repo_url && <GitBranch className="h-3.5 w-3.5 text-muted-foreground" aria-label="Has repository" />}
+          </div>
         </div>
         {p.summary && <p className="text-[12px] text-muted-foreground line-clamp-2 mt-1.5">{p.summary}</p>}
 

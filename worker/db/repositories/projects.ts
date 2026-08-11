@@ -20,6 +20,7 @@ type ProjectDatabaseRow = {
   version: number;
   created_at: string;
   updated_at: string;
+  github_stars: number | null;
   version_label: string | null;
   rpps_schema_version: string | null;
   rpps_json: string | null;
@@ -54,6 +55,7 @@ export type ProjectDto = {
   is_demo: boolean;
   created_at: string;
   updated_at: string;
+  githubStars: number | null;
 };
 
 export type ProjectFileDto = {
@@ -78,6 +80,7 @@ export type ProjectFileDto = {
 const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p.owner_user_id,
   p.organization_id, p.visibility, p.status, p.license_spdx, p.repository_url, p.difficulty,
   p.estimated_cost_minor, p.estimated_cost_currency, p.is_demo, p.version, p.created_at, p.updated_at,
+  p.github_stars,
   pv.version_label, pv.rpps_schema_version, pv.rpps_json,
   (SELECT COUNT(*) FROM rpps_build_passports bp
     JOIN rpps_releases rr ON rr.id = bp.release_id
@@ -92,7 +95,7 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
 export class ProjectsRepository {
   constructor(private readonly db: D1Database) {}
 
-  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; limit: number; offset: number }): Promise<{ items: ProjectDto[]; total: number }> {
+  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
     const access = options.mine
@@ -107,9 +110,18 @@ export class ProjectsRepository {
     }
     const where = `WHERE ${clauses.join(" AND ")}`;
     const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM projects p ${where}`).bind(...values).first<{ total: number }>();
-    const rows = await this.db.prepare(`${SELECT_PROJECT} ${where} ORDER BY p.updated_at DESC LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`)
+    const rows = await this.db.prepare(`${SELECT_PROJECT} ${where} ORDER BY ${this.orderBy(options.sort)} LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`)
       .bind(...values, options.limit, options.offset).all<ProjectDatabaseRow>();
     return { items: rows.results.map(toProjectDto), total: Number(count?.total ?? 0) };
+  }
+
+  private orderBy(sort: "popularity" | "updated" | "name" | undefined): string {
+    switch (sort) {
+      case "name": return "p.name COLLATE NOCASE ASC, p.github_stars DESC";
+      case "updated": return "p.updated_at DESC";
+      case "popularity":
+      default: return "COALESCE(p.github_stars, -1) DESC, p.updated_at DESC";
+    }
   }
 
   async find(idOrSlug: string): Promise<{ row: ProjectDatabaseRow; item: ProjectDto } | null> {
@@ -374,5 +386,6 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     is_demo: row.is_demo === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    githubStars: row.github_stars ?? null,
   };
 }
