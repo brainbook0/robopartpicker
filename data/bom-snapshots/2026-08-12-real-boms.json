@@ -1,0 +1,2077 @@
+{
+ "schema": "robopartpicker/bom-snapshot/1",
+ "created_at": "2026-08-12T21:10:00Z",
+ "commit": "47fd2ca",
+ "note": "Real BOMs harvested from upstream repositories on 2026-08-12. Restore with scripts/restore-bom-snapshot.ts.",
+ "projects": [
+  {
+   "slug": "ardupilot",
+   "project_id": "16b49074-e06d-489d-971b-5a12c2e5d516",
+   "version_id": "ffe0196d-0371-443e-a25c-b305857b5258",
+   "stars": 15670,
+   "rpps_name": "\"ardupilot\"",
+   "bom": [
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "phy_init",
+     "qty": 1
+    },
+    {
+     "name": "factory",
+     "qty": 1
+    },
+    {
+     "name": "storage",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "balancing-cube",
+   "project_id": "7a6fbc6c-713f-4a0f-a428-d1e748d539ce",
+   "version_id": "e5df2589-ed44-45f1-a7be-2433c234e394",
+   "stars": 1061,
+   "rpps_name": "\"balancing-cube\"",
+   "bom": [
+    {
+     "name": "Aluminium Electrolytic Capacitors - Radial Leaded 120uF 63 Volts 20%",
+     "mpn": "647-UPM1J121MHD6TO",
+     "qty": 3
+    },
+    {
+     "name": "Aluminium Electrolytic Capacitors - Radial Leaded 50volts 470uF 18x15 20% 7.5LS",
+     "mpn": "647-UPJ1H471MHD6",
+     "qty": 1
+    },
+    {
+     "name": "Aluminium Electrolytic Capacitors - Radial Leaded 25volts 220uF 10x12.5 '20% 5LS",
+     "mpn": "647-UPJ1E221MPD6",
+     "qty": 1
+    },
+    {
+     "name": "Multilayer Ceramic Capacitors MLCC - SMD/SMT 50V 0.1uF X7R 0603 10% Flex AEC-Q200",
+     "mpn": "80-C0603X104K5R3316",
+     "qty": 6
+    },
+    {
+     "name": "Multilayer Ceramic Capacitors MLCC - SMD/SMT 10V 10uF X5R 0603 20%",
+     "mpn": "80-C0603C106M8PACTU",
+     "qty": 2
+    },
+    {
+     "name": "ESD Suppressors / TVS Diodes 33V 1000W UniDir TransZorb 5% Tol",
+     "mpn": "78-SMBJ33A",
+     "qty": 3
+    },
+    {
+     "name": "Schottky Diodes & Rectifiers 40V 3A SCHOTTKY RECTIF",
+     "mpn": "863-NRVBSS34FA",
+     "qty": 1
+    },
+    {
+     "name": "ESD Suppressors / TVS Diodes 3.3V Bidirectional",
+     "mpn": "652-CDDFN2-T3.3B",
+     "qty": 3
+    },
+    {
+     "name": "Surface Mount Fuses 260C 4A SMF NANO CLIP VFA",
+     "mpn": "576-0157004.DR",
+     "qty": 3
+    },
+    {
+     "name": "XT60 connector female",
+     "mpn": "474-PRT-10474",
+     "qty": 4
+    },
+    {
+     "name": "XT60 connector male",
+     "mpn": "474-PRT-10474",
+     "qty": 4
+    },
+    {
+     "name": "Headers & Wire Housings 8 CKT VERT HEADER",
+     "mpn": "538-39-28-1083",
+     "qty": 3
+    },
+    {
+     "name": "Rectangular Cable Assemblies MINIFIT JR DR R-R 8CKT 150MM Sn",
+     "mpn": "538-215325-1081",
+     "qty": 3
+    },
+    {
+     "name": "Headers & Wire Housings Classic PCB Header Strips, 0.100\" pitch",
+     "mpn": "200-TSW10607LT",
+     "qty": 1
+    },
+    {
+     "name": "Power Inductors - SMD Ind,11x10x5.1mm,68uH+/-20%,3.5A,shd",
+     "mpn": "652-SRP1050WA-680M",
+     "qty": 1
+    },
+    {
+     "name": "MOSFET 50V, 0.26A, Single N-Channel Power MOSFET",
+     "mpn": "821-BSS138",
+     "qty": 2
+    },
+    {
+     "name": "Thick Film Resistors - SMD 10K OHM 5%",
+     "mpn": "71-RCA060310K0JNEA",
+     "qty": 4
+    },
+    {
+     "name": "WiFi Development Tools - 802.11 ESP32-S3 Gen-Purpose Dev Bd, ESP32-S3-WROOM-1",
+     "mpn": "356-EP32S3DVKTC1N8R8",
+     "qty": 1
+    },
+    {
+     "name": "Switching Voltage Regulators 150 KHZ 3A STEP-DOWN VLTG REG",
+     "mpn": "926-LM2596SX-5.0NOPB",
+     "qty": 1
+    },
+    {
+     "name": "LDO Voltage Regulators High Vin, Low Iq Regulator",
+     "mpn": "998-MIC5225-1.8YM5TR",
+     "qty": 1
+    },
+    {
+     "name": "IMUs - Inertial Measurement Units World's Lowest Power 9-Axis MEMS MotionTracking",
+     "mpn": "410-ICM-20948",
+     "qty": 1
+    },
+    {
+     "name": "Headers & Wire Housings",
+     "mpn": "801-87-011-10-005101",
+     "qty": 7
+    },
+    {
+     "name": "Headers & Wire Housings",
+     "mpn": "801-87-013-10-005101",
+     "qty": 3
+    },
+    {
+     "name": "Slide Switches Slide DPST",
+     "mpn": "611-L201011MS02Q",
+     "qty": 2
+    },
+    {
+     "name": "EC 45 flat ∅42.8 mm, brushless, 60 W, with Hall sensors | Open rotor",
+     "mpn": "591477",
+     "qty": 3
+    },
+    {
+     "name": "ESCON Module 24/2, 4-Q servo controller for DC/EC motors, 2/6 A, 10-24 VDC",
+     "mpn": "466023",
+     "qty": 3
+    },
+    {
+     "name": "Machined part: motor frame (aluminium 6061)",
+     "qty": 3
+    },
+    {
+     "name": "Machined part: regular frame (aluminium 6061)",
+     "qty": 3
+    },
+    {
+     "name": "Machined part: bridge (stainless steel 304)",
+     "qty": 3
+    },
+    {
+     "name": "Machined part: hub (stainless steel 304)",
+     "qty": 3
+    },
+    {
+     "name": "Machined part: wheel (stainless steel 304)",
+     "qty": 3
+    },
+    {
+     "name": "Machined part: Cornerstone A/CW (stainless steel 304)",
+     "qty": 4
+    },
+    {
+     "name": "Machined part: Cornerstone B/CCW (stainless steel 304)",
+     "qty": 4
+    },
+    {
+     "name": "Tattu Funfly Series 1300mAh 22.2V 100C 6S1P LiPo",
+     "qty": 1
+    },
+    {
+     "name": "Custom PCB: cube-motherboard (4-layer ENIG)",
+     "qty": 1
+    },
+    {
+     "name": "Custom PCB: cube-batteryboard (2-layer HASL)",
+     "qty": 1
+    },
+    {
+     "name": "Machine screw M3x6 countersunk (motor - bridge)",
+     "qty": 9
+    },
+    {
+     "name": "Machine screw M3x10 countersunk (frame - batteryboard, frame - motherboard)",
+     "qty": 8
+    },
+    {
+     "name": "Nut M3",
+     "qty": 8
+    },
+    {
+     "name": "Nylon spacer black ID 3.2 mm OD 7 mm",
+     "qty": 8
+    },
+    {
+     "name": "Set screw hex M3x4 (hub - motor)",
+     "qty": 9
+    },
+    {
+     "name": "Machine screw M2x6 countersunk (wheel - hub)",
+     "qty": 9
+    },
+    {
+     "name": "Machine screw M3x8 countersunk (cornerstone - frame, frame - bridge)",
+     "qty": 36
+    },
+    {
+     "name": "Radial ball bearing, 4 mm x 9 mm x 4 mm (bore diameter x outer diameter x width)",
+     "mpn": "638-4-ZZ-SKF",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "slug": "barkour-robot",
+   "project_id": "74e21431-e333-4212-8d93-9d0e3af95e5e",
+   "version_id": "db57c38a-9b85-44b7-b0d6-84e5a1e9014f",
+   "stars": 369,
+   "rpps_name": "\"barkour_robot\"",
+   "bom": [
+    {
+     "name": "Cap Ceramic 1uF 6.3V X5R ±20% Pad SMD 0201 +85°C T/R",
+     "qty": 4
+    },
+    {
+     "name": "CAP CER 10000PF 50V 20% X7R 0402",
+     "qty": 1
+    },
+    {
+     "name": "CAP CER 0.1UF 50V X5R 0402",
+     "qty": 2
+    },
+    {
+     "name": "TVS Diode (Bi-directional)",
+     "qty": 1
+    },
+    {
+     "name": "LED ORANGE CLEAR 1006 SMD",
+     "qty": 1
+    },
+    {
+     "name": "LED RED CLEAR CHIP SMD",
+     "qty": 1
+    },
+    {
+     "name": "LED BLUE CLEAR 0402 SMD",
+     "qty": 1
+    },
+    {
+     "name": "Connector",
+     "qty": 1
+    },
+    {
+     "name": "PCB",
+     "qty": 1
+    },
+    {
+     "name": "432K",
+     "qty": 1
+    },
+    {
+     "name": "RES SMD 200 OHM 1% 1/10W 0402",
+     "qty": 3
+    },
+    {
+     "name": "Thermistor",
+     "qty": 1
+    },
+    {
+     "name": "SENSOR, ANGLE, 9 BIT TO 14 BIT RESOLUTION, 14-BIT PWM OUTPUT, 3.3V, 12mA, QFN-16",
+     "qty": 1
+    },
+    {
+     "name": "Ultralow Noise, 150 mA CMOS Linear Regulator, 2.2 to 5.5 V Vin, 3.3 V Vout, Industrial, 5-pin SOT23 (UJ-5), Reel",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "client-sdk-esp32",
+   "project_id": "bda632da-7f99-4fb4-a439-e340c08c67f2",
+   "version_id": "b9b3b366-74ae-405c-b048-abfda16a76a0",
+   "stars": 142,
+   "rpps_name": "\"client-sdk-esp32\"",
+   "bom": [
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "phy_init",
+     "qty": 1
+    },
+    {
+     "name": "factory",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "esp-drone",
+   "project_id": "b7106ec8-112b-4692-b388-4f91679927fa",
+   "version_id": "2e255023-6fe0-4930-83af-af7268574af4",
+   "stars": 2099,
+   "rpps_name": "\"esp-drone\"",
+   "bom": [
+    {
+     "name": "陶瓷电容",
+     "qty": 4
+    },
+    {
+     "name": "单排排母,8P,间距2.0mm,错位贴片,A型",
+     "manufacturer": "长江连接器",
+     "mpn": "A2005HWV-S-8P-A",
+     "qty": 4
+    },
+    {
+     "name": "贴片电阻",
+     "qty": 5
+    },
+    {
+     "name": "光流传感器",
+     "manufacturer": "PixArt Imaging",
+     "mpn": "PMW3901MB-TXQT",
+     "qty": 1
+    },
+    {
+     "name": "LDO,输出电压2.0V",
+     "manufacturer": "微盟电子",
+     "mpn": "ME6211C20M5G-N",
+     "qty": 1
+    },
+    {
+     "name": "ToF传感器",
+     "manufacturer": "ST",
+     "mpn": "VL53L1CXV0FY/1",
+     "qty": 1
+    },
+    {
+     "name": "Compass传感器",
+     "manufacturer": "Honeywell",
+     "mpn": "HMC5833L",
+     "qty": 1
+    },
+    {
+     "name": "气压传感器",
+     "manufacturer": "TE",
+     "mpn": "MS5611-01BA",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "esp-fc",
+   "project_id": "278191eb-7d6d-449b-a5da-5a138419961f",
+   "version_id": "31c2b8c1-3bc8-447a-80cf-2280195a1960",
+   "stars": 791,
+   "rpps_name": "\"esp-fc\"",
+   "bom": [
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "otadata",
+     "qty": 1
+    },
+    {
+     "name": "app0",
+     "qty": 1
+    },
+    {
+     "name": "spiffs",
+     "qty": 1
+    },
+    {
+     "name": "coredump",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "esp32",
+   "project_id": "00b34732-a9bf-4918-9751-b5be5454dbb5",
+   "version_id": "eaceafa2-4914-4fe2-bc6b-150f20543545",
+   "stars": 998,
+   "rpps_name": "\"ESP32\"",
+   "bom": [
+    {
+     "name": "# Note: if you have increased the bootloader size",
+     "qty": 1
+    },
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "phy_init",
+     "qty": 1
+    },
+    {
+     "name": "factory",
+     "qty": 1
+    },
+    {
+     "name": "www",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "expresslrs-hardware",
+   "project_id": "ce2316c9-3152-4165-8ea4-c2400e5d90bf",
+   "version_id": "ffcca272-fb10-49f9-81b3-40a036b8f288",
+   "stars": 403,
+   "rpps_name": "\"ExpressLRS-Hardware\"",
+   "bom": [
+    {
+     "name": "10nF",
+     "manufacturer": "MuRata",
+     "mpn": "GRM155B11E103KA01D",
+     "qty": 2
+    },
+    {
+     "name": "100nF",
+     "manufacturer": "SAMSUNG",
+     "mpn": "CL05B104KO5NNNC",
+     "qty": 1
+    },
+    {
+     "name": "2.2uF",
+     "manufacturer": "Murata Electronics",
+     "mpn": "GRM155B30G225ME15D",
+     "qty": 1
+    },
+    {
+     "name": "10uF",
+     "manufacturer": "SAMSUNG",
+     "mpn": "CL05A106MQ5NUNC",
+     "qty": 1
+    },
+    {
+     "name": "470nF",
+     "manufacturer": "TDK",
+     "mpn": "CGA2B1X7S1C474KT000F",
+     "qty": 1
+    },
+    {
+     "name": "1mm pad",
+     "qty": 2
+    },
+    {
+     "name": "1K",
+     "manufacturer": "ResistorToday",
+     "mpn": "AECR0402F1K00K9",
+     "qty": 1
+    },
+    {
+     "name": "10K",
+     "manufacturer": "ResistorToday",
+     "mpn": "AECR0402F1K00K9",
+     "qty": 1
+    },
+    {
+     "name": "ZL6205A33TS5",
+     "manufacturer": "ZLG Zhiyuan Elec",
+     "mpn": "ZL6205A33TS5",
+     "qty": 1
+    },
+    {
+     "name": "STM32L432KBU6",
+     "manufacturer": "STMicroelectronics",
+     "mpn": "STM32L432KBU6",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "faze4-robotic-arm",
+   "project_id": "aa5a911c-e09e-4f36-9616-9eae1f8563f5",
+   "version_id": "6c2c41ad-1266-4091-a655-1c3c186fa311",
+   "stars": 885,
+   "rpps_name": "\"Faze4-Robotic-arm\"",
+   "bom": [
+    {
+     "name": "Joint 6 Output shaft",
+     "qty": 1
+    },
+    {
+     "name": "Wrist case",
+     "qty": 1
+    },
+    {
+     "name": "Wrist cover",
+     "qty": 1
+    },
+    {
+     "name": "Forearm main case",
+     "qty": 1
+    },
+    {
+     "name": "J5 ring rollers",
+     "qty": 12
+    },
+    {
+     "name": "11:1 cyclo disc",
+     "qty": 4
+    },
+    {
+     "name": "Eccentric shaft J5",
+     "qty": 1
+    },
+    {
+     "name": "Servo gripper plug",
+     "qty": 1
+    },
+    {
+     "name": "joint 5 output shaft",
+     "qty": 1
+    },
+    {
+     "name": "joint 5 output spacers",
+     "qty": 10
+    },
+    {
+     "name": "joint 5 switch trigger",
+     "qty": 1
+    },
+    {
+     "name": "Forearm top cover",
+     "qty": 1
+    },
+    {
+     "name": "J5 28 teeth pulley",
+     "qty": 2
+    },
+    {
+     "name": "Joint 4 output shaft",
+     "qty": 1
+    },
+    {
+     "name": "Joint 4 motor case",
+     "qty": 1
+    },
+    {
+     "name": "J4 ring spacers",
+     "qty": 12
+    },
+    {
+     "name": "Eccentric shaft J4",
+     "qty": 1
+    },
+    {
+     "name": "J4 cyclo output shaft",
+     "qty": 1
+    },
+    {
+     "name": "joint 4 output spacers",
+     "qty": 10
+    },
+    {
+     "name": "Joint 3 main case",
+     "qty": 1
+    },
+    {
+     "name": "Joint 3 cover",
+     "qty": 1
+    },
+    {
+     "name": "15:1 cyclo disc",
+     "qty": 4
+    },
+    {
+     "name": "Joint 3 ring spacers",
+     "qty": 32
+    },
+    {
+     "name": "Joint 3 output shaft",
+     "qty": 1
+    },
+    {
+     "name": "Joint 3 top cover",
+     "qty": 1
+    },
+    {
+     "name": "Joint 4 offset",
+     "qty": 1
+    },
+    {
+     "name": "Joint 4 limit switch cover",
+     "qty": 1
+    },
+    {
+     "name": "Joint 4 pulley 28 teeth",
+     "qty": 1
+    },
+    {
+     "name": "26 teeth Joint 4 pulley",
+     "qty": 1
+    },
+    {
+     "name": "Fork_motor",
+     "qty": 1
+    },
+    {
+     "name": "Joint 2 cover",
+     "qty": 1
+    },
+    {
+     "name": "Joint 2 cyclo disc",
+     "qty": 2
+    },
+    {
+     "name": "Joint 2 ring spacer",
+     "qty": 28
+    },
+    {
+     "name": "Joint 1 main case",
+     "qty": 1
+    },
+    {
+     "name": "Joint 1 ring spacers",
+     "qty": 32
+    },
+    {
+     "name": "Main base",
+     "qty": 1
+    },
+    {
+     "name": "Shaft blocker",
+     "qty": 1
+    },
+    {
+     "name": "Forearm motor lid",
+     "qty": 1
+    },
+    {
+     "name": "Forearm wires lid",
+     "qty": 1
+    },
+    {
+     "name": "Upper arm lid",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "foc-wheel-legged-robot",
+   "project_id": "5a3a1b8a-50a5-4298-8771-678be0b28f4b",
+   "version_id": "12d873c5-33d2-4c57-887c-6244b68dd7fc",
+   "stars": 1692,
+   "rpps_name": "\"foc-wheel-legged-robot\"",
+   "bom": [
+    {
+     "name": "# Note: if you change the phy_init or app partition offset",
+     "qty": 1
+    },
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "phy_init",
+     "qty": 1
+    },
+    {
+     "name": "factory",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "hopejr",
+   "project_id": "ca040e51-752d-4134-a1ee-5555e9879bbb",
+   "version_id": "e009fe2c-45ff-47b6-b891-c3804d6eed72",
+   "stars": 815,
+   "rpps_name": "\"HOPEJr\"",
+   "bom": [
+    {
+     "name": "JST_EH_B3B-EH-A_1x03_P2.50mm_Vertical",
+     "qty": 12
+    }
+   ]
+  },
+  {
+   "slug": "micro-rc-receiver",
+   "project_id": "b5e15a39-015d-4483-bef6-d6fa5d16fb77",
+   "version_id": "da12fd49-d285-4e47-89da-3fe72984c392",
+   "stars": 155,
+   "rpps_name": "\"Micro_RC_Receiver\"",
+   "bom": [
+    {
+     "name": "ATmega328P-MU",
+     "qty": 1
+    },
+    {
+     "name": "12",
+     "qty": 13
+    },
+    {
+     "name": "15",
+     "qty": 16
+    },
+    {
+     "name": "17",
+     "qty": 18
+    },
+    {
+     "name": "19",
+     "qty": 20
+    },
+    {
+     "name": "21",
+     "qty": 22
+    },
+    {
+     "name": "23",
+     "qty": 24
+    },
+    {
+     "name": "100nF 50V",
+     "qty": 2
+    },
+    {
+     "name": "10k",
+     "qty": 2
+    },
+    {
+     "name": "10uF 16V Tantalum",
+     "qty": 1
+    },
+    {
+     "name": "20k",
+     "qty": 1
+    },
+    {
+     "name": "CSTNE8M00G550000R0",
+     "qty": 1
+    },
+    {
+     "name": "MIC5205-3.3",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "open-source-rover",
+   "project_id": "cd507bd6-295a-43ca-a50e-77705723baea",
+   "version_id": "f4e63def-4240-46b0-8a72-5a4fa59ef398",
+   "stars": 9566,
+   "rpps_name": "\"open-source-rover\"",
+   "bom": [
+    {
+     "name": "Connector Header 16P 2x8",
+     "manufacturer": "On Shore Technology Inc.",
+     "mpn": "302-S161",
+     "qty": 1
+    },
+    {
+     "name": "Connector Header pin 40P 40x1",
+     "manufacturer": "Sullins",
+     "mpn": "PRPC040SAAN-RC",
+     "qty": 1
+    },
+    {
+     "name": "Connector Header 6P 6x1",
+     "manufacturer": "JST",
+     "mpn": "B6B-PH-K-S(LF)(SN)",
+     "qty": 1
+    },
+    {
+     "name": "Term block 2P side entry",
+     "manufacturer": "Phoenix Contact",
+     "mpn": "1984617",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "openamr",
+   "project_id": "301df11d-e2b8-4c51-8a8e-117a265b83a4",
+   "version_id": "0cfd2822-127f-4f9e-8c99-7ce85d099adc",
+   "stars": 145,
+   "rpps_name": "\"openamr\"",
+   "bom": [
+    {
+     "name": "MMP.00.00.00.000",
+     "mpn": "MMP.00.00.00.000",
+     "qty": 1
+    },
+    {
+     "name": "MMP.00.00.00.001",
+     "mpn": "MMP.00.00.00.001",
+     "qty": 1
+    },
+    {
+     "name": "MMP.00.00.00.002",
+     "mpn": "MMP.00.00.00.002",
+     "qty": 1
+    },
+    {
+     "name": "MMP.00.00.00.003",
+     "mpn": "MMP.00.00.00.003",
+     "qty": 2
+    },
+    {
+     "name": "РТ1.00.00.032",
+     "mpn": "РТ1.00.00.032",
+     "qty": 1
+    },
+    {
+     "name": "MMP.01.00.00.000",
+     "mpn": "MMP.01.00.00.000",
+     "qty": 1
+    },
+    {
+     "name": "37",
+     "mpn": "37",
+     "qty": 1
+    },
+    {
+     "name": "40",
+     "mpn": "40",
+     "qty": 2
+    },
+    {
+     "name": "MMP.02.00.00.000",
+     "mpn": "MMP.02.00.00.000",
+     "qty": 1
+    },
+    {
+     "name": "46",
+     "mpn": "46",
+     "qty": 20
+    },
+    {
+     "name": "MMP.03.00.00.000",
+     "mpn": "MMP.03.00.00.000",
+     "qty": 2
+    },
+    {
+     "name": "52",
+     "mpn": "52",
+     "qty": 2
+    },
+    {
+     "name": "56",
+     "mpn": "56",
+     "qty": 2
+    },
+    {
+     "name": "60",
+     "mpn": "60",
+     "qty": 2
+    },
+    {
+     "name": "63",
+     "mpn": "63",
+     "qty": 2
+    },
+    {
+     "name": "67",
+     "mpn": "67",
+     "qty": 2
+    },
+    {
+     "name": "70",
+     "mpn": "70",
+     "qty": 2
+    },
+    {
+     "name": "73",
+     "mpn": "73",
+     "qty": 2
+    },
+    {
+     "name": "76",
+     "mpn": "76",
+     "qty": 2
+    },
+    {
+     "name": "MMP.04.00.00.000",
+     "mpn": "MMP.04.00.00.000",
+     "qty": 1
+    },
+    {
+     "name": "81",
+     "mpn": "81",
+     "qty": 20
+    },
+    {
+     "name": "MMP.05.00.00.000",
+     "mpn": "MMP.05.00.00.000",
+     "qty": 2
+    },
+    {
+     "name": "87",
+     "mpn": "87",
+     "qty": 89
+    },
+    {
+     "name": "MMP.05.00.00.000-01",
+     "mpn": "MMP.05.00.00.000-01",
+     "qty": 2
+    },
+    {
+     "name": "93",
+     "mpn": "93",
+     "qty": 89
+    },
+    {
+     "name": "MMP.07.00.00.000",
+     "mpn": "MMP.07.00.00.000",
+     "qty": 1
+    },
+    {
+     "name": "98",
+     "mpn": "98",
+     "qty": 89
+    }
+   ]
+  },
+  {
+   "slug": "openarm",
+   "project_id": "35466389-302c-4e38-8f83-eea00dd05f38",
+   "version_id": "d199ddef-2f42-4b0a-b9ce-c2a71770818e",
+   "stars": 2833,
+   "rpps_name": "\"openarm\"",
+   "bom": [
+    {
+     "name": "XT30(2+2)PB-M.G.B",
+     "manufacturer": "AMASS(艾迈斯)",
+     "mpn": "XT30(2+2)PB-M.G.B",
+     "qty": 6
+    }
+   ]
+  },
+  {
+   "slug": "openbot",
+   "project_id": "923c5218-b41f-41c7-851b-971b6fb63a1e",
+   "version_id": "190d78dc-54e4-4604-815d-e66075160784",
+   "stars": 3373,
+   "rpps_name": "\"OpenBot\"",
+   "bom": [
+    {
+     "name": "S2B-PH-K-S(LF)(SN)",
+     "manufacturer": "JST Sales America",
+     "mpn": "S2B-PH-K-S(LF)(SN)",
+     "qty": 5
+    },
+    {
+     "name": "Header-Male-2.54_1x4",
+     "manufacturer": "BOOMELE(Boom Precision Elec)",
+     "mpn": "C91552",
+     "qty": 2
+    },
+    {
+     "name": "16K",
+     "manufacturer": "Tyohm",
+     "mpn": "RMC080516K1%N",
+     "qty": 2
+    },
+    {
+     "name": "Header-Male-2.54_1x3",
+     "manufacturer": "BOOMELE",
+     "mpn": "Header2.54mm 1*3P",
+     "qty": 2
+    },
+    {
+     "name": "Header-Male-2.54_1x10",
+     "mpn": "Headers  Pins2.54mm1*10P",
+     "qty": 1
+    },
+    {
+     "name": "100K",
+     "manufacturer": "UNI-ROYAL(Uniroyal Elec)",
+     "mpn": "TC0325D1003T5E",
+     "qty": 1
+    },
+    {
+     "name": "ARDUINO_NANO",
+     "manufacturer": "HOAUC",
+     "mpn": "2685Y-115CNG1SNA01",
+     "qty": 2
+    },
+    {
+     "name": "DRV8871DDAR",
+     "manufacturer": "TI",
+     "mpn": "DRV8871DDAR",
+     "qty": 2
+    },
+    {
+     "name": "150",
+     "manufacturer": "Tyohm",
+     "mpn": "RMC12061501%N",
+     "qty": 2
+    },
+    {
+     "name": "47uF",
+     "manufacturer": "VISHAY",
+     "mpn": "293D476X9020D2TE3",
+     "qty": 1
+    },
+    {
+     "name": "33K",
+     "manufacturer": "UNI-ROYAL(Uniroyal Elec)",
+     "mpn": "TC0350D3302T5E",
+     "qty": 1
+    },
+    {
+     "name": "100nF",
+     "manufacturer": "Vishay Intertech",
+     "mpn": "TMCP1D104MTRF",
+     "qty": 2
+    },
+    {
+     "name": "Header-Male-2.54_1x2",
+     "manufacturer": "TE Connectivity",
+     "mpn": "826629-2",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "slug": "opentorque-actuator",
+   "project_id": "c60ed5c6-6387-4683-9f46-c5e54c2ea29c",
+   "version_id": "06b3f273-f8e7-48ec-8036-72266bd3c16c",
+   "stars": 431,
+   "rpps_name": "\"OpenTorque-Actuator\"",
+   "bom": [
+    {
+     "name": "AMS AS5048A-TS_EK_AB encoder PCB",
+     "qty": 1
+    },
+    {
+     "name": "Herlea X8318S KV100 (Multistar 9235) brushless motor",
+     "qty": 1
+    },
+    {
+     "name": "THK RA8008 cross roller bearing",
+     "qty": 1
+    },
+    {
+     "name": "Pemnet IUB-M3-1 threaded insert",
+     "qty": 3
+    },
+    {
+     "name": "Pemnet IUB-M3-2 threaded insert",
+     "qty": 27
+    },
+    {
+     "name": "M5x30 (h7) steel dowel pin",
+     "qty": 3
+    },
+    {
+     "name": "625ZZ bearing",
+     "qty": 3
+    },
+    {
+     "name": "M2.5x4 hex cap screw",
+     "qty": 4
+    },
+    {
+     "name": "M3x12 hex flat head screw",
+     "qty": 23
+    },
+    {
+     "name": "M3x30 hex flat head screw",
+     "qty": 3
+    },
+    {
+     "name": "M4x16 hex flat head screw",
+     "qty": 4
+    }
+   ]
+  },
+  {
+   "slug": "opentoys",
+   "project_id": "43d66bf9-1e30-4eb1-9453-46ddf09a9f96",
+   "version_id": "5a634b92-2454-495b-a163-5cf7cdf4889e",
+   "stars": 142,
+   "rpps_name": "\"OpenToys\"",
+   "bom": [
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "otadata",
+     "qty": 1
+    },
+    {
+     "name": "app0",
+     "qty": 1
+    },
+    {
+     "name": "app1",
+     "qty": 1
+    },
+    {
+     "name": "spiffs",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "robot-actuator-esp32-v8",
+   "project_id": "2881c086-b211-46f8-8af9-f4a20f62727e",
+   "version_id": "76eaa082-3468-401d-9497-5e49068f2eed",
+   "stars": 233,
+   "rpps_name": "\"robot-actuator-esp32-v8\"",
+   "bom": [
+    {
+     "name": "PCB",
+     "qty": 1
+    },
+    {
+     "name": "ESP32 Wemos Mini",
+     "qty": 1
+    },
+    {
+     "name": "2x10 Pin Header Female for ESP32",
+     "qty": 2
+    },
+    {
+     "name": "2x10 Pin Header Male for ESP32",
+     "qty": 1
+    },
+    {
+     "name": "DRV8825",
+     "qty": 1
+    },
+    {
+     "name": "100uF 50V Capacitor for DRV8825",
+     "qty": 1
+    },
+    {
+     "name": "DC to DC 24V to 5V Converter",
+     "qty": 1
+    },
+    {
+     "name": "Fan 25mm 12V",
+     "qty": 1
+    },
+    {
+     "name": "Fan Mosfet FDV301N 25V 220mA SOT-23",
+     "qty": 1
+    },
+    {
+     "name": "Fan Diode Protector 100V 300mA SOD-123",
+     "qty": 1
+    },
+    {
+     "name": "Fan 100Ohm gate resistor 0402",
+     "qty": 1
+    },
+    {
+     "name": "Fan 1MOhm pull-down resistor 0402",
+     "qty": 1
+    },
+    {
+     "name": "JST XH Male Connector for fan",
+     "qty": 1
+    },
+    {
+     "name": "JST XH Crimp Connector for fan wire",
+     "qty": 2
+    },
+    {
+     "name": "JST XH Female Connector for fan wire",
+     "qty": 1
+    },
+    {
+     "name": "WS2812B White",
+     "qty": 1
+    },
+    {
+     "name": "Red LED 0805",
+     "qty": 3
+    },
+    {
+     "name": "1KOhm current limit resistor for LED 0402",
+     "qty": 2
+    },
+    {
+     "name": "2KOhm current limit resistor for power LED 0402",
+     "qty": 1
+    },
+    {
+     "name": "8 Pin Female Header 2.54mm",
+     "qty": 2
+    },
+    {
+     "name": "4 Pin Female Header 2.54mm",
+     "qty": 3
+    },
+    {
+     "name": "3 Pin Female Header 2.54mm",
+     "qty": 2
+    },
+    {
+     "name": "2 Pin Female Header 2.54mm",
+     "qty": 4
+    },
+    {
+     "name": "JST PH B4B-K-S Male Header for Stepper",
+     "qty": 1
+    },
+    {
+     "name": "JST PHR-4 Female Header for Stepper Cable",
+     "qty": 1
+    },
+    {
+     "name": "JST SPH Crimp Connector",
+     "qty": 4
+    },
+    {
+     "name": "Toggle Switch",
+     "qty": 1
+    },
+    {
+     "name": "Pin Male Header Right Angle 2.54mm (40 pins breakaway)",
+     "qty": 2
+    },
+    {
+     "name": "Pin Male Header Straight 2.54mm (40 pins breakaway)",
+     "qty": 1
+    },
+    {
+     "name": "0.1uF Capacitor smoothing for TMP36",
+     "qty": 1
+    },
+    {
+     "name": "Actuator",
+     "qty": 1
+    },
+    {
+     "name": "Stepper Motor 35mm",
+     "qty": 1
+    },
+    {
+     "name": "Neodymium Disc Mini Magnet 3x1.5mm",
+     "qty": 1
+    },
+    {
+     "name": "Hall Effect Sensor SIP-3",
+     "qty": 1
+    },
+    {
+     "name": "Heatsink 540/550 Motor",
+     "qty": 1
+    },
+    {
+     "name": "4 Pin 30AWG Silicone Wire Ultra Flexible",
+     "qty": 1
+    },
+    {
+     "name": "TMP36 Temperature Sensor TO-92",
+     "qty": 1
+    },
+    {
+     "name": "4mm Acrylic Balls",
+     "qty": 1
+    },
+    {
+     "name": "Other Stepper Motors",
+     "qty": 1
+    },
+    {
+     "name": "Higher end 35mm stepper Moon's",
+     "qty": 1
+    },
+    {
+     "name": "Another cheap 35mm that's really nice",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "roboto-origin",
+   "project_id": "15adc6ef-04c0-4d19-be68-fe17431d45b1",
+   "version_id": "23af3264-b1bf-4583-a77e-52f412356bfc",
+   "stars": 2204,
+   "rpps_name": "\"roboto_origin\"",
+   "bom": [
+    {
+     "name": "内六角圆柱头螺钉M2.5×8",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 8
+    },
+    {
+     "name": "内六角圆柱头螺钉M3×6",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 12
+    },
+    {
+     "name": "内六角圆柱头螺钉M3×8",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 58
+    },
+    {
+     "name": "内六角圆柱头螺钉M3×10",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 76
+    },
+    {
+     "name": "内六角圆柱头螺钉M3×12",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 24
+    },
+    {
+     "name": "内六角圆柱头螺钉M3×16",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 75
+    },
+    {
+     "name": "内六角圆柱头螺钉M4×8",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 109
+    },
+    {
+     "name": "内六角圆柱头螺钉M4×10",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 72
+    },
+    {
+     "name": "内六角圆柱头螺钉M4×12",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 94
+    },
+    {
+     "name": "内六角圆柱头螺钉M4×14",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 2
+    },
+    {
+     "name": "内六角圆柱头螺钉M5×10",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 84
+    },
+    {
+     "name": "内六角圆柱头螺钉M5×12",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 28
+    },
+    {
+     "name": "内六角圆柱头螺钉M6×12",
+     "mpn": "GB/T 70.1-2000",
+     "qty": 2
+    },
+    {
+     "name": "平头螺丝M4×12",
+     "mpn": "紧固件",
+     "qty": 16
+    },
+    {
+     "name": "平头螺丝M5×16",
+     "mpn": "紧固件",
+     "qty": 14
+    },
+    {
+     "name": "吊环螺钉M3",
+     "mpn": "GB/T 825-1988",
+     "qty": 4
+    },
+    {
+     "name": "向心关节轴承（G系列）8",
+     "mpn": "GB/T 9161-2001",
+     "qty": 8
+    },
+    {
+     "name": "推力滚针和保持架组件AXK6085",
+     "mpn": "GB/T 4605-2003",
+     "qty": 9
+    },
+    {
+     "name": "万向节十字轴16*40",
+     "mpn": "JB/T  8925-2008",
+     "qty": 2
+    },
+    {
+     "name": "深沟球轴承130*165*18",
+     "mpn": "GB/T 276-2013",
+     "qty": 1
+    },
+    {
+     "name": "atom手臂 - 副本 (1)",
+     "mpn": "ATOM-01-001",
+     "qty": 4
+    },
+    {
+     "name": "atom手臂 - 副本 (2)",
+     "mpn": "ATOM-01-002",
+     "qty": 4
+    },
+    {
+     "name": "atom手臂 - 副本 (3)",
+     "mpn": "ATOM-01-003",
+     "qty": 4
+    },
+    {
+     "name": "atom手臂 - 副本 (4)",
+     "mpn": "ATOM-01-004",
+     "qty": 4
+    },
+    {
+     "name": "IMU载板",
+     "mpn": "ATOM-01-005",
+     "qty": 1
+    },
+    {
+     "name": "侧板横板",
+     "mpn": "ATOM-01-006",
+     "qty": 2
+    },
+    {
+     "name": "大腿内测",
+     "mpn": "ATOM-01-007",
+     "qty": 2
+    },
+    {
+     "name": "电池底盖",
+     "mpn": "ATOM-01-008",
+     "qty": 1
+    },
+    {
+     "name": "肩膀",
+     "mpn": "ATOM-01-009",
+     "qty": 2
+    },
+    {
+     "name": "脚底板",
+     "mpn": "ATOM-01-010",
+     "qty": 2
+    },
+    {
+     "name": "脚底连杆",
+     "mpn": "ATOM-01-011",
+     "qty": 2
+    },
+    {
+     "name": "脚踝横滚连接件",
+     "mpn": "ATOM-01-012",
+     "qty": 4
+    },
+    {
+     "name": "髋关节固定",
+     "mpn": "ATOM-01-013",
+     "qty": 1
+    },
+    {
+     "name": "新髋",
+     "mpn": "ATOM-01-014",
+     "qty": 2
+    },
+    {
+     "name": "输出法兰连杆",
+     "mpn": "ATOM-01-015",
+     "qty": 4
+    },
+    {
+     "name": "通用连接件",
+     "mpn": "ATOM-01-016",
+     "qty": 4
+    },
+    {
+     "name": "通用连接件扩孔法兰",
+     "mpn": "ATOM-01-017",
+     "qty": 4
+    },
+    {
+     "name": "小腿",
+     "mpn": "ATOM-01-018",
+     "qty": 2
+    },
+    {
+     "name": "胸腔夹板后",
+     "mpn": "ATOM-01-019",
+     "qty": 1
+    },
+    {
+     "name": "胸腔前后夹板",
+     "mpn": "ATOM-01-020",
+     "qty": 1
+    },
+    {
+     "name": "限位销",
+     "mpn": "ATOM-01-021",
+     "qty": 2
+    },
+    {
+     "name": "小腿轴承锁",
+     "mpn": "ATOM-01-022",
+     "qty": 4
+    },
+    {
+     "name": "腰部支撑",
+     "mpn": "ATOM-01-023",
+     "qty": 1
+    },
+    {
+     "name": "长连杆",
+     "mpn": "ATOM-01-024",
+     "qty": 2
+    },
+    {
+     "name": "短连杆",
+     "mpn": "ATOM-01-025",
+     "qty": 2
+    },
+    {
+     "name": "橡胶脚底",
+     "mpn": "ATOM-01-026",
+     "qty": 2
+    },
+    {
+     "name": "48V 15Ah锂电池",
+     "mpn": "ATOM-01-027",
+     "qty": 1
+    },
+    {
+     "name": "2芯航空插头加母座",
+     "mpn": "ATOM-01-028",
+     "qty": 1
+    },
+    {
+     "name": "航空插头充电器",
+     "mpn": "ATOM-01-029",
+     "qty": 1
+    },
+    {
+     "name": "ATOM 01标定件",
+     "mpn": "ATOM-01-030",
+     "qty": 1
+    },
+    {
+     "name": "ATOM 01调试架",
+     "mpn": "ATOM-01-031",
+     "qty": 1
+    },
+    {
+     "name": "超核HI14M0-USB IMU/VRU USB-232",
+     "mpn": "ATOM-01-032",
+     "qty": 1
+    },
+    {
+     "name": "DM 4340P（48V）",
+     "mpn": "ATOM-01-033",
+     "qty": 14
+    },
+    {
+     "name": "DM 10010L",
+     "mpn": "ATOM-01-034",
+     "qty": 9
+    },
+    {
+     "name": "RK3588/香橙派-PI 5 PLUS",
+     "mpn": "ATOM-01-035",
+     "qty": 1
+    },
+    {
+     "name": "RK3588/香橙派-PI 5 PLUS WiFi模块",
+     "mpn": "ATOM-01-036",
+     "qty": 2
+    },
+    {
+     "name": "香橙派OrangePi开发板专用EMMC模块 32GB",
+     "mpn": "ATOM-01-037",
+     "qty": 1
+    },
+    {
+     "name": "48V转5V转压模块",
+     "mpn": "ATOM-01-038",
+     "qty": 1
+    },
+    {
+     "name": "Roboto_Usb2Can_v1.0",
+     "mpn": "ATOM-01-039",
+     "qty": 1
+    },
+    {
+     "name": "Roboto_Power_v1.0",
+     "mpn": "ATOM-01-040",
+     "qty": 1
+    },
+    {
+     "name": "急停继电器",
+     "mpn": "ATOM-01-041",
+     "qty": 1
+    },
+    {
+     "name": "金属按钮开关",
+     "mpn": "ATOM-01-042",
+     "qty": 1
+    },
+    {
+     "name": "罗技手柄",
+     "mpn": "ATOM-01-043",
+     "qty": 4
+    },
+    {
+     "name": "XT30(+2)-XT30(+2) 10CM",
+     "mpn": "ATOM-01-044",
+     "qty": 2
+    },
+    {
+     "name": "XT30(+2)-XT30(+2)",
+     "mpn": "ATOM-01-045",
+     "qty": 6
+    },
+    {
+     "name": "XT30(+2)-XT30(+2)",
+     "mpn": "ATOM-01-046",
+     "qty": 2
+    },
+    {
+     "name": "XT30-XT30(+2)",
+     "mpn": "ATOM-01-047",
+     "qty": 2
+    },
+    {
+     "name": "XT30-XT30(+2)",
+     "mpn": "ATOM-01-048",
+     "qty": 2
+    },
+    {
+     "name": "XT30-XT30",
+     "mpn": "ATOM-01-049",
+     "qty": 2
+    },
+    {
+     "name": "XT30-XT30",
+     "mpn": "ATOM-01-050",
+     "qty": 5
+    },
+    {
+     "name": "XT30-XT30",
+     "mpn": "ATOM-01-051",
+     "qty": 1
+    },
+    {
+     "name": "GH 1.25 1.25 2pin 反线",
+     "mpn": "ATOM-01-052",
+     "qty": 4
+    },
+    {
+     "name": "GH 1.25 1.25 2pin 反线",
+     "mpn": "ATOM-01-053",
+     "qty": 6
+    },
+    {
+     "name": "GH 1.25 1.25 2pin 反线",
+     "mpn": "ATOM-01-054",
+     "qty": 3
+    },
+    {
+     "name": "XT60一转二线",
+     "mpn": "ATOM-01-055",
+     "qty": 1
+    },
+    {
+     "name": "XT30公头单端线",
+     "mpn": "ATOM-01-056",
+     "qty": 1
+    },
+    {
+     "name": "XT30母头单端线",
+     "mpn": "ATOM-01-057",
+     "qty": 1
+    },
+    {
+     "name": "XT60 公头单端线",
+     "mpn": "ATOM-01-058",
+     "qty": 2
+    },
+    {
+     "name": "XT60母头单端线",
+     "mpn": "ATOM-01-059",
+     "qty": 1
+    },
+    {
+     "name": "USB - type c",
+     "mpn": "ATOM-01-060",
+     "qty": 1
+    },
+    {
+     "name": "type c 单端电源线 0.75平方",
+     "mpn": "ATOM-01-061",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "sawppy-rover",
+   "project_id": "0464f5f4-7790-4b13-bf66-378e358926fe",
+   "version_id": "bb5eb281-34c7-46c6-a27a-7b07cd24ca4a",
+   "stars": 505,
+   "rpps_name": "\"Sawppy_Rover\"",
+   "bom": [
+    {
+     "name": "# Note: if you have increased the bootloader size",
+     "qty": 1
+    },
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "phy_init",
+     "qty": 1
+    },
+    {
+     "name": "factory",
+     "qty": 1
+    },
+    {
+     "name": "static",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "sesame-robot",
+   "project_id": "6257e89e-694e-4128-adc2-9a4d78afb75a",
+   "version_id": "a31c6e95-d4f8-4033-a347-6c7e81ccb7a1",
+   "stars": 3907,
+   "rpps_name": "\"sesame-robot\"",
+   "bom": [
+    {
+     "name": "22nF",
+     "manufacturer": "SAMSUNG(三星)",
+     "mpn": "CL10B223KB8NNNC",
+     "qty": 3
+    },
+    {
+     "name": "100nF",
+     "manufacturer": "YAGEO(国巨)",
+     "mpn": "CC0603KRX7R9BB104",
+     "qty": 3
+    },
+    {
+     "name": "10nF",
+     "manufacturer": "TORCH(火炬)",
+     "mpn": "C0603B103M500NT",
+     "qty": 1
+    },
+    {
+     "name": "3.3uH",
+     "manufacturer": "Chilisin(奇力新)",
+     "mpn": "MHCI06030-3R3M-S8",
+     "qty": 1
+    },
+    {
+     "name": "KT-0603R",
+     "manufacturer": "KENTO",
+     "mpn": "KT-0603R",
+     "qty": 1
+    },
+    {
+     "name": "5.1kΩ",
+     "manufacturer": "UNI-ROYAL(厚声)",
+     "mpn": "0603WAF5101T5E",
+     "qty": 2
+    },
+    {
+     "name": "56kΩ",
+     "manufacturer": "UNI-ROYAL(厚声)",
+     "mpn": "0603WAF5602T5E",
+     "qty": 1
+    },
+    {
+     "name": "10kΩ",
+     "manufacturer": "HKR(香港电阻)",
+     "mpn": "RCT0310KJLF",
+     "qty": 4
+    },
+    {
+     "name": "3.5MM-2PIN",
+     "manufacturer": "XY",
+     "mpn": "XY302V-3.5-2P",
+     "qty": 1
+    },
+    {
+     "name": "B4B-XH-A(LF)(SN)",
+     "manufacturer": "JST",
+     "mpn": "B4B-XH-A(LF)(SN)",
+     "qty": 1
+    },
+    {
+     "name": "HX 3X4X2-2P-1.6N TACTILE SWITCH",
+     "manufacturer": "hanxia(韩下)",
+     "mpn": "HX 3x4x2-2P-1.6N TACTILE SWITCH",
+     "qty": 2
+    },
+    {
+     "name": "SolderPad (No Part Required)",
+     "qty": 2
+    },
+    {
+     "name": "1uF",
+     "manufacturer": "YAGEO(国巨)",
+     "mpn": "AC0805KKX7R9BB105",
+     "qty": 1
+    },
+    {
+     "name": "470uF",
+     "manufacturer": "KNSCHA(科尼盛)",
+     "mpn": "XT470UF25V90RV0111",
+     "qty": 1
+    },
+    {
+     "name": "SS34_C8678",
+     "manufacturer": "MDD(辰达半导体)",
+     "mpn": "SS34",
+     "qty": 2
+    },
+    {
+     "name": "3PIN MALE HEADER",
+     "manufacturer": "BOOMELE",
+     "mpn": "Male headerHDR1X3-2.54",
+     "qty": 8
+    },
+    {
+     "name": "ESP32-S3-WROOM-1(N16R8)",
+     "manufacturer": "ESPRESSIF(乐鑫)",
+     "mpn": "ESP32-S3-WROOM-1-N16R8",
+     "qty": 1
+    },
+    {
+     "name": "AMS1117-3.3",
+     "manufacturer": "AMS",
+     "mpn": "AMS1117-3.3",
+     "qty": 1
+    },
+    {
+     "name": "MSTPS563200DDCR",
+     "manufacturer": "MSKSEMI(美森科)",
+     "mpn": "MSTPS563200DDCR",
+     "qty": 1
+    },
+    {
+     "name": "10uF",
+     "manufacturer": "KNSCHA(科尼盛)",
+     "mpn": "RST10UF25V014",
+     "qty": 1
+    },
+    {
+     "name": "EXPANSION HEADER (No Part Required)",
+     "qty": 1
+    },
+    {
+     "name": "TYPE-C-31-M-12",
+     "manufacturer": "韩国韩荣",
+     "mpn": "TYPE-C-31-M-12",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "starmoon",
+   "project_id": "eaba5a6d-12ef-4240-ab95-f3fb8db153b6",
+   "version_id": "fd860948-586f-43cb-a098-bc72baaf2201",
+   "stars": 549,
+   "rpps_name": "\"Starmoon\"",
+   "bom": [
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "otadata",
+     "qty": 1
+    },
+    {
+     "name": "app0",
+     "qty": 1
+    },
+    {
+     "name": "app1",
+     "qty": 1
+    },
+    {
+     "name": "spiffs",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "tny-360",
+   "project_id": "8157b7f4-7fac-40dc-a3ee-5b8830911716",
+   "version_id": "86c86fa6-569c-4734-8c01-42ad475698a5",
+   "stars": 291,
+   "rpps_name": "\"TNY-360\"",
+   "bom": [
+    {
+     "name": "nvs",
+     "qty": 1
+    },
+    {
+     "name": "otadata",
+     "qty": 1
+    },
+    {
+     "name": "phy_init",
+     "qty": 1
+    },
+    {
+     "name": "ota_0",
+     "qty": 1
+    },
+    {
+     "name": "ota_1",
+     "qty": 1
+    },
+    {
+     "name": "userdata",
+     "qty": 1
+    },
+    {
+     "name": "storage",
+     "qty": 1
+    },
+    {
+     "name": "coredump",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "slug": "zerobug",
+   "project_id": "7071e9b8-a051-45bc-86d0-776437197d95",
+   "version_id": "9a11c819-a326-460f-b0e4-bd48b8285e2e",
+   "stars": 298,
+   "rpps_name": "\"ZeroBug\"",
+   "bom": [
+    {
+     "name": "10uF",
+     "qty": 1
+    },
+    {
+     "name": "1.0uF",
+     "qty": 6
+    },
+    {
+     "name": "47pF",
+     "qty": 2
+    },
+    {
+     "name": "10nF",
+     "qty": 1
+    },
+    {
+     "name": "2.2uF",
+     "qty": 2
+    },
+    {
+     "name": "0.1uF",
+     "qty": 2
+    },
+    {
+     "name": "4.7uF",
+     "qty": 1
+    },
+    {
+     "name": "100uF",
+     "qty": 1
+    },
+    {
+     "name": "18pF",
+     "qty": 2
+    },
+    {
+     "name": "1X4-BIG",
+     "qty": 1
+    },
+    {
+     "name": "BAT20J",
+     "qty": 2
+    },
+    {
+     "name": "BLUE",
+     "qty": 1
+    },
+    {
+     "name": "500mA",
+     "qty": 1
+    },
+    {
+     "name": "8MHz",
+     "qty": 1
+    },
+    {
+     "name": "AOD417",
+     "qty": 1
+    },
+    {
+     "name": "0",
+     "qty": 2
+    },
+    {
+     "name": "10k",
+     "qty": 6
+    },
+    {
+     "name": "27",
+     "qty": 2
+    },
+    {
+     "name": "1k",
+     "qty": 4
+    },
+    {
+     "name": "5.1k",
+     "qty": 2
+    },
+    {
+     "name": "1k5",
+     "qty": 1
+    },
+    {
+     "name": "4.7k",
+     "qty": 1
+    },
+    {
+     "name": "RESET",
+     "qty": 1
+    },
+    {
+     "name": "MPU-6050-1",
+     "qty": 1
+    },
+    {
+     "name": "AP2112K-3.3V",
+     "qty": 1
+    },
+    {
+     "name": "MCP1825S-5002E/DB",
+     "qty": 1
+    },
+    {
+     "name": "STM32F103CBT6",
+     "qty": 1
+    }
+   ]
+  }
+ ]
+}
