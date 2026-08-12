@@ -35,3 +35,6 @@ RoboPart Picker Hub.zip
 *.njsproj
 *.sln
 *.sw?
+
+# real-BOM harvest artifacts (regenerable)
+.ingest/bom-harvest-2026-08-12/
