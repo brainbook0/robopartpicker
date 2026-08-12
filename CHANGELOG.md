@@ -2,6 +2,15 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.6.1] - 2026-08-12
+
+### Added
+
+- Corrected product definition (`docs/product-definition.md`): workflow spine, six pillars (aggregation, BOM compilation, sourcing optimization, firm quotes, user-controlled sourcing, project lineage), revised hierarchy, completion floors, golden acceptance projects A/B/C, scope boundary.
+- IU-PRODUCT-RECOVERY coverage matrix (`docs/product-recovery-coverage.md`): grounded inventory of routes, API, tables, migrations, tests; partial/intentional/abandoned findings; gaps required by the corrected definition.
+- Rebuilt Graph Coder Nano plan (`gcl-plan.md`): bounds, requirements, acceptance criteria, managers, and ten unit contracts (IU-PRODUCT-RECOVERY, IU-PROJECT-CORPUS, IU-BOM-COMPILER, IU-PROJECT-PAGE, IU-SOURCING-DATA, IU-SOURCING-OPTIMIZER, IU-RFQ, IU-PROJECT-GRAPH, IU-CATALOG, IU-QUALITY-RECOVERY).
+- Versioned real-BOM snapshot (`data/bom-snapshots/2026-08-12-real-boms.json`, 25 projects / 401 components) and restore script (`scripts/restore-bom-snapshot.ts`, dry-run by default) so D1 BOM state can be rolled back.
+
 ## [0.6.0] - 2026-08-12
 
 ### Added
