@@ -77,7 +77,7 @@ export type ProjectImportAnalysis = {
   aiUsed: false;
 };
 
-type InputFile = { path: string; sizeBytes: number; bytes?: Uint8Array; sha256?: string; sourceUrl?: string; sourceRevision?: string };
+export type InputFile = { path: string; sizeBytes: number; bytes?: Uint8Array; sha256?: string; sourceUrl?: string; sourceRevision?: string };
 type GithubTreeEntry = { path?: string; type?: string; size?: number; sha?: string; url?: string };
 
 export async function analyzeProjectInput(env: Env, input: {
@@ -257,7 +257,7 @@ async function analyzeGithub(env: Env, repositoryUrl: string): Promise<ProjectIm
   });
 }
 
-async function analyzeFileSet(sourceType: ProjectImportKind, label: string, files: InputFile[], context: {
+export async function analyzeFileSet(sourceType: ProjectImportKind, label: string, files: InputFile[], context: {
   sourceLabel: string; repositoryUrl?: string; revision?: string; name?: string; description?: string; owner?: string;
   license?: string; topics?: string[]; totalFiles?: number; truncated?: boolean;
   retrieval?: { mode: "reference" | "uploaded" | "inline"; provider: "github" | "r2" | "request"; requestCount: number; attemptedFiles?: number; mirroredFiles: number };
@@ -265,6 +265,7 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
   const relevant = files.filter((file) => artifactKind(file.path) !== "other" || isProjectMetadata(file.path));
   const detected = Array.from(new Set(relevant.map((file) => detectedType(file.path)).filter(Boolean) as string[])).sort();
   const textFiles = new Map(relevant.filter((file) => file.bytes).map((file) => [file.path, decodeText(file.bytes!)]));
+  const byteFiles = new Map(relevant.filter((file) => file.bytes).map((file) => [file.path, file.bytes!]));
   const fetchedFiles = relevant.filter((file) => file.bytes).length;
   const fetchedBytes = relevant.reduce((total, file) => total + (file.bytes?.byteLength ?? 0), 0);
   const warnings: string[] = [];
@@ -295,7 +296,7 @@ async function analyzeFileSet(sourceType: ProjectImportKind, label: string, file
   })));
   const componentExtraction = manifest
     ? { components: manifest.components, sourcePath: portableEntry?.[0], extractionMethod: "rpps-manifest" as const }
-    : extractComponents(textFiles, warnings, slug);
+    : extractComponents(textFiles, warnings, slug, byteFiles);
   const components = manifest ? [] : componentExtraction.components;
   const model = extractModelSummary(textFiles);
   const software = extractSoftwarePackages(textFiles);
@@ -442,16 +443,34 @@ function githubFetchPriority(path: string): number {
   return 7;
 }
 
-function extractComponents(files: Map<string, string>, warnings: string[], slug: string): {
+function extractComponents(files: Map<string, string>, warnings: string[], slug: string, byteFiles?: Map<string, Uint8Array>): {
   components: PortableRppsManifest["components"];
   sourcePath?: string;
   extractionMethod: "explicit-bom";
 } {
-  const candidate = [...files].find(([path]) => /(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml)$/iu.test(path));
+  const candidate = [...files].find(([path]) => /(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml|xlsx)$/iu.test(path));
   if (!candidate) return { components: [], extractionMethod: "explicit-bom" };
   let rows: unknown[] = [];
   try {
-    if (/\.csv$/iu.test(candidate[0])) rows = parseCsvObjects(candidate[1]);
+    if (/\.csv$/iu.test(candidate[0])) {
+      const firstLine = candidate[1].slice(0, 8_000).split("\n", 1)[0] ?? "";
+      const tabs = (firstLine.match(/\t/gu) ?? []).length;
+      const commas = (firstLine.match(/,/gu) ?? []).length;
+      rows = parseCsvObjects(candidate[1], tabs > commas ? "\t" : ",");
+    }
+    else if (/\.xlsx$/iu.test(candidate[0])) {
+      const raw = byteFiles?.get(candidate[0]);
+      if (!raw) {
+        warnings.push(`BOM file ${candidate[0]} was not available in binary form; only text formats were fetched.`);
+        return { components: [], sourcePath: candidate[0], extractionMethod: "explicit-bom" };
+      }
+      try {
+        rows = parseXlsxObjects(raw);
+      } catch (error) {
+        warnings.push(`BOM parser could not read ${candidate[0]}: ${error instanceof Error ? error.message : "invalid xlsx"}`);
+        return { components: [], sourcePath: candidate[0], extractionMethod: "explicit-bom" };
+      }
+    }
     else {
       const parsed = tryParseData(candidate[1]);
       rows = Array.isArray(parsed) ? parsed : isRecord(parsed)
@@ -465,11 +484,12 @@ function extractComponents(files: Map<string, string>, warnings: string[], slug:
   for (const [index, raw] of rows.slice(0, 10_000).entries()) {
     if (!isRecord(raw)) continue;
     const normalized = Object.fromEntries(Object.entries(raw).map(([key, value]) => [normalizeHeader(key), value]));
-    const name = firstString(normalized, ["name", "part", "component", "description", "item"]);
+    const name = firstString(normalized, ["name", "part", "partname", "partnumber", "component", "componentname", "description", "item", "value", "comment"]);
     if (!name) continue;
-    const quantity = positiveNumber(firstValue(normalized, ["quantity", "qty", "count"])) ?? 1;
-    const manufacturer = firstString(normalized, ["manufacturer", "maker", "mfr"]);
-    const mpn = firstString(normalized, ["manufacturerpartnumber", "mpn", "partnumber", "sku"]);
+    const quantity = positiveNumber(firstValue(normalized, ["quantity", "qty", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform"]))
+    ?? positiveNumber(firstValue(normalized, Object.keys(normalized).filter((key) => /^qty|^quantity/iu.test(key)))) ?? 1;
+    const manufacturer = cleanBomValue(firstString(normalized, ["manufacturer", "maker", "mfr"]));
+    const mpn = cleanBomValue(firstString(normalized, ["manufacturerpartnumber", "manufacturerpart", "mpn", "partnumber", "sku"]));
     const ref = firstString(normalized, ["reference", "ref", "designator", "id"]);
     components.push({
       id: `component:${slug}:${slugify(ref || name || String(index + 1)).slice(0, 80) || index + 1}`,
@@ -681,7 +701,67 @@ function procedureKind(heading: string): ExtractedProjectIntelligence["procedure
 function cleanMarkdownStep(value: string): string { return value.replace(/\[([^\u005d]+)\]\([^)]+\)/gu, "$1").replace(/[*_`]/gu, "").trim().slice(0, 20_000); }
 function previewImageScore(path: string): number { const lower = path.toLowerCase(); return /(?:^|\/)(?:cover|hero|render|preview|overview|robot)[-_.]/u.test(lower) ? 10 : /cover|hero|render|preview/u.test(lower) ? 5 : 0; }
 
-function parseCsvObjects(text: string): Record<string, string>[] {
+export function parseXlsxObjects(bytes: Uint8Array): Record<string, string>[] {
+  return rowsToBomObjects(parseXlsxRaw(bytes));
+}
+
+function parseXlsxRaw(bytes: Uint8Array): string[][] {
+  const zip = unzipSync(bytes);
+  const decode = (path: string) => new TextDecoder("utf-8", { fatal: false }).decode(zip[path] ?? new Uint8Array());
+  const shared: string[] = [];
+  for (const si of decode("xl/sharedStrings.xml").matchAll(/<si(?:\s[^>]*)?>([\s\S]*?)<\/si>/giu)) {
+    shared.push([...si[1].matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/giu)].map((match) => unescapeXml(match[1])).join(""));
+  }
+  const sheetPath = Object.keys(zip).filter((path) => /^xl\/worksheets\/sheet\d+\.xml$/iu.test(path)).sort()[0];
+  if (!sheetPath) return [];
+  const sheet = decode(sheetPath);
+  const rows: string[][] = [];
+  for (const rowMatch of sheet.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/giu)) {
+    const cells = new Map<number, string>();
+    for (const cell of rowMatch[1].matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/giu)) {
+      const attrs = cell[1];
+      const ref = attrs.match(/\br="([A-Z]+)\d+"/iu)?.[1] ?? "";
+      const col = ref ? colToIndex(ref) : cells.size;
+      const t = attrs.match(/\bt="([^"]+)"/iu)?.[1] ?? "";
+      let value = "";
+      if (t === "s") {
+        const index = Number(cell[2].match(/<v>([\s\S]*?)<\/v>/iu)?.[1] ?? "NaN");
+        value = shared[Number.isFinite(index) ? index : -1] ?? "";
+      } else if (t === "inlineStr") {
+        value = [...cell[2].matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/giu)].map((match) => unescapeXml(match[1])).join("");
+      } else if (t === "b") {
+        value = cell[2].match(/<v>([\s\S]*?)<\/v>/iu)?.[1] === "1" ? "true" : "false";
+      } else {
+        value = unescapeXml(cell[2].match(/<v>([\s\S]*?)<\/v>/iu)?.[1] ?? "");
+      }
+      cells.set(col, value);
+    }
+    if (cells.size) {
+      const maxCol = Math.max(...cells.keys());
+      const arr: string[] = [];
+      for (let index = 0; index <= maxCol; index += 1) arr.push(cells.get(index) ?? "");
+      if (arr.some((value) => value !== "")) rows.push(arr);
+    }
+  }
+  return rows;
+}
+
+function colToIndex(ref: string): number {
+  let index = 0;
+  for (const char of ref) index = index * 26 + (char.charCodeAt(0) - 64);
+  return index - 1;
+}
+
+function unescapeXml(text: string): string {
+  return text
+    .replace(/&lt;/gu, "<")
+    .replace(/&gt;/gu, ">")
+    .replace(/&quot;/gu, '"')
+    .replace(/&apos;/gu, "'")
+    .replace(/&amp;/gu, "&");
+}
+
+function parseCsvRaw(text: string, delimiter: "," | "\t" = ","): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
@@ -693,14 +773,42 @@ function parseCsvObjects(text: string): Record<string, string>[] {
       else if (char === '"') quoted = false;
       else field += char;
     } else if (char === '"') quoted = true;
-    else if (char === ",") { row.push(field.trim()); field = ""; }
+    else if (char === delimiter) { row.push(field.trim()); field = ""; }
     else if (char === "\n") { row.push(field.trim()); if (row.some(Boolean)) rows.push(row); row = []; field = ""; }
     else if (char !== "\r") field += char;
   }
   row.push(field.trim());
   if (row.some(Boolean)) rows.push(row);
-  const headers = rows.shift()?.map(normalizeHeader) ?? [];
-  return rows.map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""])));
+  return rows;
+}
+
+const BOM_NAME_HEADERS = new Set(["name", "part", "partname", "partnumber", "component", "componentname", "description", "item", "value", "designator", "reference", "mpn", "manufacturerpart", "manufacturerpartnumber", "lcscpart"]);
+const BOM_QTY_HEADERS = new Set(["quantity", "qty", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform", "qtyforassembly"]);
+function isBomHeader(value: string): boolean {
+  const normalized = normalizeHeader(value);
+  return BOM_NAME_HEADERS.has(normalized) || BOM_QTY_HEADERS.has(normalized)
+    || ["manufacturer", "supplier", "supplierpart", "footprint", "comment"].includes(normalized);
+}
+function rowsToBomObjects(rows: string[][]): Record<string, string>[] {
+  if (!rows.length) return [];
+  let headerIndex = 0;
+  let best = -1;
+  for (let index = 0; index < Math.min(rows.length, 8); index += 1) {
+    const score = rows[index].reduce((total, header) => total + (isBomHeader(header) ? 1 : 0), 0);
+    if (score > best) { best = score; headerIndex = index; }
+  }
+  const headers = rows[headerIndex].map(normalizeHeader);
+  return rows.slice(headerIndex + 1).map((values) => {
+    const record: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      if (header) record[header] = values[index] ?? "";
+    });
+    return record;
+  });
+}
+
+export function parseCsvObjects(text: string, delimiter: "," | "\t" = ","): Record<string, string>[] {
+  return rowsToBomObjects(parseCsvRaw(text, delimiter));
 }
 
 function parseGithubUrl(value: string): { owner: string; repository: string } {
@@ -746,7 +854,7 @@ function githubProviderMessage(bodyText: string): string {
   return bodyText.trim().replace(/\s+/gu, " ").slice(0, 240);
 }
 
-function artifactKind(path: string): ImportedArtifact["kind"] {
+export function artifactKind(path: string): ImportedArtifact["kind"] {
   const lower = path.toLowerCase();
   if (/\.(step|stp|iges|igs|fcstd|f3d|sldprt|sldasm|ipt|iam|3dm|blend|glb|gltf)$/u.test(lower)) return "cad";
   if (/\.(stl|obj|3mf|gcode|dxf|gerber|gbr)$/u.test(lower)) return "manufacturing";
@@ -774,12 +882,12 @@ function detectedType(path: string): string | null {
   return null;
 }
 
-function isProjectMetadata(path: string): boolean {
+export function isProjectMetadata(path: string): boolean {
   return /(^|\/)(rpps(\.lock)?\.(ya?ml|json)|package\.(xml|json)|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|cargo\.toml|platformio\.ini|cmakelists\.txt|\.gitmodules|ros2?\.repos|cyclonedx[^/]*|[^/]*spdx[^/]*|[^/]*oshwa[^/]*)$/iu.test(path);
 }
 
 function isRelevantText(path: string): boolean {
-  return isProjectMetadata(path) || /\.(md|txt|csv|json|ya?ml|xml|urdf|xacro|sdf|mjcf|toml|launch|ini|cfg)$/iu.test(path);
+  return isProjectMetadata(path) || /\.(md|txt|csv|json|ya?ml|xml|xlsx|urdf|xacro|sdf|mjcf|toml|launch|ini|cfg)$/iu.test(path);
 }
 
 function parserFor(path: string): string {
@@ -802,8 +910,17 @@ function safeRelativePath(value: string): string {
 }
 
 function decodeText(bytes: Uint8Array): string {
-  if (bytes.includes(0)) return "";
-  return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+  if (bytes.length === 0) return "";
+  // UTF-16 with a byte-order mark (common for Excel/CSV exports).
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    return new TextDecoder("utf-16le", { fatal: false }).decode(bytes.subarray(2));
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    return new TextDecoder("utf-16be", { fatal: false }).decode(bytes.subarray(2));
+  }
+  // Strip a UTF-8 BOM before decoding.
+  const offset = bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf ? 3 : 0;
+  return new TextDecoder("utf-8", { fatal: false }).decode(bytes.subarray(offset));
 }
 
 function readmeText(files: Map<string, string>): string {
@@ -825,6 +942,12 @@ function firstArray(record: Record<string, unknown>, keys: string[]): unknown[] 
 }
 
 function normalizeHeader(value: string): string { return value.toLowerCase().replace(/[^a-z0-9]/gu, ""); }
+function cleanBomValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed || /^(n\/?a|none|unspecified|未指定|-+|\?+)$/iu.test(trimmed)) return undefined;
+  return trimmed;
+}
 function firstValue(record: Record<string, unknown>, keys: string[]): unknown { for (const key of keys) if (record[key] !== undefined && record[key] !== null && record[key] !== "") return record[key]; return undefined; }
 function firstString(record: Record<string, unknown>, keys: string[]): string | undefined { const value = firstValue(record, keys); return typeof value === "string" || typeof value === "number" ? String(value).trim() || undefined : undefined; }
 function positiveNumber(value: unknown): number | undefined { const parsed = Number(value); return Number.isFinite(parsed) && parsed > 0 && parsed <= 1_000_000 ? parsed : undefined; }
