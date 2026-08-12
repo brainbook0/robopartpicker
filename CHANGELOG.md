@@ -2,6 +2,26 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.6.0] - 2026-08-12
+
+### Added
+
+- Bulk open-source robotics catalog with popularity sorting (`feat(projects)`).
+- Real-BOM harvesting: 25 popular projects now carry 401 genuine BOM components extracted from their repository BOM files and persisted to project versions. Reusable parallel harvester (`scripts/harvest-top-boms.ts`, git-protocol fetch with no GitHub API quota) and D1 persister (`scripts/persist-harvested-boms.ts`).
+- Project import analyzer now parses UTF-16 and tab-separated CSVs and .xlsx BOMs, detects header rows inside title-prefixed sheets, recognizes common name/qty column variants (`Value`, `Part Name`, `Manufacturer Part`, `qty*`), and filters placeholder values.
+- Reference-first project imports with partial-fetch reporting and hardened GitHub reference fetches.
+- Real `sitemap.xml`, robots Sitemap directive, `og:image`/`twitter:image` (SEO).
+
+### Fixed
+
+- Removed 203 crawler-garbage components (JS-template names).
+- Labeled 56 auto-generated artifact BOMs as such.
+- Classified GitHub import denials; capped reference fetch attempts.
+
+### Changed
+
+- Versioned release process introduced: `VERSION` file, `scripts/release.sh`, semver tags and GitHub releases.
+
 ## [0.5.0] - 2026-07-20
 
 ### Added
