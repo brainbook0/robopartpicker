@@ -12,6 +12,11 @@ if [[ "$CURRENT" != "$VERSION" && "$CURRENT" != "${VERSION#v}" ]]; then
   echo "VERSION file ($CURRENT) does not match $VERSION; update it first." >&2
   exit 1
 fi
+# keep package.json in sync
+if command -v node >/dev/null; then
+  node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version='${VERSION#v}';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+  git add package.json
+fi
 git add VERSION CHANGELOG.md
 git commit -m "chore(version): $VERSION" || true
 git tag "$VERSION"
