@@ -7,6 +7,7 @@ import { authenticatedUserId, requirePlatformRole } from "../middleware/authoriz
 import { parseJson } from "../validation";
 import { matchStatements, normalizedName, recordTypes, sha256, stagingStatements, validateParsedData } from "../services/ingestion";
 import { recordAuditEvent } from "../services/audit";
+import { computePublishability, resolveUpstreamIdentity } from "../../src/shared/provenance";
 
 const httpUrl = z.string().url().max(2_048).refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Only HTTP(S) URLs are allowed.");
 const sourceSchema = z.object({ name: z.string().trim().min(2).max(200), type: z.string().trim().min(2).max(100), baseUrl: httpUrl.nullable().optional(), priority: z.number().int().min(1).max(1_000).default(100), trustWeight: z.number().min(0).max(1).default(0.5) }).strict();
@@ -268,13 +269,24 @@ async function prepareCanonical(db: D1Database, type: string, parsed: Record<str
     const summary = optionalString(parsed.summary) ?? optionalString(extracted.summary);
     const description = optionalString(parsed.description) ?? optionalString(extracted.description);
     const version = optionalString(parsed.version) ?? "0.1.0";
-    const rpps = { rpps_version: "1.0.0", name: String(parsed.name), slug, version, summary: summary ?? undefined, description: description ?? undefined, license: optionalString(parsed.licenseSpdx) ?? undefined, repo_url: optionalString(parsed.repositoryUrl) ?? undefined, bom: [] };
+    const upstreamUrl = optionalString(parsed.upstreamUrl) ?? optionalString(parsed.repositoryUrl) ?? context.sourceUrl;
+    const upstreamIdentity = resolveUpstreamIdentity({ upstreamUrl, repositoryUrl: optionalString(parsed.repositoryUrl) });
+    const maintainer = optionalString(parsed.maintainer);
+    const revision = optionalString(parsed.revision);
+    const publishability = computePublishability({
+      name: String(parsed.name), slug, version,
+      license: optionalString(parsed.licenseSpdx) ?? optionalString(parsed.license),
+      maintainer, authorsCount: Array.isArray(parsed.authors) ? parsed.authors.length : 0,
+      upstreamUrl, repositoryUrl: optionalString(parsed.repositoryUrl), revision,
+    });
+    const rpps = { rpps_version: "1.0.0", name: String(parsed.name), slug, version, summary: summary ?? undefined, description: description ?? undefined, license: optionalString(parsed.licenseSpdx) ?? undefined, repo_url: upstreamUrl ?? undefined, bom: [] };
     statements.push(
       db.prepare(`INSERT INTO projects
         (id, slug, name, summary, description, owner_user_id, visibility, status, current_version_id,
-         license_spdx, repository_url, is_demo, version, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'unlisted', 'review', ?7, ?8, ?9, 0, 1, ?10, ?10)`)
-        .bind(id, slug, parsed.name, summary, description, context.userId, versionId, parsed.licenseSpdx ?? null, parsed.repositoryUrl ?? context.sourceUrl, context.now),
+         license_spdx, repository_url, is_demo, version, upstream_url, upstream_identity, maintainer,
+         revision, ingested_at, last_checked_at, publishability, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'unlisted', 'review', ?7, ?8, ?9, 0, 1, ?10, ?11, ?12, ?13, ?14, ?14, ?15, ?14, ?14)`)
+        .bind(id, slug, parsed.name, summary, description, context.userId, versionId, parsed.licenseSpdx ?? null, upstreamUrl, upstreamUrl, upstreamIdentity, maintainer, revision, context.now, publishability),
       db.prepare(`INSERT INTO project_versions
         (id, project_id, version_label, rpps_schema_version, changelog, rpps_json, status, created_by_user_id, created_at)
         VALUES (?1, ?2, ?3, '1.0.0', 'Created from an administrator-reviewed import', ?4, 'review', ?5, ?6)`)

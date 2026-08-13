@@ -30,6 +30,13 @@ export type ProjectRow = {
   created_at: string;
   updated_at: string;
   githubStars: number | null;
+  upstream_url: string | null;
+  upstream_identity: string | null;
+  maintainer: string | null;
+  revision: string | null;
+  ingested_at: string | null;
+  last_checked_at: string | null;
+  publishability: "ready" | "review" | "incomplete" | "blocked";
 };
 
 export async function listPublicProjects(): Promise<ProjectRow[]> {

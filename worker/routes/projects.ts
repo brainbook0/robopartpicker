@@ -9,6 +9,7 @@ import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, auth
 import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
 import { analyzeProjectArchive, analyzeProjectInput, analyzeStoredProjectFiles } from "../services/project-import";
+import { computePublishability } from "../../src/shared/provenance";
 
 const createSchema = z.object({
   visibility: z.enum(["private", "organization", "unlisted", "public"]).default("public"),
@@ -88,6 +89,20 @@ projectRoutes.post("/projects/import/repository", loadAuthSession, requireAuth, 
   const externalId = analysis.sourceLabel;
   const raw = JSON.stringify({ repositoryUrl, inventory: analysis.inventory, retrieval: analysis.retrieval, analyzedAt: analysis.analyzedAt });
   const fingerprint = await sha256(`${externalId}\n${analysis.manifestYaml}`);
+  const revision = analysis.sourceMappings.find((mapping) => mapping.sourceRevision)?.sourceRevision ?? null;
+  const maintainer = analysis.manifest.authors?.[0]?.name ?? null;
+  const upstreamUrl = analysis.draft.repo_url ?? repositoryUrl;
+  const publishability = computePublishability({
+    name: analysis.draft.name,
+    slug: analysis.draft.slug,
+    version: analysis.manifest.release.version,
+    license: analysis.draft.license,
+    maintainer,
+    authorsCount: analysis.manifest.authors.length,
+    upstreamUrl,
+    repositoryUrl,
+    revision,
+  });
   await c.env.DB.batch([
     c.env.DB.prepare(`INSERT INTO import_sources (id, slug, name, source_type, base_url, priority, trust_weight, status, created_at, updated_at)
       VALUES (?1, 'github-repository', 'GitHub repository import', 'repository', 'https://github.com', 100, 0.65, 'active', ?2, ?2)
@@ -103,12 +118,13 @@ projectRoutes.post("/projects/import/repository", loadAuthSession, requireAuth, 
       VALUES (?1, ?2, ?3, ?4, 'project', ?5, 0.65, ?6, ?7, ?8, 'review', ?9, ?9)`)
       .bind(recordId, jobId, sourceId, externalId, repositoryUrl, raw, JSON.stringify(analysis), fingerprint, now),
     c.env.DB.prepare(`INSERT INTO staging_projects
-      (id, import_record_id, name, repository_url, license_spdx, extracted_json, review_status, created_at)
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7)`)
-      .bind(crypto.randomUUID(), recordId, analysis.draft.name, analysis.draft.repo_url ?? repositoryUrl, analysis.draft.license ?? null, JSON.stringify(analysis), now),
+      (id, import_record_id, name, repository_url, license_spdx, extracted_json, review_status,
+       upstream_url, revision, maintainer, ingested_at, last_checked_at, publishability, created_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?10, ?10, ?11, ?10)`)
+      .bind(crypto.randomUUID(), recordId, analysis.draft.name, analysis.draft.repo_url ?? repositoryUrl, analysis.draft.license ?? null, JSON.stringify(analysis), upstreamUrl, revision, maintainer, now, publishability),
   ]);
   await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "project.repository_import.draft", entityType: "import_job", entityId: jobId, requestId: c.get("requestId"), after: { sourceUrl: repositoryUrl, recordId, retrieval: analysis.retrieval } });
-  return c.json({ draft: analysis.draft, analysis, importJobId: jobId, reviewRequired: true });
+  return c.json({ draft: analysis.draft, analysis, importJobId: jobId, reviewRequired: true, publishability, revision });
 });
 
 projectRoutes.get("/projects/:id/files", loadAuthSession, async (c) => {
