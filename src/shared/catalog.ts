@@ -1,3 +1,5 @@
+import type { OfferAvailability, OfferCondition, OfferFreshnessLabel, OfferRiskLabel, PriceBreak } from "./offer";
+
 export type PartCategory = "actuator" | "hand" | "sensor" | "compute" | "driver" | "reducer";
 export type Region = "US" | "EU" | "CN" | "JP" | "KR" | "Global";
 
@@ -11,7 +13,13 @@ export type CatalogOffer = {
   stock: number;
   leadDays: number;
   moq: number;
-  condition?: "new" | "refurb";
+  currency?: string;
+  condition?: OfferCondition;
+  availability?: OfferAvailability;
+  priceBreaks?: PriceBreak[];
+  reliabilityScore?: number | null;
+  riskLabel?: OfferRiskLabel;
+  freshnessLabel?: OfferFreshnessLabel;
   observedAt: string;
   isDemo: boolean;
 };

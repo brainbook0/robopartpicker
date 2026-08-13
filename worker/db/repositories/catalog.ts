@@ -1,4 +1,5 @@
 import type { CatalogOffer, CatalogPart, PartCategory, SupplierSummary } from "../../../src/shared/catalog";
+import { normalizePriceBreaks, shouldAppendHistory, type OfferWriteInput } from "../../../src/shared/offer";
 
 type ComponentRow = {
   id: string;
@@ -27,10 +28,17 @@ type OfferRow = {
   supplier_id: string;
   supplier_name: string;
   supplier_region: string | null;
+  currency: string | null;
   unit_price_minor: number;
   stock_quantity: number | null;
   lead_time_days: number | null;
   minimum_quantity: number;
+  availability: string | null;
+  condition: string | null;
+  price_breaks: string | null;
+  reliability_score: number | null;
+  risk_label: string | null;
+  freshness_label: string | null;
   observed_at: string;
   is_demo: number;
 };
@@ -191,6 +199,164 @@ export class CatalogRepository {
     }));
   }
 
+  async getOfferById(id: string): Promise<{
+    id: string;
+    supplierId: string;
+    componentId: string;
+    supplierSku: string | null;
+    regionCode: string | null;
+    unitPriceMinor: number;
+    stockQuantity: number | null;
+  } | null> {
+    return this.db
+      .prepare(`SELECT id, supplier_id AS supplierId, component_id AS componentId,
+        supplier_sku AS supplierSku, region_code AS regionCode,
+        unit_price_minor AS unitPriceMinor, stock_quantity AS stockQuantity
+        FROM supplier_offers WHERE id = ?1 LIMIT 1`)
+      .bind(id)
+      .first<{
+        id: string;
+        supplierId: string;
+        componentId: string;
+        supplierSku: string | null;
+        regionCode: string | null;
+        unitPriceMinor: number;
+        stockQuantity: number | null;
+      }>() ?? null;
+  }
+
+  async listOfferHistory(offerId: string): Promise<Array<{
+    id: string;
+    currency: string;
+    unitPriceMinor: number;
+    stockQuantity: number | null;
+    minimumQuantity: number;
+    leadTimeDays: number | null;
+    observedAt: string;
+  }>> {
+    const rows = await this.db
+      .prepare(`SELECT id, currency, unit_price_minor AS unitPriceMinor,
+        stock_quantity AS stockQuantity, minimum_quantity AS minimumQuantity,
+        lead_time_days AS leadTimeDays, observed_at AS observedAt
+        FROM offer_price_history WHERE supplier_offer_id = ?1 ORDER BY observed_at ASC, id ASC`)
+      .bind(offerId)
+      .all<{
+        id: string;
+        currency: string;
+        unitPriceMinor: number;
+        stockQuantity: number | null;
+        minimumQuantity: number;
+        leadTimeDays: number | null;
+        observedAt: string;
+      }>();
+    return rows.results;
+  }
+
+  /** Insert or update an offer, appending a price-history observation whenever
+   *  the observable state changes so a prior observation is never overwritten. */
+  async upsertOffer(input: OfferWriteInput): Promise<{ offerId: string; historyAppended: boolean }> {
+    const now = new Date().toISOString();
+    const existing = await this.db
+      .prepare(`SELECT id, unit_price_minor, stock_quantity FROM supplier_offers
+        WHERE supplier_id = ?1 AND component_id = ?2
+          AND COALESCE(supplier_sku, '') = COALESCE(?3, '')
+          AND COALESCE(region_code, '') = COALESCE(?4, '')
+        LIMIT 1`)
+      .bind(input.supplierId, input.componentId, input.supplierSku ?? null, input.regionCode ?? null)
+      .first<{ id: string; unit_price_minor: number; stock_quantity: number | null }>();
+
+    if (existing) {
+      await this.db.prepare(`UPDATE supplier_offers SET
+          supplier_sku = ?1, product_url = ?2, region_code = ?3, currency = ?4,
+          unit_price_minor = ?5, minimum_quantity = ?6, stock_quantity = ?7,
+          lead_time_days = ?8, availability = ?9, condition = ?10, price_breaks = ?11,
+          reliability_score = ?12, risk_label = ?13, freshness_label = ?14,
+          observed_at = ?15, expires_at = ?16, updated_at = ?17
+        WHERE id = ?18`)
+        .bind(
+          input.supplierSku ?? null,
+          input.productUrl ?? null,
+          input.regionCode ?? null,
+          input.currency,
+          input.unitPriceMinor,
+          input.minimumQuantity,
+          input.stockQuantity ?? null,
+          input.leadTimeDays ?? null,
+          input.availability ?? "unknown",
+          input.condition ?? "unknown",
+          input.priceBreaks?.length ? JSON.stringify(input.priceBreaks) : null,
+          input.reliabilityScore ?? null,
+          input.riskLabel ?? "unknown",
+          input.freshnessLabel ?? "unknown",
+          input.observedAt,
+          input.expiresAt ?? null,
+          now,
+          existing.id,
+        )
+        .run();
+      const historyAppended = shouldAppendHistory(
+        { unitPriceMinor: existing.unit_price_minor, stockQuantity: existing.stock_quantity },
+        { unitPriceMinor: input.unitPriceMinor, stockQuantity: input.stockQuantity ?? null },
+      );
+      if (historyAppended) {
+        await this.appendHistory(existing.id, input);
+      }
+      return { offerId: existing.id, historyAppended };
+    }
+
+    const id = crypto.randomUUID();
+    await this.db.prepare(`INSERT INTO supplier_offers
+        (id, supplier_id, component_id, supplier_sku, product_url, region_code, currency,
+         unit_price_minor, minimum_quantity, stock_quantity, lead_time_days, availability,
+         condition, price_breaks, reliability_score, risk_label, freshness_label,
+         observed_at, expires_at, is_demo, created_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, 0, ?20, ?20)`)
+      .bind(
+        id,
+        input.supplierId,
+        input.componentId,
+        input.supplierSku ?? null,
+        input.productUrl ?? null,
+        input.regionCode ?? null,
+        input.currency,
+        input.unitPriceMinor,
+        input.minimumQuantity,
+        input.stockQuantity ?? null,
+        input.leadTimeDays ?? null,
+        input.availability ?? "unknown",
+        input.condition ?? "unknown",
+        input.priceBreaks?.length ? JSON.stringify(input.priceBreaks) : null,
+        input.reliabilityScore ?? null,
+        input.riskLabel ?? "unknown",
+        input.freshnessLabel ?? "unknown",
+        input.observedAt,
+        input.expiresAt ?? null,
+        now,
+      )
+      .run();
+    await this.appendHistory(id, input);
+    return { offerId: id, historyAppended: true };
+  }
+
+  private async appendHistory(offerId: string, input: OfferWriteInput): Promise<void> {
+    await this.db.prepare(`INSERT INTO offer_price_history
+        (id, supplier_offer_id, currency, unit_price_minor, stock_quantity,
+         minimum_quantity, lead_time_days, observed_at, source_import_record_id)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`)
+      .bind(
+        crypto.randomUUID(),
+        offerId,
+        input.currency,
+        input.unitPriceMinor,
+        input.stockQuantity ?? null,
+        input.minimumQuantity,
+        input.leadTimeDays ?? null,
+        input.observedAt,
+        input.sourceImportRecordId ?? null,
+      )
+      .run();
+  }
+
   private async hydrateComponents(rows: ComponentRow[]): Promise<CatalogPart[]> {
     if (!rows.length) return [];
     const ids = rows.map((row) => row.id);
@@ -202,8 +368,9 @@ export class CatalogRepository {
       this.db.prepare(`SELECT component_id, tag FROM component_tags WHERE component_id IN (${placeholders}) ORDER BY tag`).bind(...ids),
       this.db.prepare(`SELECT component_id, tag FROM component_compatibility_tags WHERE component_id IN (${placeholders}) ORDER BY tag`).bind(...ids),
       this.db.prepare(`SELECT so.id, so.component_id, so.supplier_id, s.name AS supplier_name,
-        MIN(sr.region_code) AS supplier_region, so.unit_price_minor, so.stock_quantity, so.lead_time_days,
-        so.minimum_quantity, so.observed_at, so.is_demo
+        MIN(sr.region_code) AS supplier_region, so.currency, so.unit_price_minor, so.stock_quantity,
+        so.lead_time_days, so.minimum_quantity, so.availability, so.condition, so.price_breaks,
+        so.reliability_score, so.risk_label, so.freshness_label, so.observed_at, so.is_demo
         FROM supplier_offers so JOIN suppliers s ON s.id = so.supplier_id
         LEFT JOIN supplier_regions sr ON sr.supplier_id = s.id AND sr.ships_from = 1
         WHERE so.component_id IN (${placeholders}) GROUP BY so.id ORDER BY so.unit_price_minor`).bind(...ids),
@@ -237,7 +404,13 @@ export class CatalogRepository {
         stock: row.stock_quantity ?? 0,
         leadDays: row.lead_time_days ?? 0,
         moq: row.minimum_quantity,
-        condition: "new",
+        currency: row.currency ?? undefined,
+        condition: (row.condition as CatalogOffer["condition"]) ?? "unknown",
+        availability: (row.availability as CatalogOffer["availability"]) ?? "unknown",
+        priceBreaks: normalizePriceBreaks(row.price_breaks),
+        reliabilityScore: row.reliability_score,
+        riskLabel: (row.risk_label as CatalogOffer["riskLabel"]) ?? "unknown",
+        freshnessLabel: (row.freshness_label as CatalogOffer["freshnessLabel"]) ?? "unknown",
         observedAt: row.observed_at,
         isDemo: row.is_demo === 1,
       };
