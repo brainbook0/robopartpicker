@@ -80,7 +80,7 @@
         {
           "binding": "DB",
           "database_name": "robopartpicker-production",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "10c57e79-e34f-4643-8c4e-4f0c7968a74d",
           "migrations_dir": "migrations"
         }
       ],
