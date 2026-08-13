@@ -1,8 +1,10 @@
 import { Hono } from "hono";
 import type { PartCategory } from "../../src/shared/catalog";
+import { OfferValidationError, normalizeOfferWriteInput } from "../../src/shared/offer";
 import { CatalogRepository } from "../db/repositories/catalog";
 import type { AppBindings } from "../env";
 import { AppError, parsePositiveInt } from "../http";
+import { sha256 } from "../services/ingestion";
 
 const CATEGORIES = new Set<PartCategory>(["actuator", "hand", "sensor", "compute", "driver", "reducer"]);
 
@@ -66,10 +68,36 @@ catalogRoutes.get("/offers", async (c) => {
   if (!componentId && !supplierId) throw new AppError(400, "VALIDATION_ERROR", "componentId or supplierId is required.");
   const rows = await c.env.DB.prepare(`SELECT id, supplier_id AS supplierId, component_id AS componentId,
     currency, unit_price_minor AS unitPriceMinor, minimum_quantity AS minimumQuantity,
-    stock_quantity AS stockQuantity, lead_time_days AS leadTimeDays, availability, observed_at AS observedAt, is_demo AS isDemo
+    stock_quantity AS stockQuantity, lead_time_days AS leadTimeDays, availability, condition,
+    price_breaks AS priceBreaks, reliability_score AS reliabilityScore, risk_label AS riskLabel,
+    freshness_label AS freshnessLabel, observed_at AS observedAt, is_demo AS isDemo
     FROM supplier_offers WHERE (?1 IS NULL OR component_id = ?1) AND (?2 IS NULL OR supplier_id = ?2)
     ORDER BY unit_price_minor LIMIT 100`).bind(componentId ?? null, supplierId ?? null).all();
   return c.json({ items: rows.results, total: rows.results.length });
+});
+
+catalogRoutes.put("/offers/:id", async (c) => {
+  await requireIngestionCredential(c.req.raw.headers, c.env.INGESTION_SECRET);
+  const id = c.req.param("id");
+  const repo = new CatalogRepository(c.env.DB);
+  const existing = await repo.getOfferById(id);
+  if (!existing) throw new AppError(404, "OFFER_NOT_FOUND", "Offer not found.");
+  const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body || typeof body !== "object") throw new AppError(400, "VALIDATION_ERROR", "A JSON body is required.");
+  let input;
+  try {
+    input = normalizeOfferWriteInput({
+      ...body,
+      offerId: id,
+      supplierId: body.supplierId ?? existing.supplierId,
+      componentId: body.componentId ?? existing.componentId,
+    });
+  } catch (error) {
+    if (error instanceof OfferValidationError) throw new AppError(400, "VALIDATION_ERROR", error.message);
+    throw error;
+  }
+  const result = await repo.upsertOffer(input);
+  return c.json({ item: result, historyAppended: result.historyAppended });
 });
 
 catalogRoutes.get("/integrations", async (c) => {
@@ -98,4 +126,19 @@ function optionalNonNegativeNumber(value: string | undefined, field: string): nu
 function cleanSearch(value: string | undefined): string | undefined {
   const cleaned = value?.trim().slice(0, 100);
   return cleaned || undefined;
+}
+
+async function requireIngestionCredential(headers: Headers, configured: string): Promise<void> {
+  const authorization = headers.get("authorization") ?? "";
+  const provided = authorization.startsWith("Bearer ") ? authorization.slice(7) : headers.get("x-ingestion-secret") ?? "";
+  if (!configured || configured.startsWith("replace-with") || !provided || !constantTime(await sha256(provided), await sha256(configured))) {
+    throw new AppError(401, "INGESTION_AUTHENTICATION_FAILED", "A valid ingestion service credential is required.");
+  }
+}
+
+function constantTime(left: string, right: string): boolean {
+  if (left.length !== right.length) return false;
+  let value = 0;
+  for (let index = 0; index < left.length; index += 1) value |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  return value === 0;
 }
