@@ -833,8 +833,6 @@ IU-PROJECT-PAGE and IU-PROJECT-CORPUS.
 > Cloudflare pool starts (repo/CI); the locally runnable gates on this platform are
 > `npm run typecheck` and `npm run test:unit`.
 
-# 2. Grounding
-
 Repository facts (from docs/product-recovery-coverage.md, compiled 2026-08-12):
 
 - 17 route files, ~200 endpoints; 14 migrations, ~190 tables.
