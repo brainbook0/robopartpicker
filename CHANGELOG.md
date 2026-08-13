@@ -2,6 +2,25 @@
 
 All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
 
+## [0.7.0] - 2026-08-13
+
+### Added
+
+- **IU-SOURCING-DATA** — revision-aware supplier offer time-series: `offer_price_history` is appended on every observable change (never overwritten), offers carry condition, price breaks, reliability, risk and freshness labels (migration `0017`); ingestion-guarded `PUT /api/v1/offers/:id`.
+- **IU-BOM-COMPILER** — per-line completeness buckets (verified/probable/unresolved/missing-qty/custom-fabricated/non-procurement), evidence locators, extraction method and confidence on the portable manifest and materialized `bom_items` (migration `0016`); unresolved lines are retained, and URDF model candidates become custom-fabricated components.
+- **IU-PROJECT-CORPUS** — project provenance (`upstream_url`, `upstream_identity`, `maintainer`, `revision`, `ingested_at`, `last_checked_at`), publishability gating (no silent publication), and canonical upstream dedup (migration `0015`).
+- **IU-PROJECT-GRAPH** — clone/fork lineage with upstream/downstream fork resolution, revision comparison, and change summaries (migration `0018`); `POST /projects/:id/clone`, `GET /projects/:id/forks`, `GET /projects/:id/compare/:otherId`.
+- **IU-SOURCING-OPTIMIZER** — deterministic whole-BOM procurement optimizer with selectable objectives, quantity price breaks, and user constraints (preferred/blocked suppliers, region, delivery, exact/substitute/used/surplus, owned parts, price overrides); `POST /sourcing/estimate` and `/sourcing/preferences` (migration `0019`); unpriced lines are listed, never hidden.
+- **IU-RFQ** — firm-quote state machine (`estimate_ready → … → user_review_required → option_selected`) with normalized line items, reconciliation, and an explicit approval gate before any handoff (migration `0020`).
+- **IU-CATALOG** — per-category required field floors surfaced on part pages, and synthetic/demo data is never presented as a live supplier record.
+- **IU-PROJECT-PAGE** — Sourcing estimate and Versions & forks sections on the project page, both backed by their APIs with honest not-available states.
+- **IU-QUALITY-RECOVERY** — golden A/B/C semantic regression suite (`src/quality/golden.test.ts`) plus a dedicated `quality` CI workflow.
+
+### Changed
+
+- Production D1 database id backfilled into `wrangler.jsonc`; migrations `0014`–`0020` applied and the Worker deployed to production (`robopartpicker-production`).
+- Worker integration tests now cover provenance, lineage and offer history (run in CI).
+
 ## [0.6.1] - 2026-08-12
 
 ### Added
