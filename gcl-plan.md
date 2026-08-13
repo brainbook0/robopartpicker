@@ -823,6 +823,18 @@ IU-PROJECT-PAGE and IU-PROJECT-CORPUS.
 
 # 2. Grounding
 
+> Platform gate (verified 2026-08-13): `npm run typecheck` and `npm run test:unit` pass
+> here (5 files / 35 tests OK; typecheck exit 0). `npm run test:worker` cannot start in
+> this sandbox: the @cloudflare/vitest-pool-workers miniflare pool fails with `write EPIPE`
+> in `Runtime.updateConfig` before any test runs (the `workerd` subprocess cannot spawn
+> here). The worker test (`tests/worker/api.test.ts`), `tests/worker/setup.ts`, and
+> `vitest.worker.config.ts` (include `tests/worker/**`) all exist and are valid. Therefore
+> any unit `command` listing `npm run test:worker` is an effective gate only where the
+> Cloudflare pool starts (repo/CI); the locally runnable gates on this platform are
+> `npm run typecheck` and `npm run test:unit`.
+
+# 2. Grounding
+
 Repository facts (from docs/product-recovery-coverage.md, compiled 2026-08-12):
 
 - 17 route files, ~200 endpoints; 14 migrations, ~190 tables.
