@@ -32,7 +32,9 @@ export type PriceBreak = { quantity: number; unitPriceMinor: number };
 export type SourcingOffer = {
   id: string;
   supplierId: string;
+  supplierName?: string | null;
   componentId: string;
+  region?: string | null;
   currency: string;
   unitPriceMinor: number;
   minimumQuantity: number;
