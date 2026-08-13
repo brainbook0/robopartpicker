@@ -1,5 +1,6 @@
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { z } from "zod";
+import { COMPLETENESS_BUCKETS, EXTRACTION_METHODS } from "./bom";
 import type { RppsPackage } from "./schema";
 
 export const PORTABLE_RPPS_VERSION = "0.1" as const;
@@ -39,7 +40,13 @@ export const PortableComponent = z.object({
   fabricated: z.boolean().default(false),
   optional: z.boolean().default(false),
   artifactRefs: z.array(Identifier).max(100).default([]),
+  extractionMethod: z.enum(EXTRACTION_METHODS).default("explicit-bom"),
+  completeness: z.enum(COMPLETENESS_BUCKETS).default("probable"),
+  evidenceLocator: z.string().trim().max(1_024).optional(),
+  confidence: z.number().min(0).max(1).optional(),
 }).strict();
+
+export type PortableComponent = z.infer<typeof PortableComponent>;
 
 export const PortableInterface = z.object({
   id: Identifier,

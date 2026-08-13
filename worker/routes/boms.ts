@@ -15,6 +15,8 @@ const bomItemSchema = z.object({
   description: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1_000_000),
   unit: z.string().trim().min(1).max(30).optional(), selectedSupplierOfferId: z.string().max(200).nullable().optional(),
   targetUnitPriceMinor: z.number().int().nonnegative().nullable().optional(), notes: z.string().trim().max(4_000).nullable().optional(),
+  extractionMethod: z.string().trim().min(1).max(60).optional(), completeness: z.string().trim().min(1).max(60).optional(),
+  evidenceLocator: z.string().trim().max(1_024).nullable().optional(), confidence: z.number().min(0).max(1).nullable().optional(),
 }).strict();
 const createSchema = z.object({
   name: z.string().trim().min(2).max(120), projectId: z.string().uuid().nullable().optional(),
