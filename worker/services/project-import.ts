@@ -1,5 +1,6 @@
 import { unzipSync } from "fflate";
 import { parse as parseYaml } from "yaml";
+import { buildBomLine, withCompleteness } from "../../src/lib/rpps/bom";
 import { RppsPackage } from "../../src/lib/rpps/schema";
 import {
   PortableRppsManifest,
@@ -282,6 +283,11 @@ export async function analyzeFileSet(sourceType: ProjectImportKind, label: strin
     const legacy = RppsPackage.safeParse(legacyRaw);
     if (legacy.success) manifest = convertLegacyRpps(legacy.data);
   }
+  if (manifest) {
+    // Every compiled line carries an extraction method, completeness bucket,
+    // confidence and evidence locator; unresolved lines are retained.
+    manifest = { ...manifest, components: manifest.components.map((component) => withCompleteness(component, portableEntry?.[0])) };
+  }
 
   const name = context.name || manifest?.project.name || cleanProjectName(label);
   const slug = manifest?.project.slug || slugify(name);
@@ -300,6 +306,7 @@ export async function analyzeFileSet(sourceType: ProjectImportKind, label: strin
   const components = manifest ? [] : componentExtraction.components;
   const model = extractModelSummary(textFiles);
   const software = extractSoftwarePackages(textFiles);
+  const modelCandidates = extractModelPartCandidates(textFiles);
   const configuration = { parameters: extractConfigurationParameters(textFiles) };
   const repository = extractRepositorySignals(relevant);
   const procedureCandidates = extractProcedureCandidates(textFiles, slug);
@@ -321,7 +328,7 @@ export async function analyzeFileSet(sourceType: ProjectImportKind, label: strin
         ...artifact,
         source: sourceUrl ? { url: sourceUrl, revision: sourceRevision } : undefined,
       })),
-      components,
+      components: [...components, ...deriveFabricatedComponents(modelCandidates, slug)],
       interfaces: extractUrdfInterfaces(textFiles, slug),
       procedures: procedureCandidates.map((candidate) => ({
         id: candidate.id,
@@ -354,10 +361,9 @@ export async function analyzeFileSet(sourceType: ProjectImportKind, label: strin
   const partCandidates = componentExtraction.components.map((component) => ({
     ...component,
     sourcePath: componentExtraction.sourcePath ?? portableEntry?.[0] ?? "unknown",
-    confidence: 1,
+    confidence: component.confidence ?? 1,
     extractionMethod: componentExtraction.extractionMethod,
   }));
-  const modelCandidates = extractModelPartCandidates(textFiles);
   const extracted: ExtractedProjectIntelligence = {
     parts: { sourcePaths: Array.from(new Set(partCandidates.map((part) => part.sourcePath))), candidates: partCandidates, modelCandidates },
     model,
@@ -486,20 +492,26 @@ function extractComponents(files: Map<string, string>, warnings: string[], slug:
     const normalized = Object.fromEntries(Object.entries(raw).map(([key, value]) => [normalizeHeader(key), value]));
     const name = firstString(normalized, ["name", "part", "partname", "partnumber", "component", "componentname", "description", "item", "value", "comment"]);
     if (!name) continue;
-    const quantity = positiveNumber(firstValue(normalized, ["quantity", "qty", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform"]))
-    ?? positiveNumber(firstValue(normalized, Object.keys(normalized).filter((key) => /^qty|^quantity/iu.test(key)))) ?? 1;
+    const quantity = firstValue(normalized, ["quantity", "qty", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform"])
+      ?? firstValue(normalized, Object.keys(normalized).filter((key) => /^qty|^quantity/iu.test(key)));
     const manufacturer = cleanBomValue(firstString(normalized, ["manufacturer", "maker", "mfr"]));
     const mpn = cleanBomValue(firstString(normalized, ["manufacturerpartnumber", "manufacturerpart", "mpn", "partnumber", "sku"]));
     const ref = firstString(normalized, ["reference", "ref", "designator", "id"]);
-    components.push({
-      id: `component:${slug}:${slugify(ref || name || String(index + 1)).slice(0, 80) || index + 1}`,
-      name: name.slice(0, 500),
+    const line = buildBomLine({
+      name,
       quantity,
-      unit: firstString(normalized, ["unit", "uom"])?.slice(0, 40) || "each",
-      manufacturer: manufacturer?.slice(0, 160),
-      mpn: mpn?.slice(0, 160),
+      unit: firstString(normalized, ["unit", "uom"]),
+      manufacturer,
+      mpn,
       fabricated: /^(true|yes|fabricated|make)$/iu.test(String(firstValue(normalized, ["fabricated", "makeorbuy"]) ?? "")),
       optional: /^(true|yes|optional)$/iu.test(String(firstValue(normalized, ["optional"]) ?? "")),
+      sourcePath: candidate[0],
+      rowIndex: index,
+      extractionMethod: "explicit-bom",
+    });
+    components.push({
+      ...line,
+      id: `component:${slug}:${slugify(ref || name || String(index + 1)).slice(0, 80) || index + 1}`,
       artifactRefs: [],
     });
   }
@@ -569,6 +581,20 @@ function extractModelPartCandidates(files: Map<string, string>): ExtractedProjec
     }
   }
   return output;
+}
+
+function deriveFabricatedComponents(candidates: ExtractedProjectIntelligence["parts"]["modelCandidates"], slug: string): PortableRppsManifest["components"] {
+  return candidates.slice(0, 500).map((candidate, index) => ({
+    ...buildBomLine({
+      name: candidate.name || candidate.linkName,
+      quantity: 1,
+      fabricated: true,
+      sourcePath: candidate.sourcePath,
+      extractionMethod: "cad-metadata",
+    }),
+    id: `component:${slug}:fabricated:${slugify(candidate.linkName || candidate.name || String(index + 1)).slice(0, 80) || index + 1}`,
+    artifactRefs: [],
+  }));
 }
 
 function extractSoftwarePackages(files: Map<string, string>): ExtractedProjectIntelligence["software"]["packages"] {
@@ -950,7 +976,6 @@ function cleanBomValue(value: string | undefined): string | undefined {
 }
 function firstValue(record: Record<string, unknown>, keys: string[]): unknown { for (const key of keys) if (record[key] !== undefined && record[key] !== null && record[key] !== "") return record[key]; return undefined; }
 function firstString(record: Record<string, unknown>, keys: string[]): string | undefined { const value = firstValue(record, keys); return typeof value === "string" || typeof value === "number" ? String(value).trim() || undefined : undefined; }
-function positiveNumber(value: unknown): number | undefined { const parsed = Number(value); return Number.isFinite(parsed) && parsed > 0 && parsed <= 1_000_000 ? parsed : undefined; }
 function cleanProjectName(value: string): string { return value.replace(/\.(zip|ya?ml|json|csv|urdf)$/iu, "").replace(/[-_]+/gu, " ").trim().slice(0, 500) || "Imported robot project"; }
 function slugify(value: string): string { return value.toLowerCase().trim().replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 80) || "imported-robot"; }
 function defaultFileName(kind: string): string { return kind === "rpps" ? "rpps.yaml" : kind === "bom" ? "bom.csv" : "robot.urdf"; }

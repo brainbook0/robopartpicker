@@ -23,6 +23,10 @@ export type BomItemInput = {
   selectedSupplierOfferId?: string | null;
   targetUnitPriceMinor?: number | null;
   notes?: string | null;
+  extractionMethod?: string;
+  completeness?: string;
+  evidenceLocator?: string | null;
+  confidence?: number | null;
 };
 
 export type BomDetail = BomRow & {
@@ -69,6 +73,7 @@ export class BomsRepository {
         bi.quantity, bi.unit, bi.selected_supplier_offer_id AS selectedSupplierOfferId,
         s.name AS selectedSupplierName, so.unit_price_minor AS selectedUnitPriceMinor,
         bi.target_unit_price_minor AS targetUnitPriceMinor, bi.notes, bi.sort_order AS sortOrder,
+        bi.extraction_method AS extractionMethod, bi.completeness, bi.evidence_locator AS evidenceLocator, bi.confidence,
         (SELECT MIN(so2.unit_price_minor) FROM supplier_offers so2 WHERE so2.component_id = bi.component_id AND so2.stock_quantity > 0) AS lowestUnitPriceMinor,
         (SELECT COUNT(*) FROM supplier_offers so3 WHERE so3.component_id = bi.component_id) AS knownOfferCount
         FROM bom_items bi
@@ -141,10 +146,12 @@ export class BomsRepository {
 function appendItems(db: D1Database, statements: D1PreparedStatement[], versionId: string, items: BomItemInput[]): void {
   items.forEach((item, index) => statements.push(db.prepare(`INSERT INTO bom_items
     (id, bom_version_id, component_id, slot_key, description, quantity, unit, selected_supplier_offer_id,
-     target_unit_price_minor, notes, sort_order)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`)
+     target_unit_price_minor, notes, extraction_method, completeness, evidence_locator, confidence, sort_order)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`)
     .bind(crypto.randomUUID(), versionId, item.componentId ?? null, item.slotKey, item.description, item.quantity,
-      item.unit ?? "each", item.selectedSupplierOfferId ?? null, item.targetUnitPriceMinor ?? null, item.notes ?? null, index)));
+      item.unit ?? "each", item.selectedSupplierOfferId ?? null, item.targetUnitPriceMinor ?? null, item.notes ?? null,
+      item.extractionMethod ?? "explicit-bom", item.completeness ?? "probable", item.evidenceLocator ?? null,
+      item.confidence ?? null, index)));
 }
 
 function slugify(value: string): string {
