@@ -9,7 +9,7 @@ import { ExpandableField } from "@/components/common/ExpandableField";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 import { CatalogDataNotice, FIXTURE_TOOLTIP } from "@/components/parts/CatalogDataNotice";
 import { RfqComposer } from "@/components/parts/RfqComposer";
-import { isPartSaved, toggleSavedPart, toggleCompare, readCompare, priceAlertForPart, upsertPriceAlert, removePriceAlert } from "@/lib/catalogWorkspace";
+import { isPartSaved, toggleSavedPart, toggleCompare, readCompare, priceAlertForPart, upsertPriceAlert, removePriceAlert, missingRequiredFields } from "@/lib/catalogWorkspace";
 import { gallery } from "@/lib/media";
 import { Plus, ChevronDown, ExternalLink, Star, StarOff, GitCompareArrows, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -153,6 +153,7 @@ export default function PartDetail() {
   const inCompare = compare.ids.includes(p.id);
   const saved = isPartSaved(p.id);
   const existingAlert = priceAlertForPart(p.id);
+  const missingFields = missingRequiredFields(p);
 
   const low = lowestPrice(p);
   const delta = priceDelta30(p);
@@ -223,6 +224,12 @@ export default function PartDetail() {
       </div>
 
       <CatalogDataNotice className="mt-4" />
+
+      {missingFields.length > 0 && (
+        <div className="mt-4 rounded-md border-warning/60 bg-warning/10 px-3 py-2 text-[12px] text-warning" role="status">
+          This record is missing required {p.category} fields: {missingFields.join(", ")}. Treat the shown values as incomplete.
+        </div>
+      )}
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
         <section className="space-y-4">
