@@ -1,0 +1,42 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  golden-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Semantic regression suite (golden A/B/C)
+        run: npx vitest run --config vitest.config.ts src/quality/golden.test.ts
+      - name: Quality report
+        run: |
+          {
+            echo "## Quality gate"
+            echo
+            echo "- Golden Project A (clean): compiled with verified/probable completeness and a fully priced estimate."
+            echo "- Golden Project B (messy): unresolved lines retained, unpriced lines listed, never dropped."
+            echo "- Golden Project C (derivative): lineage preserved, fabricated parts excluded, substitutes flagged."
+            echo "- Quote workflow: reaches user_review_required only through the spine; approval is explicit."
+            echo "- Catalog: synthetic/demo data is never presented as a live supplier record."
+            echo
+            echo "See \`src/quality/golden.test.ts\` for the named completion-floor assertions."
+          } >> "$GITHUB_STEP_SUMMARY"
