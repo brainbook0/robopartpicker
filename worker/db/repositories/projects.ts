@@ -1,4 +1,5 @@
 import type { RppsPackage } from "../../../src/lib/rpps/schema";
+import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
 import { AppError } from "../../http";
 
 type ProjectDatabaseRow = {
@@ -21,6 +22,13 @@ type ProjectDatabaseRow = {
   created_at: string;
   updated_at: string;
   github_stars: number | null;
+  upstream_url: string | null;
+  upstream_identity: string | null;
+  maintainer: string | null;
+  revision: string | null;
+  ingested_at: string | null;
+  last_checked_at: string | null;
+  publishability: "ready" | "review" | "incomplete" | "blocked";
   version_label: string | null;
   rpps_schema_version: string | null;
   rpps_json: string | null;
@@ -56,6 +64,13 @@ export type ProjectDto = {
   created_at: string;
   updated_at: string;
   githubStars: number | null;
+  upstream_url: string | null;
+  upstream_identity: string | null;
+  maintainer: string | null;
+  revision: string | null;
+  ingested_at: string | null;
+  last_checked_at: string | null;
+  publishability: "ready" | "review" | "incomplete" | "blocked";
 };
 
 export type ProjectFileDto = {
@@ -80,7 +95,8 @@ export type ProjectFileDto = {
 const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p.owner_user_id,
   p.organization_id, p.visibility, p.status, p.license_spdx, p.repository_url, p.difficulty,
   p.estimated_cost_minor, p.estimated_cost_currency, p.is_demo, p.version, p.created_at, p.updated_at,
-  p.github_stars,
+  p.github_stars, p.upstream_url, p.upstream_identity, p.maintainer, p.revision, p.ingested_at,
+  p.last_checked_at, p.publishability,
   pv.version_label, pv.rpps_schema_version, pv.rpps_json,
   (SELECT COUNT(*) FROM rpps_build_passports bp
     JOIN rpps_releases rr ON rr.id = bp.release_id
@@ -179,25 +195,50 @@ export class ProjectsRepository {
     organizationId?: string | null;
     visibility: ProjectDatabaseRow["visibility"];
     rpps: RppsPackage;
+    upstreamUrl?: string | null;
+    revision?: string | null;
+    maintainer?: string | null;
   }): Promise<ProjectDto> {
     const projectId = crypto.randomUUID();
     const versionId = crypto.randomUUID();
     const now = new Date().toISOString();
     const { rpps } = input;
+    const maintainer = input.maintainer ?? rpps.authors?.[0]?.name ?? null;
+    const upstreamUrl = input.upstreamUrl ?? rpps.repo_url ?? null;
+    const upstreamIdentity = resolveUpstreamIdentity({ upstreamUrl, repositoryUrl: rpps.repo_url });
+    const publishability = computePublishability({
+      name: rpps.name,
+      slug: rpps.slug,
+      version: rpps.version,
+      license: rpps.license,
+      maintainer,
+      authorsCount: rpps.authors?.length ?? 0,
+      upstreamUrl,
+      repositoryUrl: rpps.repo_url,
+      revision: input.revision,
+    });
+    if (upstreamIdentity) {
+      const existing = await this.db.prepare(`SELECT id FROM projects WHERE upstream_identity = ?1 AND deleted_at IS NULL LIMIT 1`)
+        .bind(upstreamIdentity).first<{ id: string }>();
+      if (existing) throw new AppError(409, "PROJECT_UPSTREAM_EXISTS", "A project for this upstream repository already exists.");
+    }
+    const status = publishability === "ready" ? "published" : "review";
     try {
       await this.db.batch([
         this.db.prepare(`INSERT INTO projects
           (id, slug, name, summary, description, owner_user_id, organization_id, visibility, status,
            current_version_id, license_spdx, repository_url, difficulty, estimated_cost_minor,
-           estimated_cost_currency, is_demo, version, created_at, updated_at)
-          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'published', ?9, ?10, ?11, ?12, ?13, 'USD', 0, 1, ?14, ?14)`)
+           estimated_cost_currency, is_demo, version, upstream_url, upstream_identity, maintainer, revision,
+           ingested_at, last_checked_at, publishability, created_at, updated_at)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 'USD', 0, 1, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?19, ?19)`)
           .bind(projectId, rpps.slug, rpps.name, rpps.summary ?? null, rpps.description ?? null, input.ownerUserId,
-            input.organizationId ?? null, input.visibility, versionId, rpps.license ?? null, rpps.repo_url ?? null,
-            rpps.build?.difficulty ?? null, rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100), now),
+            input.organizationId ?? null, input.visibility, status, versionId, rpps.license ?? null, rpps.repo_url ?? null,
+            rpps.build?.difficulty ?? null, rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100),
+            upstreamUrl, upstreamIdentity, maintainer, input.revision ?? null, now, publishability),
         this.db.prepare(`INSERT INTO project_versions
           (id, project_id, version_label, rpps_schema_version, changelog, rpps_json, status, created_by_user_id, created_at, published_at)
-          VALUES (?1, ?2, ?3, ?4, 'Initial publication', ?5, 'published', ?6, ?7, ?7)`)
-          .bind(versionId, projectId, rpps.version, rpps.rpps_version, JSON.stringify(rpps), input.ownerUserId, now),
+          VALUES (?1, ?2, ?3, ?4, 'Initial publication', ?5, ?6, ?7, ?8, ?8)`)
+          .bind(versionId, projectId, rpps.version, rpps.rpps_version, JSON.stringify(rpps), status, input.ownerUserId, now),
         this.db.prepare(`INSERT INTO project_maintainers (project_id, user_id, role, created_at)
           VALUES (?1, ?2, 'owner', ?3)`).bind(projectId, input.ownerUserId, now),
       ]);
@@ -222,6 +263,19 @@ export class ProjectsRepository {
     if (!current) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
     const versionId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const upstreamUrl = current.row.upstream_url ?? rpps.repo_url ?? null;
+    const upstreamIdentity = resolveUpstreamIdentity({ upstreamUrl, repositoryUrl: rpps.repo_url });
+    const publishability = computePublishability({
+      name: rpps.name,
+      slug: rpps.slug,
+      version: rpps.version,
+      license: rpps.license,
+      maintainer: current.row.maintainer ?? rpps.authors?.[0]?.name,
+      authorsCount: rpps.authors?.length ?? 0,
+      upstreamUrl,
+      repositoryUrl: rpps.repo_url,
+      revision: current.row.revision,
+    });
     try {
       const results = await this.db.batch([
         this.db.prepare(`INSERT INTO project_versions
@@ -234,10 +288,14 @@ export class ProjectsRepository {
           AND EXISTS (SELECT 1 FROM projects WHERE id = ?1 AND version = ?3)`).bind(projectId, versionId, expectedVersion),
         this.db.prepare(`UPDATE projects SET slug = ?1, name = ?2, summary = ?3, description = ?4,
           current_version_id = ?5, license_spdx = ?6, repository_url = ?7, difficulty = ?8,
-          estimated_cost_minor = ?9, version = version + 1, updated_at = ?10 WHERE id = ?11 AND version = ?12`)
+          estimated_cost_minor = ?9, upstream_url = ?10, upstream_identity = ?11, maintainer = ?12,
+          publishability = ?13, last_checked_at = ?14, version = version + 1, updated_at = ?14
+          WHERE id = ?15 AND version = ?16`)
           .bind(rpps.slug, rpps.name, rpps.summary ?? null, rpps.description ?? null, versionId, rpps.license ?? null,
             rpps.repo_url ?? null, rpps.build?.difficulty ?? null,
-            rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100), now, projectId, expectedVersion),
+            rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100),
+            upstreamUrl, upstreamIdentity, current.row.maintainer ?? rpps.authors?.[0]?.name ?? null,
+            publishability, now, projectId, expectedVersion),
       ]);
       if (Number(results[2].meta.changes) < 1) throw new AppError(409, "PROJECT_VERSION_CONFLICT", "The project changed; refresh and retry.");
       await this.replaceNormalizedProjectData(
@@ -387,5 +445,12 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     created_at: row.created_at,
     updated_at: row.updated_at,
     githubStars: row.github_stars ?? null,
+    upstream_url: row.upstream_url,
+    upstream_identity: row.upstream_identity,
+    maintainer: row.maintainer,
+    revision: row.revision,
+    ingested_at: row.ingested_at,
+    last_checked_at: row.last_checked_at,
+    publishability: row.publishability ?? "review",
   };
 }
