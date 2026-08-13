@@ -29,6 +29,10 @@ type ProjectDatabaseRow = {
   ingested_at: string | null;
   last_checked_at: string | null;
   publishability: "ready" | "review" | "incomplete" | "blocked";
+  upstream_project_id: string | null;
+  upstream_revision: string | null;
+  clone_created_at: string | null;
+  change_summary: string | null;
   version_label: string | null;
   rpps_schema_version: string | null;
   rpps_json: string | null;
@@ -71,6 +75,10 @@ export type ProjectDto = {
   ingested_at: string | null;
   last_checked_at: string | null;
   publishability: "ready" | "review" | "incomplete" | "blocked";
+  upstream_project_id: string | null;
+  upstream_revision: string | null;
+  clone_created_at: string | null;
+  change_summary: string | null;
 };
 
 export type ProjectFileDto = {
@@ -96,7 +104,7 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
   p.organization_id, p.visibility, p.status, p.license_spdx, p.repository_url, p.difficulty,
   p.estimated_cost_minor, p.estimated_cost_currency, p.is_demo, p.version, p.created_at, p.updated_at,
   p.github_stars, p.upstream_url, p.upstream_identity, p.maintainer, p.revision, p.ingested_at,
-  p.last_checked_at, p.publishability,
+  p.last_checked_at, p.publishability, p.upstream_project_id, p.upstream_revision, p.clone_created_at, p.change_summary,
   pv.version_label, pv.rpps_schema_version, pv.rpps_json,
   (SELECT COUNT(*) FROM rpps_build_passports bp
     JOIN rpps_releases rr ON rr.id = bp.release_id
@@ -198,6 +206,9 @@ export class ProjectsRepository {
     upstreamUrl?: string | null;
     revision?: string | null;
     maintainer?: string | null;
+    upstreamProjectId?: string | null;
+    upstreamRevision?: string | null;
+    changeSummary?: string | null;
   }): Promise<ProjectDto> {
     const projectId = crypto.randomUUID();
     const versionId = crypto.randomUUID();
@@ -229,12 +240,15 @@ export class ProjectsRepository {
           (id, slug, name, summary, description, owner_user_id, organization_id, visibility, status,
            current_version_id, license_spdx, repository_url, difficulty, estimated_cost_minor,
            estimated_cost_currency, is_demo, version, upstream_url, upstream_identity, maintainer, revision,
-           ingested_at, last_checked_at, publishability, created_at, updated_at)
-          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 'USD', 0, 1, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?19, ?19)`)
+           ingested_at, last_checked_at, publishability, upstream_project_id, upstream_revision,
+           clone_created_at, change_summary, created_at, updated_at)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 'USD', 0, 1, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?21, ?22, ?23, ?24, ?19, ?19)`)
           .bind(projectId, rpps.slug, rpps.name, rpps.summary ?? null, rpps.description ?? null, input.ownerUserId,
             input.organizationId ?? null, input.visibility, status, versionId, rpps.license ?? null, rpps.repo_url ?? null,
             rpps.build?.difficulty ?? null, rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100),
-            upstreamUrl, upstreamIdentity, maintainer, input.revision ?? null, now, publishability),
+            upstreamUrl, upstreamIdentity, maintainer, input.revision ?? null, now, publishability,
+            input.upstreamProjectId ?? null, input.upstreamRevision ?? null,
+            input.upstreamProjectId ? now : null, input.changeSummary ?? null),
         this.db.prepare(`INSERT INTO project_versions
           (id, project_id, version_label, rpps_schema_version, changelog, rpps_json, status, created_by_user_id, created_at, published_at)
           VALUES (?1, ?2, ?3, ?4, 'Initial publication', ?5, ?6, ?7, ?8, ?8)`)
@@ -452,5 +466,9 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     ingested_at: row.ingested_at,
     last_checked_at: row.last_checked_at,
     publishability: row.publishability ?? "review",
+    upstream_project_id: row.upstream_project_id,
+    upstream_revision: row.upstream_revision,
+    clone_created_at: row.clone_created_at,
+    change_summary: row.change_summary,
   };
 }

@@ -142,6 +142,29 @@ export async function deleteProject(projectId: string): Promise<void> {
   await api.delete(`/api/v1/projects/${encodeURIComponent(projectId)}`);
 }
 
+// ---------- Lineage / forks ----------
+
+export type ForkSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  version: string | null;
+  visibility: "private" | "organization" | "unlisted" | "public";
+  status: "draft" | "review" | "published" | "archived";
+  upstreamRevision: string | null;
+  cloneCreatedAt: string | null;
+  changeSummary: string | null;
+  updatedAt: string;
+};
+
+export async function listForks(projectId: string, direction: "upstream" | "downstream"): Promise<ForkSummary[]> {
+  return (await api.get<{ items: ForkSummary[] }>(`/api/v1/projects/${encodeURIComponent(projectId)}/forks?direction=${direction}`)).items;
+}
+
+export async function cloneProject(projectId: string, input: { name?: string; visibility?: ProjectRow["visibility"]; changeSummary?: string }): Promise<ProjectRow> {
+  return (await api.post<{ item: ProjectRow }>(`/api/v1/projects/${encodeURIComponent(projectId)}/clone`, input)).item;
+}
+
 // ---------- GitHub import ----------
 // Parses a public GitHub URL, fetches repo metadata + README via the public API,
 // and returns a draft RPPS scaffold. Untrusted content: never treated as instructions.
