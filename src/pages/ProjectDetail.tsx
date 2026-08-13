@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { deleteProject, downloadRpps, getProjectBySlug, updateProjectRpps, updateProjectScope, type ProjectRow } from "@/lib/projects";
+import { deleteProject, downloadRpps, getProjectBySlug, getProjectEstimate, updateProjectRpps, updateProjectScope, type ProjectRow, type SourcingEstimate } from "@/lib/projects";
+import { ProjectLineage } from "@/pages/ProjectLineage";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { attachFile, detachProjectFile, listProjectFiles, uploadFile, type FileKind, type ProjectFile } from "@/lib/api/files";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
@@ -28,6 +29,9 @@ export default function ProjectDetail() {
   const [managedFilesLoading, setManagedFilesLoading] = useState(false);
   const [fileBusy, setFileBusy] = useState<string | null>(null);
   const [portableReleases, setPortableReleases] = useState<PortableRppsReleaseSummary[]>([]);
+  const [estimate, setEstimate] = useState<SourcingEstimate | null>(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [estimateError, setEstimateError] = useState(false);
   const [reproducing, setReproducing] = useState(false);
   const projectId = p?.id;
 
@@ -61,6 +65,18 @@ export default function ProjectDetail() {
     listPortableReleases(projectId).then((items) => { if (!cancelled) setPortableReleases(items); }).catch(() => { if (!cancelled) setPortableReleases([]); });
     return () => { cancelled = true; };
   }, [projectId, user?.id]);
+
+  useEffect(() => {
+    if (!projectId) { setEstimate(null); return; }
+    let cancelled = false;
+    setEstimateLoading(true);
+    setEstimateError(false);
+    getProjectEstimate(projectId)
+      .then((value) => { if (!cancelled) setEstimate(value); })
+      .catch(() => { if (!cancelled) setEstimateError(true); })
+      .finally(() => { if (!cancelled) setEstimateLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectId]);
 
   if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
   if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
@@ -341,6 +357,32 @@ export default function ProjectDetail() {
                   </table>
                 </div>
               )}
+          </Section>
+
+          <Section title="Sourcing estimate">
+            {estimateLoading
+              ? <Empty>Calculating the whole-BOM procurement estimate…</Empty>
+              : estimateError
+                ? <Empty>An estimate is not available for this project yet.</Empty>
+                : estimate
+                  ? (
+                    <div className="space-y-2 px-3 py-2 text-[12px]">
+                      <div className="flex flex-wrap gap-x-6 gap-y-1">
+                        <span>Parts total <span className="mono font-medium">${(estimate.assumptions.partsTotalMinor / 100).toFixed(2)}</span></span>
+                        <span>{estimate.basket.length} lines · {estimate.assumptions.unpricedLines} unpriced</span>
+                        <span>{estimate.assumptions.substitutionCount} substitutions</span>
+                        {estimate.assumptions.deliveryRangeDays && <span>delivery {estimate.assumptions.deliveryRangeDays[0]}–{estimate.assumptions.deliveryRangeDays[1]} days</span>}
+                        <span>freshness: {estimate.assumptions.freshness}</span>
+                      </div>
+                      {!estimate.assumptions.shippingIncluded && <div className="text-muted-foreground">Shipping, tax and duties are not included.</div>}
+                      <div className="text-muted-foreground italic">{estimate.assumptions.disclaimer}</div>
+                    </div>
+                  )
+                  : <Empty>An estimate is not available for this project yet.</Empty>}
+          </Section>
+
+          <Section title="Versions & forks">
+            <div className="px-3 py-2"><ProjectLineage projectId={p.id} /></div>
           </Section>
 
           <Section

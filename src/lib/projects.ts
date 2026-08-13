@@ -165,6 +165,47 @@ export async function cloneProject(projectId: string, input: { name?: string; vi
   return (await api.post<{ item: ProjectRow }>(`/api/v1/projects/${encodeURIComponent(projectId)}/clone`, input)).item;
 }
 
+// ---------- Sourcing estimate ----------
+
+export type SourcingEstimate = {
+  basket: Array<{
+    lineId: string;
+    componentId: string | null;
+    name: string;
+    quantity: number;
+    unitPriceMinor: number | null;
+    supplierId: string | null;
+    supplierName: string | null;
+    riskLabel: string | null;
+    freshnessLabel: string | null;
+    leadTimeDays: number | null;
+    subtotalMinor: number | null;
+    isSubstitute: boolean;
+    unpriced: boolean;
+    exclusionReason: string | null;
+  }>;
+  assumptions: {
+    objective: string;
+    currency: string;
+    partsTotalMinor: number;
+    shippingMinor: number;
+    taxDutiesMinor: number;
+    shippingIncluded: boolean;
+    taxDutiesIncluded: boolean;
+    unpricedLines: number;
+    substitutionCount: number;
+    ownedPartLines: number;
+    deliveryRangeDays: [number, number] | null;
+    freshness: string;
+    disclaimer: string;
+  };
+  totalRangeMinor: [number, number];
+};
+
+export async function getProjectEstimate(projectId: string): Promise<SourcingEstimate> {
+  return (await api.post<{ estimate: SourcingEstimate }>("/api/v1/sourcing/estimate", { projectId })).estimate;
+}
+
 // ---------- GitHub import ----------
 // Parses a public GitHub URL, fetches repo metadata + README via the public API,
 // and returns a draft RPPS scaffold. Untrusted content: never treated as instructions.
