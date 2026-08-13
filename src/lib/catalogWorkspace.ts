@@ -2,7 +2,7 @@
 // Nothing here is sent, monitored, published, or synchronized with any server.
 // All data lives in this browser's localStorage.
 
-import type { PartCategory } from "@/shared/catalog";
+import type { Part, PartCategory } from "@/shared/catalog";
 
 const SAVED_PARTS_KEY = "rpp:cat:saved-parts:v1";
 const COMPARE_KEY = "rpp:cat:compare:v1";
@@ -317,6 +317,40 @@ export const rfqDraftToText = (r: RfqDraft, supplierName?: string): string => {
 export const copyText = async (text: string): Promise<boolean> => {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 };
+
+// ---------------- Field floors (catalog data completeness) ----------------
+
+/** Required fields per component category. Missing values must be surfaced, not
+ *  silently defaulted, so a part never looks more complete than it is. */
+export const CATEGORY_REQUIRED_FIELDS: Record<PartCategory, string[]> = {
+  actuator: ["peakNm", "contNm", "speedRpm", "voltageV"],
+  hand: ["dof", "payloadKg"],
+  sensor: ["type", "rangeM"],
+  compute: ["tops", "ramGb"],
+  driver: ["maxCurrentA", "voltageV"],
+  reducer: ["ratio", "ratedTorqueNm"],
+};
+
+export const missingRequiredFields = (part: Part): string[] => {
+  const required = CATEGORY_REQUIRED_FIELDS[part.category] ?? [];
+  return required.filter((field) => {
+    const value = (part as Record<string, unknown>)[field];
+    return value == null || (typeof value === "number" && !Number.isFinite(value));
+  });
+};
+
+export const fieldFloorOk = (part: Part): boolean => missingRequiredFields(part).length === 0;
+
+export type FieldFloorReport = { category: PartCategory; required: string[]; missing: string[]; complete: boolean };
+
+export const fieldFloorReport = (part: Part): FieldFloorReport => {
+  const missing = missingRequiredFields(part);
+  return { category: part.category, required: CATEGORY_REQUIRED_FIELDS[part.category] ?? [], missing, complete: missing.length === 0 };
+};
+
+/** Synthetic/demo fixtures must never be presented as live supplier data. */
+export const isSyntheticPart = (part: Pick<Part, "isDemo" | "provenanceLabel">): boolean =>
+  part.isDemo === true || part.provenanceLabel === "demo" || part.provenanceLabel === "inferred";
 
 // ---------------- Testing hooks (exported for unit tests) ----------------
 export const __testing = { SAVED_PARTS_KEY, COMPARE_KEY, PRICE_ALERTS_KEY, RFQ_KEY };
