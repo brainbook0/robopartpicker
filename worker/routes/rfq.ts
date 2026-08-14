@@ -6,14 +6,16 @@ import { SourcingOptimizerService } from "../services/sourcing-optimizer";
 import { isRfqAction, type RfqAction } from "../../src/shared/rfq";
 import { AppError } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
-import { authenticatedUserId } from "../middleware/authorization";
+import { assertScopedRead, authenticatedUserId } from "../middleware/authorization";
 import { parseJson } from "../validation";
+import { BomsRepository } from "../db/repositories/boms";
+import { ProjectsRepository } from "../db/repositories/projects";
 
 const createSchema = z.object({
   projectId: z.string().min(1).max(200).optional(),
   bomId: z.string().min(1).max(200).optional(),
   expiresInDays: z.number().int().positive().max(365).optional(),
-}).strict().refine((value) => value.projectId || value.bomId, { message: "projectId or bomId is required." });
+}).strict().refine((value) => Boolean(value.projectId) !== Boolean(value.bomId), { message: "Exactly one of projectId or bomId is required." });
 
 const transitionSchema = z.object({ action: z.string().trim().min(1).max(40) }).strict();
 
@@ -33,6 +35,15 @@ export const rfqRoutes = new Hono<AppBindings>();
 rfqRoutes.post("/rfq", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, createSchema);
+  if (body.bomId) {
+    const bom = await new BomsRepository(c.env.DB).find(body.bomId);
+    if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
+    await assertScopedRead(c.env.DB, userId, bom);
+  } else {
+    const project = await new ProjectsRepository(c.env.DB).find(body.projectId!);
+    if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+    await assertScopedRead(c.env.DB, userId, project.row);
+  }
   const service = new SourcingOptimizerService(c.env.DB);
   const estimate = body.bomId
     ? await service.estimateForBom(body.bomId)

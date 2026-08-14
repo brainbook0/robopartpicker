@@ -49,6 +49,22 @@ app.use("/.well-known/*", apiSecurityHeaders);
 app.all("/mcp/private", (c) => handlePrivateMcpRequest(c.req.raw, c.env));
 app.all("/mcp", (c) => handleMcpRequest(c.req.raw, c.env));
 
+app.on(["GET", "HEAD"], "/.well-known/mcp.json", (c) => {
+  const origin = new URL(c.req.url).origin;
+  const metadata = {
+    name: "RoboPartPicker",
+    description: "Public read-only robotics project, component, and supplier data.",
+    transport: "streamable-http",
+    endpoint: `${origin}/mcp`,
+    documentation: `${origin}/developers`,
+    authentication: { public: "none", privateEndpoint: `${origin}/mcp/private`, private: "oauth2" },
+    capabilities: ["search_projects", "get_project", "search_components", "compare_components", "search_suppliers"],
+  };
+  return new Response(c.req.method === "HEAD" ? null : JSON.stringify(metadata), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300, stale-while-revalidate=300" },
+  });
+});
+
 app.on(["GET", "HEAD"], ["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp/private"], (c) => {
   const body = c.req.method === "HEAD" ? null : JSON.stringify(privateMcpResourceMetadata(c.env));
   return new Response(body, {

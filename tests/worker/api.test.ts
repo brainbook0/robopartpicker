@@ -211,6 +211,29 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const csv = await call(`/api/v1/builds/${buildId}/export?format=csv`, {}, ownerCookie); expect(csv.status).toBe(200); expect(await csv.text()).toContain("TM-42 Motor");
   });
 
+  it("authorizes RFQ targets before estimating private BOM data", async () => {
+    const createdBom = await call("/api/v1/boms", { method: "POST", body: jsonBody({
+      name: "Private RFQ BOM",
+      visibility: "private",
+      items: [{ componentId: "c-test", slotKey: "drive-motor", description: "TM-42 Motor", quantity: 2 }],
+    }) }, ownerCookie);
+    expect(createdBom.status).toBe(201);
+    const bomId = (await body<{ item: { id: string } }>(createdBom)).item.id;
+
+    const denied = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId }) }, otherCookie);
+    expect(denied.status).toBe(403);
+    expect(await body<{ error: { code: string } }>(denied)).toMatchObject({ error: { code: "RESOURCE_ACCESS_DENIED" } });
+
+    const allowed = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId, expiresInDays: 30 }) }, ownerCookie);
+    expect(allowed.status).toBe(201);
+    const request = (await body<{ item: { id: string; bomId: string; createdByUserId: string } }>(allowed)).item;
+    expect(request).toMatchObject({ bomId, createdByUserId: ownerId });
+    expect((await call(`/api/v1/rfq/${request.id}`, {}, otherCookie)).status).toBe(403);
+
+    const ambiguous = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId, projectId: crypto.randomUUID() }) }, ownerCookie);
+    expect(ambiguous.status).toBe(400);
+  });
+
   it("persists build configuration, firmware, calibration, and test records with build authorization", async () => {
     const configuration = await call(`/api/v1/builds/${buildId}/configurations`, { method: "POST", body: jsonBody({ name: "Motor controller", format: "yaml", contentText: "motor:\n  current_limit: 12" }) }, ownerCookie);
     expect(configuration.status).toBe(201); const configurationId = (await body<{ item: { id: string } }>(configuration)).item.id;
@@ -789,6 +812,17 @@ extensions:`);
   });
 
   it("serves stateless read-only robotics tools over MCP Streamable HTTP", async () => {
+    const discovery = await call("/.well-known/mcp.json");
+    expect(discovery.status).toBe(200);
+    expect(discovery.headers.get("content-type")).toContain("application/json");
+    expect(await body(discovery)).toMatchObject({
+      name: "RoboPartPicker",
+      transport: "streamable-http",
+      endpoint: `${origin}/mcp`,
+      documentation: `${origin}/developers`,
+      capabilities: expect.arrayContaining(["search_projects", "get_project", "search_components"]),
+    });
+
     const headers = { accept: "application/json, text/event-stream", "content-type": "application/json" };
     const initialized = await call("/mcp", { method: "POST", headers, body: jsonBody({
       jsonrpc: "2.0", id: 1, method: "initialize",

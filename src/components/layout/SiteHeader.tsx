@@ -26,6 +26,8 @@ const moreItems: { label: string; to: string }[] = [
   { label: "Teardowns", to: "/teardowns" },
   { label: "Guided finder", to: "/finder/actuator" },
   { label: "RPPS spec", to: "/rpps" },
+  { label: "Developers & MCP", to: "/developers" },
+  { label: "Partners & advertising", to: "/partners" },
 ];
 
 const partCats: PartCategory[] = ["actuator","hand","sensor","compute","driver","reducer"];
@@ -113,7 +115,7 @@ export const SiteHeader = () => {
 
         <div className="ml-auto flex items-center gap-1.5">
           <Link to="/assistant" className="hidden sm:inline-flex btn-ghost btn-sm" aria-label={aiEnabled ? "Ask AI" : "AI assistant coming soon"}><Sparkles className="h-3.5 w-3.5" /> {aiEnabled ? "Ask AI" : "AI soon"}</Link>
-          <Link to="/marketplace/wanted/new" className="hidden lg:inline-flex btn-ghost btn-sm"><GitPullRequest className="h-3.5 w-3.5" /> RFQ</Link>
+          <Link to="/marketplace/wanted/new" className="hidden lg:inline-flex btn-ghost btn-sm"><GitPullRequest className="h-3.5 w-3.5" /> Post wanted</Link>
           {user && <Link to="/notifications" className="relative hidden sm:inline-flex btn-ghost btn-sm" aria-label={`${notificationCount.data?.unreadCount ?? 0} unread notifications`}><Bell className="h-3.5 w-3.5" />{Boolean(notificationCount.data?.unreadCount) && <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[9px] font-bold text-primary-foreground">{Math.min(notificationCount.data!.unreadCount, 99)}</span>}</Link>}
           <button onClick={() => setDark(!dark)} aria-label="Toggle theme"
             className="rounded border border-border p-1 hover:bg-muted">

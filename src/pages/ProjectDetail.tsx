@@ -3,17 +3,18 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu, FileUp,
   Clock, DollarSign, Package, ListChecks, ShieldCheck, BookOpen, AlertTriangle,
-  Play, Users, Code2,
+  Play, Users, Code2, GitFork, Truck,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { deleteProject, downloadRpps, getProjectBySlug, getProjectEstimate, updateProjectRpps, updateProjectScope, type ProjectRow, type SourcingEstimate } from "@/lib/projects";
+import { cloneProject, deleteProject, downloadRpps, getProjectBySlug, getProjectEstimate, updateProjectRpps, updateProjectScope, type ProjectRow, type SourcingEstimate } from "@/lib/projects";
 import { ProjectLineage } from "@/pages/ProjectLineage";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { attachFile, detachProjectFile, listProjectFiles, uploadFile, type FileKind, type ProjectFile } from "@/lib/api/files";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 import { createReleaseBuildPassport, listPortableReleases, type PortableRppsReleaseSummary } from "@/lib/rpps/client";
 import { ReleaseCollaborationPanel } from "@/components/projects/ReleaseCollaborationPanel";
+import { rfqApi } from "@/lib/api/rfq";
 
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 
@@ -33,6 +34,8 @@ export default function ProjectDetail() {
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [estimateError, setEstimateError] = useState(false);
   const [reproducing, setReproducing] = useState(false);
+  const [forking, setForking] = useState(false);
+  const [creatingRfq, setCreatingRfq] = useState(false);
   const projectId = p?.id;
 
   useEffect(() => {
@@ -131,6 +134,43 @@ export default function ProjectDetail() {
       toast({ title: "Could not start reproduction", description: errorMessage(error), variant: "destructive" });
     } finally {
       setReproducing(false);
+    }
+  };
+
+  const forkProject = async () => {
+    if (!user) {
+      nav("/auth", { state: { from: `/projects/${p.slug}` } });
+      return;
+    }
+    setForking(true);
+    try {
+      const fork = await cloneProject(p.id, {
+        name: `${p.name} fork`,
+        visibility: "private",
+        changeSummary: "Private working fork created from the public project page.",
+      });
+      toast({ title: "Private fork created", description: "The upstream project and revision were preserved. You can now edit the project and BOM." });
+      nav(`/projects/${fork.slug}`);
+    } catch (error) {
+      toast({ title: "Could not create fork", description: errorMessage(error), variant: "destructive" });
+    } finally {
+      setForking(false);
+    }
+  };
+
+  const createQuoteRequest = async () => {
+    if (!user) {
+      nav("/auth", { state: { from: `/projects/${p.slug}` } });
+      return;
+    }
+    setCreatingRfq(true);
+    try {
+      const result = await rfqApi.create({ projectId: p.id, expiresInDays: 30 });
+      nav(`/quotes/${result.item.id}`);
+    } catch (error) {
+      toast({ title: "Could not create quote request", description: errorMessage(error), variant: "destructive" });
+    } finally {
+      setCreatingRfq(false);
     }
   };
 
@@ -236,6 +276,7 @@ export default function ProjectDetail() {
                   {p.repo_url && <a href={p.repo_url} target="_blank" rel="noreferrer" aria-label="Open source repository" className="btn-ghost btn-sm"><Github className="h-3.5 w-3.5" /> Repo <ExternalLink className="h-3 w-3" /></a>}
                   {p.docs_url && <a href={p.docs_url} target="_blank" rel="noreferrer" aria-label="Open documentation" className="btn-ghost btn-sm"><BookOpen className="h-3.5 w-3.5" /> Docs <ExternalLink className="h-3 w-3" /></a>}
                   <button onClick={copyLink} aria-label="Copy project link" className="btn-ghost btn-sm"><Link2 className="h-3.5 w-3.5" /> Copy link</button>
+                  <button onClick={() => void forkProject()} disabled={forking} aria-label="Create a private editable fork" className="btn-ghost btn-sm"><GitFork className="h-3.5 w-3.5" /> {forking ? "Forking…" : "Fork & modify"}</button>
                   <button onClick={() => void reproduce()} disabled={reproducing || portableReleases.length === 0} aria-label="Reproduce this project release" className="btn-primary btn-sm disabled:opacity-50"><Play className="h-3.5 w-3.5" /> {reproducing ? "Creating…" : "Reproduce"}</button>
                   <button onClick={() => downloadRpps(p.rpps)} aria-label="Export RPPS package" className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> Export RPPS</button>
                 </div>
@@ -251,6 +292,8 @@ export default function ProjectDetail() {
               <Meta k="rpps" v={p.rpps_version} />
               <StatusPill kind={p.status === "published" ? "ok" : p.status === "archived" ? "muted" : "warn"} label={p.status} />
               {p.is_demo && <StatusPill kind="warn" label="demo fixture" />}
+              <StatusPill kind={p.license ? "ok" : "warn"} label={p.license ? "licensed source" : p.repo_url ? "license unclear" : "closed-source showcase"} />
+              <StatusPill kind={p.publishability === "ready" ? "ok" : p.publishability === "blocked" ? "warn" : "info"} label={`publishability: ${p.publishability}`} />
               {p.difficulty && <Meta k="difficulty" v={p.difficulty} />}
               {p.license && <Meta k="license" v={p.license} />}
               <Meta k="updated" v={updated.toLocaleDateString()} />
@@ -279,7 +322,7 @@ export default function ProjectDetail() {
 
           <Section title="Description">
             {p.description
-              ? <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed">{p.description}</pre>
+              ? <ReadableDescription value={p.description} />
               : <Empty>No long-form description provided.</Empty>}
           </Section>
 
@@ -376,6 +419,14 @@ export default function ProjectDetail() {
                       </div>
                       {!estimate.assumptions.shippingIncluded && <div className="text-muted-foreground">Shipping, tax and duties are not included.</div>}
                       <div className="text-muted-foreground italic">{estimate.assumptions.disclaimer}</div>
+                      <DeliveryPlan estimate={estimate} />
+                      <div className="overflow-x-auto rounded border border-border">
+                        <table className="w-full min-w-[820px] text-[11px]">
+                          <thead className="border-b border-border bg-muted/40 text-left text-muted-foreground"><tr><th className="p-2">BOM line</th><th className="p-2">Supplier</th><th className="p-2">Evidence</th><th className="p-2 text-right">Qty</th><th className="p-2 text-right">Unit</th><th className="p-2 text-right">Subtotal</th><th className="p-2 text-right">Arrival</th></tr></thead>
+                          <tbody>{estimate.basket.map((line) => <tr key={line.lineId} className="border-b border-border/60 last:border-0"><td className="p-2"><div className="font-medium">{line.name}</div>{line.exclusionReason && <div className="text-[10px] text-warning">{line.exclusionReason}</div>}</td><td className="p-2">{line.supplierName ?? "Not sourced"}</td><td className="p-2"><div className="flex flex-wrap gap-1">{line.riskLabel && <StatusPill kind={line.isSubstitute ? "warn" : "ok"} label={line.riskLabel} />}{line.condition && <StatusPill kind="muted" label={line.condition} />}{line.freshnessLabel && <StatusPill kind="info" label={line.freshnessLabel} />}{line.unpriced && <StatusPill kind="warn" label="unpriced" />}</div></td><td className="p-2 text-right mono">{line.quantity}</td><td className="p-2 text-right mono">{moneyMinor(line.unitPriceMinor, line.currency)}</td><td className="p-2 text-right mono">{moneyMinor(line.subtotalMinor, line.currency)}</td><td className="p-2 text-right mono">{line.leadTimeDays == null ? "unknown" : `${line.leadTimeDays}d`}</td></tr>)}</tbody>
+                        </table>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-primary/25 bg-primary/5 p-3"><div><div className="font-medium">Need firm supplier pricing?</div><div className="text-[10.5px] text-muted-foreground">Capture this estimate in an RFQ package, reconcile supplier responses, and explicitly approve an option. Automated outbound delivery is still coming soon.</div></div><div className="flex gap-2"><Link to="/builder" className="btn-ghost btn-sm">Sourcing preferences</Link><button disabled={creatingRfq} onClick={() => void createQuoteRequest()} className="btn-primary btn-sm">{creatingRfq ? "Creating…" : "Create quote request"}</button></div></div>
                     </div>
                   )
                   : <Empty>An estimate is not available for this project yet.</Empty>}
@@ -622,6 +673,43 @@ export default function ProjectDetail() {
       </div>
     </div>
   );
+}
+
+function DeliveryPlan({ estimate }: { estimate: SourcingEstimate }) {
+  const groups = new Map<string, { supplier: string; leadTimeDays: number | null; lines: number; subtotalMinor: number }>();
+  for (const line of estimate.basket) {
+    if (!line.supplierId || line.subtotalMinor == null) continue;
+    const current = groups.get(line.supplierId) ?? { supplier: line.supplierName ?? "Supplier", leadTimeDays: null, lines: 0, subtotalMinor: 0 };
+    current.lines += 1;
+    current.subtotalMinor += line.subtotalMinor;
+    current.leadTimeDays = line.leadTimeDays == null ? current.leadTimeDays : Math.max(current.leadTimeDays ?? 0, line.leadTimeDays);
+    groups.set(line.supplierId, current);
+  }
+  const shipments = [...groups.values()].sort((a, b) => (a.leadTimeDays ?? Number.MAX_SAFE_INTEGER) - (b.leadTimeDays ?? Number.MAX_SAFE_INTEGER));
+  if (!shipments.length) return <div className="rounded border border-dashed border-border p-3 text-muted-foreground">No supplier-backed shipment groups are available yet. Unpriced lines remain visible below.</div>;
+  return <div><div className="mb-1.5 flex items-center gap-1.5 font-medium"><Truck className="h-3.5 w-3.5 text-primary" /> Split delivery plan · {shipments.length} shipment{shipments.length === 1 ? "" : "s"}</div><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{shipments.map((shipment, index) => <div key={`${shipment.supplier}-${index}`} className="rounded border border-border p-2"><div className="flex items-center justify-between gap-2"><span className="font-medium">{shipment.supplier}</span><span className="mono text-[10px]">{shipment.leadTimeDays == null ? "date unknown" : `about ${shipment.leadTimeDays}d`}</span></div><div className="mt-1 text-[10.5px] text-muted-foreground">{shipment.lines} BOM line{shipment.lines === 1 ? "" : "s"} · {moneyMinor(shipment.subtotalMinor, estimate.assumptions.currency)}</div></div>)}</div></div>;
+}
+
+function moneyMinor(value: number | null, currency: string | null = "USD") {
+  if (value == null) return "—";
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: currency ?? "USD" }).format(value / 100);
+}
+
+function ReadableDescription({ value }: { value: string }) {
+  const cleaned = value
+    .replace(/<!--[\s\S]*?-->/gu, " ")
+    .replace(/```[\s\S]*?```/gu, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/gu, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/gu, "$1")
+    .replace(/<[^>]+>/gu, " ")
+    .replace(/^\s{0,3}#{1,6}\s*/gmu, "")
+    .replace(/[>*_`~|]/gu, " ")
+    .replace(/\n{3,}/gu, "\n\n")
+    .replace(/[ \t]+/gu, " ")
+    .trim();
+  const preview = cleaned.slice(0, 2200);
+  if (cleaned.length <= preview.length) return <p className="whitespace-pre-line text-[13px] leading-6">{cleaned}</p>;
+  return <div className="text-[13px] leading-6"><p className="whitespace-pre-line">{preview}…</p><details className="mt-2"><summary className="cursor-pointer text-xs font-medium text-primary">Show complete imported description</summary><p className="mt-2 whitespace-pre-line text-muted-foreground">{cleaned}</p></details></div>;
 }
 
 type ProjectAuthor = NonNullable<ProjectRow["rpps"]["authors"]>[number];

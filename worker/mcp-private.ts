@@ -107,7 +107,10 @@ function createPrivateMcpServer(env: Env, userId: string, claims: McpClaims): Mc
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, async ({ idOrSlug }) => {
     const project = await env.DB.prepare(`SELECT p.id, p.slug, p.name, p.summary, p.description, p.visibility, p.status,
-      p.license_spdx AS license, p.repository_url AS repositoryUrl, p.difficulty, p.updated_at AS updatedAt
+      p.license_spdx AS license, p.repository_url AS repositoryUrl, p.difficulty, p.updated_at AS updatedAt,
+      CASE WHEN p.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM organization_members member
+        WHERE member.organization_id = p.organization_id AND member.user_id = ?2 AND member.status = 'active')
+        THEN 1 ELSE 0 END AS canReadPrivateFiles
       FROM projects p WHERE (p.id = ?1 OR p.slug = ?1) AND p.deleted_at IS NULL AND
       (p.owner_user_id = ?2 OR p.visibility IN ('public', 'unlisted') OR EXISTS (
         SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id
@@ -116,9 +119,12 @@ function createPrivateMcpServer(env: Env, userId: string, claims: McpClaims): Mc
     const files = await env.DB.prepare(`SELECT f.id, f.original_name AS name, f.media_type AS mediaType,
       f.size_bytes AS sizeBytes, f.kind, f.visibility, f.status, pf.purpose, pf.relative_path AS relativePath
       FROM project_files pf JOIN files f ON f.id = pf.file_id
-      WHERE pf.project_id = ?1 AND f.deleted_at IS NULL ORDER BY pf.relative_path, f.original_name`)
-      .bind(project.id).all();
-    return jsonResult({ project, files: files.results });
+      WHERE pf.project_id = ?1 AND f.deleted_at IS NULL
+        AND (?2 = 1 OR (f.visibility = 'public' AND f.status = 'ready'))
+      ORDER BY pf.relative_path, f.original_name`)
+      .bind(project.id, project.canReadPrivateFiles === 1 ? 1 : 0).all();
+    const { canReadPrivateFiles: _privateFiles, ...publicProject } = project;
+    return jsonResult({ project: publicProject, files: files.results });
   });
 
   server.registerTool("list_project_releases", {
@@ -257,7 +263,8 @@ function createPrivateMcpServer(env: Env, userId: string, claims: McpClaims): Mc
     inputSchema: { proposalId: z.string().uuid(), confirm: z.literal(true) },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   }, async ({ proposalId }) => {
-    requireScope(claims, WRITE_SCOPE);
+    const scopeError = requireScope(claims, WRITE_SCOPE);
+    if (scopeError) return scopeError;
     const output = await confirmAiProposal(env.DB, userId, proposalId);
     await recordAuditEvent(env.DB, { actorUserId: userId, action: "mcp.proposal.confirm", entityType: "ai_tool_call", entityId: proposalId, after: output });
     return jsonResult({ applied: true, output });
@@ -269,7 +276,8 @@ function createPrivateMcpServer(env: Env, userId: string, claims: McpClaims): Mc
     inputSchema: { proposalId: z.string().uuid(), confirm: z.literal(true) },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   }, async ({ proposalId }) => {
-    requireScope(claims, WRITE_SCOPE);
+    const scopeError = requireScope(claims, WRITE_SCOPE);
+    if (scopeError) return scopeError;
     const result = await env.DB.prepare(`UPDATE ai_tool_calls SET status = 'rejected', authorized_by_user_id = ?1,
       completed_at = ?2 WHERE id = ?3 AND status = 'proposed' AND conversation_id IN (
         SELECT id FROM ai_conversations WHERE user_id = ?1)`)
@@ -283,7 +291,8 @@ function createPrivateMcpServer(env: Env, userId: string, claims: McpClaims): Mc
 }
 
 async function createBuildProposal(db: D1Database, userId: string, claims: McpClaims, toolName: string, input: Record<string, unknown>) {
-  requireScope(claims, WRITE_SCOPE);
+  const scopeError = requireScope(claims, WRITE_SCOPE);
+  if (scopeError) return scopeError;
   const build = await new BuildsRepository(db).find(String(input.buildId));
   if (!build) return toolError("Build not found.");
   await assertScopedWrite(db, userId, build, "build");
@@ -334,7 +343,7 @@ function scopesOf(claims: McpClaims): string[] {
 }
 
 function requireScope(claims: McpClaims, scope: string) {
-  if (!scopesOf(claims).includes(scope)) throw new Error(`OAuth scope ${scope} is required.`);
+  return scopesOf(claims).includes(scope) ? null : toolError(`OAuth scope ${scope} is required.`);
 }
 
 function bearerToken(request: Request): string | null {
