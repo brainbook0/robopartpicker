@@ -9,7 +9,6 @@ import {
   Factory,
   FileBox,
   GitFork,
-  Github,
   PackageCheck,
   Search,
   Sparkles,
@@ -220,11 +219,11 @@ export default function About() {
           <div>
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"><Code2 className="h-4 w-4" /> Open data interface</div>
             <h2 className="mt-2 text-2xl font-bold md:text-3xl">Built for humans, agents, and robotics tools.</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-background/70">The public MCP endpoint lets compatible AI agents search project, component, and supplier data. The platform itself is open source so its claims and progress can be inspected.</p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-background/70">The public MCP endpoint lets compatible AI agents search project, component, and supplier data. Developer documentation explains what is available now, which workflows require authentication, and how the interface is evolving.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to="/developers" className="inline-flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Developers & MCP <ChevronRight className="h-4 w-4" /></Link>
-            <a href="https://github.com/lucadominguez/robopartpicker" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded border border-background/25 px-4 py-2 text-sm font-semibold hover:bg-background/10"><Github className="h-4 w-4" /> GitHub</a>
+            <Link to="/projects" className="inline-flex items-center gap-2 rounded border border-background/25 px-4 py-2 text-sm font-semibold hover:bg-background/10">Browse project data</Link>
           </div>
         </div>
       </section>
