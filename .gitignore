@@ -38,3 +38,4 @@ RoboPart Picker Hub.zip
 
 # real-BOM harvest artifacts (regenerable)
 .ingest/bom-harvest-2026-08-12/
+.ingest/github-project-metadata-*.json

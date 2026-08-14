@@ -37,6 +37,8 @@
     "db:export": "tsx scripts/export-local-db.ts",
     "db:validate": "tsx scripts/validate-schema.ts",
     "db:validate:preview": "tsx scripts/validate-schema.ts --remote --env preview",
+    "data:enrich-projects": "node scripts/enrich-production-projects.mjs",
+    "data:classify-projects": "node scripts/classify-production-projects.mjs",
     "deploy": "npm run build && wrangler deploy --env production",
     "deploy:preview": "npm run build:preview && wrangler deploy --env preview",
     "deploy:dry-run": "npm run build && wrangler deploy --env production --dry-run"

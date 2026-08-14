@@ -12,6 +12,7 @@ import { promisify } from "node:util";
 import {
   buildComponentMatcher,
   isFalsePartitionTableBom,
+  pairSnapshotItemsWithNormalizedLines,
   repairBomItems,
 } from "./bom-repair-lib";
 import type { BomItemLike, BomSnapshot } from "./bom-repair-lib";
@@ -22,6 +23,7 @@ const SNAPSHOT = "data/bom-snapshots/2026-08-12-real-boms.json";
 interface Args { env?: "production" | "preview"; apply: boolean; allowNameMatch: boolean }
 interface DbProjectRow { project_id: string; slug: string; version_id: string; rpps_json: string }
 interface CatalogRow { id: string; name: string; manufacturer_part_number: string | null; offer_count: number }
+interface NormalizedBomRow { project_id: string; bom_id: string; bom_version_id: string; id: string; description: string; sort_order: number }
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { apply: false, allowNameMatch: false };
@@ -64,10 +66,9 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const snapshot = JSON.parse(readFileSync(SNAPSHOT, "utf8")) as BomSnapshot;
   const projectIds = snapshot.projects.map((project) => project.project_id);
-  const versionIds = snapshot.projects.map((project) => project.version_id);
   const sqlPath = `/tmp/repair-${args.env}-boms-${Date.now()}.sql`;
 
-  const [catalog, projectRows] = await Promise.all([
+  const [catalog, projectRows, normalizedBomRows] = await Promise.all([
     query(args.env, `SELECT c.id, c.name, c.manufacturer_part_number, COUNT(so.id) AS offer_count
       FROM components c
       LEFT JOIN supplier_offers so ON so.component_id = c.id
@@ -77,16 +78,25 @@ async function main() {
       FROM projects p
       JOIN project_versions pv ON pv.id = p.current_version_id
       WHERE p.deleted_at IS NULL
-        AND p.id IN (${projectIds.map(sqlString).join(",")})
-        AND pv.id IN (${versionIds.map(sqlString).join(",")})`),
-  ]) as [CatalogRow[], DbProjectRow[]];
+        AND p.id IN (${projectIds.map(sqlString).join(",")})`),
+    query(args.env, `SELECT b.project_id, b.id AS bom_id, b.current_version_id AS bom_version_id,
+        bi.id, bi.description, bi.sort_order
+      FROM boms b
+      JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+      WHERE b.project_id IN (${projectIds.map(sqlString).join(",")})
+        AND b.id = 'project-bom-' || b.project_id`),
+  ]) as [CatalogRow[], DbProjectRow[], NormalizedBomRow[]];
 
   const matcher = buildComponentMatcher(catalog, { allowNameMatch: args.allowNameMatch });
-  const rowsByVersion = new Map(projectRows.map((row) => [row.version_id, row]));
+  const catalogById = new Map(catalog.map((component) => [component.id, component]));
+  const rowsByProject = new Map(projectRows.map((row) => [row.project_id, row]));
+  const normalizedByProject = new Map<string, NormalizedBomRow[]>();
+  for (const line of normalizedBomRows) {
+    normalizedByProject.set(line.project_id, [...(normalizedByProject.get(line.project_id) ?? []), line]);
+  }
   const statements: string[] = [
     `-- ${basename(import.meta.url)} generated ${new Date().toISOString()}`,
     `-- env=${args.env} apply=${args.apply} snapshot=${SNAPSHOT}`,
-    "BEGIN TRANSACTION;",
   ];
 
   let projectsSeen = 0;
@@ -99,9 +109,13 @@ async function main() {
   let matchedWithOffers = 0;
   let resultingLines = 0;
   let resultingPricedLines = 0;
+  let normalizedLinesSeen = 0;
+  let normalizedLinesPaired = 0;
+  let normalizedLinesLinked = 0;
+  let normalizedPricedLines = 0;
 
   for (const snapshotProject of snapshot.projects) {
-    const row = rowsByVersion.get(snapshotProject.version_id);
+    const row = rowsByProject.get(snapshotProject.project_id);
     if (!row) continue;
     projectsSeen += 1;
     const snapshotBom = asBomItems(snapshotProject.bom);
@@ -116,6 +130,7 @@ async function main() {
       removedFalseBoms += 1;
       removedFalseLines += candidateBom.length;
       rpps.bom = [];
+      statements.push(`DELETE FROM boms WHERE id = ${sqlString(`project-bom-${row.project_id}`)} AND project_id = ${sqlString(row.project_id)};`);
     } else {
       keptProjects += 1;
       const repaired = repairBomItems(snapshotBom, matcher);
@@ -124,13 +139,25 @@ async function main() {
       exactNameMatches += repaired.nameMatches;
       matchedWithOffers += repaired.pricedLines;
       resultingLines += repaired.items.length;
-      resultingPricedLines += repaired.items.filter((item) => typeof item.component_id === "string").length;
+      resultingPricedLines += repaired.pricedLines;
+
+      const normalizedLines = normalizedByProject.get(row.project_id) ?? [];
+      normalizedLinesSeen += normalizedLines.length;
+      const paired = pairSnapshotItemsWithNormalizedLines(repaired.items, normalizedLines);
+      normalizedLinesPaired += paired.length;
+      for (const { item, line } of paired) {
+        if (typeof item.component_id !== "string") continue;
+        const component = catalogById.get(item.component_id);
+        normalizedLinesLinked += 1;
+        if ((component?.offer_count ?? 0) > 0) normalizedPricedLines += 1;
+        statements.push(`UPDATE bom_items SET component_id = ${sqlString(item.component_id)}, completeness = 'complete', confidence = 1.0
+          WHERE id = ${sqlString(line.id)} AND bom_version_id = ${sqlString(line.bom_version_id)};`);
+      }
     }
 
     statements.push(`UPDATE project_versions SET rpps_json = ${sqlString(JSON.stringify(rpps))} WHERE id = ${sqlString(row.version_id)} AND project_id = ${sqlString(row.project_id)};`);
   }
 
-  statements.push("COMMIT;");
   writeFileSync(sqlPath, `${statements.join("\n")}\n`);
 
   console.log(JSON.stringify({
@@ -148,6 +175,11 @@ async function main() {
     resultingLines,
     resultingPricedLines,
     resultingPricedLineCoverage: resultingLines ? resultingPricedLines / resultingLines : 0,
+    normalizedLinesSeen,
+    normalizedLinesPaired,
+    normalizedLinesLinked,
+    normalizedPricedLines,
+    normalizedPricedLineCoverage: normalizedLinesSeen ? normalizedPricedLines / normalizedLinesSeen : 0,
     note: args.allowNameMatch ? "unique exact normalized name matching enabled" : "name matching disabled; pass --allow-name-match to enable unique exact normalized name matches",
   }, null, 2));
 
@@ -156,7 +188,7 @@ async function main() {
     return;
   }
   await executeFile(args.env, sqlPath);
-  console.log(`Applied ${statements.length - 3} bounded project_version updates from ${sqlPath}.`);
+  console.log(`Applied ${statements.length - 2} bounded BOM/project-version statements from ${sqlPath}.`);
 }
 
 main().catch((error) => {

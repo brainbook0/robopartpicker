@@ -26,6 +26,12 @@ export interface CatalogComponentLike {
   offer_count?: number;
 }
 
+export interface NormalizedBomLineLike {
+  id: string;
+  description: string;
+  sort_order: number;
+}
+
 export type MatchKind = "mpn" | "name";
 
 export interface BomItemMatch {
@@ -40,6 +46,8 @@ const PARTITION_TABLE_NAMES = new Set([
   "phy_init",
   "factory",
   "storage",
+  "static",
+  "www",
   "spiffs",
   "coredump",
   "eeprom",
@@ -75,7 +83,10 @@ export function normalizeName(value: unknown): string {
 
 export function isFalsePartitionTableBom(items: BomItemLike[]): boolean {
   if (items.length < 3) return false;
-  const named = items.filter((item) => normalizeName(item.name));
+  const named = items.filter((item) => {
+    const rawName = String(item.name ?? "").trim();
+    return rawName && !rawName.startsWith("#");
+  });
   if (named.length < 3) return false;
   const withMpn = named.filter((item) => normalizeToken(item.mpn));
   if (withMpn.length > 0) return false;
@@ -128,4 +139,26 @@ export function repairBomItems(
     return { ...item, component_id: found.component.id, completeness: "complete" };
   });
   return { items: repaired, mpnMatches, nameMatches, pricedLines };
+}
+
+export function pairSnapshotItemsWithNormalizedLines(
+  items: BomItemLike[],
+  lines: NormalizedBomLineLike[],
+): Array<{ item: BomItemLike; line: NormalizedBomLineLike }> {
+  const available = new Map<string, NormalizedBomLineLike[]>();
+  for (const line of [...lines].sort((left, right) => left.sort_order - right.sort_order)) {
+    const key = normalizeName(line.description);
+    if (!key) continue;
+    available.set(key, [...(available.get(key) ?? []), line]);
+  }
+  const output: Array<{ item: BomItemLike; line: NormalizedBomLineLike }> = [];
+  items.forEach((item, index) => {
+    const key = normalizeName(item.name);
+    const candidates = available.get(key);
+    if (!candidates?.length) return;
+    const exactIndex = candidates.findIndex((candidate) => candidate.sort_order === index);
+    const [line] = candidates.splice(exactIndex >= 0 ? exactIndex : 0, 1);
+    output.push({ item, line });
+  });
+  return output;
 }

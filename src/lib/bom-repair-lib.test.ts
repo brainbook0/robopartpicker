@@ -4,6 +4,7 @@ import {
   isFalsePartitionTableBom,
   normalizeName,
   normalizeToken,
+  pairSnapshotItemsWithNormalizedLines,
   repairBomItems,
 } from "../../scripts/bom-repair-lib";
 
@@ -24,6 +25,13 @@ describe("bom repair pure functions", () => {
       { name: "phy_init", qty: 1 },
       { name: "factory", qty: 1 },
       { name: "storage", qty: 1 },
+    ])).toBe(true);
+    expect(isFalsePartitionTableBom([
+      { name: "# Note: if you have increased the bootloader size", qty: 1 },
+      { name: "nvs", qty: 1 },
+      { name: "phy_init", qty: 1 },
+      { name: "factory", qty: 1 },
+      { name: "www", qty: 1 },
     ])).toBe(true);
   });
 
@@ -57,6 +65,18 @@ describe("bom repair pure functions", () => {
     ], { allowNameMatch: true });
     expect(match({ name: "anything", mpn: "dup" })).toBeNull();
     expect(match({ name: "same name" })).toBeNull();
+  });
+
+  it("pairs snapshot items to normalized lines by exact name and occurrence", () => {
+    const pairs = pairSnapshotItemsWithNormalizedLines(
+      [{ name: "M3 screw" }, { name: "Servo" }, { name: "M3 screw" }, { name: "Not materialized" }],
+      [
+        { id: "line-2", description: "M3 screw", sort_order: 2 },
+        { id: "line-1", description: "Servo", sort_order: 1 },
+        { id: "line-0", description: "M3 screw", sort_order: 0 },
+      ],
+    );
+    expect(pairs.map(({ line }) => line.id)).toEqual(["line-0", "line-1", "line-2"]);
   });
 
   it("sets component_id and completeness only for high-confidence unique matches", () => {
