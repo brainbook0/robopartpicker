@@ -1,6 +1,11 @@
 # Changelog
 
-All notable changes to RoboPartPicker are recorded here. Versions follow semantic versioning while the standalone application is developed.
+## Unreleased
+
+### Fixed
+
+- Hardened project import BOM detection so ESP32 partition tables and arbitrary CSVs are not classified or parsed as bills of materials unless their filename and headers are credible BOM inputs.
+
 
 ## [0.7.0] - 2026-08-13
 

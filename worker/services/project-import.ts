@@ -440,7 +440,7 @@ export function selectGithubFetchCandidates(entries: GithubTreeEntry[]): GithubT
 function githubFetchPriority(path: string): number {
   const lower = path.toLowerCase();
   if (/(^|\/)rpps\.(ya?ml|json)$/u.test(lower)) return 0;
-  if (/(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml)$/u.test(lower)) return 1;
+  if (isBomArtifactPath(lower, ["csv", "json", "yaml", "yml"])) return 1;
   if (/\.(urdf|xacro|mjcf|sdf)$/u.test(lower)) return 2;
   if (/(^|\/)(package\.xml|package\.json|pyproject\.toml|requirements[^/]*\.txt|cargo\.toml|platformio\.ini)$/u.test(lower)) return 3;
   if (/(^|\/)(readme|license|copying|contributing|changelog)(\.|$)/u.test(lower)) return 4;
@@ -454,7 +454,7 @@ function extractComponents(files: Map<string, string>, warnings: string[], slug:
   sourcePath?: string;
   extractionMethod: "explicit-bom";
 } {
-  const candidate = [...files].find(([path]) => /(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml|xlsx)$/iu.test(path));
+  const candidate = [...files].find(([path]) => isBomArtifactPath(path));
   if (!candidate) return { components: [], extractionMethod: "explicit-bom" };
   let rows: unknown[] = [];
   try {
@@ -635,7 +635,7 @@ function extractSoftwarePackages(files: Map<string, string>): ExtractedProjectIn
 function extractConfigurationParameters(files: Map<string, string>): ExtractedProjectIntelligence["configuration"]["parameters"] {
   const output: ExtractedProjectIntelligence["configuration"]["parameters"] = [];
   for (const [path, text] of files) {
-    if (!/\.(?:json|ya?ml)$/iu.test(path) || /(?:^|\/)(?:rpps(?:\.lock)?|package|bom|parts?)[^/]*\.(?:json|ya?ml)$/iu.test(path)) continue;
+    if (!/\.(?:json|ya?ml)$/iu.test(path) || /(?:^|\/)(?:rpps(?:\.lock)?|package)\.(?:json|ya?ml)$/iu.test(path) || isBomArtifactPath(path, ["json", "yaml", "yml"])) continue;
     if (!/(?:^|\/)(?:config|configuration|calibration|params?|settings?)(?:\/|[-_.])/iu.test(path)) continue;
     try {
       const parsed = tryParseData(text);
@@ -808,12 +808,29 @@ function parseCsvRaw(text: string, delimiter: "," | "\t" = ","): string[][] {
   return rows;
 }
 
+const BOM_FILENAME_RE = /^(?:bom|parts(?:[-_ ]list)?|bill[-_ ]of[-_ ]materials)$/iu;
+
+function isBomArtifactPath(path: string, extensions: string[] = ["csv", "json", "yaml", "yml", "xlsx"]): boolean {
+  const fileName = path.replace(/\\/gu, "/").split("/").pop() ?? "";
+  const match = fileName.match(/^(.+)\.([^.]+)$/u);
+  if (!match) return false;
+  return extensions.includes(match[2].toLowerCase()) && BOM_FILENAME_RE.test(match[1]);
+}
+
 const BOM_NAME_HEADERS = new Set(["name", "part", "partname", "partnumber", "component", "componentname", "description", "item", "value", "designator", "reference", "mpn", "manufacturerpart", "manufacturerpartnumber", "lcscpart"]);
 const BOM_QTY_HEADERS = new Set(["quantity", "qty", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform", "qtyforassembly"]);
+const BOM_SUPPORT_HEADERS = new Set(["manufacturer", "supplier", "supplierpart", "footprint", "comment", "unit", "uom", "sku"]);
 function isBomHeader(value: string): boolean {
   const normalized = normalizeHeader(value);
   return BOM_NAME_HEADERS.has(normalized) || BOM_QTY_HEADERS.has(normalized)
-    || ["manufacturer", "supplier", "supplierpart", "footprint", "comment"].includes(normalized);
+    || BOM_SUPPORT_HEADERS.has(normalized);
+}
+function isCredibleBomHeader(headers: string[]): boolean {
+  const normalized = headers.map(normalizeHeader);
+  const hasName = normalized.some((header) => BOM_NAME_HEADERS.has(header));
+  const hasQuantity = normalized.some((header) => BOM_QTY_HEADERS.has(header) || /^qty|^quantity/iu.test(header));
+  const supportCount = normalized.reduce((total, header) => total + (BOM_SUPPORT_HEADERS.has(header) ? 1 : 0), 0);
+  return hasQuantity && (hasName || supportCount > 0);
 }
 function rowsToBomObjects(rows: string[][]): Record<string, string>[] {
   if (!rows.length) return [];
@@ -824,6 +841,7 @@ function rowsToBomObjects(rows: string[][]): Record<string, string>[] {
     if (score > best) { best = score; headerIndex = index; }
   }
   const headers = rows[headerIndex].map(normalizeHeader);
+  if (!isCredibleBomHeader(headers)) return [];
   return rows.slice(headerIndex + 1).map((values) => {
     const record: Record<string, string> = {};
     headers.forEach((header, index) => {
@@ -887,7 +905,7 @@ export function artifactKind(path: string): ImportedArtifact["kind"] {
   if (/\.urdf(?:\.xacro)?$/u.test(lower)) return "urdf";
   if (/\.mjcf$/u.test(lower)) return "mjcf";
   if (/\.sdf$/u.test(lower)) return "sdf";
-  if (/(^|\/)(bom|bill[-_ ]?of[-_ ]?materials|parts?)([^/]*)\.(csv|json|ya?ml|xlsx)$/u.test(lower)) return "bom";
+  if (isBomArtifactPath(lower)) return "bom";
   if (/(^|\/)(firmware|src|arduino|platformio)(\/|$)|\.(ino|hex|bin|elf)$/u.test(lower)) return "firmware";
   if (/(^|\/)(config|configuration|calibration)(\/|$)|\.(launch|toml)$/u.test(lower)) return lower.includes("calib") ? "calibration" : "configuration";
   if (/(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|(^|\/)\.gitlab-ci\.ya?ml$|(^|\/)jenkinsfile$/u.test(lower)) return "configuration";
@@ -919,7 +937,7 @@ function isRelevantText(path: string): boolean {
 function parserFor(path: string): string {
   if (/rpps\./iu.test(path)) return "rpps-portable-0.1";
   if (/\.csv$/iu.test(path)) return "csv-bom-rfc4180";
-  if (/\.(json|ya?ml)$/iu.test(path) && /bom|parts?/iu.test(path)) return "structured-bom-v1";
+  if (/\.(json|ya?ml)$/iu.test(path) && isBomArtifactPath(path, ["json", "yaml", "yml"])) return "structured-bom-v1";
   if (/\.urdf(?:\.xacro)?$/iu.test(path)) return "urdf-inventory-v1";
   if (/(^|\/)(package\.(xml|json)|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|cargo\.toml|platformio\.ini)$/iu.test(path)) return "software-manifest-v1";
   if (/\.md$/iu.test(path)) return "markdown-procedure-heuristic-v1";

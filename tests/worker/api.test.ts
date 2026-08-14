@@ -2,7 +2,7 @@ import { env, exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import { strToU8, zipSync } from "fflate";
 import { emptyRpps } from "../../src/lib/rpps/schema";
-import { classifyGithubProviderError, selectGithubFetchCandidates } from "../../worker/services/project-import";
+import { artifactKind, classifyGithubProviderError, parseCsvObjects, selectGithubFetchCandidates } from "../../worker/services/project-import";
 
 const origin = "https://example.com";
 const ingestionSecret = "test-only-ingestion-secret-32-characters-minimum";
@@ -89,6 +89,42 @@ describe("GitHub reference import policy", () => {
     ]);
 
     expect(selected.map((entry) => entry.path)).toEqual(["bom.csv"]);
+  });
+
+  it("does not treat partition tables as BOM candidates or artifacts", () => {
+    const selected = selectGithubFetchCandidates([
+      { path: "firmware/partitions.csv", size: 120 },
+      { path: "firmware/partitions.json", size: 120 },
+      { path: "firmware/partitions.yaml", size: 120 },
+      { path: "docs/usage.md", size: 500 },
+      { path: "robot.urdf", size: 1_000 },
+    ]);
+
+    expect(selected.map((entry) => entry.path)).toEqual([
+      "robot.urdf",
+      "docs/usage.md",
+      "firmware/partitions.csv",
+      "firmware/partitions.json",
+      "firmware/partitions.yaml",
+    ]);
+    expect(artifactKind("firmware/partitions.csv")).toBe("firmware");
+    expect(artifactKind("firmware/partitions.json")).toBe("firmware");
+    expect(artifactKind("firmware/partitions.yaml")).toBe("firmware");
+  });
+
+  it("recognizes only explicit BOM filename variants", () => {
+    expect(artifactKind("bom.csv")).toBe("bom");
+    expect(artifactKind("hardware/parts.csv")).toBe("bom");
+    expect(artifactKind("hardware/parts-list.csv")).toBe("bom");
+    expect(artifactKind("hardware/bill-of-materials.xlsx")).toBe("bom");
+    expect(artifactKind("hardware/partition-table.csv")).not.toBe("bom");
+  });
+
+  it("requires credible BOM headers before emitting CSV part rows", () => {
+    expect(parseCsvObjects("Name,Type,SubType,Offset,Size,Flags\nnvs,data,nvs,0x9000,0x5000,\n")).toEqual([]);
+    expect(parseCsvObjects("Name,Manufacturer,MPN,Quantity\nDrive motor,Test Motors,TM-42,2\n")).toEqual([
+      { name: "Drive motor", manufacturer: "Test Motors", mpn: "TM-42", quantity: "2" },
+    ]);
   });
 
   it("maps GitHub rate-limit denials to actionable retry errors", () => {
