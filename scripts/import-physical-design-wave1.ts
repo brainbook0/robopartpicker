@@ -1,7 +1,7 @@
-import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildCandidate, buildForwardSql, buildRollbackSql, canonicalizeUpstreamIdentity, sqlString, type ImportCandidate, type WaveRecord } from '../src/lib/physical-design-wave-import';
+import { buildCandidate, buildForwardSql, buildRollbackSql, canonicalizeUpstreamIdentity, sqlString, validateWaveRecords, type ImportCandidate, type WaveRecord } from '../src/lib/physical-design-wave-import';
+import { captureWranglerJson, runWrangler } from './wrangler-cli';
 
 const WAVE = 'data/project-waves/2026-08-14-physical-design-wave1.ndjson';
 const HARVEST = '/root/.jcode/scratch/robopartpicker-wave1/harvest';
@@ -20,9 +20,13 @@ if (apply && env === 'production' && process.env[PROD_GATE] !== 'apply-productio
   throw new Error(`Refusing production apply without ${PROD_GATE}=apply-production-wave1`);
 }
 
-function wranglerSql(sql: string): string {
-  const args = ['d1', 'execute', 'DB', '--env', env, '--remote', '--command', sql];
-  return execFileSync('wrangler', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+type WranglerStatement<T> = {
+  results?: T[];
+};
+
+function wranglerRows<T>(sql: string): T[] {
+  const statements = captureWranglerJson<Array<WranglerStatement<T>>>(['d1', 'execute', 'DB', '--env', env, '--remote', '--command', sql]);
+  return statements.flatMap((statement) => statement.results ?? []);
 }
 
 function readJson(path: string): unknown {
@@ -44,16 +48,20 @@ function queryExisting(records: WaveRecord[]): Set<string> {
   const identities = records.map((r) => sqlString(canonicalizeUpstreamIdentity(r.repository_url))).join(',');
   const sql = `SELECT slug, repository_url, lower(upstream_identity) AS upstream_identity FROM projects WHERE slug IN (${slugs}) OR repository_url IN (${repos}) OR lower(upstream_identity) IN (${identities});`;
   console.log('Querying D1 for duplicate slug, repository_url, or canonical upstream_identity before generating inserts...');
-  const out = wranglerSql(sql);
+  const rows = wranglerRows<{ slug: string; repository_url: string | null; upstream_identity: string | null }>(sql);
   const existing = new Set<string>();
   for (const r of records) {
-    if (out.includes(r.slug) || out.includes(r.repository_url) || out.toLowerCase().includes(canonicalizeUpstreamIdentity(r.repository_url))) existing.add(r.slug);
+    const upstream = canonicalizeUpstreamIdentity(r.repository_url);
+    if (rows.some((row) => row.slug.toLowerCase() === r.slug.toLowerCase()
+      || row.repository_url?.toLowerCase() === r.repository_url.toLowerCase()
+      || row.upstream_identity === upstream)) existing.add(r.slug);
   }
-  console.log(out);
+  console.log(JSON.stringify(rows, null, 2));
   return existing;
 }
 
 const records = readWave();
+validateWaveRecords(records);
 const existing = queryExisting(records);
 const candidates: ImportCandidate[] = [];
 for (const record of records) {
@@ -62,18 +70,16 @@ for (const record of records) {
     continue;
   }
   const manifest = manifestFor(record.slug);
-  if (!manifest) {
-    console.log(`skip missing manifest ${record.slug}`);
-    continue;
-  }
+  if (!manifest) throw new Error(`Missing immutable harvest manifest for ${record.slug}`);
   candidates.push(buildCandidate(record, manifest));
 }
 
 const now = new Date().toISOString();
 const scratch = process.env.JCODE_SCRATCH_DIR ?? '/root/.jcode/scratch';
 mkdirSync(scratch, { recursive: true });
-const forwardPath = join(scratch, `physical-design-wave1-${env}-forward.sql`);
-const rollbackPath = join(scratch, `physical-design-wave1-${env}-rollback.sql`);
+const stamp = now.replace(/[:.]/g, '-');
+const forwardPath = join(scratch, `physical-design-wave1-${env}-${stamp}-forward.sql`);
+const rollbackPath = join(scratch, `physical-design-wave1-${env}-${stamp}-rollback.sql`);
 writeFileSync(forwardPath, buildForwardSql(candidates, now));
 writeFileSync(rollbackPath, buildRollbackSql(candidates));
 console.log(`Prepared ${candidates.length} candidates as ${OWNER}`);
@@ -86,8 +92,9 @@ if (!apply) {
 }
 
 console.log('Applying reviewed forward SQL...');
-console.log(wranglerSql(readFileSync(forwardPath, 'utf8')));
+runWrangler(['d1', 'execute', 'DB', '--env', env, '--remote', '--file', forwardPath]);
 const verifyIds = candidates.map((c) => sqlString(c.projectId)).join(',') || 'NULL';
-const verification = wranglerSql(`SELECT p.id, p.slug, p.project_kind, p.visibility, p.status, p.publishability, p.revision, p.upstream_identity, pv.rpps_schema_version, json_valid(pv.rpps_json) AS rpps_valid, COUNT(bi.id) AS bom_items FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id LEFT JOIN boms b ON b.project_id = p.id LEFT JOIN bom_versions bv ON bv.id = b.current_version_id LEFT JOIN bom_items bi ON bi.bom_version_id = bv.id WHERE p.owner_user_id = '${OWNER}' AND p.id IN (${verifyIds}) GROUP BY p.id ORDER BY p.slug;`);
+const verification = wranglerRows(`SELECT p.id, p.slug, p.project_kind, p.visibility, p.status, p.publishability, p.revision, p.upstream_identity, pv.rpps_schema_version, json_valid(pv.rpps_json) AS rpps_valid, COUNT(bi.id) AS bom_items FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id LEFT JOIN boms b ON b.project_id = p.id LEFT JOIN bom_versions bv ON bv.id = b.current_version_id LEFT JOIN bom_items bi ON bi.bom_version_id = bv.id WHERE p.owner_user_id = '${OWNER}' AND p.id IN (${verifyIds}) GROUP BY p.id ORDER BY p.slug;`);
+if (verification.length !== candidates.length) throw new Error(`Post-apply verification returned ${verification.length} of ${candidates.length} imported projects. Rollback SQL: ${rollbackPath}`);
 console.log('Post-apply verification:');
-console.log(verification);
+console.log(JSON.stringify(verification, null, 2));

@@ -11,6 +11,21 @@ export type WaveRecord = {
   summary: string;
 };
 
+type HarvestArtifact = {
+  sourceRevision?: string;
+};
+
+type HarvestManifest = {
+  ok?: boolean;
+  slug?: string;
+  repository_url?: string;
+  analysis?: {
+    inventory?: {
+      artifacts?: HarvestArtifact[];
+    };
+  };
+};
+
 type AnalyzerComponent = {
   id?: string;
   ref?: string;
@@ -60,6 +75,37 @@ export function canonicalizeUpstreamIdentity(repositoryUrl: string): string {
   return `${host}${path}`;
 }
 
+export function validateWaveRecords(records: WaveRecord[]): void {
+  const ids = new Set<string>();
+  const slugs = new Set<string>();
+  const upstreams = new Set<string>();
+  for (const record of records) {
+    if (!record.id || !record.slug || !record.name || !record.summary) throw new Error('Wave records require id, slug, name, and summary');
+    if (!/^[0-9a-f]{40}$/i.test(record.revision)) throw new Error(`Wave record ${record.slug} does not use an immutable 40-character Git revision`);
+    const upstream = canonicalizeUpstreamIdentity(record.repository_url);
+    if (ids.has(record.id)) throw new Error(`Duplicate Wave 1 project id: ${record.id}`);
+    if (slugs.has(record.slug.toLowerCase())) throw new Error(`Duplicate Wave 1 slug: ${record.slug}`);
+    if (upstreams.has(upstream)) throw new Error(`Duplicate Wave 1 upstream: ${upstream}`);
+    ids.add(record.id);
+    slugs.add(record.slug.toLowerCase());
+    upstreams.add(upstream);
+  }
+}
+
+export function validateHarvestManifest(wave: WaveRecord, manifest: unknown): void {
+  if (!manifest || typeof manifest !== 'object') throw new Error(`Missing harvest manifest for ${wave.slug}`);
+  const value = manifest as HarvestManifest;
+  if (value.ok !== true) throw new Error(`Harvest manifest is not successful for ${wave.slug}`);
+  if (value.slug !== wave.slug) throw new Error(`Harvest manifest slug mismatch for ${wave.slug}: ${String(value.slug)}`);
+  if (!value.repository_url || canonicalizeUpstreamIdentity(value.repository_url) !== canonicalizeUpstreamIdentity(wave.repository_url)) {
+    throw new Error(`Harvest manifest repository mismatch for ${wave.slug}`);
+  }
+  const artifacts = value.analysis?.inventory?.artifacts;
+  if (!Array.isArray(artifacts) || artifacts.length === 0) throw new Error(`Harvest manifest has no reviewed artifacts for ${wave.slug}`);
+  const mismatched = artifacts.find((artifact) => artifact.sourceRevision?.toLowerCase() !== wave.revision.toLowerCase());
+  if (mismatched) throw new Error(`Harvest manifest revision mismatch for ${wave.slug}`);
+}
+
 export function stableId(prefix: string, seed: string): string {
   let hashA = 0x811c9dc5;
   let hashB = 0x01000193;
@@ -105,6 +151,7 @@ function getManifestComponents(manifest: unknown): AnalyzerComponent[] {
 }
 
 export function buildCandidate(wave: WaveRecord, manifest: unknown): ImportCandidate {
+  validateHarvestManifest(wave, manifest);
   const canonicalUpstreamIdentity = canonicalizeUpstreamIdentity(wave.repository_url);
   const projectId = wave.id;
   const versionId = stableId('pver', `${wave.id}:version:${wave.revision}`);
