@@ -85,7 +85,12 @@ export default function ProjectDetail() {
   }, [projectId, user?.id]);
 
   useEffect(() => {
-    if (!projectId) { setEstimate(null); return; }
+    if (!projectId || p?.project_kind === "commercial_showcase") {
+      setEstimate(null);
+      setEstimateError(false);
+      setEstimateLoading(false);
+      return;
+    }
     let cancelled = false;
     setEstimateLoading(true);
     setEstimateError(false);
@@ -94,7 +99,7 @@ export default function ProjectDetail() {
       .catch(() => { if (!cancelled) setEstimateError(true); })
       .finally(() => { if (!cancelled) setEstimateLoading(false); });
     return () => { cancelled = true; };
-  }, [projectId]);
+  }, [projectId, p?.project_kind]);
 
   if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
   if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
@@ -131,6 +136,7 @@ export default function ProjectDetail() {
   const estCost = p.estimated_cost_usd ?? p.rpps.build?.estimated_cost_usd ?? null;
   const estTime = p.rpps.build?.estimated_time_hours ?? (totalBuildMin > 0 ? totalBuildMin / 60 : null);
   const latestPublishedRelease = portableReleases.find((release) => release.status === "published");
+  const isCommercialShowcase = p.project_kind === "commercial_showcase";
 
   const reproduce = async () => {
     if (!user) {
@@ -289,12 +295,12 @@ export default function ProjectDetail() {
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
                 <div className="flex flex-wrap items-center justify-end gap-1.5">
-                  {p.repo_url && <a href={p.repo_url} target="_blank" rel="noreferrer" aria-label="Open source repository" className="btn-ghost btn-sm"><Github className="h-3.5 w-3.5" /> Repo <ExternalLink className="h-3 w-3" /></a>}
-                  {p.docs_url && <a href={p.docs_url} target="_blank" rel="noreferrer" aria-label="Open documentation" className="btn-ghost btn-sm"><BookOpen className="h-3.5 w-3.5" /> Docs <ExternalLink className="h-3 w-3" /></a>}
+                  {p.repo_url && <a href={p.repo_url} target="_blank" rel="noreferrer" aria-label={isCommercialShowcase ? "Open official product page" : "Open source repository"} className="btn-ghost btn-sm"><Github className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Official page" : "Repo"} <ExternalLink className="h-3 w-3" /></a>}
+                  {p.docs_url && <a href={p.docs_url} target="_blank" rel="noreferrer" aria-label={isCommercialShowcase ? "Open official product page" : "Open documentation"} className="btn-ghost btn-sm"><BookOpen className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Official page" : "Docs"} <ExternalLink className="h-3 w-3" /></a>}
                   <button onClick={copyLink} aria-label="Copy project link" className="btn-ghost btn-sm"><Link2 className="h-3.5 w-3.5" /> Copy link</button>
-                  <button onClick={() => void forkProject()} disabled={forking} aria-label="Create a private editable fork" className="btn-ghost btn-sm"><GitFork className="h-3.5 w-3.5" /> {forking ? "Forking…" : "Fork & modify"}</button>
-                  <button onClick={() => void reproduce()} disabled={reproducing || portableReleases.length === 0} aria-label="Reproduce this project release" className="btn-primary btn-sm disabled:opacity-50"><Play className="h-3.5 w-3.5" /> {reproducing ? "Creating…" : "Reproduce"}</button>
-                  <button onClick={() => downloadRpps(p.rpps)} aria-label="Export RPPS package" className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> Export RPPS</button>
+                  {!isCommercialShowcase && <button onClick={() => void forkProject()} disabled={forking} aria-label="Create a private editable fork" className="btn-ghost btn-sm"><GitFork className="h-3.5 w-3.5" /> {forking ? "Forking…" : "Fork & modify"}</button>}
+                  {!isCommercialShowcase && <button onClick={() => void reproduce()} disabled={reproducing || portableReleases.length === 0} aria-label="Reproduce this project release" className="btn-primary btn-sm disabled:opacity-50"><Play className="h-3.5 w-3.5" /> {reproducing ? "Creating…" : "Reproduce"}</button>}
+                  <button onClick={() => downloadRpps(p.rpps)} aria-label={isCommercialShowcase ? "Export showcase metadata" : "Export RPPS package"} className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Export metadata" : "Export RPPS"}</button>
                 </div>
                 {canManageScope && (
                   <div className="mt-1 border-t border-border/60 pt-1.5 w-full flex justify-end">
@@ -308,7 +314,7 @@ export default function ProjectDetail() {
               <Meta k="rpps" v={p.rpps_version} />
               <StatusPill kind={p.status === "published" ? "ok" : p.status === "archived" ? "muted" : "warn"} label={p.status} />
               {p.is_demo && <StatusPill kind="warn" label="demo fixture" />}
-              <StatusPill kind={p.license ? "ok" : "warn"} label={p.license ? "licensed source" : p.repo_url ? "license unclear" : "closed-source showcase"} />
+              <StatusPill kind={p.license ? "ok" : "warn"} label={isCommercialShowcase ? "commercial showcase" : p.license ? "licensed source" : p.repo_url ? "license unclear" : "license unavailable"} />
               <StatusPill kind={p.publishability === "ready" ? "ok" : p.publishability === "blocked" ? "warn" : "info"} label={`publishability: ${p.publishability}`} />
               {p.difficulty && <Meta k="difficulty" v={p.difficulty} />}
               {p.license && <Meta k="license" v={p.license} />}
@@ -317,6 +323,13 @@ export default function ProjectDetail() {
             </div>
           </div>
         </div>
+
+        {isCommercialShowcase && (
+          <div className="mt-3 flex gap-2 rounded border border-warning/40 bg-warning/10 p-3 text-[12px] leading-5">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <div><strong>Commercial showcase, not a reproducible release.</strong> This page summarizes official manufacturer information. Public design files, build rights, a complete BOM, and assembly instructions have not been published here, so RoboPartPicker does not present this product as forkable or buildable.</div>
+          </div>
+        )}
 
         {/* KPI strip */}
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 border-t border-border pt-3">
@@ -359,7 +372,7 @@ export default function ProjectDetail() {
             {normalizedBomLoading
               ? <Empty>Loading the normalized BOM…</Empty>
               : bomLineCount === 0
-              ? <Empty>No BOM items recorded. Add them by editing the RPPS package.</Empty>
+              ? <Empty>{isCommercialShowcase ? "No public BOM is available for this commercial showcase." : "No BOM items recorded. Add them by editing the RPPS package."}</Empty>
               : normalizedBom
                 ? <NormalizedBomTable bom={normalizedBom} />
               : (
@@ -423,7 +436,9 @@ export default function ProjectDetail() {
           </Section>
 
           <Section title="Sourcing estimate">
-            {estimateLoading
+            {isCommercialShowcase
+              ? <Empty>Sourcing is unavailable because this showcase does not include a public, reproducible BOM.</Empty>
+              : estimateLoading
               ? <Empty>Calculating the whole-BOM procurement estimate…</Empty>
               : estimateError
                 ? <Empty>An estimate is not available for this project yet.</Empty>
