@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "recovery_id": "RECOVERY-U004-U005-2026-07-29T0614Z",
+  "scope_units": ["U-004", "U-005"],
+  "plan_version": 6,
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "plan_hash": "b0884f1fef62e40ce1aae45bd1eadb335fa4e2d66e9d8e3b86882ed2714ec773",
+  "raw_summary_file": ".agent-planning/artifacts/plan-v6-rerehearsal-raw-summary.json",
+  "raw_summary_sha256": "0ffd0974fb5f131a1e7599eaf42f65d533e118d8a5fe57f44a38874c8fe9a210",
+  "reviewed_entry_keys": [
+    "U-004-v6-pass1.json::D-U004-001",
+    "U-004-v6-pass1.json::D-U004-002",
+    "U-004-v6-pass1.json::D-U004-003",
+    "U-004-v6-pass2.json::D-U004-001",
+    "U-004-v6-pass2.json::D-U004-002",
+    "U-004-v6-pass2.json::D-U004-003",
+    "U-004-v6-pass2.json::D-U004-004",
+    "U-005-v6-pass1.json::D-U005-01",
+    "U-005-v6-pass2.json::U-005-D1",
+    "U-005-v6-pass2.json::U-005-D2"
+  ],
+  "dispositions": [
+    {
+      "source_report": "U-004-v6-pass1.json",
+      "source_sha256": "7091b74593b8fff201c8d7dec0e475e1d1c8468653680f9029142e4556fe8aae",
+      "defect_id": "D-U004-001",
+      "severity": "P0",
+      "raw_classification": "dependency_artifact_gate",
+      "disposition": "reject_ordered_dependency_output",
+      "rationale": "U-004 depends on U-002 to produce migration 0015 (source_snapshots table). The plan correctly orders U-002 before U-004, but neither U-002 nor U-003 write scopes include migrations. The defect is a genuine dependency-chain gap: U-002 must be assigned migration 0015 authorship. U-004 cannot implement SHA-256 deduplication without the source_snapshots table. This is not a U-004 packet defect; it is a missing ordered-dependency output.",
+      "exact_plan_mutation": "Ensure U-002's write_scope includes migrations/0015_data_collection_provenance.sql. The migration must define at minimum: source_snapshots (id, sha256, object_key, size_bytes, media_type, source_class, retention_state, created_at, updated_at) and collection_lifecycle_events (id, snapshot_id, previous_state, new_state, actor_user_id, reason, created_at)."
+    },
+    {
+      "source_report": "U-004-v6-pass1.json",
+      "source_sha256": "7091b74593b8fff201c8d7dec0e475e1d1c8468653680f9029142e4556fe8aae",
+      "defect_id": "D-U004-002",
+      "severity": "P1",
+      "raw_classification": "packet_local_candidate",
+      "disposition": "accept_packet_local",
+      "rationale": "The packet correctly specifies the streaming upload requirement. The existing codebase uses full buffering (arrayBuffer), but the packet explicitly requires a new streaming pattern. The absence of a streaming+hashing example in the codebase is a codebase reality, not a plan defect. The packet's proposed_resolution (ReadableStream.pipeThrough with crypto.subtle.digest) provides sufficient implementation guidance. The packet's stop condition correctly gates on Worker CPU/memory limits.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": "U-004-v6-pass1.json",
+      "source_sha256": "7091b74593b8fff201c8d7dec0e475e1d1c8468653680f9029142e4556fe8aae",
+      "defect_id": "D-U004-003",
+      "severity": "P1",
+      "raw_classification": "packet_local_candidate",
+      "disposition": "accept_packet_local",
+      "rationale": "The packet correctly identifies the R2 authorization concern as both a requirement and a stop condition. The existing authorizedFile() pattern provides a clear model to mirror. The packet's stop condition ('The existing FILES binding cannot provide authorized non-enumerable access for the source-evidence prefix without a new approved storage design') is a legitimate gate that the implementer must verify, not a plan defect. The resolution (mirror authorizedFile() pattern, verify no key enumeration) is adequate.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": "U-004-v6-pass2.json",
+      "source_sha256": "1de8ec0803fe11e47ac387155fc4dd1862bc454cdbd49e0dcdf4c669a32b54b4",
+      "defect_id": "D-U004-001",
+      "severity": "P0",
+      "raw_classification": "dependency_artifact_gate",
+      "disposition": "reject_ordered_dependency_output",
+      "rationale": "Same root cause as U-004 pass1 D-U004-001. The pass2 report provides stronger evidence: 'Neither U-002 nor U-003 write scopes include migrations or source_snapshots' and confirms U-004's own write scope excludes migration files. The dependency scan confirms no unit in the chain is assigned migration 0015. The plan must be mutated to assign migration 0015 authorship to U-002. U-004 is blocked at the database layer.",
+      "exact_plan_mutation": "Same mutation as pass1 D-U004-001: Ensure U-002's write_scope includes migrations/0015_data_collection_provenance.sql with source_snapshots and collection_lifecycle_events DDL."
+    },
+    {
+      "source_report": "U-004-v6-pass2.json",
+      "source_sha256": "1de8ec0803fe11e47ac387155fc4dd1862bc454cdbd49e0dcdf4c669a32b54b4",
+      "defect_id": "D-U004-002",
+      "severity": "P1",
+      "raw_classification": "dependency_artifact_gate",
+      "disposition": "accept_packet_local",
+      "rationale": "The contracts/ directory does not exist in the repository. Directory creation is an implicit prerequisite for any file write. The packet's write_scope includes files under contracts/ which implies the directory must exist. This is a minor procedural note, not a blocking defect. The proposed resolution ('Add Create contracts/ directory if it does not exist as an explicit step') is well-scoped.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": "U-004-v6-pass2.json",
+      "source_sha256": "1de8ec0803fe11e47ac387155fc4dd1862bc454cdbd49e0dcdf4c669a32b54b4",
+      "defect_id": "D-U004-003",
+      "severity": "P1",
+      "raw_classification": "dependency_artifact_gate",
+      "disposition": "accept_packet_local",
+      "rationale": "The docs/data-ingestion-contract.md file does not exist in the repository, and the packet does not specify whether U-004 creates or updates it. This is a minor packet ambiguity. The implementer can safely create the file with the evidence registration handoff section. The proposed resolution (clarify create vs update, specify required structure) is proportionate.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": "U-004-v6-pass2.json",
+      "source_sha256": "1de8ec0803fe11e47ac387155fc4dd1862bc454cdbd49e0dcdf4c669a32b54b4",
+      "defect_id": "D-U004-004",
+      "severity": "P1",
+      "raw_classification": "packet_local_candidate",
+      "disposition": "accept_packet_local",
+      "rationale": "The packet does not specify the R2 test strategy. The existing test infrastructure (tests/worker/setup.ts) only applies D1 migrations; no R2 mock exists. The source-evidence tests must PUT and GET R2 objects. The packet should specify whether to use the local Wrangler R2 binding or an in-memory mock. This is a genuine packet-local gap that needs closure before implementation.",
+      "exact_plan_mutation": "Add an R2 test strategy specification to the U-004 packet. Recommended: use the local Wrangler R2 binding available in the cloudflare:test environment (accessible via `wrangler dev --test --r2=robopartpicker-files` or equivalent Vitest configuration). Document that tests requiring R2 must run with the R2 binding enabled. Alternatively, specify an in-memory R2 mock pattern to be added to tests/worker/setup.ts."
+    },
+    {
+      "source_report": "U-005-v6-pass1.json",
+      "source_sha256": "309eddba96e9e9467e8227e1c89f8cc6cffa271ca8ba41f969f497b20fa3e79d",
+      "defect_id": "D-U005-01",
+      "severity": "P1",
+      "raw_classification": "packet_local_candidate",
+      "disposition": "accept_packet_local",
+      "rationale": "Genuine packet contradiction. Procedure step 7 instructs modifying worker/services/import-jobs.ts, but that file is not in the authorized write_scope. The implementer faces an impossible choice: violate write_scope or violate the procedure. The pass1 report correctly identifies the recommended resolution: place dispatch in worker/index.ts (which IS in write_scope) and keep import-jobs.ts untouched. This is a real packet-local defect requiring plan mutation.",
+      "exact_plan_mutation": "Rewrite procedure step 7: replace 'Add discriminated queue-aware dispatch around the existing project-import and inline ai-evaluation branches in worker/services/import-jobs.ts' with 'Add queue-name-aware routing in worker/index.ts queue export that dispatches IMPORT_QUEUE messages to the existing processQueueBatch and SCRAPE_INGEST_QUEUE messages to the new scrape ingestion handler in worker/services/scrape-ingestion-jobs.ts. Do not modify worker/services/import-jobs.ts.'"
+    },
+    {
+      "source_report": "U-005-v6-pass2.json",
+      "source_sha256": "6311a850a7e5de3068b1f3b3af7a38969005eeaa12e85cffd0c9a2daf3086168",
+      "defect_id": "U-005-D1",
+      "severity": "P1",
+      "raw_classification": "packet_local_candidate",
+      "disposition": "reject_ordered_dependency_output",
+      "rationale": "U-005 depends on U-002's migration 0015 for the collection_jobs and collection_lifecycle_events DDL. These tables are the sole D1 scrape checkpoint owners. Without the exact column names, types, CHECK constraints, and status values, the executor cannot write checkpoint updates, retry logic, or dead-letter transitions. The raw classification as 'packet_local_candidate' is incorrect; this is a genuine dependency artifact gate. Same root cause as D-U004-001: U-002 must produce migration 0015 before U-005 can proceed.",
+      "exact_plan_mutation": "Same mutation as D-U004-001: Ensure U-002's write_scope includes migrations/0015_data_collection_provenance.sql with the full DDL for collection_jobs (id, source_id, status, attempt_count, lease_token, trace_id, payload_hash, created_at, updated_at, plus status CHECK constraints) and collection_lifecycle_events (id, job_id, previous_state, new_state, actor_user_id, reason, created_at). Alternatively, include the exact CREATE TABLE statements in U-005's input_artifacts or inspect_targets list."
+    },
+    {
+      "source_report": "U-005-v6-pass2.json",
+      "source_sha256": "6311a850a7e5de3068b1f3b3af7a38969005eeaa12e85cffd0c9a2daf3086168",
+      "defect_id": "U-005-D2",
+      "severity": "P1",
+      "raw_classification": "dependency_artifact_gate",
+      "disposition": "reject_ordered_dependency_output",
+      "rationale": "U-005 depends on U-003 for the v2 batch schema and trace_id field contract. Procedure step 8 requires carrying the U-003 trace_id unchanged through producer, retries, dead-letter rows, and resume. The exact field name, v2 batch structure, and storage column are not inspectable from the U-005 packet. U-003 must produce the v2 batch TypeScript interface or exact trace_id field contract before U-005 can implement trace_id propagation. The cross-unit trace contract verified by U-013 depends on this alignment.",
+      "exact_plan_mutation": "Ensure U-003's output_artifacts include the v2 batch TypeScript interface with the exact trace_id field name, type (lowercase 32-hex string), and position in the batch envelope. Alternatively, specify the trace_id field contract explicitly in the U-005 packet interfaces. U-005 cannot proceed until U-003 produces this artifact."
+    }
+  ],
+  "accepted_packet_local_count": 6,
+  "rejected_ordered_dependency_output_count": 4,
+  "disposition_summary": {
+    "accept_packet_local": [
+      "U-004-v6-pass1.json::D-U004-002 (streaming pattern missing - codebase reality, not plan defect)",
+      "U-004-v6-pass1.json::D-U004-003 (R2 authorization - stop condition correctly gates)",
+      "U-004-v6-pass2.json::D-U004-002 (contracts/ directory - implicit prerequisite)",
+      "U-004-v6-pass2.json::D-U004-003 (docs/data-ingestion-contract.md - minor ambiguity)",
+      "U-004-v6-pass2.json::D-U004-004 (R2 mock - genuine gap, exact_plan_mutation provided)",
+      "U-005-v6-pass1.json::D-U005-01 (write_scope vs procedure contradiction - exact_plan_mutation provided)"
+    ],
+    "reject_ordered_dependency_output": [
+      "U-004-v6-pass1.json::D-U004-001 (migration 0015 missing - U-002 must produce)",
+      "U-004-v6-pass2.json::D-U004-001 (migration 0015 missing - same root cause, stronger evidence)",
+      "U-005-v6-pass2.json::U-005-D1 (collection_jobs DDL missing - U-002 must produce)",
+      "U-005-v6-pass2.json::U-005-D2 (trace_id contract missing - U-003 must produce)"
+    ]
+  },
+  "unresolved_questions": [
+    {
+      "question": "Which unit is definitively assigned to author migration 0015?",
+      "context": "D-U004-001 (both passes) and U-005-D1 both depend on U-002 producing migration 0015. U-002's write_scope does not currently include migrations. The plan must explicitly assign migration 0015 authorship.",
+      "recommended_answer": "U-002. U-002's title is 'Implement D1 schema for data collection provenance, capacity, and query plans.' Migration 0015 (source_snapshots + collection_lifecycle_events + collection_jobs + collection_budget_ledger, etc.) is core to U-002's scope."
+    },
+    {
+      "question": "Does U-004's packet-local defect D-U004-004 (R2 test strategy) require plan mutation before U-004 can be marked executable?",
+      "context": "D-U004-004 was the reason U-004 pass2 was marked executable: false. The pass1 report was executable: true despite not checking R2 test infrastructure. The pass2 reviewer added this as a P1 defect.",
+      "recommended_answer": "The packet should specify the R2 test strategy, but U-004 is executable with the guidance that the local Wrangler R2 binding is available in cloudflare:test. The exact_plan_mutation provides this specification."
+    }
+  ],
+  "confidence": "high",
+  "what_i_did_not_check": [
+    "Whether U-002's v6 packet already includes migration 0015 authorship in its write_scope (the raw summary shows U-002 pass2 is executable: true with confidence: high, suggesting the migration is expected to be created during U-002 implementation)",
+    "Whether U-003's v6 packet explicitly lists the v2 batch TypeScript interface as an output_artifact",
+    "The exact content of docs/research/technical-findings.md for Cloudflare Queue limits, Worker CPU/memory envelopes, and R2 streaming constraints cited in the packets",
+    "Whether the existing worker/index.ts ExportedHandler type widening to ImportQueueMessage | ScrapeIngestionQueueMessage is compatible with the installed @cloudflare/workers-types version",
+    "The actual R2 binding configuration in wrangler.jsonc to confirm the FILES binding name and whether local R2 is enabled for testing",
+    "Cross-reference with the U-002/U-003 reconciliation artifacts (if any exist) to verify dependency chain consistency",
+    "Whether the original reviewer's six-minute timeout was due to a genuine failure or a harness issue"
+  ]
+}

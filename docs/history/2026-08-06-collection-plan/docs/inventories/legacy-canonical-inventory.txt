@@ -1,0 +1,1694 @@
+Below is the consolidated master scrape inventory for RoboPartPicker. It combines the original detailed source list, the refined product architecture, and the additional file formats and workflows discussed later.
+
+The scraping agent should collect raw source material plus structured extracted records. Every record should retain provenance so RoboPartPicker can distinguish manufacturer claims, reported experiences, measured tests, marketplace listings, and AI inferences.
+
+1. Universal metadata for every scraped record
+
+Every imported object should include:
+
+External source ID
+Source name
+Source URL
+Source type
+Retrieval timestamp
+Original publication or update date
+Last successful check
+Language
+Country or region
+Applicable product, project, or component revision
+Raw source payload or immutable snapshot reference
+Content hash
+Schema version
+Extraction method
+Extracted fields
+Confidence per field
+Whether each value was:
+Officially stated
+Reported by a user
+Measured
+Calculated
+Estimated
+AI-inferred
+Copyright or reuse status where known
+Robots.txt and terms-of-service status
+Conflict links to contradictory records
+Superseded or withdrawn state
+Scraper version
+Import batch ID
+
+Do not overwrite older values silently. Prices, stock, specifications, firmware, project versions, and availability must remain time-series or revision-aware records.
+
+A. COMPONENT DATA
+2. Actuators, motors, and integrated joints
+Fields
+Product name
+Manufacturer
+Manufacturer part number
+Product family
+Revision
+Rotary or linear
+Integrated actuator, motor, servo, or bare motor
+Peak torque
+Continuous torque
+Rated torque
+Stall torque
+Maximum speed
+Rated speed
+Torque-speed curve
+Weight
+Dimensions
+Mounting pattern
+Shaft dimensions
+Input and output geometry
+Voltage range
+Nominal voltage
+Continuous current
+Peak current
+Idle current
+Power
+Gear ratio
+Gearbox type
+Backlash
+Efficiency
+Encoder type
+Encoder resolution
+Absolute versus incremental encoder
+Temperature range
+Thermal limits
+IP rating
+Communication protocols
+CAN protocol details
+EtherCAT
+RS-485
+Modbus
+UART
+SPI
+Control modes
+Firmware
+SDK
+ROS driver
+CAD files
+Datasheet
+Price
+Currency
+Supplier offers
+Stock
+Lead time
+Warranty
+Known project usage
+Known integrations
+Reported incidents
+Compatibility or integration evidence
+
+The original source map specifically called for torque, speed, weight, voltage, current, gearing, backlash, encoders, protocol, price, datasheets, and compatibility information.
+
+Sources
+T-Motor
+CubeMars
+MYACTUATOR
+INNFOS
+Robotis e-Manual and Dynamixel documentation
+Maxon
+Harmonic Drive
+TQ-RoboDrive
+Kollmorgen
+RobotShop
+Trossen Robotics
+DigiKey
+Mouser
+AliExpress
+ROS-compatible actuator databases and repositories
+3. Hands, grippers, and end effectors
+Fields
+Product name
+Manufacturer
+Revision
+Anthropomorphic hand, parallel gripper, adaptive gripper, suction tool, or custom end effector
+Degrees of freedom
+Number of independently controlled joints
+Number of actuators
+Finger count
+Weight
+Dimensions
+Maximum opening
+Grip force
+Fingertip force
+Payload
+Closing speed
+Repeatability
+Backdrivability
+Tactile sensing
+Force sensing
+Position sensing
+Sensor types
+Communication protocols
+Voltage
+Current
+Pneumatic or hydraulic requirements
+Mounting interface
+Mechanical drawings
+ROS support
+SDK
+Firmware
+CAD
+Price
+Supplier listings
+Datasheet
+Known robot integrations
+Failure and reliability reports
+
+The original list identified DOF, actuator count, dimensions, grip force, fingertip force, payload, sensing, protocol, price, and datasheet data.
+
+Sources
+Shadow Robot
+Schunk
+Robotiq
+Barrett Technology
+Inspire Robots
+Psyonic
+Wonik Robotics
+qbrobotics
+Clone Robotics
+Seed Robotics
+RobotShop
+Trossen Robotics
+Research-paper appendices and technical papers
+4. Sensors
+Sensor categories
+IMUs
+Force-torque sensors
+Tactile sensors
+Depth cameras
+RGB cameras
+Stereo cameras
+Encoders
+LiDAR
+Radar
+Ultrasonic sensors
+Proximity sensors
+Joint torque sensors
+Contact sensors
+Pressure sensors
+GPS and GNSS
+Motion-capture systems
+Fields
+Product name
+Manufacturer
+Revision
+Sensor type
+Number of axes
+Measurement range
+Resolution
+Accuracy
+Precision
+Repeatability
+Noise
+Drift
+Sample rate
+Latency
+Field of view
+Minimum and maximum range
+Depth range
+Image resolution
+Frame rate
+Wavelength
+Weight
+Dimensions
+Mounting interface
+Communication protocol
+Voltage
+Current
+Power
+Environmental rating
+Operating temperature
+Calibration requirements
+ROS driver
+SDK
+Firmware
+CAD
+Datasheet
+Price
+Offers
+Known integrations
+Reported failures
+
+The source document required axes, range, resolution, accuracy, sample rate, dimensions, protocol, voltage, price, and datasheets.
+
+Sources
+ATI Industrial Automation
+Robotiq
+Stereolabs
+Intel RealSense
+Luxonis
+Orbbec
+Roboception
+GelSight
+Contactile
+SynTouch
+Xsens
+VectorNav
+Renishaw
+DigiKey
+Mouser
+SparkFun
+Adafruit
+Manufacturer GitHub organizations and ROS packages
+5. Compute modules, embedded computers, and motor controllers
+Fields
+Product name
+Manufacturer
+Product type
+Processor
+CPU architecture
+CPU cores
+GPU
+Accelerator
+AI performance in TOPS
+Memory
+Storage
+Expandable storage
+Operating systems
+ROS support
+CUDA or other acceleration support
+I/O ports
+GPIO
+CAN
+EtherCAT
+Ethernet
+USB
+PCIe
+UART
+SPI
+I²C
+Wireless connectivity
+Voltage range
+Nominal power
+Peak power
+Thermal design
+Weight
+Dimensions
+Environmental rating
+SDK
+Drivers
+Firmware
+Price
+Offers
+Stock
+Datasheet
+Known robot deployments
+
+For motor controllers additionally collect:
+
+Supported motor types
+Motor count
+Continuous current
+Peak current
+Bus voltage
+Control frequency
+Encoder support
+Position, velocity, and torque-control modes
+Regenerative braking
+Safety features
+
+The original map identified processor, GPU/TOPS, memory, storage, ports, protocols, voltage, current, dimensions, price, and purchase links.
+
+Sources
+NVIDIA Jetson
+Raspberry Pi
+Intel NUC
+ODrive
+MJBots and Moteus
+Elmo Motion Control
+Technosoft
+Analog Devices Trinamic
+DigiKey
+Mouser
+AliExpress FOC-controller listings
+6. Reducers, gearboxes, and transmissions
+Fields
+Name
+Manufacturer
+Revision
+Harmonic, strain-wave, planetary, cycloidal, worm, bevel, or other type
+Gear ratio
+Rated torque
+Peak torque
+Continuous torque
+Emergency-stop torque
+Backlash
+Lost motion
+Torsional stiffness
+Efficiency
+Weight
+Dimensions
+Input interface
+Output interface
+Bearings included
+Lubrication
+Service life
+Maximum input speed
+Radial load
+Axial load
+Mounting pattern
+Price
+Supplier offers
+CAD
+Datasheet
+Known actuator combinations
+Known robot usage
+
+The original list called for type, ratio, torque, backlash, efficiency, weight, dimensions, interfaces, price, and purchase sources.
+
+Sources
+Harmonic Drive
+Harmonic Drive AG
+Leaderdrive
+Nabtesco
+Sumitomo Drive
+Neugart
+Apex Dynamics
+AliExpress reducer listings
+Manufacturer datasheets
+Distributor listings
+7. Batteries, BMS, and power systems
+Products
+Battery cells
+Battery packs
+LiPo packs
+Li-ion packs
+LiFePO4 packs
+Battery-management systems
+Power supplies
+DC-DC converters
+Regulators
+Chargers
+Power-distribution boards
+Fuses
+Contactors
+Relays
+Current sensors
+Fields
+Chemistry
+Capacity
+Nominal voltage
+Maximum voltage
+Minimum voltage
+Continuous discharge
+Peak discharge
+Charge current
+Energy
+Weight
+Dimensions
+Cell configuration
+Connector
+BMS features
+Balancing
+Temperature sensing
+Protection features
+Cycle life
+Certifications
+Price
+Shipping restrictions
+Supplier region
+Stock
+Lead time
+Sources
+HobbyKing
+LiPoMall
+BatterySpace
+Dakota Lithium
+DigiKey
+Mouser
+AliExpress
+Battery and BMS manufacturers
+
+These power categories and fields were explicitly identified as missing from the initial taxonomy.
+
+8. Structural components and fabrication stock
+Products
+Extrusions
+Tubes
+Plates
+Sheet material
+Carbon-fibre components
+Aluminum components
+Steel components
+Plastic stock
+Brackets
+Hinges
+Frames
+Enclosures
+Mounting plates
+Fields
+Material
+Grade
+Dimensions
+Wall thickness
+Weight
+Density
+Load rating
+Mounting pattern
+Surface finish
+Manufacturing process
+CAD
+Price
+Cut-to-size availability
+Fabrication tolerance
+Lead time
+Sources
+McMaster-Carr
+Misumi
+80/20
+OpenBuilds
+SendCutSend
+AliExpress
+Fabrication-service catalogs
+9. Bearings, shafts, fasteners, and mechanical hardware
+Fields
+Component type
+Standard
+Size
+Material
+Inner and outer diameter
+Length
+Thread
+Pitch
+Load rating
+Speed rating
+Tolerance
+Finish
+Corrosion resistance
+Weight
+CAD
+Price
+Stock
+Supplier
+Sources
+McMaster-Carr
+SKF
+NSK
+Misumi
+Bolt Depot
+Industrial distributors
+10. Wheels, tracks, mobile bases, and drivetrain components
+Fields
+Diameter
+Width
+Material
+Tread
+Hub pattern
+Bore
+Load capacity
+Weight
+Recommended motor
+Recommended gearbox
+Speed
+Terrain type
+Suspension
+Encoder support
+Mounting interface
+Price
+CAD
+Datasheet
+Sources
+AndyMark
+VEX Pro
+ServoCity
+SuperDroid Robots
+AliExpress
+Mobile-robot manufacturers
+11. Cables, connectors, and wiring
+Fields
+Cable or connector type
+Manufacturer
+Series
+Wire gauge
+Pin count
+Pinout
+Voltage rating
+Current rating
+Communication standard
+Shielding
+Length
+Connector gender
+Locking mechanism
+IP rating
+Temperature rating
+Flex-life rating
+Drag-chain suitability
+Price
+CAD
+Datasheet
+Mating components
+Sources
+DigiKey
+Mouser
+McMaster-Carr
+Amphenol
+Molex
+JST
+TE Connectivity
+Connector manufacturers
+12. Microcontrollers and embedded boards
+Fields
+Architecture
+Processor
+Clock speed
+RAM
+Flash
+GPIO count
+ADC
+DAC
+PWM
+Timers
+CAN
+Ethernet
+UART
+SPI
+I²C
+USB
+Wi-Fi
+Bluetooth
+Operating voltage
+Power consumption
+Form factor
+Development environment
+SDK
+Firmware
+ROS integration
+Price
+Stock
+Datasheet
+Sources
+Arduino
+STM32
+ESP32
+Teensy
+Adafruit
+SparkFun
+DigiKey
+Mouser
+13. Safety systems
+Products
+Emergency stops
+Safety relays
+Contactors
+Light curtains
+Safety scanners
+Safety PLCs
+Brakes
+Interlocks
+Bump sensors
+Torque limiting systems
+Fields
+Safety function
+Safety category
+Performance level
+SIL rating
+Voltage
+Current
+Contact configuration
+Reset behavior
+Response time
+Environmental rating
+Certifications
+Wiring
+CAD
+Datasheet
+Price
+Sources
+Pilz
+SICK
+Omron
+Banner Engineering
+DigiKey
+Safety-component manufacturers
+14. Software, SDKs, drivers, and firmware
+Fields
+Package or repository name
+Manufacturer or maintainer
+Repository
+License
+Latest release
+Supported hardware
+Supported revisions
+ROS 1 support
+ROS 2 support
+Supported ROS distributions
+Operating systems
+Dependencies
+Language
+Installation method
+API documentation
+Configuration files
+Firmware binaries
+Firmware version
+Release notes
+Known issues
+Open issues
+Commit activity
+Maintenance state
+Security advisories
+Integration examples
+Sources
+GitHub
+GitLab
+ROS Index
+Manufacturer GitHub organizations
+PyPI
+npm where relevant
+Package repositories
+Official SDK portals
+15. CAD, robot-description files, and digital twins
+Files to discover and ingest
+URDF
+Xacro
+SDF
+SRDF
+MJCF
+USD
+USDZ
+STEP and STP
+STL
+OBJ
+GLTF and GLB
+DAE
+IGES
+DXF
+Onshape documents and exports
+Fusion exports
+SolidWorks exports where available
+Native or exported assemblies
+Mesh textures and materials
+Metadata to scrape
+File type
+File name
+Robot or component
+Project version
+Applicable revision
+Author
+License
+Source repository
+Commit hash
+Release
+File hash
+Units
+Coordinate conventions
+Required external assets
+Export tool and version
+Last modified date
+Parsed robot-description data
+Links
+Joints
+Parent-child hierarchy
+Joint types
+Joint axes
+Joint limits
+Mesh references
+Missing meshes
+Visual geometry
+Collision geometry
+Mass
+Inertia
+Material
+Sensors
+Transmissions
+Gazebo or simulator plugins
+Controllers
+Configuration references
+Suspected purchasable parts
+Suspected fabricated parts
+Unresolved component identities
+Sources
+GitHub
+GitLab
+GrabCAD
+Thingiverse
+Onshape Public
+Manufacturer CAD portals
+Project websites
+ROS packages
+
+The refined map specifically identified CAD, URDF, MJCF, GrabCAD, Thingiverse, public Onshape documents, and manufacturer CAD portals.
+
+16. Fabrication services
+Fields
+Provider
+Service type
+CNC machining
+Sheet cutting
+Sheet bending
+3D printing
+Injection molding
+PCB fabrication
+PCB assembly
+Materials
+Tolerances
+Maximum dimensions
+Minimum order
+Pricing model
+Instant-quote support
+Lead time
+Regions served
+Certifications
+File formats accepted
+Sources
+SendCutSend
+Protolabs
+Xometry
+JLCPCB
+PCBWay
+Shapeways
+Regional fabrication providers
+17. Tools and test equipment
+Products
+Hand tools
+Torque tools
+Crimpers
+Soldering equipment
+Multimeters
+Oscilloscopes
+Power supplies
+Logic analyzers
+CAN analyzers
+Load cells
+Force gauges
+Calibration fixtures
+3D printers
+CNC equipment
+Fields
+Tool type
+Specifications
+Accuracy
+Range
+Required accessories
+Calibration status
+Applicable project steps
+Price
+Supplier
+Availability
+Sources
+McMaster-Carr
+Amazon
+DigiKey
+SparkFun
+Tool manufacturers
+
+The original map proposed associating tools with the build steps that require them.
+
+B. ROBOTS AND PROJECTS
+18. Commercial complete robots
+Fields
+Robot name
+Manufacturer
+Product generation
+Revision
+Release year
+Product status
+Height
+Weight
+Degrees of freedom
+Joint layout
+Payload
+Maximum speed
+Walking speed
+Running speed
+Battery life
+Battery capacity
+Charging method
+Actuator types
+Reducer types
+Hand or gripper
+Sensor suite
+Compute platform
+Communication interfaces
+Operating system
+SDK
+ROS support
+Autonomy capabilities
+Intended use
+Safety features
+Environmental rating
+Price
+Purchase or inquiry link
+Datasheet
+CAD or simulation model
+Videos
+Known deployments
+Teardowns
+Source date
+
+The source file identified height, weight, DOF, payload, speed, battery life, actuator types, sensors, compute, price, datasheet, and release year.
+
+Sources
+Unitree
+Fourier Intelligence
+Agility Robotics
+Figure
+Tesla Optimus
+Boston Dynamics
+Apptronik
+1X
+Sanctuary AI
+Manufacturer product pages
+Wikipedia comparison tables
+IEEE Spectrum
+The Robot Report
+19. Open-source robot projects
+Fields
+Project name
+Robot name
+Repository
+Repository owner
+Maintainers
+Contributors
+Organization
+Project website
+License
+Latest release
+Release history
+Commit hash
+Last activity
+Archived state
+Robot type
+Intended use
+Difficulty
+Build time
+Estimated cost
+Degrees of freedom
+Actuator count
+Component count
+Compute platform
+Sensor suite
+Software stack
+ROS compatibility
+Simulation support
+BOM availability
+BOM completeness
+Build-instruction completeness
+CAD availability
+Robot-description availability
+Firmware availability
+Configuration availability
+Calibration instructions
+Test procedures
+Known issues
+Forks
+Reproductions
+Evidence-backed reproductions
+Images and videos
+Sources
+GitHub humanoid-robot topics
+GitHub open-source-robot topics
+GitLab
+Hackaday.io
+Instructables
+Poppy Project
+InMoov
+Project websites
+University robotics groups
+ROS Discourse project threads
+20. Repository contents
+
+For every relevant repository, scrape or ingest:
+
+README files
+Documentation directories
+Wikis
+Releases
+Tags
+License files
+Contribution files
+Issue templates
+BOM files
+CSV
+TSV
+XLSX
+Markdown tables
+JSON
+YAML
+XML
+URDF
+Xacro
+SDF
+SRDF
+MJCF
+CAD files
+Meshes
+Firmware
+Configuration
+ROS parameters
+Launch files
+package.xml
+CMake files
+Python dependency files
+npm manifests
+Dockerfiles
+Installation scripts
+Calibration scripts
+Test files
+Benchmark results
+GitHub Issues
+Pull requests
+Discussions
+Release notes
+Forks
+Commit history relevant to hardware revisions
+
+Repository ingestion, BOM extraction, build instructions, configuration files, troubleshooting records, calibration, and forks were all identified as data requirements.
+
+C. BILLS OF MATERIALS
+21. BOM records
+Project-level fields
+Project
+Robot
+Project version
+BOM version
+Maintainer
+Source
+Source URL
+Commit hash
+Last updated
+Currency
+Total stated cost
+Calculated current cost
+Part count
+Unique-part count
+Category breakdown
+Supplier diversity
+Lead-time estimate
+Weight estimate
+Completeness
+Verification state
+BOM-line fields
+Line ID
+Subsystem
+Part name
+Manufacturer
+Manufacturer part number
+Canonical component match
+Quantity
+Unit price
+Currency
+Supplier
+Product URL
+Alternative suppliers
+Required revision
+Optional or required
+Purchased or fabricated
+Material
+Dimensions
+File reference
+Notes
+Substitutions
+Unresolved identity
+Confidence
+Evidence
+
+The detailed map defined project, total cost, part count, category breakdown, individual items, quantities, prices, links, source, and update date.
+
+Sources
+GitHub BOM search
+MIT Biomimetics
+Poppy Project
+InMoov
+Stanford Student Robotics
+GitHub robot topics
+Hackaday.io
+Instructables
+ROS Discourse
+Reddit robotics communities
+RobotForum
+Project wikis
+README tables
+
+If no reliable BOM is found, record a missing BOM state instead of generating an invented BOM.
+
+D. BUILD AND REPRODUCTION DATA
+22. Build instructions and recipes
+
+Scrape:
+
+Required tools
+Required skills
+Safety warnings
+Prerequisites
+Assembly steps
+Step order
+Step dependencies
+Images
+Videos
+Fastener types
+Torque values
+Wiring instructions
+Connector pinouts
+Soldering requirements
+Fabrication instructions
+Firmware installation
+Software installation
+Configuration
+Calibration
+Testing
+Expected results
+Estimated time per step
+Common mistakes
+Known failure points
+Sources
+Project READMEs
+Wikis
+Hackaday.io instructions
+Instructables
+YouTube transcripts
+ROS Discourse
+Community build logs
+
+The architecture expressly listed recipes, assembly guidance, firmware/configuration, troubleshooting, calibration, testing, and build variations.
+
+23. Reproductions, forks, and variants
+Fields
+Parent project
+Exact parent version
+Exact BOM version
+Builder
+Organization
+Start date
+Completion date
+Build status
+Final cost
+Build duration
+Region
+Suppliers used
+Substitutions
+Fabricated parts
+Modified CAD
+Firmware revision
+Configuration
+Calibration
+Tests
+Measured performance
+Problems
+Resolutions
+Photos
+Videos
+Evidence
+Verification state
+Fork repository
+Changes from parent
+Sources
+GitHub forks
+Hackaday remixes
+Instructables variations
+Community build logs
+ROS Discourse
+Project forums
+YouTube build series
+E. INTEGRATION AND COMPATIBILITY EVIDENCE
+24. Integration bundles and reference architectures
+Fields
+Integration name
+Components involved
+Applicable revisions
+Robot or project
+Mechanical interface
+Mounting requirements
+Adapter files
+Electrical requirements
+Voltage
+Current
+Connectors
+Pinout
+Communication protocol
+Bus configuration
+Software requirements
+Driver
+Firmware
+Configuration
+Calibration
+Tested operating system
+Tested ROS version
+Test procedure
+Result
+Limitations
+Failure modes
+Evidence
+Confidence
+Verification date
+Sources
+ROS Discourse prebuilt stacks
+NVIDIA Isaac packages
+GitHub robot-stack repositories
+Manufacturer reference designs
+Unitree SDK examples
+Dynamixel Workbench
+GitHub Discussions
+Project documentation
+25. Substitutions and alternatives
+
+Scrape records such as:
+
+Original component
+Replacement component
+Applicable revisions
+Why it was substituted
+Cost difference
+Weight difference
+Performance difference
+Availability difference
+Mechanical adaptations
+Wiring adaptations
+Software adaptations
+Firmware changes
+Calibration changes
+Result
+Failure modes
+Evidence
+Whether the substitution was successful
+Verification state
+Sources
+Reddit
+GitHub Issues
+Pull requests
+ROS Discourse
+Build logs
+Project forks
+Maintainer documentation
+
+The source map specifically called for statements such as “I used X instead of Y because…” and integration-compatibility reports.
+
+26. Normalization and compatibility reference data
+
+Scrape or maintain:
+
+Unit conversions
+Unit aliases
+SI normalization
+Communication-interface taxonomy
+Mechanical-interface taxonomy
+Electrical-interface taxonomy
+Connector taxonomy
+Category ontology
+Component-subtype ontology
+Voltage-matching rules
+Current-capacity rules
+Protocol-matching rules
+Mechanical-fit rules
+Adapter requirements
+ROS-version compatibility
+Firmware compatibility
+Operating-system compatibility
+
+The architecture explicitly identified unit tables, interface taxonomies, category ontologies, and compatibility rules.
+
+F. TEARDOWNS AND TECHNICAL ANALYSIS
+27. Teardowns
+Fields
+Robot or device
+Revision
+Teardown date
+Source type
+Author
+Identified component
+Suspected component
+Confidence
+Actuator type
+Motor type
+Reducer type
+Sensor type
+Compute platform
+Battery
+Power electronics
+PCB
+Connectors
+Materials
+Manufacturing methods
+Internal images
+Timestamps in videos
+Estimated BOM cost
+Community corrections
+Supporting evidence
+
+The detailed list required robot, date, source, identified components, actuators, sensors, compute, gearbox types, BOM estimate, and source URL.
+
+Sources
+YouTube teardown videos and transcripts
+YouTube comments
+Wevolver
+IEEE Spectrum
+The Robot Report
+Construction Physics
+CNET
+Reddit
+FCC filings and internal photos
+GitHub analysis repositories
+Bunnie Studios
+iFixit
+G. SUPPLIERS, PRICING, AND AVAILABILITY
+28. Manufacturers
+Fields
+Name
+Legal name
+Brand names
+Website
+Country
+Regions
+Product categories
+Product count
+Distributor relationships
+Contact details
+Support channels
+Documentation portal
+CAD portal
+GitHub organization
+Warranty policy
+Custom-order support
+Minimum order
+Data freshness
+Sources
+Direct manufacturer sites
+ThomasNet
+Distributor manufacturer directories
+Trade directories
+Manufacturer GitHub organizations
+
+The source map proposed more than 40 direct manufacturers plus the ThomasNet robotics directory.
+
+29. Suppliers and vendors
+Fields
+Name
+Website
+Country
+Locations
+Shipping regions
+Categories stocked
+Manufacturers carried
+Authorized-distributor status
+Minimum order
+Contact
+Support
+Currency
+Payment methods
+Shipping methods
+Return policy
+Warranty handling
+Lead times
+Community-reported experiences
+Sample or source rating
+Data freshness
+
+The original supplier schema included name, website, country, categories, shipping regions, minimum order, contact, and rating.
+
+Sources
+RobotShop
+Trossen Robotics
+DigiKey
+Mouser
+Farnell
+Generation Robots
+Active Robots
+AliExpress stores
+ThomasNet
+ROS Discourse vendor announcements
+Niche robotics vendors
+30. Supplier offers
+Fields
+Canonical component
+Supplier
+Supplier SKU
+Manufacturer part number
+Listing URL
+Product title
+Price
+Currency
+Price breaks
+Stock status
+Quantity available
+Lead time
+MOQ
+Shipping cost
+Shipping regions
+Delivery estimate
+Condition
+New, used, refurbished, or surplus
+Seller rating
+Authorization state
+Last checked
+First seen
+Last seen
+Historical prices
+Historical stock
+Listing status
+Source confidence
+
+Comparison requires price, stock, lead time, shipping, MOQ, and region.
+
+Sources
+Manufacturer stores
+DigiKey API
+Mouser API
+Farnell
+Octopart
+RobotShop
+Trossen Robotics
+Generation Robots
+Active Robots
+AliExpress
+Amazon
+eBay
+LabX
+University surplus
+GovDeals
+Alibaba RFQ
+IndiaMART
+Direct manufacturer RFQ forms
+31. Marketplace listings
+Fields
+Listing title
+Category
+Canonical component or robot match
+Condition
+Price
+Currency
+Seller
+Seller type
+Seller rating
+Location
+Shipping
+Pickup
+Listing URL
+Date posted
+Last checked
+Sold state
+Images
+Description
+Quantity
+Included accessories
+Known defects
+Full robot versus individual part
+Comparable-listing relationships
+
+The initial listing schema identified title, category, condition, price, seller, location, shipping, URL, and posting date.
+
+Sources
+AliExpress
+eBay
+Amazon
+RobotShop
+Trossen Robotics
+ROS Discourse Marketplace
+Reddit buy/sell/trade posts
+RobotForum classifieds
+LabX
+Used-equipment and surplus platforms
+H. COMMUNITY AND COLLABORATION DATA
+32. Build logs
+
+Extract:
+
+Project
+Build version
+Parts used
+Suppliers
+Build progress
+Problems
+Failures
+Solutions
+Cost
+Build time
+Photos
+Tests
+Modifications
+Final outcome
+Sources
+ROS Discourse
+RobotForum
+Hackaday.io
+Reddit
+GitHub Discussions
+Project forums
+
+Build logs were identified as sources for part lists, problems, and solutions.
+
+33. Component reviews and real-world experience
+
+Extract:
+
+Component
+Revision
+Project used in
+Duration of use
+Reliability
+Performance
+Noise
+Heat
+Accuracy
+Ease of integration
+Documentation quality
+Support quality
+Failures
+Replacement
+Measurements
+Reviewer context
+Evidence
+Sources
+RobotShop reviews
+YouTube review transcripts
+Reddit
+Forums
+Project build reports
+
+The refined map identified component reliability and real-world performance as structured review data.
+
+34. BOM corrections
+
+Extract:
+
+Project
+BOM version
+Incorrect line
+Corrected component
+Corrected quantity
+Corrected link
+Reason
+Reporter
+Maintainer response
+Accepted or rejected
+Evidence
+Applicable release
+Sources
+GitHub Issues
+Pull-request comments
+Project forums
+Maintainer release notes
+35. Supplier experiences
+
+Extract:
+
+Supplier
+Region
+Product ordered
+Order date
+Quoted lead time
+Actual lead time
+Product quality
+Packaging
+Support
+Refund or return outcome
+Counterfeit concerns
+Evidence
+User-reported status
+Sources
+Reddit
+ROS Discourse
+RobotForum
+Marketplace feedback
+
+The source map specifically called for actual lead-time and quality information.
+
+36. Measured component performance
+
+Extract:
+
+Component and revision
+Test configuration
+Methodology
+Instruments
+Conditions
+Voltage
+Current
+Temperature
+Load
+Measurements
+Units
+Repeatability
+Raw files
+Rated specification
+Difference from rating
+Author
+Evidence
+Sources
+YouTube tests
+Community wikis
+GitHub benchmarks
+Research papers
+Build reports
+
+The architecture explicitly called for actual torque and speed compared with rated specifications.
+
+37. Community discussions and annotations
+
+Potentially index:
+
+Thread title
+Public author identity
+Publication date
+Platform
+Tags
+Project references
+Component references
+Supplier references
+Question
+Accepted or best answer where platform-supported
+Solution
+Mentioned failures
+Mentioned substitutions
+Linked files
+Source URL
+Sources
+Reddit r/robotics
+Reddit r/humanoidrobots
+Reddit r/roboticsengineering
+ROS Discourse
+RobotForum
+Hackaday.io
+GitHub Discussions
+X robotics discussions
+IEEE Robotics and Automation Society communities
+DIY Robocars
+Builder forums
+
+Do not wholesale republish copyrighted discussions. Store permitted excerpts, structured facts, attribution, and source links.
+
+I. RESEARCH AND TECHNICAL PUBLICATIONS
+38. Papers, articles, and reports
+
+Scrape metadata and extract relevant technical claims from:
+
+Research papers
+Paper appendices
+Supplementary files
+Technical reports
+Conference papers
+Standards
+University project pages
+Industry analysis
+Manufacturer white papers
+Benchmark studies
+Fields
+Title
+Authors
+Institution
+DOI
+Publication
+Date
+License
+Robot or component
+Stated specifications
+Architecture
+BOM
+CAD or code link
+Test methodology
+Results
+Limitations
+Evidence relationships
+Sources
+arXiv
+IEEE publications
+IEEE Spectrum
+IEEE RAS
+University repositories
+Wevolver
+The Robot Report
+Construction Physics
+Manufacturer technical papers
+J. SOURCE TYPES AND INITIAL SCALE
+
+The original plan estimated the following initial indexing scope:
+
+40+ manufacturer catalogs: structured HTML and PDF datasheets
+7 distributor catalogs: filterable product catalogs and APIs
+4 e-commerce marketplaces: prices and listings
+100+ GitHub repositories: Markdown, CSV, YAML, files, issues, and releases
+6+ community forums: discussions and build logs
+500+ YouTube videos: teardown, review, tutorial, and build transcripts
+5+ technical publications
+3+ Wikipedia comparison resources
+4+ relevant subreddits
+10+ companies’ FCC filings
+Priority feed groups
+Tier 1: Structured sources
+Manufacturer product pages
+Manufacturer datasheets
+Distributor catalogs and APIs
+E-commerce listings
+GitHub repositories
+ROS Index
+Wikipedia comparison tables
+FCC filings
+GrabCAD
+Thingiverse
+Public CAD portals
+Tier 2: Semi-structured sources
+YouTube transcripts
+ROS Discourse
+Reddit
+Hackaday.io
+Instructables
+IEEE Spectrum
+The Robot Report
+Wevolver
+Tier 3: Unstructured extraction
+Project wikis
+README files
+Forum build threads
+PDF datasheets
+YouTube comments
+X threads
+Community corrections
+Video descriptions
+Images and teardown photographs
+
+These priority tiers match the refined crawl index.
+
+Final rule for the scraping agent
+
+The scraper should not merely produce pages of extracted text. Its output should create or update one of these canonical object types:
+
+Manufacturer
+Supplier
+Component
+Component revision
+Supplier offer
+Price observation
+Stock observation
+Project
+Project version
+Repository
+File
+BOM
+BOM version
+BOM item
+Robot
+Build recipe
+Build reproduction
+Integration
+Substitution
+Evidence
+Teardown
+Technical test
+Supplier report
+Marketplace reference
+Community-derived engineering claim
+Data conflict
+Missing-information record
+
+Every extracted object should remain linked to the exact source, date, applicable version, and extraction

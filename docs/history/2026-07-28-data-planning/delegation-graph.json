@@ -1,0 +1,3261 @@
+{
+  "schema_version": "agent-planning-system/v1",
+  "root_id": "Director",
+  "frontier": [
+    "Director"
+  ],
+  "max_nodes": 17,
+  "max_depth": 10,
+  "max_fanout": 8,
+  "metadata": {
+    "graph_id": "G-robopartpicker-data-collection-v6",
+    "plan_id": "P-robopartpicker-data-collection-v1",
+    "plan_version": 6,
+    "plan_content_sha256": "b0884f1fef62e40ce1aae45bd1eadb335fa4e2d66e9d8e3b86882ed2714ec773",
+    "created_at": "2026-07-29T06:32:52.079287Z",
+    "implementation_node_count": 16,
+    "director_node_count": 1,
+    "max_active_workers": 4,
+    "recursive_spawning": false,
+    "execution_waves": [
+      {
+        "wave": 0,
+        "nodes": [
+          "U-001"
+        ],
+        "max_concurrency": 1
+      },
+      {
+        "wave": 1,
+        "nodes": [
+          "U-002"
+        ],
+        "max_concurrency": 1
+      },
+      {
+        "wave": 2,
+        "nodes": [
+          "U-003",
+          "U-014"
+        ],
+        "max_concurrency": 2
+      },
+      {
+        "wave": 3,
+        "nodes": [
+          "U-004",
+          "U-005",
+          "U-011"
+        ],
+        "max_concurrency": 3
+      },
+      {
+        "wave": 4,
+        "nodes": [
+          "U-006",
+          "U-012"
+        ],
+        "max_concurrency": 2
+      },
+      {
+        "wave": 5,
+        "nodes": [
+          "U-007",
+          "U-008",
+          "U-009",
+          "U-013"
+        ],
+        "max_concurrency": 4
+      },
+      {
+        "wave": 6,
+        "nodes": [
+          "U-010"
+        ],
+        "max_concurrency": 1
+      },
+      {
+        "wave": 7,
+        "nodes": [
+          "U-015"
+        ],
+        "max_concurrency": 1
+      },
+      {
+        "wave": 8,
+        "nodes": [
+          "U-016"
+        ],
+        "max_concurrency": 1
+      }
+    ],
+    "serialized_conflicts": [
+      {
+        "nodes": [
+          "U-003",
+          "U-004"
+        ],
+        "paths": [
+          "docs/data-ingestion-contract.md"
+        ],
+        "resolution": "dependency"
+      },
+      {
+        "nodes": [
+          "U-005",
+          "U-013"
+        ],
+        "paths": [
+          "worker/index.ts",
+          "wrangler.jsonc"
+        ],
+        "resolution": "dependency"
+      },
+      {
+        "nodes": [
+          "U-003",
+          "U-012"
+        ],
+        "paths": [
+          "worker/routes/imports.ts"
+        ],
+        "resolution": "dependency"
+      },
+      {
+        "nodes": [
+          "U-009",
+          "U-010"
+        ],
+        "paths": [
+          "collector/src/robopartpicker_collector/parsers/**"
+        ],
+        "resolution": "explicit U-009 to U-010 edge"
+      },
+      {
+        "nodes": [
+          "U-013",
+          "U-016"
+        ],
+        "paths": [
+          "docs/operations/data-collection.md"
+        ],
+        "resolution": "transitive dependency via U-015"
+      },
+      {
+        "nodes": [
+          "U-005",
+          "U-016"
+        ],
+        "paths": [
+          "docs/deployment.md"
+        ],
+        "resolution": "transitive dependency via U-015"
+      }
+    ],
+    "critical_path": [
+      "U-001",
+      "U-002",
+      "U-003",
+      "U-004",
+      "U-006",
+      "U-009",
+      "U-010",
+      "U-015",
+      "U-016"
+    ],
+    "ai_token_monthly_ceiling_usd": 50,
+    "cloudflare_envelope": "separate explicit configuration and approval",
+    "paid_source_api_envelope": "separate per-source configuration and approval",
+    "compiler_note": "Native compile was attempted and hit the root-plus-16 max_nodes boundary. This graph uses the exact APS contract with a non-dispatched Director root and 16 canonical implementation nodes."
+  },
+  "nodes": [
+    {
+      "id": "Director",
+      "kind": "integrate",
+      "title": "RoboPartPicker APS Director",
+      "prompt": "Coordinate the approved graph, enforce gates, and never perform leaf implementation work.",
+      "unit_ids": [],
+      "parent_owner": null,
+      "role": "composite",
+      "depends_on": [],
+      "artifact_inputs": [],
+      "artifact_outputs": [
+        {
+          "name": "Director->U-001::approved plan v6 and bounded graph authority",
+          "type": "handoff",
+          "producer": "Director",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "planning artifacts and execution evidence"
+      ],
+      "write_scopes": [
+        ".agent-planning/events/**",
+        ".agent-planning/artifacts/execution-status.json"
+      ],
+      "acceptance": [
+        "All dispatches obey graph, cost, authority, and preservation gates."
+      ],
+      "review": {
+        "required": false,
+        "reviewers": [],
+        "checklist": []
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": null,
+        "capabilities": [
+          "coordination"
+        ]
+      },
+      "risk": "high",
+      "priority": "critical",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 1,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "graph",
+      "merge_strategy": null,
+      "children": [
+        "U-001"
+      ],
+      "metadata": {
+        "dispatchable": false,
+        "depth": 1,
+        "owner": "root Jcode Director"
+      }
+    },
+    {
+      "id": "U-001",
+      "kind": "implement",
+      "title": "Preserve the deployed baseline and clear execution preflights",
+      "prompt": "Capture a reliable dirty-worktree and deployment preservation checkpoint, verify repository ownership and remote prerequisites, classify pre-existing failures, and keep execution blocked until secrets and Jcode compatibility are safe.\n\nProcedure:\n- Verify RTK availability and use only non-interactive commands.\n- Capture branch, HEAD, remotes, changed paths, untracked paths, deployed version, and planning-only changes.\n- Classify existing failures with fresh proportional checks without fixing unrelated work.\n- Verify secret names and owners without reading values.\n- Record GO or STOP for remote, billing, provider-key rotation, Cloudflare resources, and Jcode compatibility.\n- Verify the documented remote 0003 bootstrap compatibility path and record the preview and production migration-history state without modifying either database.\n- Verify authority and current Cloudflare support for D1 Time Travel or an equivalent recovery checkpoint before any production migration.",
+      "unit_ids": [
+        "U-001"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "Director"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "Director->U-001::approved plan v6 and bounded graph authority",
+          "type": "handoff",
+          "producer": "Director",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-001::.agent-planning/artifacts/repository-grounding.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-001::docs/deployment.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-001::CHANGELOG.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-001->U-002::execution-preflight.json",
+          "type": "handoff",
+          "producer": "U-001",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-001->U-002::deployed baseline manifest",
+          "type": "handoff",
+          "producer": "U-001",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-001->U-013::authority and execution preflight",
+          "type": "handoff",
+          "producer": "U-001",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "entire repository metadata and planning artifacts"
+      ],
+      "write_scopes": [
+        "docs/operations/data-collection-preflight.md",
+        ".agent-planning/artifacts/execution-preflight.json"
+      ],
+      "acceptance": [
+        "A machine-readable changed-file manifest and preservation checkpoint identify deployed v0.6 work without resetting or overwriting it.",
+        "Git remote, repository visibility, Actions billing authority, Cloudflare plan, and secret owners are recorded as verified or explicit STOP conditions.",
+        "No secret value is printed or persisted."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent release-safety reviewer"
+        ],
+        "checklist": [
+          "A machine-readable changed-file manifest and preservation checkpoint identify deployed v0.6 work without resetting or overwriting it.",
+          "Git remote, repository visibility, Actions billing authority, Cloudflare plan, and secret owners are recorded as verified or explicit STOP conditions.",
+          "No secret value is printed or persisted.",
+          "preflight artifact hash",
+          "changed-path manifest",
+          "fresh command results",
+          "reviewer approval",
+          "remote migration-history report",
+          "D1 recovery-authority check"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "repository forensics",
+          "Cloudflare operations",
+          "secret hygiene"
+        ]
+      },
+      "risk": "high",
+      "priority": "critical",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 1,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "external",
+      "merge_strategy": null,
+      "children": [
+        "U-002",
+        "U-013"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "release-safety executor",
+        "depth": 2,
+        "forbidden_scope": [
+          "application source",
+          "migrations",
+          "secrets",
+          "production resources",
+          "git reset/clean/checkout of user work"
+        ],
+        "stop_conditions": [
+          "Any destructive git operation would be required.",
+          "The exposed AI credential is not rotated before AI work.",
+          "Jcode compatibility remains unsafe for execution."
+        ],
+        "escalation_conditions": [
+          "dirty manifest cannot be obtained",
+          "deployed source cannot be preserved",
+          "secret exposure is suspected",
+          "remote or billing authority is absent"
+        ],
+        "declared_output_artifacts": [
+          "docs/operations/data-collection-preflight.md",
+          ".agent-planning/artifacts/execution-preflight.json"
+        ]
+      }
+    },
+    {
+      "id": "U-002",
+      "kind": "implement",
+      "title": "Add the provenance, source-policy, claim, observation, and lifecycle schema",
+      "prompt": "Create one additive D1 migration and domain documentation for source policy revisions, snapshots, field claims, mutable observations, conflicts, withdrawals, source-scoped missing information, budgets, and durable collection jobs while preserving existing canonical table ownership.\n\nProcedure:\n- Inventory every existing owner named in the readiness overlay, including record_versions, technical_records, missing_information_requests/responses/subscriptions, evidence_claims, data_conflicts, import_sources, import_jobs, and import_records; document why each new table is additive rather than duplicate ownership.\n- Treat complete inventory lines 1 through 1693 and the known line-1694 provenance prefix as normative. Record the unknown truncated suffix as a deferred inventory-tail item and do not infer it.\n- Create the eleven exactly named migration 0015 tables and their documented columns, checks, foreign keys, uniqueness constraints, and indexes. Do not invent alternate table names in consumers.\n- Keep collection_jobs as the complete acquisition lifecycle owner with states queued, leased, fetching, parsing, submitting, complete, failed, deferred, denied, and cancelled; qualify status columns by table in every join and set nullable import_job_id only after an ingestion handoff exists.\n- Use append-only rows for budgets, observations, source-policy revisions, lifecycle transitions, delisting, supersession, and withdrawal; derive current views by indexed ordering and never update historical fact values in place.\n- Create docs/database/ if absent, then write the capacity report and schema ownership map.\n- Create deterministic Worker-D1 fixtures rooted in one import_sources row, one import_jobs row, and at least two import_records. Insert all six claim classifications, two temporal observations, one withdrawal, all three budget cost classes, one expired lease, and revisions for price, stock, availability, specification, firmware, release, project version, source-policy status, and delisting; assert pre-revision rows remain queryable.\n- Run EXPLAIN QUERY PLAN for due work, lease expiry, budget projection, snapshot lineage, field claims, latest observations, open conflicts, and pending review. High-cardinality tables must report SEARCH USING an intended index and no unbounded SCAN at the expansion fixture.\n- Measure local D1 page_count multiplied by page_size before fixtures, after pilot fixtures, and after bounded-expansion fixtures. Record per-table row-width samples using length() for bounded text/JSON fields, index overhead, append-only write amplification, worst-case batch writes, and headroom against the 400 MiB design cap.\n- Update scripts/validate-schema.ts only to require migration 0015 and the eleven exact tables while retaining PRAGMA foreign_key_check and prior required tables. Update tests/worker/api.test.ts only to advance the migration-count assertion from 14 to 15.\n- Rehearse migration 0015 against fresh and ordinary upgraded local databases. Treat fresh remote migration lists, current recovery bookmarks, and remote-0003 freshness as U-001 completion evidence required before actual U-002 execution or any remote apply.\n- Add the four nullable trace_id columns in migration 0015 with lowercase-32-hex checks when non-null and indexes for job/audit lookup; do not rewrite historical rows or edit migrations 0001 through 0014.",
+      "unit_ids": [
+        "U-002"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-001"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-001->U-002::execution-preflight.json",
+          "type": "handoff",
+          "producer": "U-001",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-001->U-002::deployed baseline manifest",
+          "type": "handoff",
+          "producer": "U-001",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-002::C:\\Users\\Lenovo\\Desktop\\AI\\robopartpicker data collection.txt",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-002::docs/database-schema.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-002::migrations/0002_catalog_projects_and_boms.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-002::migrations/0004_imports_ai_notifications_admin_and_search.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-002::migrations/0006_import_ownership_and_file_uploads.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-002::migrations/0014_cross_product_systems.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-002::.agent-planning/artifacts/execution-readiness-recheck.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-002::.agent-planning/artifacts/U-002-corrected-rehearsal-reconciliation.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-002->U-003::migration 0015",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-003::database schema contract",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-004::source_snapshots and lifecycle schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-005::collection_jobs and lifecycle schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-006::source-policy and budget schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-008::declared producer outputs",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-011::claims, observations, conflicts, and lifecycle schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-013::lease, freshness, scheduling, and budget schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-014::source profile and policy revision schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "the exact named inventory and readiness/reconciliation artifacts",
+        "migrations 0001 through 0014",
+        "named database-facing Worker services and scripts",
+        "Worker D1 test configuration and existing API test",
+        "schema documentation"
+      ],
+      "write_scopes": [
+        "migrations/0015_data_collection_provenance.sql",
+        "docs/database-schema.md",
+        "tests/worker/data-collection-provenance.test.ts",
+        "docs/database/data-collection-capacity.md",
+        "tests/worker/data-collection-capacity.test.ts",
+        "scripts/validate-schema.ts",
+        "tests/worker/api.test.ts"
+      ],
+      "acceptance": [
+        "Migration 0015 applies to a fresh and upgraded local database, advances schema validation and migration-count assertions from 14 to 15, and preserves all existing foreign keys.",
+        "Universal provenance and the six field classifications are represented in source/import-scoped field_claims without source-specific tables and without altering canonical evidence_claims.",
+        "Time-series, lifecycle, delisting, supersession, and withdrawal history are append-only and cannot be silently overwritten by schema design.",
+        "A documented D1 capacity model proves representative due-work, lineage, claim, current-observation, conflict, review, lease-expiry, and budget queries fit row, database, index, query-count, batch, and write budgets.",
+        "The schema covers every complete canonical-inventory requirement through line 1693 plus the known line-1694 fields for exact source, date, applicable version, and extraction metadata; the unknown truncated suffix remains explicitly deferred and is never invented.",
+        "Existing record_versions, technical_records, missing_information_*, evidence_claims, import_sources, import_jobs, and import_records retain their documented ownership and are linked only through additive source/import-scoped tables or optional promotion references.",
+        "Migration 0015 publishes exact source scheduling, lease, circuit-breaker, and three-class budget contracts consumed by U-006, U-008, U-013, and U-014."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent database and provenance reviewer"
+        ],
+        "checklist": [
+          "Migration 0015 applies to a fresh and upgraded local database, advances schema validation and migration-count assertions from 14 to 15, and preserves all existing foreign keys.",
+          "Universal provenance and the six field classifications are represented in source/import-scoped field_claims without source-specific tables and without altering canonical evidence_claims.",
+          "Time-series, lifecycle, delisting, supersession, and withdrawal history are append-only and cannot be silently overwritten by schema design.",
+          "A documented D1 capacity model proves representative due-work, lineage, claim, current-observation, conflict, review, lease-expiry, and budget queries fit row, database, index, query-count, batch, and write budgets.",
+          "The schema covers every complete canonical-inventory requirement through line 1693 plus the known line-1694 fields for exact source, date, applicable version, and extraction metadata; the unknown truncated suffix remains explicitly deferred and is never invented.",
+          "Existing record_versions, technical_records, missing_information_*, evidence_claims, import_sources, import_jobs, and import_records retain their documented ownership and are linked only through additive source/import-scoped tables or optional promotion references.",
+          "Migration 0015 publishes exact source scheduling, lease, circuit-breaker, and three-class budget contracts consumed by U-006, U-008, U-013, and U-014.",
+          "migration hash and byte-identity proof for migrations 0001 through 0014",
+          "fresh and upgrade migration logs showing 15 migrations",
+          "zero-row foreign-key report",
+          "reviewed schema ownership diagram",
+          "six-classification and append-only fixture report",
+          "capacity measurements and eight EXPLAIN plans",
+          "schema-validator and API migration-count diff",
+          "U-001 gate resolution references"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "SQLite/D1 modeling",
+          "temporal data",
+          "provenance systems"
+        ]
+      },
+      "risk": "high",
+      "priority": "critical",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "graph",
+      "merge_strategy": null,
+      "children": [
+        "U-003",
+        "U-004",
+        "U-005",
+        "U-006",
+        "U-008",
+        "U-011",
+        "U-013",
+        "U-014"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "database and provenance engineer",
+        "depth": 3,
+        "forbidden_scope": [
+          "editing migrations 0001 through 0014",
+          "production or preview database mutation",
+          "source adapters",
+          "UI",
+          "changing existing Worker API behavior beyond the migration-count assertion",
+          "inventing the truncated inventory suffix"
+        ],
+        "stop_conditions": [
+          "A prior migration must be edited.",
+          "Historical facts or revisions would be overwritten.",
+          "Raw large documents would be stored in D1.",
+          "A new table duplicates an existing canonical owner without a documented source/import boundary and promotion link.",
+          "Any required query full-scans a high-cardinality expansion table.",
+          "The truncated inventory suffix would need to be invented.",
+          "Any U-001 STOP gate remains unresolved at execution time."
+        ],
+        "escalation_conditions": [
+          "schema duplicates an existing owner",
+          "migration requires destructive rewrite",
+          "D1 limits make the model infeasible"
+        ],
+        "declared_output_artifacts": [
+          "migrations/0015_data_collection_provenance.sql",
+          "docs/database-schema.md exact ownership and consumer contract",
+          "Worker-D1 provenance, lease, and three-class budget fixture report",
+          "D1 capacity and query-plan report",
+          "schema validation and migration-count update",
+          "remote compatibility gate reference"
+        ]
+      }
+    },
+    {
+      "id": "U-003",
+      "kind": "implement",
+      "title": "Introduce external ingestion contract v2 with backward compatibility",
+      "prompt": "Add a bounded v2 batch contract for universal provenance, snapshot manifests, field claims, record lifecycle, and per-record errors while preserving the v1 endpoint and idempotency behavior.\n\nProcedure:\n- Define v2 JSON Schema with bounded arrays and strings and intentional additionalProperties behavior.\n- Add schema-version dispatch while retaining v1.\n- Validate record and claim semantics, normalized fingerprints, lifecycle events, and snapshot references.\n- Return stable per-record error codes and duplicate details.\n- Document compatibility and withdrawal-as-event semantics.\n- Inventory all legacy accepted record types and assign each a reviewed staging, typed-claim/evidence, or explicit unsupported/deferred path.\n- Validate claimed canonical dependencies by existence and entity type before staging and again before promotion.\n- Enforce a 1 MiB v1 request-body cap, 100-record cap, depth-10 and 256-properties-per-object caps, and 64 KiB retained rawPayload cap per record. Use stable typed rejection or metadata-only quarantine, document the compatibility/deprecation policy, and never spill oversized evidence into D1.\n- Validate or generate one trace_id per v2 batch, validate optional W3C traceparent, and persist the trace_id through import job, record, error, and audit events without logging service credentials.\n- Persist trace_id only through the nullable migration-0015 columns on import_jobs, import_records, import_errors, and import_audit_events; staging rows inherit trace context through import_record_id rather than adding unowned columns.",
+      "unit_ids": [
+        "U-003"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-002"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-002->U-003::migration 0015",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-003::database schema contract",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-003::contracts/import-batch.v1.schema.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-003::docs/data-ingestion-contract.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-003::worker/routes/imports.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-003::worker/services/ingestion.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-003->U-004::import-batch v2 schema",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-004::v2 ingestion documentation",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-005::v2 trace_id contract",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-006::import-batch v2 schema and endpoint contract",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-011::v2 claim and ingestion contracts",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-012::v2 claims, lifecycle, and trace contract",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "contracts",
+        "import routes and services",
+        "contract tests"
+      ],
+      "write_scopes": [
+        "contracts/import-batch.v2.schema.json",
+        "contracts/examples/import-batch.v2.json",
+        "scripts/validate-contracts.ts",
+        "worker/routes/imports.ts",
+        "worker/services/ingestion.ts",
+        "docs/data-ingestion-contract.md",
+        "tests/worker/import-contract-v2.test.ts"
+      ],
+      "acceptance": [
+        "Contract v1 examples and tests remain valid.",
+        "Contract v2 rejects missing universal metadata, invalid evidence classes, oversized fields, and idempotency mismatches.",
+        "A v2 record stages without canonical mutation and retains complete lineage.",
+        "Every accepted v1 and v2 record type maps to typed staging, claim/evidence review storage, or an explicit unsupported/deferred state.",
+        "Nonexistent or entity-type-mismatched canonical references are rejected before review or promotion in both contract versions.",
+        "Version-1 requests are protected by explicit endpoint body, string, object-depth, and retained-payload limits with documented compatibility behavior.",
+        "Every v2 batch carries a lowercase 32-hex trace_id and may carry a validated W3C traceparent; the same trace_id reaches staging and audit rows.",
+        "Version-1 compatibility is bounded to a 1 MiB request body, 100 records, object depth 10, 256 properties per object, and 64 KiB retained rawPayload per record; excess data receives a stable typed rejection or explicit metadata-only quarantine with no D1 evidence spill."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent API contract reviewer"
+        ],
+        "checklist": [
+          "Contract v1 examples and tests remain valid.",
+          "Contract v2 rejects missing universal metadata, invalid evidence classes, oversized fields, and idempotency mismatches.",
+          "A v2 record stages without canonical mutation and retains complete lineage.",
+          "Every accepted v1 and v2 record type maps to typed staging, claim/evidence review storage, or an explicit unsupported/deferred state.",
+          "Nonexistent or entity-type-mismatched canonical references are rejected before review or promotion in both contract versions.",
+          "Version-1 requests are protected by explicit endpoint body, string, object-depth, and retained-payload limits with documented compatibility behavior.",
+          "Every v2 batch carries a lowercase 32-hex trace_id and may carry a validated W3C traceparent; the same trace_id reaches staging and audit rows.",
+          "Version-1 compatibility is bounded to a 1 MiB request body, 100 records, object depth 10, 256 properties per object, and 64 KiB retained rawPayload per record; excess data receives a stable typed rejection or explicit metadata-only quarantine with no D1 evidence spill.",
+          "schema validation output",
+          "v1 and v2 test logs",
+          "contract diff review",
+          "record-type disposition matrix",
+          "canonical-reference validation tests",
+          "v1 bounds decision"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "JSON Schema",
+          "Hono/Zod",
+          "API compatibility",
+          "idempotency"
+        ]
+      },
+      "risk": "high",
+      "priority": "critical",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "graph",
+      "merge_strategy": null,
+      "children": [
+        "U-004",
+        "U-005",
+        "U-006",
+        "U-011",
+        "U-012"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "ingestion API contract engineer",
+        "depth": 4,
+        "forbidden_scope": [
+          "interactive project-import routes",
+          "canonical catalog tables outside reviewed promotion",
+          "secrets"
+        ],
+        "stop_conditions": [
+          "The endpoint would fetch source URLs.",
+          "Unknown schema versions are accepted.",
+          "Raw content can reach privileged prompts.",
+          "An accepted record type has no reviewable storage or explicit unsupported state.",
+          "Version-1 compatibility requires unbounded retained payloads."
+        ],
+        "escalation_conditions": [
+          "v1 compatibility cannot be maintained",
+          "field provenance cannot be represented without unbounded payloads"
+        ],
+        "declared_output_artifacts": [
+          "v2 schema and example",
+          "compatibility documentation",
+          "contract test report"
+        ]
+      }
+    },
+    {
+      "id": "U-004",
+      "kind": "implement",
+      "title": "Implement immutable evidence registration and R2 snapshot storage",
+      "prompt": "Add content-addressed, policy-gated evidence registration and bounded R2 upload/reference flows with deduplication, retention metadata, and authorization.\n\nProcedure:\n- Encode the five exact source classes, byte caps, MIME allowlists, detected-MIME mismatch rejection, and external-reference-only classes in the machine-readable evidence contract.\n- Use a Worker-compatible bounded upload flow: reject from Content-Length when available, stream directly to the existing FILES binding without full-response buffering, compute or verify SHA-256 within the selected implementation's documented CPU/memory envelope, and STOP for independent source verification if incremental hashing cannot be proven within Worker limits.\n- Deduplicate by SHA-256 using migration 0015 source_snapshots metadata; multiple snapshot rows may reference one content-addressed object key without duplicate R2 bytes.\n- Support immutable external references with normalized HTTPS URL, source policy revision, retrieval metadata, and no claim that remote bytes are retained.\n- Apply only the exact append-only retention states and transitions; takedown never silently deletes provenance metadata.\n- Publish contracts/evidence-registration.v1.schema.json and its canonical example, validate both in tests/worker/source-evidence.test.ts, and record their hashes before U-006 begins.",
+      "unit_ids": [
+        "U-004"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-002",
+        "U-003"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-002->U-004::source_snapshots and lifecycle schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-004::import-batch v2 schema",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-004::v2 ingestion documentation",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-004::worker/routes/files.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-004::worker/db/repositories/files.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-004::R2 binding configuration",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-004::docs/research/technical-findings.md Worker, R2, SSRF, and file-upload constraints plus cited primary sources",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-004->U-006::evidence-registration v1 schema and canonical example",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-004->U-010::evidence source-class contract",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-004->U-012::authorized evidence and preview metadata contract",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-004->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "file and R2 services",
+        "authorization",
+        "R2 tests",
+        "docs/research/technical-findings.md and its cited Worker/R2/file-upload primary sources"
+      ],
+      "write_scopes": [
+        "worker/routes/source-evidence.ts",
+        "worker/services/source-evidence.ts",
+        "worker/router.ts",
+        "tests/worker/source-evidence.test.ts",
+        "contracts/evidence-registration.v1.schema.json",
+        "contracts/examples/evidence-registration.v1.json",
+        "docs/data-ingestion-contract.md"
+      ],
+      "acceptance": [
+        "Identical evidence bytes deduplicate by SHA-256 and link to multiple records without duplicate objects.",
+        "Policy-denied or oversized evidence is recorded as external-reference, metadata-only, or rejected without hidden upload.",
+        "Evidence retrieval is authorized and never exposes arbitrary R2 keys."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent storage and security reviewer"
+        ],
+        "checklist": [
+          "Identical evidence bytes deduplicate by SHA-256 and link to multiple records without duplicate objects.",
+          "Policy-denied or oversized evidence is recorded as external-reference, metadata-only, or rejected without hidden upload.",
+          "Evidence retrieval is authorized and never exposes arbitrary R2 keys.",
+          "R2 object/hash assertions",
+          "authorization tests",
+          "storage policy review",
+          "collector handoff contract hash"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "R2",
+          "streaming",
+          "content addressing",
+          "authorization"
+        ]
+      },
+      "risk": "high",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-006",
+        "U-010",
+        "U-012",
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "evidence storage and authorization engineer",
+        "depth": 5,
+        "forbidden_scope": [
+          "public R2 bucket exposure",
+          "whole-repository mirrors",
+          "native file execution",
+          "prior migrations"
+        ],
+        "stop_conditions": [
+          "Unbounded response buffering is introduced.",
+          "Evidence becomes publicly enumerable.",
+          "A downloaded file would execute.",
+          "The existing FILES binding cannot provide authorized non-enumerable access for the source-evidence prefix without a new approved storage design."
+        ],
+        "escalation_conditions": [
+          "copyright policy cannot authorize retention",
+          "streaming hash cannot stay within Worker limits"
+        ],
+        "declared_output_artifacts": [
+          "evidence service and route",
+          "R2 fixture report",
+          "contracts/evidence-registration.v1.schema.json",
+          "contracts/examples/evidence-registration.v1.json",
+          "retention contract update",
+          "producer artifact hashes"
+        ]
+      }
+    },
+    {
+      "id": "U-005",
+      "kind": "implement",
+      "title": "Add dedicated asynchronous scrape-ingestion processing",
+      "prompt": "Create dedicated Queue and D1 checkpoint processing for v2 normalization, matching, conflict generation, and review preparation using pointer messages and idempotent recovery.\n\nProcedure:\n- Define pointer message schema, exact byte measurement after JSON UTF-8 encoding, and attempt semantics; reject messages above the deliberate 65,536-byte internal cap even though the cited Cloudflare platform maximum is 131,072 bytes.\n- Add dedicated producer and consumer bindings by environment without creating any production queue before approval.\n- Checkpoint every phase by updating collection_jobs current state and appending collection_lifecycle_events before acknowledgement; never create a duplicate checkpoint table.\n- Implement bounded batches, backoff, dead-letter transitions, and the exact administrator-only idempotent manual-resume contract.\n- Add structured trace IDs and metrics.\n- Document the 65,536-byte internal design cap, 131,072-byte platform maximum, pointer-only rule, retry/DLQ policy, and manual-resume operation in docs/deployment.md with the Cloudflare Queues limits source.\n- Add discriminated queue-aware dispatch around the existing project-import and inline ai-evaluation branches in worker/services/import-jobs.ts so each message kind retains its schema and retry policy.\n- Carry the U-003 trace_id unchanged through producer, retries, dead-letter rows, resume, and queue audit events; validate optional W3C traceparent and never derive trace identifiers from secrets.",
+      "unit_ids": [
+        "U-005"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-002",
+        "U-003"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-002->U-005::collection_jobs and lifecycle schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-005::v2 trace_id contract",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-005::worker/services/import-jobs.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-005::worker/index.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-005::worker/env.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-005::wrangler.jsonc",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-005::docs/research/technical-findings.md Cloudflare Queue limits, pricing, and pointer-message decision plus cited primary sources",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-005->U-013::queue checkpoint and trace contract",
+          "type": "handoff",
+          "producer": "U-005",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-005->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-005",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "queue handlers",
+        "job services",
+        "Worker configuration"
+      ],
+      "write_scopes": [
+        "worker/services/scrape-ingestion-jobs.ts",
+        "worker/index.ts",
+        "worker/env.ts",
+        "wrangler.jsonc",
+        "tests/worker/scrape-ingestion-queue.test.ts",
+        "docs/deployment.md"
+      ],
+      "acceptance": [
+        "Queue messages obey a deliberate 64 KB internal cap, below Cloudflare's researched 128 KB platform maximum, and contain identifiers, hashes, attempts, trace IDs, and no evidence bytes.",
+        "Retries and dead-letter behavior preserve durable D1 job state and do not duplicate claims or canonical facts.",
+        "Existing project-import and AI queues remain behaviorally isolated."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent Cloudflare operations reviewer"
+        ],
+        "checklist": [
+          "Queue messages obey a deliberate 64 KB internal cap, below Cloudflare's researched 128 KB platform maximum, and contain identifiers, hashes, attempts, trace IDs, and no evidence bytes.",
+          "Retries and dead-letter behavior preserve durable D1 job state and do not duplicate claims or canonical facts.",
+          "Existing project-import and AI queues remain behaviorally isolated.",
+          "queue fixture logs",
+          "Wrangler dry-run",
+          "idempotent recovery proof",
+          "reviewer approval",
+          "message-size boundary report",
+          "queue dispatch isolation matrix"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "Cloudflare Queues",
+          "idempotent workflows",
+          "D1 checkpoints"
+        ]
+      },
+      "risk": "high",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-013",
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "Cloudflare queue engineer",
+        "depth": 5,
+        "forbidden_scope": [
+          "project-import queue semantics",
+          "AI evaluation retry policy",
+          "raw evidence in messages",
+          "production queue creation without approval"
+        ],
+        "stop_conditions": [
+          "Message bodies carry evidence.",
+          "Consumer can acknowledge before durable checkpoint.",
+          "No DLQ or recovery path exists."
+        ],
+        "escalation_conditions": [
+          "queue operation budget is insufficient",
+          "retry ownership conflicts with existing queues"
+        ],
+        "declared_output_artifacts": [
+          "queue service",
+          "wrangler binding diff",
+          "retry/DLQ test report"
+        ]
+      }
+    },
+    {
+      "id": "U-006",
+      "kind": "implement",
+      "title": "Build the portable external collector core and policy engine",
+      "prompt": "Create a containerized Python collector with common adapter lifecycle, source policy, RFC 9309 robots handling, secure conditional HTTP, SSRF defenses, byte budgets, extraction manifests, cost accounting, and v2 submission.\n\nProcedure:\n- Before implementation, require every exact U-002/U-003/U-004/U-014 producer artifact to exist, parse, validate, and have a recorded hash; stop rather than inventing a missing dependency.\n- Verify and lock Python and parser dependency versions from primary sources.\n- Implement adapter discovery/fetch/snapshot/extract/normalize/submit stages against the exact adapter-family, v2, evidence, and source-policy contracts.\n- Implement RFC 9309 cache and separate terms/reuse approval state.\n- Implement conditional requests, Retry-After, jittered backoff, redirect and DNS/IP revalidation, streamed byte caps, and circuit breakers.\n- Implement BudgetLedger reservation, commit, release, and status for ai_token, cloudflare_infra, and paid_source_api without cross-class borrowing; the USD 50 monthly ceiling applies only to ai_token.\n- Build a non-root OCI image, stable fixture-run CLI, and offline fixture suite.\n- Generate snapshot manifests and submission fixtures from the exact U-004 evidence contract and fail contract drift in tests.\n- Validate v2 through the U-003-updated contracts:validate command and prove the HTTP client uses the documented endpoint, bearer credential, and idempotency contract without exposing credential values.",
+      "unit_ids": [
+        "U-006"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-002",
+        "U-003",
+        "U-004",
+        "U-014"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-002->U-006::source-policy and budget schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-006::import-batch v2 schema and endpoint contract",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-004->U-006::evidence-registration v1 schema and canonical example",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-014->U-006::source, field, pilot, and adapter-family registries",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-006::docs/research/technical-findings.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::migrations/0015_data_collection_provenance.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::docs/database-schema.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::contracts/import-batch.v2.schema.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::docs/data-ingestion-contract.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::contracts/evidence-registration.v1.schema.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::contracts/examples/evidence-registration.v1.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::config/data-collection/source-coverage.yaml",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::config/data-collection/field-coverage.yaml",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::config/data-collection/pilot-sources.yaml",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-006::config/data-collection/adapter-families.yaml",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-006->U-007::collector SDK and SourceAdapter protocol",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-006->U-008::collector SDK and BudgetLedger contract",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-006->U-009::collector SDK and secure acquisition boundaries",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-006->U-010::collector parser protocol and security core",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-006->U-013::collector CLI, container, and BudgetLedger",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "exact producer contracts from U-002, U-003, U-004, and U-014",
+        "ingestion contract",
+        "technical findings",
+        "repository secret variable names without values"
+      ],
+      "write_scopes": [
+        "collector/pyproject.toml",
+        "collector/uv.lock",
+        "collector/Dockerfile",
+        "collector/src/robopartpicker_collector/core/**",
+        "collector/src/robopartpicker_collector/cli.py",
+        "collector/tests/core/**",
+        "collector/tests/test_cli.py",
+        "collector/README.md",
+        ".dockerignore"
+      ],
+      "acceptance": [
+        "The collector runs from fixtures without network or paid credentials and emits deterministic batches validated by import-batch v2 and evidence-registration v1.",
+        "Denied robots, terms, private-network URLs, unsafe redirects, oversized responses, and exhausted class-local budgets fail closed with typed states.",
+        "One locked non-root container and stable CLI run locally and on any OCI runner; U-013 separately proves the GitHub Actions invocation."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent acquisition security reviewer"
+        ],
+        "checklist": [
+          "The collector runs from fixtures without network or paid credentials and emits deterministic batches validated by import-batch v2 and evidence-registration v1.",
+          "Denied robots, terms, private-network URLs, unsafe redirects, oversized responses, and exhausted class-local budgets fail closed with typed states.",
+          "One locked non-root container and stable CLI run locally and on any OCI runner; U-013 separately proves the GitHub Actions invocation.",
+          "lockfile and image digest",
+          "offline pytest results",
+          "security fixture matrix",
+          "contract submission trace",
+          "evidence handoff conformance trace"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "Python",
+          "HTTP",
+          "robots",
+          "SSRF prevention",
+          "containers",
+          "budget systems"
+        ]
+      },
+      "risk": "high",
+      "priority": "critical",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "graph",
+      "merge_strategy": null,
+      "children": [
+        "U-007",
+        "U-008",
+        "U-009",
+        "U-010",
+        "U-013"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "collector core and security engineer",
+        "depth": 6,
+        "forbidden_scope": [
+          "Worker application internals as collector dependencies",
+          "live targets in tests",
+          "committed credentials",
+          "unbounded browser or file execution"
+        ],
+        "stop_conditions": [
+          "Any exact producer artifact is absent, invalid, unhashed, or has unresolved contract drift.",
+          "Tests require live targets.",
+          "The collector can reach private networks.",
+          "Budget enforcement is advisory only or allows cross-class borrowing.",
+          "Secrets enter artifacts or logs.",
+          "The Worker evidence handoff contract is absent or has unresolved drift."
+        ],
+        "escalation_conditions": [
+          "exact dependency sources cannot be verified",
+          "secure DNS/redirect validation is unavailable",
+          "runner cost cannot be bounded"
+        ],
+        "declared_output_artifacts": [
+          "locked collector package",
+          "OCI image digest",
+          "offline security test report",
+          "adapter SDK documentation"
+        ]
+      }
+    },
+    {
+      "id": "U-007",
+      "kind": "implement",
+      "title": "Implement the official manufacturer pilot adapter",
+      "prompt": "Add one policy-approved official manufacturer adapter that extracts component revisions, specifications, datasheet locators, files, and official claims through the common collector SDK.\n\nProcedure:\n- Complete source-specific policy preflight and fixture capture with approved reuse.\n- Map official identifiers and revisions deterministically.\n- Extract bounded fields and evidence locators.\n- Emit missing information and file references explicitly.\n- Test change detection and parser drift.",
+      "unit_ids": [
+        "U-007"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-006"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-006->U-007::collector SDK and SourceAdapter protocol",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-007::manufacturer fixture selected during source preflight",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-007::canonical component fields",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-007::collector SDK",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-007->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-007",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "collector core",
+        "component contracts",
+        "fixture source evidence"
+      ],
+      "write_scopes": [
+        "collector/src/robopartpicker_collector/adapters/manufacturer_pilot.py",
+        "collector/tests/adapters/test_manufacturer_pilot.py",
+        "collector/tests/fixtures/manufacturer_pilot/**",
+        "docs/sources/manufacturer-pilot.md"
+      ],
+      "acceptance": [
+        "Adapter fixtures produce revision-aware component and official-claim records with exact evidence locators.",
+        "Changed and unchanged source fixtures demonstrate content hashing and conditional acquisition.",
+        "Missing values remain absent or explicit missing-information records."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent source-adapter reviewer"
+        ],
+        "checklist": [
+          "Adapter fixtures produce revision-aware component and official-claim records with exact evidence locators.",
+          "Changed and unchanged source fixtures demonstrate content hashing and conditional acquisition.",
+          "Missing values remain absent or explicit missing-information records.",
+          "policy preflight",
+          "fixture hashes",
+          "adapter tests",
+          "sample v2 batch"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "HTML/API extraction",
+          "robotics specifications",
+          "fixture design"
+        ]
+      },
+      "risk": "medium",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "official-source adapter engineer",
+        "depth": 7,
+        "forbidden_scope": [
+          "live crawling in tests",
+          "AI-inferred official labels",
+          "source-specific canonical writes"
+        ],
+        "stop_conditions": [
+          "Robots or terms disallow acquisition.",
+          "The adapter guesses a revision or measurement."
+        ],
+        "escalation_conditions": [
+          "source policy is not approved",
+          "source layout cannot yield stable evidence locators"
+        ],
+        "declared_output_artifacts": [
+          "manufacturer adapter",
+          "approved fixtures",
+          "field mapping",
+          "adapter report"
+        ]
+      }
+    },
+    {
+      "id": "U-008",
+      "kind": "implement",
+      "title": "Implement the structured distributor and volatile offer pilot adapter",
+      "prompt": "Add one approved distributor or catalog adapter that links products to suppliers and appends price, currency, stock, availability, lead-time, region, and offer observations.\n\nProcedure:\n- Read the exact disabled distributor_pilot entry. If candidate identity, fixture directory, cost class, or policy-preflight requirement is missing, stop. Do not substitute another source.\n- Perform and persist the source-specific access, robots/terms/reuse, quota, and cost preflight only after the separate live-source approval gate. If approval is denied or unavailable, mark the pilot deferred and write no adapter acquisition logic.\n- Normalize supplier and manufacturer identifiers deterministically while preserving source IDs and original labels.\n- Emit each volatile observation with ISO-8601 UTC timestamp, BCP-47 locale, ISO-4217 currency, region, seller, authorization, condition, and retrieval context.\n- Reserve paid_source_api and cloudflare_infra budget before any approved call; record ai_token as zero unless an explicitly approved model step is invoked. Never borrow between cost classes.\n- Test unavailable, delisted, out-of-stock, changed-price, changed-stock, and withdrawal states with two temporal fixtures that append rather than overwrite.\n- Record the field map, policy decision, exact fixture hashes, budget trace, and independent reviewer checklist in docs/sources/distributor-pilot.md.",
+      "unit_ids": [
+        "U-008"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-002",
+        "U-006",
+        "U-014"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-002->U-008::declared producer outputs",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-006->U-008::collector SDK and BudgetLedger contract",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-014->U-008::declared producer outputs",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-008::config/data-collection/pilot-sources.yaml#distributor_pilot",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-008::config/data-collection/field-coverage.yaml",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-008::migrations/0015_data_collection_provenance.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-008::contracts/import-batch.v2.schema.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-008::collector/src/robopartpicker_collector/core/**",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-008::collector/src/robopartpicker_collector/cli.py",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-008->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-008",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "exact U-002, U-006, and U-014 producer artifacts",
+        "offer and supplier schema definitions",
+        "named disabled distributor pilot entry"
+      ],
+      "write_scopes": [
+        "collector/src/robopartpicker_collector/adapters/distributor_pilot.py",
+        "collector/tests/adapters/test_distributor_pilot.py",
+        "collector/tests/fixtures/distributor_pilot/**",
+        "docs/sources/distributor-pilot.md"
+      ],
+      "acceptance": [
+        "Two temporal fixtures append distinct price and stock observations without overwriting history.",
+        "Currency, region, seller, authorization, condition, and retrieval context remain explicit.",
+        "Rate and cost limits defer work before overage."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent offer-data reviewer"
+        ],
+        "checklist": [
+          "Two temporal fixtures append distinct price and stock observations without overwriting history.",
+          "Currency, region, seller, authorization, condition, and retrieval context remain explicit.",
+          "Rate and cost limits defer work before overage.",
+          "policy and quota preflight",
+          "temporal test results",
+          "cost ledger",
+          "reviewed field map"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "catalog APIs",
+          "time-series offers",
+          "currency/region data"
+        ]
+      },
+      "risk": "medium",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "offer-data adapter engineer",
+        "depth": 7,
+        "forbidden_scope": [
+          "checkout or purchase actions",
+          "unapproved marketplace scraping",
+          "silent currency conversion"
+        ],
+        "stop_conditions": [
+          "Adapter can purchase or message sellers.",
+          "Price observations overwrite earlier rows.",
+          "Currency conversion lacks source and timestamp."
+        ],
+        "escalation_conditions": [
+          "approved interface is unavailable",
+          "quota or cost exceeds pilot budget"
+        ],
+        "declared_output_artifacts": [
+          "distributor adapter",
+          "temporal fixtures",
+          "budget trace",
+          "sample v2 batch"
+        ]
+      }
+    },
+    {
+      "id": "U-009",
+      "kind": "implement",
+      "title": "Implement bounded GitHub, ROS, BOM, and repository-file ingestion",
+      "prompt": "Build the repository pilot adapter using versioned GitHub APIs, conditional requests, truncation-aware tree traversal, bounded relevant-file discovery, BOM extraction, and project/release/software evidence while preserving interactive project import separation.\n\nProcedure:\n- Implement authenticated conditional API client with pagination, serialized concurrency, retry headers, and version provenance.\n- Use contents and tree APIs and detect truncation.\n- Select relevant engineering files by allowlisted path, type, size, and project context.\n- Parse CSV, TSV, XLSX, Markdown, JSON, and YAML BOM candidates deterministically.\n- Emit missing BOM and unresolved part identities explicitly.\n- Prove no dependency on interactive project-import writes.",
+      "unit_ids": [
+        "U-009"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-006"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-006->U-009::collector SDK and secure acquisition boundaries",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-009::GitHub API 2026-03-10 docs",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-009::worker/services/project-import.ts as compatibility evidence",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-009::repository and BOM fixtures",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-009->U-010::parser-tree ownership handoff",
+          "type": "handoff",
+          "producer": "U-009",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-009->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-009",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "interactive project import for boundaries",
+        "project and BOM models",
+        "collector core"
+      ],
+      "write_scopes": [
+        "collector/src/robopartpicker_collector/adapters/github_repository.py",
+        "collector/src/robopartpicker_collector/parsers/bom.py",
+        "collector/tests/adapters/test_github_repository.py",
+        "collector/tests/fixtures/github_repository/**",
+        "docs/sources/github-repository.md"
+      ],
+      "acceptance": [
+        "A repository fixture imports metadata, commit, release, license, one BOM, and bounded relevant files by path and hash without an archive mirror.",
+        "Truncated trees, large files, missing BOMs, submodules, symlinks, and unsafe paths produce explicit states.",
+        "The external adapter pins the current API version while existing project import remains unchanged."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent repository-ingestion reviewer"
+        ],
+        "checklist": [
+          "A repository fixture imports metadata, commit, release, license, one BOM, and bounded relevant files by path and hash without an archive mirror.",
+          "Truncated trees, large files, missing BOMs, submodules, symlinks, and unsafe paths produce explicit states.",
+          "The external adapter pins the current API version while existing project import remains unchanged.",
+          "API fixture traces",
+          "bounded file manifest",
+          "BOM parser tests",
+          "interactive import regression tests"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "GitHub REST",
+          "repository graphs",
+          "BOM parsing",
+          "path security"
+        ]
+      },
+      "risk": "high",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-010",
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "repository and BOM ingestion engineer",
+        "depth": 7,
+        "forbidden_scope": [
+          "worker/services/project-import.ts",
+          "repository archive mirroring",
+          "unsafe symlink traversal",
+          "live GitHub tests"
+        ],
+        "stop_conditions": [
+          "Whole archives are mirrored by default.",
+          "Interactive project-import code must change.",
+          "Unsafe paths or symlinks can escape the extraction root."
+        ],
+        "escalation_conditions": [
+          "GitHub API version support conflicts with current docs",
+          "tree truncation cannot be bounded",
+          "repository license or terms block file retention"
+        ],
+        "declared_output_artifacts": [
+          "repository adapter",
+          "BOM parser",
+          "truncation fixtures",
+          "compatibility proof"
+        ]
+      }
+    },
+    {
+      "id": "U-010",
+      "kind": "implement",
+      "title": "Implement safe document and robotics-description parser pack",
+      "prompt": "Add bounded parsers for HTML, Markdown, CSV, TSV, XLSX, JSON, YAML, XML, policy-approved PDF text, URDF, Xacro, SDF, SRDF, and MJCF, with metadata-only handling for native CAD and meshes.\n\nProcedure:\n- Source-verify and lock parser libraries and licenses.\n- Define per-format size, node, depth, sheet, row, cell, page, and expansion limits.\n- Disable external entities and unsafe constructors.\n- Normalize evidence locators by path, sheet/cell, JSON pointer, XML path, page, line, or joint/link identifier.\n- Parse robot hierarchy and missing external assets without fetching them implicitly.\n- Add malicious and boundary fixtures.",
+      "unit_ids": [
+        "U-010"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-004",
+        "U-006",
+        "U-009"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-004->U-010::evidence source-class contract",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-006->U-010::collector parser protocol and security core",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-009->U-010::parser-tree ownership handoff",
+          "type": "handoff",
+          "producer": "U-009",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-010::canonical file-format inventory",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-010::OWASP file guidance",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-010::existing fflate/yaml/urdf-loader usage",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-010->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-010",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "existing safe parser patterns",
+        "collector core",
+        "format fixtures"
+      ],
+      "write_scopes": [
+        "collector/src/robopartpicker_collector/parsers/**",
+        "collector/tests/parsers/**",
+        "collector/tests/fixtures/parsers/**",
+        "docs/data-collection/parser-matrix.md"
+      ],
+      "acceptance": [
+        "Each supported fixture emits evidence-located claims or robot-structure records under size and complexity limits.",
+        "XXE, unsafe YAML, CSV formulas, traversal references, archive bombs, encrypted PDFs, and unsupported native files fail closed.",
+        "Robot descriptions retain units, links, joints, limits, inertial data, mesh references, and missing assets."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent parser security reviewer"
+        ],
+        "checklist": [
+          "Each supported fixture emits evidence-located claims or robot-structure records under size and complexity limits.",
+          "XXE, unsafe YAML, CSV formulas, traversal references, archive bombs, encrypted PDFs, and unsupported native files fail closed.",
+          "Robot descriptions retain units, links, joints, limits, inertial data, mesh references, and missing assets.",
+          "dependency source record",
+          "fixture matrix",
+          "resource-limit tests",
+          "security review"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "secure parsing",
+          "robotics formats",
+          "PDF/spreadsheet/XML security"
+        ]
+      },
+      "risk": "high",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "parser security engineer",
+        "depth": 8,
+        "forbidden_scope": [
+          "native CAD execution",
+          "arbitrary shell commands",
+          "network access from parsers",
+          "unsafe deserialization"
+        ],
+        "stop_conditions": [
+          "Parser performs network I/O.",
+          "External entities or unsafe YAML are enabled.",
+          "Unsupported native files execute."
+        ],
+        "escalation_conditions": [
+          "parser library license is incompatible",
+          "safe resource limits cannot be enforced",
+          "native format requires execution"
+        ],
+        "declared_output_artifacts": [
+          "parser pack",
+          "locked dependencies",
+          "parser support matrix",
+          "malicious fixture report"
+        ]
+      }
+    },
+    {
+      "id": "U-011",
+      "kind": "implement",
+      "title": "Implement normalization, identity candidates, conflicts, and lifecycle services",
+      "prompt": "Create deterministic services for units, currencies, names, part numbers, revisions, component candidates, alternatives, substitutions, claim conflicts, supersession, withdrawal, and missing information.\n\nProcedure:\n- Define stable normalization registries and provenance for conversions.\n- Generate deterministic fingerprints and ranked candidates.\n- Keep AI candidate signals separate from deterministic scores.\n- Model conflict detection and resolution without deleting claims.\n- Implement supersession, withdrawal, and missing-information transitions.\n- Add state-space tests for repeated, conflicting, and out-of-order events.\n- Exercise append-only state transitions for firmware, releases, project versions, availability, source status, and delisting in addition to offer observations.\n- Preserve validated canonical dependency type and existence evidence through candidate generation and lifecycle transitions.",
+      "unit_ids": [
+        "U-011"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-002",
+        "U-003"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-002->U-011::claims, observations, conflicts, and lifecycle schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-003->U-011::v2 claim and ingestion contracts",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-011::worker/services/ingestion.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-011::canonical_match_candidates",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-011::data_conflicts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-011::technical decisions",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-011->U-012::normalization, identity, conflict, and lifecycle services",
+          "type": "handoff",
+          "producer": "U-011",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-011->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-011",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "ingestion and matching services",
+        "catalog entities",
+        "database schema"
+      ],
+      "write_scopes": [
+        "worker/services/data-normalization.ts",
+        "worker/services/identity-resolution.ts",
+        "worker/services/claim-conflicts.ts",
+        "worker/services/record-lifecycle.ts",
+        "tests/worker/data-normalization.test.ts",
+        "tests/worker/identity-resolution.test.ts"
+      ],
+      "acceptance": [
+        "Normalization preserves original values and records conversion source and time.",
+        "Ambiguous identities create ranked candidates and unresolved states, never forced matches.",
+        "Conflicts and withdrawals preserve all prior evidence and current-view semantics."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent data-quality reviewer"
+        ],
+        "checklist": [
+          "Normalization preserves original values and records conversion source and time.",
+          "Ambiguous identities create ranked candidates and unresolved states, never forced matches.",
+          "Conflicts and withdrawals preserve all prior evidence and current-view semantics.",
+          "state-space test report",
+          "determinism proof",
+          "conflict lifecycle examples",
+          "reviewer approval",
+          "mutable-class coverage matrix",
+          "canonical dependency type-check report"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "entity resolution",
+          "temporal conflicts",
+          "units/currency",
+          "property testing"
+        ]
+      },
+      "risk": "high",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-012",
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "normalization and identity engineer",
+        "depth": 5,
+        "forbidden_scope": [
+          "source fetching",
+          "review UI",
+          "automatic promotion policy",
+          "prior migrations"
+        ],
+        "stop_conditions": [
+          "Ambiguous matches auto-promote.",
+          "Original values are discarded.",
+          "Withdrawals delete history."
+        ],
+        "escalation_conditions": [
+          "canonical identity rules are underspecified",
+          "normalization would discard original evidence"
+        ],
+        "declared_output_artifacts": [
+          "normalization services",
+          "state-space test matrix",
+          "conversion registry documentation"
+        ]
+      }
+    },
+    {
+      "id": "U-012",
+      "kind": "implement",
+      "title": "Extend administrator review and provenance APIs/UI",
+      "prompt": "Expose field claims, raw evidence, policy state, revisions, conflicts, lifecycle, AI provenance, and exact proposed canonical mutations in review APIs and administrator UI with authorized approve, reject, defer, and conflict actions.\n\nProcedure:\n- Extend the existing /imports/:jobId ImportJobs surface and add focused data-review components; do not create or reference a nonexistent Admin.tsx page.\n- Implement the exact bounded review DTO and authorized evidence metadata links.\n- Compute a deterministic mutation diff and hash server-side, display it before approval, and require expected_diff_hash on approve to prevent stale review writes.\n- Implement the exact approve, reject, defer, and conflict state transitions and audit semantics without canonical mutation from reject/defer/conflict.\n- Add conflict grouping, lifecycle context, AI-inferred labels, and trace propagation.\n- Enforce moderator read access and administrator mutation access using existing authorization middleware; preserve constant-time service credential behavior and never display secrets.\n- Preserve existing public shapes or add versioned/internal fields only.\n- Add accessible mobile-safe loading, denial, conflict, stale-diff, and oversized-evidence states.",
+      "unit_ids": [
+        "U-012"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-003",
+        "U-004",
+        "U-011"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-003->U-012::v2 claims, lifecycle, and trace contract",
+          "type": "handoff",
+          "producer": "U-003",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-004->U-012::authorized evidence and preview metadata contract",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-011->U-012::normalization, identity, conflict, and lifecycle services",
+          "type": "handoff",
+          "producer": "U-011",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-012::worker/routes/imports.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-012::src/pages/ImportJobs.tsx and src/App.tsx import routes",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-012::src/lib/api/systems.ts current importJobsApi",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-012::worker/middleware/authorization.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-012::U-003 v2 contract, U-004 evidence contract, and U-011 claim-service interfaces",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-012->U-013::review trace and audit contract",
+          "type": "handoff",
+          "producer": "U-012",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-012->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-012",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "admin routes and UI",
+        "authorization",
+        "catalog API contracts"
+      ],
+      "write_scopes": [
+        "worker/routes/imports.ts",
+        "worker/routes/catalog.ts",
+        "src/lib/api/imports.ts",
+        "src/components/admin/data-review/**",
+        "src/pages/ImportJobs.tsx",
+        "tests/worker/import-review-v2.test.ts",
+        "tests/ui/data-review.test.tsx"
+      ],
+      "acceptance": [
+        "Reviewer can inspect evidence and proposed mutations before any canonical write.",
+        "Reject and defer leave canonical data unchanged and create audit events.",
+        "Current public APIs remain compatible while versioned/internal responses expose provenance and freshness."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent authorization and review-UX reviewer"
+        ],
+        "checklist": [
+          "Reviewer can inspect evidence and proposed mutations before any canonical write.",
+          "Reject and defer leave canonical data unchanged and create audit events.",
+          "Current public APIs remain compatible while versioned/internal responses expose provenance and freshness.",
+          "role matrix tests",
+          "review state screenshots",
+          "API compatibility assertions",
+          "audit rows"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "Hono auth",
+          "React admin UI",
+          "audit workflows",
+          "API compatibility"
+        ]
+      },
+      "risk": "high",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-013",
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "review API and UX engineer",
+        "depth": 6,
+        "forbidden_scope": [
+          "anonymous evidence access",
+          "automatic policy enablement",
+          "secret display",
+          "unreviewed canonical writes"
+        ],
+        "stop_conditions": [
+          "Evidence is exposed publicly.",
+          "Approval can occur without showing mutation diff.",
+          "Reject/defer mutates canonical data."
+        ],
+        "escalation_conditions": [
+          "current admin page ownership conflicts",
+          "mutation diff cannot be made deterministic"
+        ],
+        "declared_output_artifacts": [
+          "review API and UI",
+          "authorization test report",
+          "API compatibility report"
+        ]
+      }
+    },
+    {
+      "id": "U-013",
+      "kind": "implement",
+      "title": "Add scheduling, budget enforcement, observability, and GitHub Actions workflow",
+      "prompt": "Implement due-source calculation, freshness debt, source leases and circuit breakers, monthly cost ceiling, structured metrics, lightweight Worker maintenance cron, and the containerized GitHub Actions collector schedule.\n\nProcedure:\n- Verify every U-001 authority gate from execution-readiness-recheck.json and stop if any remains unresolved. Require exact U-002/U-005/U-006/U-012/U-014 producer artifacts before implementation.\n- Implement atomic source lease acquisition, expiry, due calculation, freshness debt, and circuit-breaker transitions against the exact migration 0015 columns.\n- Implement hard class-local gates through BudgetLedger: USD 50 per calendar month for ai_token, separately configured cloudflare_infra and paid_source_api limits, explicit approval state, no borrowing, and source-local freshness debt.\n- Verify the lowercase 32-hex trace_id remains identical across collector, ingestion, queue, review, scheduler, and audit fixtures; validate optional W3C traceparent and publish the metrics catalog.\n- Add workflow_dispatch with dry_run=true by default. Keep the schedule trigger present but gate the scheduled job on vars.DATA_COLLECTION_SCHEDULE_ENABLED == 'true'; the absent or false repository variable is the disabled default and enabling it requires canary approval plus repository authority.\n- Add a lightweight Worker Cron handler that performs zero network subrequests and processes at most 100 D1 rows per invocation for expired-lease recovery and freshness-debt updates only. It never starts collection or heavy parsing.\n- Validate the exact Wrangler cron syntax against authoritative documentation for the installed Wrangler version, add YAML syntax validation, and keep secret values out of CLI arguments and logs.\n- Make docs/operations/data-collection.md the canonical runtime runbook. Link to data-collection-preflight.md and data-collection-unblock.md without duplicating or superseding their authority checks.",
+      "unit_ids": [
+        "U-013"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-001",
+        "U-002",
+        "U-005",
+        "U-006",
+        "U-012",
+        "U-014"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-001->U-013::authority and execution preflight",
+          "type": "handoff",
+          "producer": "U-001",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-002->U-013::lease, freshness, scheduling, and budget schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-005->U-013::queue checkpoint and trace contract",
+          "type": "handoff",
+          "producer": "U-005",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-006->U-013::collector CLI, container, and BudgetLedger",
+          "type": "handoff",
+          "producer": "U-006",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-012->U-013::review trace and audit contract",
+          "type": "handoff",
+          "producer": "U-012",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-014->U-013::disabled pilot source registry",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-013::.agent-planning/artifacts/execution-readiness-recheck.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::migrations/0015_data_collection_provenance.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::docs/database-schema.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::config/data-collection/pilot-sources.yaml",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::collector/Dockerfile",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::collector/src/robopartpicker_collector/cli.py",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::collector/src/robopartpicker_collector/core/**",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::worker/services/scrape-ingestion-jobs.ts",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::docs/data-ingestion-contract.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-013::current wrangler observability",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-013->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-013",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "U-001 authority evidence",
+        "migration 0015 scheduling and three-class budget schema",
+        "disabled pilot source registry",
+        "Cloudflare config and current CI",
+        "collector CLI/BudgetLedger",
+        "ingestion, queue, and review trace interfaces"
+      ],
+      "write_scopes": [
+        "worker/services/data-collection-scheduler.ts",
+        "worker/index.ts",
+        "wrangler.jsonc",
+        ".github/workflows/data-collection.yml",
+        "collector/src/robopartpicker_collector/cli.py",
+        "tests/worker/data-collection-scheduler.test.ts",
+        "collector/tests/test_cli.py",
+        "docs/operations/data-collection.md",
+        "docs/operations/data-collection-metrics.json"
+      ],
+      "acceptance": [
+        "Projected spend at or above USD 50 blocks new paid work and surfaces freshness debt.",
+        "Overlapping schedules cannot acquire the same source concurrently.",
+        "Actions workflow supports manual dry-run and scheduled execution without secrets in logs, and Worker cron performs only lightweight maintenance.",
+        "The USD 50 monthly hard stop applies only to AI model token spend; Cloudflare usage and paid source/API charges have separate ledgers, alerts, and explicit approval gates with no automatic paid-tier upgrade."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent infrastructure and cost reviewer"
+        ],
+        "checklist": [
+          "Projected spend at or above USD 50 blocks new paid work and surfaces freshness debt.",
+          "Overlapping schedules cannot acquire the same source concurrently.",
+          "Actions workflow supports manual dry-run and scheduled execution without secrets in logs, and Worker cron performs only lightweight maintenance.",
+          "The USD 50 monthly hard stop applies only to AI model token spend; Cloudflare usage and paid source/API charges have separate ledgers, alerts, and explicit approval gates with no automatic paid-tier upgrade.",
+          "workflow dry-run",
+          "budget state-space tests",
+          "Wrangler dry-run",
+          "metrics sample",
+          "reviewer approval"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "GitHub Actions",
+          "Cloudflare Cron",
+          "cost control",
+          "observability",
+          "distributed leases"
+        ]
+      },
+      "risk": "high",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "scheduling, budget, and observability engineer",
+        "depth": 7,
+        "forbidden_scope": [
+          "enabling live schedule before approval",
+          "secret values",
+          "unbounded paid usage",
+          "heavy crawling in Worker cron"
+        ],
+        "stop_conditions": [
+          "Any U-001 authority or dependency-artifact gate is unresolved.",
+          "Schedule would activate when DATA_COLLECTION_SCHEDULE_ENABLED is absent or false.",
+          "Any cost class can exceed its own limit or borrow from another class.",
+          "Secrets can appear in workflow or collector logs.",
+          "Worker Cron performs external fetches, starts collection, parses source payloads, or exceeds 100 D1 rows per invocation.",
+          "Trace identifiers diverge across collector, ingestion, queue, review, scheduler, or audit."
+        ],
+        "escalation_conditions": [
+          "no Git remote or Actions authority",
+          "budget cannot be hard-stopped",
+          "source leases are not reliable"
+        ],
+        "declared_output_artifacts": [
+          "scheduler service",
+          "disabled-by-default Actions workflow",
+          "budget tests",
+          "operations runbook",
+          "metrics catalog"
+        ]
+      }
+    },
+    {
+      "id": "U-014",
+      "kind": "implement",
+      "title": "Create the complete source coverage matrix and pilot registry",
+      "prompt": "Translate every inventory section and named source family into a versioned coverage matrix with adapter family, wave, policy state, extraction methods, formats, cadence, risk, ownership, and deferment, then define the five pilot source registry entries without running them.\n\nProcedure:\n- Map all complete inventory lines 1 through 1693 plus the known line-1694 prefix; preserve the unknown suffix as deferred_unknown_tail.\n- Publish config/data-collection/adapter-families.yaml with the common adapter families and exact SourceAdapter capability flags without depending on collector implementation files.\n- Publish source-coverage.yaml and field-coverage.yaml with stable source tier, policy state, claim key, value type, unit or normalizer, evidence locator class, temporal behavior, and supported/deferred/unsupported state.\n- Publish exactly five disabled pilot IDs: manufacturer_pilot, distributor_pilot, github_repository_pilot, ros_bom_pilot, and volatile_offer_pilot. For each, select candidate identity only from the canonical inventory or a persisted product decision, and record access method, required policy-preflight evidence, cost class, and fixture directory. Candidate identity is not approval: enabled=false and policy_state remains unreviewed or approved_fixture_only until separate live-source approval.\n- Validate every inventory section, source family, and field maps exactly once and no entry is enabled.\n- Document deferment reasons, ownership, and the separate approval gate for any live source contact or paid API.",
+      "unit_ids": [
+        "U-014"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-002"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-002->U-014::source profile and policy revision schema",
+          "type": "handoff",
+          "producer": "U-002",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-014::C:\\Users\\Lenovo\\Desktop\\AI\\robopartpicker data collection.txt",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-014::.agent-planning/artifacts/product-contract.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-014::.agent-planning/artifacts/technical-research.json",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-014::migrations/0015_data_collection_provenance.sql",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-014::docs/database-schema.md",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-014->U-006::source, field, pilot, and adapter-family registries",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-014->U-008::declared producer outputs",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-014->U-013::disabled pilot source registry",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-014->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "all inventory sections and appendices",
+        "source-policy and budget schema",
+        "product and technical planning artifacts"
+      ],
+      "write_scopes": [
+        "config/data-collection/source-coverage.yaml",
+        "config/data-collection/pilot-sources.yaml",
+        "docs/data-collection/source-coverage.md",
+        "scripts/validate-source-coverage.mjs",
+        "tests/contracts/source-coverage.test.ts",
+        "config/data-collection/field-coverage.yaml",
+        "config/data-collection/adapter-families.yaml"
+      ],
+      "acceptance": [
+        "Sections 1 through 38, source tiers, canonical object types, every named source family, and every named inventory field are accounted for.",
+        "Every entry has a wave or explicit deferment and no truncated inventory content is invented.",
+        "Five pilot entries remain disabled until source-specific policy preflight is approved.",
+        "Every inventory field has a stable claim key, value type, expected unit or normalizer, evidence-locator class, revision/time-series behavior, and supported, deferred, or unsupported state."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent scope and policy reviewer"
+        ],
+        "checklist": [
+          "Sections 1 through 38, source tiers, canonical object types, every named source family, and every named inventory field are accounted for.",
+          "Every entry has a wave or explicit deferment and no truncated inventory content is invented.",
+          "Five pilot entries remain disabled until source-specific policy preflight is approved.",
+          "Every inventory field has a stable claim key, value type, expected unit or normalizer, evidence-locator class, revision/time-series behavior, and supported, deferred, or unsupported state.",
+          "coverage validator output",
+          "38-section traceability report",
+          "pilot entries",
+          "reviewer signoff",
+          "complete field registry validation"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "taxonomy",
+          "source governance",
+          "schema validation"
+        ]
+      },
+      "risk": "medium",
+      "priority": "high",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "branch",
+      "merge_strategy": null,
+      "children": [
+        "U-006",
+        "U-008",
+        "U-013",
+        "U-015"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "source taxonomy and policy engineer",
+        "depth": 4,
+        "forbidden_scope": [
+          "live source access",
+          "enabling schedules",
+          "credentials",
+          "invented ending for line 1694"
+        ],
+        "stop_conditions": [
+          "Any complete inventory line or named field is unmapped.",
+          "The truncated suffix would need to be invented.",
+          "Any pilot is enabled or marked approved_live without persisted policy authority.",
+          "Creating the registry would require live source contact during planning or implementation before the live-source approval gate."
+        ],
+        "escalation_conditions": [
+          "inventory source family cannot be classified",
+          "pilot source requires unresolved legal authority"
+        ],
+        "declared_output_artifacts": [
+          "config/data-collection/source-coverage.yaml",
+          "config/data-collection/field-coverage.yaml",
+          "config/data-collection/pilot-sources.yaml",
+          "config/data-collection/adapter-families.yaml",
+          "docs/data-collection/source-coverage.md",
+          "coverage validation report"
+        ]
+      }
+    },
+    {
+      "id": "U-015",
+      "kind": "verify",
+      "title": "Build the complete offline verification and compatibility suite",
+      "prompt": "Integrate database, contract, queue, evidence, collector, adapters, parsers, normalization, review, scheduler, budget, security, and existing project-import tests into deterministic offline release gates.\n\nProcedure:\n- Inventory each AE and map it to an executable check or explicit operator evidence.\n- Create end-to-end fixture harness from collector output through review and canonical views.\n- Add security threats and state-space cases.\n- Add CI jobs with bounded timeouts and artifact retention.\n- Run baseline and classify only genuine pre-existing failures.\n- Document exact expected outputs and troubleshooting.\n- Add stable package scripts for focused Worker data-collection tests and collector pytest so local and CI commands share one supported surface.\n- Define the versioned canary evidence schema and validate complete and intentionally incomplete fixtures.",
+      "unit_ids": [
+        "U-015"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-004",
+        "U-005",
+        "U-007",
+        "U-008",
+        "U-009",
+        "U-010",
+        "U-011",
+        "U-012",
+        "U-013",
+        "U-014"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-004->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-004",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-005->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-005",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-007->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-007",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-008->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-008",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-009->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-009",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-010->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-010",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-011->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-011",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-012->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-012",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-013->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-013",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "U-014->U-015::declared implementation outputs and verification evidence",
+          "type": "handoff",
+          "producer": "U-014",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-015::all prior unit outputs",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-015::package.json checks",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-015::.github/workflows/ci.yml",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [
+        {
+          "name": "U-015->U-016::offline verification report and canary evidence schema",
+          "type": "handoff",
+          "producer": "U-015",
+          "required": true,
+          "external": false
+        }
+      ],
+      "read_scopes": [
+        "all tests and fixtures",
+        "CI workflow",
+        "verification docs"
+      ],
+      "write_scopes": [
+        "tests/e2e/data-collection-pilot.test.ts",
+        "tests/security/data-collection-threats.test.ts",
+        "scripts/verify-data-collection.mjs",
+        "package.json",
+        ".github/workflows/ci.yml",
+        "docs/local-development.md",
+        "contracts/data-collection-canary.schema.json",
+        "scripts/validate-data-collection-canary.ts"
+      ],
+      "acceptance": [
+        "All new behavior is enforced by named tests using fixtures and fake clocks without live targets or paid credentials.",
+        "Existing typecheck, lint, contracts, unit, Worker, database, mobile, and build checks pass or pre-existing failures are classified.",
+        "The suite demonstrates conflict, withdrawal, missing data, denied source, unsupported file, budget stop, and idempotent replay.",
+        "Stable package scripts run focused data-collection Worker tests and the complete collector suite before CI references them.",
+        "A versioned canary evidence schema rejects reports missing per-source lineage, policy, review, cost, drill, alert, rollback, or provenance-completeness evidence."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent verification reviewer"
+        ],
+        "checklist": [
+          "All new behavior is enforced by named tests using fixtures and fake clocks without live targets or paid credentials.",
+          "Existing typecheck, lint, contracts, unit, Worker, database, mobile, and build checks pass or pre-existing failures are classified.",
+          "The suite demonstrates conflict, withdrawal, missing data, denied source, unsupported file, budget stop, and idempotent replay.",
+          "Stable package scripts run focused data-collection Worker tests and the complete collector suite before CI references them.",
+          "A versioned canary evidence schema rejects reports missing per-source lineage, policy, review, cost, drill, alert, rollback, or provenance-completeness evidence.",
+          "AE-to-test matrix",
+          "full-suite output",
+          "CI dry run",
+          "pre-existing failure classification",
+          "package-script parity report",
+          "canary schema validation report"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "test architecture",
+          "Cloudflare integration tests",
+          "security fixtures",
+          "CI"
+        ]
+      },
+      "risk": "high",
+      "priority": "critical",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 2,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "graph",
+      "merge_strategy": null,
+      "children": [
+        "U-016"
+      ],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "offline verification engineer",
+        "depth": 9,
+        "forbidden_scope": [
+          "live production targets",
+          "paid inference",
+          "test-only production bypasses",
+          "weakening existing assertions"
+        ],
+        "stop_conditions": [
+          "Tests contact live targets by default.",
+          "Assertions are weakened to pass.",
+          "A requirement lacks an observable check."
+        ],
+        "escalation_conditions": [
+          "acceptance cannot be observed",
+          "fixtures require restricted copyrighted content",
+          "baseline failures obscure regression"
+        ],
+        "declared_output_artifacts": [
+          "verification script",
+          "CI jobs",
+          "machine-readable AE report",
+          "fresh full-suite logs",
+          "canary evidence schema and fixture validation"
+        ]
+      }
+    },
+    {
+      "id": "U-016",
+      "kind": "release",
+      "title": "Run the five-source canary and complete rollout, rollback, and operations",
+      "prompt": "After explicit execution authority and source approvals, deploy additive infrastructure safely, run the disabled-by-default five-source canary, review every result, verify budget and observability, and publish expansion and rollback gates without broad rollout.\n\nProcedure:\n- Re-run U-001 preflight and fresh full verification.\n- Apply migrations and queue resources to preview, then validate.\n- Run each source manually with strict record and byte caps and review every claim.\n- Exercise conflict, withdrawal, denied, unsupported, and retry drills.\n- Verify spend projection, freshness, logs, metrics, and alerts.\n- Deploy production bindings and code only with explicit authorization, then run the same bounded canary.\n- Document rollback and leave recurring broad schedules disabled pending post-canary approval.\n- Before production migration, capture and verify a fresh D1 Time Travel bookmark or supported equivalent and record its opaque identifier only in the authorized operations artifact.\n- On disposable or preview resources, rehearse restoring the prior Worker, pausing producers, preserving additive tables, and applying a forward-corrective migration without data loss.\n- Simulate the documented remote 0003 migration-history state before applying migration 0015.\n- Populate and validate the canary JSON per source with policy and content hashes, batch/job/import/canonical IDs, accepted/rejected/deferred counts, reviewer decisions, provenance completeness, costs, failures, drills, alerts, rollback references, and approval identities.",
+      "unit_ids": [
+        "U-016"
+      ],
+      "parent_owner": "Director",
+      "role": "atomic",
+      "depends_on": [
+        "U-015"
+      ],
+      "artifact_inputs": [
+        {
+          "name": "U-015->U-016::offline verification report and canary evidence schema",
+          "type": "handoff",
+          "producer": "U-015",
+          "required": true,
+          "external": false
+        },
+        {
+          "name": "external::U-016::execution preflight",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-016::five approved source policies",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-016::verification report",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        },
+        {
+          "name": "external::U-016::deployment runbook",
+          "type": "external-input",
+          "producer": null,
+          "required": true,
+          "external": true
+        }
+      ],
+      "artifact_outputs": [],
+      "read_scopes": [
+        "release artifacts",
+        "resource metrics",
+        "review backlog",
+        "budget ledger"
+      ],
+      "write_scopes": [
+        "docs/deployment.md",
+        "docs/operations/data-collection.md",
+        "docs/data-collection/pilot-report.md",
+        "CHANGELOG.md",
+        ".agent-planning/artifacts/data-collection-canary.json",
+        "scripts/rehearse-data-collection-rollback.ts"
+      ],
+      "acceptance": [
+        "Canary sources complete raw-to-reviewed-canonical flow with complete provenance and no direct canonical writes.",
+        "Conflict, withdrawal, missing information, denied source, and unsupported format drills preserve history and current views.",
+        "Rollback, pause, takedown, budget, alert, and expansion procedures are proven and broad schedules remain disabled until separately approved.",
+        "A fresh production D1 Time Travel bookmark or Cloudflare-supported equivalent is captured and verified immediately before migration 0015; absence is a production STOP.",
+        "A disposable or preview rehearsal produces machine-readable evidence for prior-Worker restore, migration pause, preserved additive tables, and forward-corrective recovery.",
+        "The five-source canary JSON validates against the U-015 schema with complete per-source policy, lineage, review, cost, drill, alert, rollback, and approval evidence."
+      ],
+      "review": {
+        "required": true,
+        "reviewers": [
+          "independent release and operations reviewer"
+        ],
+        "checklist": [
+          "Canary sources complete raw-to-reviewed-canonical flow with complete provenance and no direct canonical writes.",
+          "Conflict, withdrawal, missing information, denied source, and unsupported format drills preserve history and current views.",
+          "Rollback, pause, takedown, budget, alert, and expansion procedures are proven and broad schedules remain disabled until separately approved.",
+          "A fresh production D1 Time Travel bookmark or Cloudflare-supported equivalent is captured and verified immediately before migration 0015; absence is a production STOP.",
+          "A disposable or preview rehearsal produces machine-readable evidence for prior-Worker restore, migration pause, preserved additive tables, and forward-corrective recovery.",
+          "The five-source canary JSON validates against the U-015 schema with complete per-source policy, lineage, review, cost, drill, alert, rollback, and approval evidence.",
+          "fresh verification logs",
+          "preview and production version IDs",
+          "five-source pilot report",
+          "budget report",
+          "rollback evidence",
+          "independent review",
+          "D1 recovery checkpoint receipt",
+          "machine-readable rollback rehearsal",
+          "validated per-source canary schema report"
+        ]
+      },
+      "route": {
+        "adapter": "jcode",
+        "model": null,
+        "effort": null,
+        "spawn_mode": "inline",
+        "capabilities": [
+          "release management",
+          "Cloudflare operations",
+          "data review",
+          "incident recovery"
+        ]
+      },
+      "risk": "high",
+      "priority": "critical",
+      "cost": {
+        "tokens": null,
+        "dollars": null,
+        "minutes": null
+      },
+      "limits": {
+        "max_attempts": 1,
+        "heartbeat_seconds": 30,
+        "max_expansions": 0
+      },
+      "failure_domain": "graph",
+      "merge_strategy": null,
+      "children": [],
+      "metadata": {
+        "dispatchable": true,
+        "owner": "release and operations engineer",
+        "depth": 10,
+        "forbidden_scope": [
+          "unapproved source activation",
+          "broad catalog population",
+          "budget overage",
+          "destructive rollback",
+          "credential values"
+        ],
+        "stop_conditions": [
+          "User has not explicitly approved execution or deployment.",
+          "Any P0/P1 defect remains.",
+          "Secrets or source authority are missing.",
+          "Broad schedule would activate automatically.",
+          "A fresh production D1 recovery checkpoint cannot be captured or verified.",
+          "The preview/disposable rollback rehearsal or canary schema validation fails."
+        ],
+        "escalation_conditions": [
+          "any source policy changes",
+          "budget projection exceeds USD 50",
+          "unexplained warning or regression",
+          "rollback cannot be proven"
+        ],
+        "declared_output_artifacts": [
+          "pilot report",
+          "canary evidence JSON",
+          "deployment and rollback records",
+          "changelog entry"
+        ]
+      }
+    }
+  ]
+}

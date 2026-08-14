@@ -1,0 +1,1158 @@
+{
+  "schema_version": 1,
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "plan_version": 3,
+  "unit_id": "U-001",
+  "generated_at": "2026-07-29T03:20:00Z",
+  "overall_decision": "STOP",
+  "summary": "The deployed v0.6 dirty baseline is hashed and preserved, but execution cannot advance to U-002 because required repository, credential, Cloudflare recovery, and Jcode compatibility gates are unresolved.",
+  "repository": {
+    "branch": "master",
+    "head": "b9e7449fcf2b3edff869943007347308ab7eee67",
+    "remotes": [],
+    "remote_authority": "STOP",
+    "remote_authority_reason": "No Git remote is configured, so repository ownership, visibility, Actions billing, and workflow authority cannot be tied to this checkout.",
+    "github_cli_authentication": "authenticated_without_persisting_account_or_token",
+    "github_actions_billing_authority": "unverified",
+    "deployed_version": "0.6.0",
+    "dirty_worktree": {
+      "tracked_modified_count": 41,
+      "untracked_count": 98,
+      "manifest_entry_count": 139,
+      "manifest_sha256": "5e3d96736545f9d6d99acff2edcbe6182f5fc73609fdd6b7c10adbc0f44e6bd9",
+      "diff_stat": ".dev.vars.example                         |   4 +\n CHANGELOG.md                              |  44 +++++++\n docs/deployment.md                        |  54 +++++++--\n docs/implementation-plan.md               |   9 +-\n package-lock.json                         | 116 +++++++++++++++++-\n package.json                              |  11 +-\n scripts/validate-schema.ts                |  20 +++-\n src/App.tsx                               |  27 +++++\n src/components/ai/AiFormDraft.tsx         |  89 +-------------\n src/components/ai/AiNarrativeComposer.tsx |  43 ++-----\n src/components/layout/SiteFooter.tsx      |  27 +++--\n src/components/layout/SiteHeader.tsx      |  46 ++++++--\n src/components/ui/alert-dialog.tsx        |   5 +-\n src/components/ui/dialog.tsx              |   5 +-\n src/index.css                             |   6 +-\n src/lib/api/notifications.ts              |   4 +-\n src/lib/assistant.ts                      |  63 +++++++++-\n src/pages/Assistant.tsx                   |  21 +++-\n src/pages/Auth.tsx                        |  14 ++-\n src/pages/Builder.tsx                     |  49 ++++----\n src/pages/ForumNewThread.tsx              |  11 +-\n src/pages/Index.tsx                       | 101 ++++++++++++++--\n src/pages/Notifications.tsx               |  20 +++-\n src/pages/PartsCatalog.tsx                |  10 +-\n src/pages/ProjectDetail.tsx               |  13 ++\n src/pages/ProjectInsight.tsx              |  47 +++++++-\n src/pages/ProjectNew.tsx                  |   5 +-\n src/pages/ProjectsIndex.tsx               |   2 +-\n src/pages/RppsSpec.tsx                    |   2 +-\n src/pages/marketplace/ListingEditorD1.tsx |   9 +-\n src/pages/marketplace/WantedEditorD1.tsx  |   3 +-\n tests/worker/api.test.ts                  |  85 ++++++++++++-\n vite.config.ts                            |   8 +-\n worker-configuration.d.ts                 |  21 +++-\n worker/env.ts                             |  11 ++\n worker/index.ts                           |   9 +-\n worker/router.ts                          |  10 ++\n worker/routes/ai.ts                       | 190 +++++++++++++++++++++---------\n worker/routes/notifications.ts            |  11 +-\n worker/services/project-import.ts         | 124 +++++++++++++++++--\n wrangler.jsonc                            |  92 ++++++++++++++-\n 41 files changed, 1126 insertions(+), 315 deletions(-)",
+      "files": [
+        {
+          "path": ".dev.vars.example",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 872,
+          "sha256": "31f362d7e435bc4a1b2afd13ac1711fd2e35e94f78fd011b8c1f099c77369898"
+        },
+        {
+          "path": "CHANGELOG.md",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 18080,
+          "sha256": "1d54038a87e87aadff518987068a42cda4b2a153cdd6cf2520ba6d7bb8c09f57"
+        },
+        {
+          "path": "docs/deployment.md",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 9069,
+          "sha256": "07a5ef6784c4f09a0b668942d26c0cafedbf085030f64d994859cc019b655422"
+        },
+        {
+          "path": "docs/implementation-plan.md",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 11278,
+          "sha256": "f27f55c4bc278b16c6af8bffbff7a532b269cff2648879adf89a933ab8a9283c"
+        },
+        {
+          "path": "package-lock.json",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 538186,
+          "sha256": "517964aa0a8f50fcc4345d535d5f97711bf6f5320d20d33a75a54cd173af6979"
+        },
+        {
+          "path": "package.json",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 6345,
+          "sha256": "a90a19d8efdc33fccda3424d17193b923fba597ad358607a8d4d26536860395d"
+        },
+        {
+          "path": "scripts/validate-schema.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 3821,
+          "sha256": "c20e6625ec3cc759b5fccaf4f4c901652b02955cbf8ec0f12b7ada14154cbb7f"
+        },
+        {
+          "path": "src/App.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 6758,
+          "sha256": "5cc25f8e17dbac1cb9a4c68d83a97ee0e51591a7e7ece544ae0355a2754d7996"
+        },
+        {
+          "path": "src/components/ai/AiFormDraft.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 616,
+          "sha256": "5210f606629fe6e8ffb438dd44d74152c817174d67483613829374e73e0277fa"
+        },
+        {
+          "path": "src/components/ai/AiNarrativeComposer.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 1842,
+          "sha256": "9cae342ff1cfd761bf49a1da85ef10764349ed285b9354cbcb837ad88fd09ea1"
+        },
+        {
+          "path": "src/components/layout/SiteFooter.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 3192,
+          "sha256": "759470057e53e54d21950f629ced3654041ccbe275c9ba9def8be7a5f2a4ee6f"
+        },
+        {
+          "path": "src/components/layout/SiteHeader.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 15011,
+          "sha256": "6743b086673ea2769bd0ee8752be7ca8b6a7e788633165cc3ce92f82ca3c7a8c"
+        },
+        {
+          "path": "src/components/ui/alert-dialog.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 4363,
+          "sha256": "a74464229066fbae7a07b29264562e322b5e1813754d71e3f82f39182b5111e3"
+        },
+        {
+          "path": "src/components/ui/dialog.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 3811,
+          "sha256": "f8a60a9a0b2cab743e5b4bf462c4a7cc3a723677c76b1553e01bbec0c9234465"
+        },
+        {
+          "path": "src/index.css",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 7009,
+          "sha256": "21d70972158f9198083941b28db213e48ff05a5c6eb2cb098f17d5fce4b1ff33"
+        },
+        {
+          "path": "src/lib/api/notifications.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 1335,
+          "sha256": "c58e2e75949ca7cd4c7c17833ebf5350c503894f66c0e96aaf04740431a38d1f"
+        },
+        {
+          "path": "src/lib/assistant.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 6934,
+          "sha256": "31d4526857535ce1c15672379e02322e10ec0fc1f16e1562a2c7009d251b0695"
+        },
+        {
+          "path": "src/pages/Assistant.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 17683,
+          "sha256": "a75b744fb1edd6af35b6a840da8a98b2cfad4b6c3c7a767cd9a80933b5cf4910"
+        },
+        {
+          "path": "src/pages/Auth.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 7420,
+          "sha256": "5ad81c3cc044d165b715371ae0f5d95f96455b6ffdf763325003ae2868ff4bdf"
+        },
+        {
+          "path": "src/pages/Builder.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 44242,
+          "sha256": "128a4ad7cf6de57d95060350c772494d2e2310d66bbb288e658c323ad584cd2a"
+        },
+        {
+          "path": "src/pages/ForumNewThread.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 24201,
+          "sha256": "d014a47b41c720d8aa6aa2ccf0a33b365e8de66e59d9cc778d1a61d5745d604e"
+        },
+        {
+          "path": "src/pages/Index.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 10491,
+          "sha256": "d099df9831802fc79004116939c27de8739a8f401975d7e48ed976eec6490d1c"
+        },
+        {
+          "path": "src/pages/Notifications.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 10275,
+          "sha256": "e9d1cb0ad9f8c0117b07f21b63c8a3ec89c27a7fdba08bebd714de8aaec13465"
+        },
+        {
+          "path": "src/pages/PartsCatalog.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 32118,
+          "sha256": "f81fdaa6b45fa7ebf4369cbc3a1bd30700c02e787b1818cb85181181dd90bf19"
+        },
+        {
+          "path": "src/pages/ProjectDetail.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 53361,
+          "sha256": "871b30c1f3fc1e2f77ff8136448fa9431de2e41f0e8f25ebea397de5b8646ea6"
+        },
+        {
+          "path": "src/pages/ProjectInsight.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 18739,
+          "sha256": "5c05deb4260cfbb64ab31ebf6cbb479fc4b57f9c2323e27a0a31f6f71fcf7c88"
+        },
+        {
+          "path": "src/pages/ProjectNew.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 60435,
+          "sha256": "5885537c97c54e4319b6ff6281896255f58360457f769e4935429444c4bf6748"
+        },
+        {
+          "path": "src/pages/ProjectsIndex.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 16649,
+          "sha256": "0221f105fff6349669003914c48ce0551ba2e101f8d43dcc6b43be631e897293"
+        },
+        {
+          "path": "src/pages/RppsSpec.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 13004,
+          "sha256": "ab57f68b086f96d21f3817e5c2bb2e5ff6aa139436a946ef067e060372ecddfc"
+        },
+        {
+          "path": "src/pages/marketplace/ListingEditorD1.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 22815,
+          "sha256": "3981891eda8618e06d7da29353c8859859652d7f6d70aaa6cf7b25ebdaf4d93b"
+        },
+        {
+          "path": "src/pages/marketplace/WantedEditorD1.tsx",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 6494,
+          "sha256": "f99a71cbe5215a1b0a1919b31f4b58cd0b36178f6a2d2314aaa1e635e29bfd47"
+        },
+        {
+          "path": "tests/worker/api.test.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 89978,
+          "sha256": "09dd8302b9060f30f4d5e31177f5cbc6f8ae4fc9f2a87ad731a53ca99af8ec8e"
+        },
+        {
+          "path": "vite.config.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 819,
+          "sha256": "ebf0ddf6e0847ac00de59eae2b40c8f1129c1b9147fde88231c1d0e96770c077"
+        },
+        {
+          "path": "worker-configuration.d.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 552462,
+          "sha256": "609f3d74da2be622f4470e96e54deee6748613fed6b6f040527042df826e1972"
+        },
+        {
+          "path": "worker/env.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 1156,
+          "sha256": "8bcc59dc2e8b59c7d75abe2e364b33b58b6cc6e2fd47e34b73fd7f5e78ed5f8d"
+        },
+        {
+          "path": "worker/index.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 381,
+          "sha256": "05c444dbf61e265e0831aec153bfb82b822c55d221b0ac2b6dbbfde7f239242e"
+        },
+        {
+          "path": "worker/router.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 4551,
+          "sha256": "624480c4ef4a3d724b0b3bfdb30a7c3f8bbbba31aeff49ead49b5ddcd655b71a"
+        },
+        {
+          "path": "worker/routes/ai.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 60822,
+          "sha256": "588a28ccbe618aba807131daa8a7278889318e1880fc01de08a4a9b1d20ac861"
+        },
+        {
+          "path": "worker/routes/notifications.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 3623,
+          "sha256": "a54dc20e0eb84cd5289f27b3ddb6ada3bc6eb0db8d0a5cfe6bac2fe2f30b1ce5"
+        },
+        {
+          "path": "worker/services/project-import.ts",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 57124,
+          "sha256": "8a9641f3447cc0dda23e6decdbfee0c90ff71d10a661cd2ed96486ab0ef67855"
+        },
+        {
+          "path": "wrangler.jsonc",
+          "status": "tracked_modified",
+          "exists": true,
+          "bytes": 5632,
+          "sha256": "c6d3c3dd1b64aae6b46df6859e57142b200b42333de9552b2cd6cea5652fc751"
+        },
+        {
+          "path": ".agent-planning/artifacts/apply_review_mutation.py",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 16004,
+          "sha256": "01d9e992ed60211a7dbae9739d562473ec41faf5325328fc038bf6df10b4adb7"
+        },
+        {
+          "path": ".agent-planning/artifacts/approval-packet.md",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 10003,
+          "sha256": "fa632fa8c73f3e53184db1228278332ecf721acf8cc3d5b5298b67f893d3a8bc"
+        },
+        {
+          "path": ".agent-planning/artifacts/build_plan.py",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 22308,
+          "sha256": "4240237a95dcc8e5e792e29c45db9e7340f90f4cea86a717191b25100d6453a3"
+        },
+        {
+          "path": ".agent-planning/artifacts/build_rehearsal_packets.py",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 8813,
+          "sha256": "b6689898feae1fd1bc4f61955eebc92c79dda1e34416dfc50ac078898073f12b"
+        },
+        {
+          "path": ".agent-planning/artifacts/cold-rehearsal-defects-draft.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 34318,
+          "sha256": "c4fa9b9383cbafd76d01e35b13a858278210b64f6fe74f65d7708788de612cb4"
+        },
+        {
+          "path": ".agent-planning/artifacts/cold-rehearsal-model-selection.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 16815,
+          "sha256": "b8139055587f37d74b3f8f0e980993864f8059955a3e2b7bc0b7f000368419e6"
+        },
+        {
+          "path": ".agent-planning/artifacts/cold-rehearsal-results-draft.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 26366,
+          "sha256": "b938930c8a4802849f01b7b1b0d3ee7510eeb9d4d46b365315868c21e9d96333"
+        },
+        {
+          "path": ".agent-planning/artifacts/concept-grill-final.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 3859,
+          "sha256": "90cd32ce7a0bc5e1451670d4a833fbc2719fbb4f9157ec4396d6fda1b56974ba"
+        },
+        {
+          "path": ".agent-planning/artifacts/concept-grill-reopened.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 889,
+          "sha256": "a12e5daf2e2b57d11bfdfe4edcaf278ff8910fdfa66d9ff1e933f99544299d42"
+        },
+        {
+          "path": ".agent-planning/artifacts/concept-grill.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 4177,
+          "sha256": "2bd1b1dbdd22802940ffc57c89a7ac3034f745fc22f7bf9eaca00bfdac0f79ae"
+        },
+        {
+          "path": ".agent-planning/artifacts/context-reconstruction.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 2021,
+          "sha256": "28ef868e16761f326ce5ff28d6ab1c72af7ae109d7af2db69f466343e7416fc6"
+        },
+        {
+          "path": ".agent-planning/artifacts/delegation-graph.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 30874,
+          "sha256": "0473fb53514c5c0098ad2fbc1d7d932f0fd4cc0956f406cf0c7fb18d7e542d99"
+        },
+        {
+          "path": ".agent-planning/artifacts/final-simulation.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 7822,
+          "sha256": "95b552e81be31203f96684fb053e7fe01b9a4d2e30e12afa204aad55b46628f9"
+        },
+        {
+          "path": ".agent-planning/artifacts/implementation-units.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 108133,
+          "sha256": "99aeca4832efb035bed6d4ca61976ef8d0b4912ad09adf46b66fbc7b0aa9b797"
+        },
+        {
+          "path": ".agent-planning/artifacts/inspect_aps_events.py",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 629,
+          "sha256": "24cee07bffc5cdd349bcd2703aac3487d493a0d957aa4e629ad9fc92a47f74da"
+        },
+        {
+          "path": ".agent-planning/artifacts/intake.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 676,
+          "sha256": "813775eced408862e82eef54a202150bb944815c3e18c72b2dc1266fc7690fa6"
+        },
+        {
+          "path": ".agent-planning/artifacts/model-routing.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 14209,
+          "sha256": "5fac2d513514df9619e79d05b840d6f827a589c913127a255d02498c65346900"
+        },
+        {
+          "path": ".agent-planning/artifacts/plan-authoring.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 776,
+          "sha256": "93fbc3b0c46f9dfdcdd3a62dfe2f54f1ff8696d6f86889336af885fe0b5db5a0"
+        },
+        {
+          "path": ".agent-planning/artifacts/plan-mutation.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 4104,
+          "sha256": "21aaf747eeec86aab75c0ddf60173985ab699c32aae44240f4b23c39bfe2830a"
+        },
+        {
+          "path": ".agent-planning/artifacts/product-contract.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 678,
+          "sha256": "66d250dbcb1d5618eba012de25f3d7c63a783cadbab1e51062e8fc20fb578018"
+        },
+        {
+          "path": ".agent-planning/artifacts/rebase_rehearsal_models.py",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 2967,
+          "sha256": "3744ffaab41c12eb1624966a326c8c6e770980c9ccf114339f4575539bdb926d"
+        },
+        {
+          "path": ".agent-planning/artifacts/repository-grounding.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 6170,
+          "sha256": "ecd1ce2c9f132e26c6b35b85c2887806dfa9f2884ed9ac0c6d7a410d34e9d4c1"
+        },
+        {
+          "path": ".agent-planning/artifacts/review-graph.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 14211,
+          "sha256": "9f131e366d702246ca73c4deda41e3a80b14582e5cc16efec344d2d8bd330dc0"
+        },
+        {
+          "path": ".agent-planning/artifacts/technical-research.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 4211,
+          "sha256": "5909458480972f9a0d4161edce690b5a55818d2d32b7573786215dd08680432c"
+        },
+        {
+          "path": ".agent-planning/artifacts/validate-output.ps1",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 792,
+          "sha256": "079948af495d258855d8af4e498e1c2963c872aeca3633ccd97270058de3a6be"
+        },
+        {
+          "path": ".agent-planning/artifacts/validate_plan_draft.py",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 1479,
+          "sha256": "2dda6d897dd1aff0ae3ef5f644207286cc5f2f05604cd9769611d7f9adb40ce3"
+        },
+        {
+          "path": ".agent-planning/config.toml",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 715,
+          "sha256": "c3fe735d2750e43df633d2e1c7cc5e2ba831fd5fed50c806b75ce4c4ef2e3f01"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-001-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 8921,
+          "sha256": "bf73c710af34563e7417fdc180bd245ee4446a37b501e32e650c8c2c67238208"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-001-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 8908,
+          "sha256": "e3443926b522c4c421d4d600918ec403b9f45204752792cc953777b91d87908c"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-002-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 21007,
+          "sha256": "b749efdd67f515bd5c55ef93f19cb539cb9c4d63a848cb901a279683e51e65e2"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-002-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 20994,
+          "sha256": "7df0fd5bfbf987433a992583e6908fcee3c85040a9c438138e50e08dfd869ff7"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-003-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 12681,
+          "sha256": "344e09814539953ad1098966c4c7243f0c40f73f4619be7681ac04a41b794677"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-003-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 12668,
+          "sha256": "595782dfbb8c6b205c4604449598dd83cb22d6e710da4a6970656b134ec04e77"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-004-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11916,
+          "sha256": "7f416463589b6e880618d3320cf6bfe46e0a7314200e7f5b1e494f990c53255d"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-004-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11903,
+          "sha256": "f4848fcc69ed4196038e8d847df6920ec499b11b206ac608fbf0d25d659f5384"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-005-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11068,
+          "sha256": "914353f765c1032e162d8183934511e57e7c39358302d10ee83a712113b6d1c8"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-005-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11055,
+          "sha256": "2f082e42495f580063a76fc723808da71d56525517a6834e7dbf28a8ac2c0eea"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-006-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 13206,
+          "sha256": "67aa292f0c1012f96dca8c20146fdcee5e747c01e0e11bbd0295b23ee187e19e"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-006-pass1.result.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 16181,
+          "sha256": "d6a82f5d74b1ef28f5aed2b72726f05f0a641d3cfdf858a763a6f2205748c7a1"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-006-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 13193,
+          "sha256": "e35b812f6f97dbd7354bf9c6c2dd33a22b3e448af0512c4917b70313a111de09"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-007-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 7999,
+          "sha256": "72846dcf90b9949e3f193664edaf28d8766b6fbf2d602a6cabe3745c4e30df6a"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-008-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 10669,
+          "sha256": "388f6a7e85967b42a3e5d14100f2e536172a57e0dfe2a36a1ba91d6eff215fb9"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-009-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 9271,
+          "sha256": "90f7792e6a2b9741bc738026e4077c13f59de4763a48b1dfe6b87c12830245d4"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-009-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 9258,
+          "sha256": "53e6675e87c36a1ba3c8229e17c0ebb0de77b40044adf947d653848f4a4744ae"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-010-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 8471,
+          "sha256": "f108630f7c489f6a95cdbea54f89eea18dd0bee4580298a4a3d02f4ca26b4c1a"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-010-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 8458,
+          "sha256": "fff51517a4dbdca81cf398092b9eaee06395b43f14daa3ccc866e231d8b27474"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-011-pass1-rehearsal.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 19345,
+          "sha256": "2bdbeab6c9ed22df212ae4d931faf454734f21eb707f7653da0805bd50e05790"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-011-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 9360,
+          "sha256": "b315fc123f70f51138892a4b1721b72a6c68d7929793a9b71c29eff85cbbdff9"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-011-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 9347,
+          "sha256": "d7663675873e88b8c5c98ec1ed9651977e2cf24d122dd09da0d58a293f201330"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-012-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11192,
+          "sha256": "066a6bceaebcc15463c998a7c8c6cf70c70abff3693033ca14100680bc5c6297"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-012-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11179,
+          "sha256": "aaaa4f11d045f9f79270eab82b5cdf0061571da49506c26449189eb37c0d5c5e"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-013-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 14551,
+          "sha256": "ac798e3b919d50f2ecf6a5bfbf2d5709725bfc1bf0d5083ae8855df13a60a8c4"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-013-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 14538,
+          "sha256": "cfedca0a5d3d6bc20dc017edd2a523e9720043ce470f9403f33a1fb72725db1c"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-014-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11678,
+          "sha256": "f3e44d5562c62ecc31627b188a5c415d28361588a32d370d362d0e4afcf4c1e1"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-015-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 10380,
+          "sha256": "df5d12bcabb88798a7459bf7129fc77ef4c75f473d0fe89c1cbac9d9764a49cf"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-015-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 10367,
+          "sha256": "82bd9d6622698f2648e11dad8eea27f9cb39294400f13967110020c55fca601d"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-016-pass1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 12073,
+          "sha256": "1ce0526631321c73e3380d24902ac2da606d869054a26e62acada05dcbf89797"
+        },
+        {
+          "path": ".agent-planning/rehearsal/packets/U-016-pass2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 12060,
+          "sha256": "14c3a25cf2dea9e44920ea964f98f87d10e2c3e4ba008d8389ff52c73b5fd5d7"
+        },
+        {
+          "path": ".agent-planning/rehearsal/reports/U-004-pass2-rehearsal.md",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 3002,
+          "sha256": "e32580b9d722593d57265ce87063ff5a169e0dacf0eb79807337a2d814fbbf53"
+        },
+        {
+          "path": ".agent-planning/rehearsal/reports/U-015-pass1-rehearsal.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 20396,
+          "sha256": "28f2178dfbe95cdfda051001fe2571dc5cab46fdb51b874b2fce2d68c2b29a08"
+        },
+        {
+          "path": ".agent-planning/snapshots/P-robopartpicker-data-collection-v1/v1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 69125,
+          "sha256": "2020431e7ea829a87dc3d501be2e1b7ed10eb3b50ebacbaf5902a3a557ff23a1"
+        },
+        {
+          "path": ".agent-planning/snapshots/P-robopartpicker-data-collection-v1/v2.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 309714,
+          "sha256": "a6b3aaa72d9281a59ce74a5fa7a30cb14574dcaf0e3e2c7631cce88dd34b305f"
+        },
+        {
+          "path": ".agent-planning/snapshots/P-robopartpicker-data-collection-v1/v3.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 347179,
+          "sha256": "4bc5afc385aceee60dc71e8ea567421e52480c250af19acd2aa347b5e4b2a640"
+        },
+        {
+          "path": ".agent-planning/state.db",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 864256,
+          "sha256": "b0940795b222b2bc01248d0fa857a1a1534a06d1a1d3e45da9c22f4e65db3828"
+        },
+        {
+          "path": "Dockerfile",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 483,
+          "sha256": "f5eb89ba93b35faf4876cd2117a8c7fb1ce21242b5fbb7ffa9313594a468b317"
+        },
+        {
+          "path": "docs/plans/2026-07-28-robopartpicker-data-collection-plan.md",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 149572,
+          "sha256": "b0884f1fef62e40ce1aae45bd1eadb335fa4e2d66e9d8e3b86882ed2714ec773"
+        },
+        {
+          "path": "docs/research/technical-findings.md",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 16609,
+          "sha256": "260d60757e6bde76a9dbe42b3932576465f6dee5d65507152be47c7beb03ec0a"
+        },
+        {
+          "path": "evaluations/ai/v1.json",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 6370,
+          "sha256": "25f66fc1a6018e5ecb0c0e52060ac3a1498428b025c89a2d1820b20d76fd25ff"
+        },
+        {
+          "path": "migrations/0014_cross_product_systems.sql",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 46723,
+          "sha256": "5305dc810968414440061636584f5f17b0160d5194b2d5bc1ad18755985719e4"
+        },
+        {
+          "path": "playwright.mobile.config.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 647,
+          "sha256": "0f093f6f8e9e94dce4f057ecbf64a01327528afbc8b7e8740d3de18a18658fc9"
+        },
+        {
+          "path": "sandbox/import_processor.py",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 6439,
+          "sha256": "089cd620cfa1a25aaee08149f6c9bd21d901e9f16f620ed84e964bc1b4fbc691"
+        },
+        {
+          "path": "scripts/start-e2e-server.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 1305,
+          "sha256": "aaf65a4416529dcfa8a12aad7588a1546dfd6144d6e5d9c9f00ca6b810c6a0c8"
+        },
+        {
+          "path": "scripts/validate-ai-evaluations.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 2003,
+          "sha256": "1fb664cbbbf3bcdd115a5f2e73dc68785c40c9e32d4df2057b547b558deaf6a9"
+        },
+        {
+          "path": "src/components/ai/ContextualAiActions.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 16165,
+          "sha256": "fa7fc0e8af7715ce9d6e2827b9683e10f731a2167e980084d0463fafcac905fe"
+        },
+        {
+          "path": "src/components/common/RichTechnicalEditor.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 9854,
+          "sha256": "7c1fd31e25849d546f636d4b83f1268f0cb48e08cec8683239bd87b43fdc6de9"
+        },
+        {
+          "path": "src/components/projects/ProjectAiPanel.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 2729,
+          "sha256": "2a7171c1841594f9953b44a30208659872893f109b861454e21d87e88368d2c9"
+        },
+        {
+          "path": "src/components/projects/ProjectPeoplePanel.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 3611,
+          "sha256": "70b296c6f7ad666d5eeedee615ed49157f1732386148b2713c7a8f56b5a92863"
+        },
+        {
+          "path": "src/lib/api/systems.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 12573,
+          "sha256": "0c7b12919000b0607217f6a0b2d5320eaee888edce6c8460b33527bdd3ac9823"
+        },
+        {
+          "path": "src/lib/featured-projects.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 807,
+          "sha256": "b18652525c90cb92d7ad8a2ead22ea5b5d62248a0d6add1ab9b70a218f43939d"
+        },
+        {
+          "path": "src/pages/BomVerification.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 8576,
+          "sha256": "64f65507caafb9160771eb7a07c196aeb0595a5fe89f9dc50a9794ab3d969a85"
+        },
+        {
+          "path": "src/pages/ImportJobs.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 15309,
+          "sha256": "13ef2198425504578b9de8fe2c45f4c928e5ae244b4e3fcca9ab80893fd4c0fc"
+        },
+        {
+          "path": "src/pages/ImprovementRecords.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 3878,
+          "sha256": "4d54fb8334f3242413dc8b51d6f084756ae480ba845eca20799cb5123c4d75bb"
+        },
+        {
+          "path": "src/pages/Index.test.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 1488,
+          "sha256": "9139ab54f94910ea20b1901f62e5bebe0f2cae3668eed0ad3e65e58c3a4ce526"
+        },
+        {
+          "path": "src/pages/InformationGap.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 6453,
+          "sha256": "93fa3d029d06d22142fed437a739a3d1428cbcd61697c77fc5149e9e440bf68c"
+        },
+        {
+          "path": "src/pages/Legal.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 24257,
+          "sha256": "6d52ac9e668abc7a88eb029e75384efc64f0ac2db5820d700b8802a6e6e63bf3"
+        },
+        {
+          "path": "src/pages/Messages.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11137,
+          "sha256": "47f39cd6b51f7a603d6115d7b6fa7fe75defad3deb338d952268f48dc8bf60a0"
+        },
+        {
+          "path": "src/pages/Operations.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 8757,
+          "sha256": "23d2ab0785da6e0cd1d4544a1bc482b4b2ba58c75d4c8facbe12eb8319310694"
+        },
+        {
+          "path": "src/pages/ProjectAnalytics.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 4681,
+          "sha256": "7a3a42b33f9bbc6283fc09e37a640b92904a7562357a69945e54bedeb4db94e3"
+        },
+        {
+          "path": "src/pages/ProjectKnowledge.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 11867,
+          "sha256": "f7e82b4932f7f64721bd34e9fed51bc2687796498b739044e93fe0db4d1c4657"
+        },
+        {
+          "path": "src/pages/marketplace/PartOutEditor.tsx",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 12210,
+          "sha256": "003da390afc8733f443ade08fc4d71a9973f05ae272bea8e03f7edb329998d0c"
+        },
+        {
+          "path": "tests/e2e/mobile-primary.spec.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 12569,
+          "sha256": "aaf2a1dce0ca8504a398915cbed0a8ed01f6bb24aad9ba52679e47fde4cc6cbd"
+        },
+        {
+          "path": "worker/routes/ai-systems.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 54816,
+          "sha256": "36b7db22698d7d336b2d75fd632d6aa80032bd3a15fff966f6731cbf1192f662"
+        },
+        {
+          "path": "worker/routes/knowledge-workflows.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 54368,
+          "sha256": "aa28d0be3c0b3dd85781aac3179b98874d15d9df17e58e9956a396d75a0470f9"
+        },
+        {
+          "path": "worker/routes/marketplace-analytics-operations.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 39123,
+          "sha256": "7ea98d4f5196c70ff3f340c4095e145a1230b43c0b960dffed36a6e1d30b66a1"
+        },
+        {
+          "path": "worker/routes/messaging-safety.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 17593,
+          "sha256": "5df9dd159fe515fc677354ee3ba93a120bf8c69449562ba53afc215d96d54fad"
+        },
+        {
+          "path": "worker/routes/project-import-jobs.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 14851,
+          "sha256": "c86da0da4091b19e65bd9d2dd694a8e34213a1a4908916147d603cb9d0ea3250"
+        },
+        {
+          "path": "worker/services/ai-routing.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 20784,
+          "sha256": "1c227a0bc19bbf37484a2f1610da2c30c243757ae8b1fdede1fe313e2947bf1b"
+        },
+        {
+          "path": "worker/services/import-jobs.ts",
+          "status": "untracked",
+          "exists": true,
+          "bytes": 23570,
+          "sha256": "12f1413534d8d840eb8ed0e343f807482d7009edfb8e2ec31bc455819837f778"
+        }
+      ],
+      "updated_at": "2026-07-29T06:44:25.942741Z",
+      "update_note": "Post-planning-v6 baseline refresh. All 36 prior mismatches were planning artifacts only; zero application code changed."
+    }
+  },
+  "tooling": {
+    "rtk": {
+      "status": "GO",
+      "version": "0.42.4",
+      "telemetry_enabled": false
+    },
+    "jcode": {
+      "status": "STOP",
+      "running_version": "0.54.16-dev",
+      "required_by_plan": ">=0.55.0",
+      "reason": "The running build remains below the APS compatibility target recorded by the approved plan."
+    }
+  },
+  "fresh_checks": [
+    {
+      "command": "rtk npm run typecheck",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "command": "rtk npm run contracts:validate",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "command": "rtk git remote -v",
+      "status": "STOP",
+      "detail": "No remotes returned."
+    },
+    {
+      "command": "rtk gh auth status",
+      "status": "PASS",
+      "detail": "GitHub CLI authenticated; no account identifier or token persisted."
+    },
+    {
+      "command": "rtk npx wrangler --cwd <repo> whoami",
+      "status": "STOP",
+      "detail": "After the server reload, the non-interactive project context reports no usable Cloudflare credentials."
+    },
+    {
+      "command": "rtk npx wrangler ... d1 migrations list",
+      "status": "STOP",
+      "detail": "Remote preview and production migration history could not be read. Earlier authenticated probing also returned Cloudflare API code 7403."
+    },
+    {
+      "command": "rtk npx wrangler ... d1 time-travel info",
+      "status": "STOP",
+      "detail": "Preview and production recovery bookmarks could not be read because current non-interactive Cloudflare authentication is unavailable."
+    }
+  ],
+  "cloudflare": {
+    "configured_architecture": [
+      "Workers",
+      "D1",
+      "R2",
+      "Queues"
+    ],
+    "configured_plan_constraint": "Workers Free; Containers and Durable Objects intentionally disabled in preview and production environment blocks.",
+    "current_noninteractive_authentication": "STOP",
+    "secret_names_only": {
+      "preview_observed_before_reload": [
+        "AI_PROVIDER_KEY",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "INGESTION_SECRET"
+      ],
+      "production_observed_before_reload": [
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "INGESTION_SECRET"
+      ]
+    },
+    "secret_values_read_or_persisted": false,
+    "production_ai_state": "fail_closed",
+    "provider_key_rotation": "STOP_unverified",
+    "migration_history": {
+      "preview": "STOP_unverified",
+      "production": "STOP_unverified"
+    },
+    "remote_0003_compatibility_path": "STOP_not_documented_or_located",
+    "d1_time_travel": {
+      "platform_support": "documented_as_available_with_30_day_point_in_time_recovery_and_no_additional_cost",
+      "authoritative_source": "https://developers.cloudflare.com/d1/reference/time-travel/",
+      "preview_bookmark": "STOP_unverified",
+      "production_bookmark": "STOP_unverified",
+      "restore_attempted": false
+    }
+  },
+  "gates": [
+    {
+      "gate": "dirty baseline captured",
+      "decision": "GO",
+      "evidence": "e2ac20959dc090a1fb5ac9b4fb371749448719f0adba527ed9893489956788f7"
+    },
+    {
+      "gate": "fresh local type and contract checks",
+      "decision": "GO"
+    },
+    {
+      "gate": "Git remote and repository authority",
+      "decision": "STOP"
+    },
+    {
+      "gate": "GitHub Actions billing authority",
+      "decision": "STOP"
+    },
+    {
+      "gate": "application AI credential rotation",
+      "decision": "STOP"
+    },
+    {
+      "gate": "Cloudflare non-interactive authority",
+      "decision": "STOP"
+    },
+    {
+      "gate": "remote preview and production migration history",
+      "decision": "STOP"
+    },
+    {
+      "gate": "remote 0003 compatibility path",
+      "decision": "STOP"
+    },
+    {
+      "gate": "D1 production recovery bookmark",
+      "decision": "STOP"
+    },
+    {
+      "gate": "Jcode APS compatibility",
+      "decision": "STOP"
+    }
+  ],
+  "safety": {
+    "destructive_git_operations": false,
+    "application_files_modified_by_u001": false,
+    "migrations_modified_by_u001": false,
+    "production_resources_modified": false,
+    "deployment_performed": false,
+    "scraping_or_live_source_access": false,
+    "catalog_population": false,
+    "credential_values_printed_or_persisted": false,
+    "external_service_cost_usd": 0
+  },
+  "next_unit": {
+    "unit_id": "U-002",
+    "decision": "BLOCKED",
+    "reason": "U-001 did not achieve GO."
+  },
+  "preservation_verification": {
+    "status": "PASS",
+    "baseline_files_checked": 139,
+    "changed_preexisting_files": [],
+    "missing_preexisting_files": [],
+    "allowed_outputs_exist": true
+  },
+  "canonical_payload_sha256": "07774d3720cb8b816ed9a7801fb607b26b00918eb609bf2f8fe1335adb9e13da"
+}

@@ -1,0 +1,321 @@
+{
+  "routing_id": "R-robopartpicker-data-collection-v1",
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "created": "2026-07-29T02:14:00Z",
+  "method": "deterministic",
+  "evidence_source": "user-established model preferences (cold-rehearsal-model-selection.json)",
+  "benchmark_refresh": "STOP: LLM Stats API key rejected (HTTP 401). No cached data available. Routing uses documented model preferences from prior rehearsal runs. To refresh: get a valid key at https://llm-stats.com/developer and set LLM_STATS_API_KEY.",
+  "benchmark_refresh_attempted": "2026-07-29T02:15:02Z",
+  "benchmark_refresh_error": "auth_failed",
+  "credential_safety": "PASS: no secrets, keys, or credentials in this artifact",
+  "global_constraints": {
+    "primary_provider": "OpenRouter",
+    "preferred_models": ["deepseek/deepseek-v4-pro", "qwen/qwen-3.7-max", "z-ai/glm-5.2", "minimax/minimax-m3", "nvidia/nemotron-super-49b-v1"],
+    "reserved_model": "openai/gpt-5.6-sol",
+    "reserved_for": "final synthesis gate, approval packet assembly, hardest conflict resolution",
+    "budget_usd": 50,
+    "routing_rules": [
+      "Use OpenRouter open-source models for all implementation work",
+      "Reserve direct OpenAI for hardest synthesis/final gate only",
+      "Do not use Claude while allowance is exhausted",
+      "Do not duplicate a direct-subscription model via OpenRouter",
+      "Free models (Nemotron) for low-risk mechanical work",
+      "Strongest OSS (DeepSeek V4 Pro) for high-risk complex work"
+    ]
+  },
+  "unit_routes": [
+    {
+      "unit_id": "U-001",
+      "title": "Preserve the deployed baseline and clear execution preflights",
+      "risk": "high",
+      "complexity": "medium",
+      "capability_profile": "repository forensics, Cloudflare operations, secret hygiene",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "low",
+      "rationale": "High risk (baseline preservation) but medium complexity; DeepSeek's strong reasoning prevents destructive mistakes. Low token volume (git commands, JSON output).",
+      "estimated_tokens": {"input": 15000, "output": 5000},
+      "estimated_cost_usd": 0.03
+    },
+    {
+      "unit_id": "U-002",
+      "title": "Add provenance, source-policy, claim, observation, and lifecycle schema",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "SQLite/D1 modeling, temporal data, provenance systems",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "medium",
+      "rationale": "Highest-risk schema design; errors cascade to all downstream units. DeepSeek's strong reasoning for SQL and temporal data modeling.",
+      "estimated_tokens": {"input": 40000, "output": 15000},
+      "estimated_cost_usd": 0.12
+    },
+    {
+      "unit_id": "U-003",
+      "title": "Introduce external ingestion contract v2 with backward compatibility",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "JSON Schema, Hono/Zod, API compatibility, idempotency",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "medium",
+      "rationale": "External contract boundary affects all collectors. DeepSeek for precise schema design and backward-compat reasoning.",
+      "estimated_tokens": {"input": 35000, "output": 12000},
+      "estimated_cost_usd": 0.10
+    },
+    {
+      "unit_id": "U-004",
+      "title": "Implement immutable evidence registration and R2 snapshot storage",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "R2, streaming, content addressing, authorization",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "medium",
+      "rationale": "Security-critical streaming and R2 integration. DeepSeek for correctness in content-addressed storage and auth.",
+      "estimated_tokens": {"input": 30000, "output": 10000},
+      "estimated_cost_usd": 0.09
+    },
+    {
+      "unit_id": "U-005",
+      "title": "Add dedicated asynchronous scrape-ingestion processing",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "Cloudflare Queues, idempotent workflows, D1 checkpoints",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "medium",
+      "rationale": "Queue infrastructure with idempotency requirements. DeepSeek for durable workflow design.",
+      "estimated_tokens": {"input": 30000, "output": 10000},
+      "estimated_cost_usd": 0.09
+    },
+    {
+      "unit_id": "U-006",
+      "title": "Build the portable external collector core and policy engine",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "Python, HTTP, robots, SSRF prevention, containers, budget systems",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "high",
+      "rationale": "Core collector with security-critical SSRF and budget enforcement. DeepSeek for multi-domain Python security design.",
+      "estimated_tokens": {"input": 50000, "output": 20000},
+      "estimated_cost_usd": 0.16
+    },
+    {
+      "unit_id": "U-007",
+      "title": "Implement the official manufacturer pilot adapter",
+      "risk": "medium",
+      "complexity": "medium",
+      "capability_profile": "HTML/API extraction, robotics specifications, fixture design",
+      "primary_model": "openrouter/qwen/qwen-3.7-max",
+      "fallback_model": "openrouter/z-ai/glm-5.2",
+      "cost_tier": "medium",
+      "rationale": "Medium risk adapter; Qwen is sufficient for structured extraction. Falls back to GLM if unavailable.",
+      "estimated_tokens": {"input": 20000, "output": 8000},
+      "estimated_cost_usd": 0.06
+    },
+    {
+      "unit_id": "U-008",
+      "title": "Implement the structured distributor and volatile offer pilot adapter",
+      "risk": "medium",
+      "complexity": "medium",
+      "capability_profile": "catalog APIs, time-series offers, currency/region data",
+      "primary_model": "openrouter/qwen/qwen-3.7-max",
+      "fallback_model": "openrouter/z-ai/glm-5.2",
+      "cost_tier": "medium",
+      "rationale": "Medium risk; Qwen handles catalog API and time-series patterns well.",
+      "estimated_tokens": {"input": 20000, "output": 8000},
+      "estimated_cost_usd": 0.06
+    },
+    {
+      "unit_id": "U-009",
+      "title": "Implement bounded GitHub, ROS, BOM, and repository-file ingestion",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "GitHub REST, repository graphs, BOM parsing, path security",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "high",
+      "rationale": "High risk due to API version pinning, path security, and BOM parsing. DeepSeek for security-critical design.",
+      "estimated_tokens": {"input": 40000, "output": 15000},
+      "estimated_cost_usd": 0.12
+    },
+    {
+      "unit_id": "U-010",
+      "title": "Implement safe document and robotics-description parser pack",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "secure parsing, robotics formats, PDF/spreadsheet/XML security",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "high",
+      "rationale": "Security-critical parser design with XXE, YAML, and archive-bomb defenses. DeepSeek for vulnerability-aware design.",
+      "estimated_tokens": {"input": 45000, "output": 18000},
+      "estimated_cost_usd": 0.14
+    },
+    {
+      "unit_id": "U-011",
+      "title": "Implement normalization, identity candidates, conflicts, and lifecycle services",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "entity resolution, temporal conflicts, units/currency, property testing",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "medium",
+      "rationale": "Algorithmic entity resolution with temporal conflict modeling. DeepSeek for correctness in identity matching and lifecycle transitions.",
+      "estimated_tokens": {"input": 35000, "output": 12000},
+      "estimated_cost_usd": 0.10
+    },
+    {
+      "unit_id": "U-012",
+      "title": "Extend administrator review and provenance APIs/UI",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "Hono auth, React admin UI, audit workflows, API compatibility",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "high",
+      "rationale": "Auth-critical UI/API changes with audit trail requirements. DeepSeek for authorization design and React component architecture.",
+      "estimated_tokens": {"input": 40000, "output": 15000},
+      "estimated_cost_usd": 0.12
+    },
+    {
+      "unit_id": "U-013",
+      "title": "Add scheduling, budget enforcement, observability, and GitHub Actions workflow",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "GitHub Actions, Cloudflare Cron, cost control, observability, distributed leases",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "medium",
+      "rationale": "Budget enforcement and cron scheduling with hard USD 50 gate. DeepSeek for cost-control correctness.",
+      "estimated_tokens": {"input": 35000, "output": 12000},
+      "estimated_cost_usd": 0.10
+    },
+    {
+      "unit_id": "U-014",
+      "title": "Create the complete source coverage matrix and pilot registry",
+      "risk": "medium",
+      "complexity": "high",
+      "capability_profile": "taxonomy, source governance, schema validation",
+      "primary_model": "openrouter/qwen/qwen-3.7-max",
+      "fallback_model": "openrouter/z-ai/glm-5.2",
+      "cost_tier": "low",
+      "rationale": "Medium risk taxonomy work; large context (1,694 inventory lines) but mechanical mapping. Qwen handles large-context classification well.",
+      "estimated_tokens": {"input": 60000, "output": 10000},
+      "estimated_cost_usd": 0.08
+    },
+    {
+      "unit_id": "U-015",
+      "title": "Build the complete offline verification and compatibility suite",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "test architecture, Cloudflare integration tests, security fixtures, CI",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "high",
+      "rationale": "Integration test suite spanning all prior units. DeepSeek for comprehensive test architecture and security fixture design.",
+      "estimated_tokens": {"input": 50000, "output": 20000},
+      "estimated_cost_usd": 0.16
+    },
+    {
+      "unit_id": "U-016",
+      "title": "Run the five-source canary and complete rollout, rollback, and operations",
+      "risk": "high",
+      "complexity": "high",
+      "capability_profile": "release management, Cloudflare operations, data review, incident recovery",
+      "primary_model": "openrouter/deepseek/deepseek-v4-pro",
+      "fallback_model": "openrouter/qwen/qwen-3.7-max",
+      "cost_tier": "medium",
+      "rationale": "Release-critical operations. DeepSeek for rollout safety and rollback verification. Note: final approval gate may use reserved GPT-5.6-sol.",
+      "estimated_tokens": {"input": 30000, "output": 10000},
+      "estimated_cost_usd": 0.09
+    },
+    {
+      "unit_id": "SYNTHESIS-GATE",
+      "title": "Final synthesis gate: compile approval packet, resolve all remaining defects, verify plan/graph/event hashes",
+      "risk": "critical",
+      "complexity": "high",
+      "capability_profile": "architecture, cross-cutting synthesis, verification",
+      "primary_model": "openai/gpt-5.6-sol",
+      "fallback_model": "openrouter/deepseek/deepseek-v4-pro",
+      "cost_tier": "high",
+      "rationale": "RESERVED: This is the hardest synthesis requiring cross-cutting verification of all 16 units, all defects, and all hash chains. Direct OpenAI model as the strongest available.",
+      "estimated_tokens": {"input": 80000, "output": 25000},
+      "estimated_cost_usd": 0.35
+    }
+  ],
+  "budget_summary": {
+    "total_estimated_cost_usd": 2.02,
+    "total_estimated_input_tokens": 615000,
+    "total_estimated_output_tokens": 215000,
+    "cost_by_model": {
+      "openrouter/deepseek/deepseek-v4-pro": 1.37,
+      "openrouter/qwen/qwen-3.7-max": 0.26,
+      "openrouter/z-ai/glm-5.2": 0.04,
+      "openai/gpt-5.6-sol": 0.35
+    },
+    "budget_remaining_usd": 47.98,
+    "note": "Estimates are conservative. Actual costs may be lower with RTK-filtered outputs. All costs within USD 50 monthly cap."
+  },
+  "parallel_execution_groups": [
+    {
+      "wave": 1,
+      "units": ["U-001"],
+      "max_concurrent": 1
+    },
+    {
+      "wave": 2,
+      "units": ["U-002"],
+      "max_concurrent": 1
+    },
+    {
+      "wave": 3,
+      "units": ["U-003"],
+      "max_concurrent": 1
+    },
+    {
+      "wave": 4,
+      "units": ["U-004", "U-005", "U-011"],
+      "max_concurrent": 3
+    },
+    {
+      "wave": 5,
+      "units": ["U-006"],
+      "max_concurrent": 1
+    },
+    {
+      "wave": 6,
+      "units": ["U-007", "U-008", "U-009", "U-013", "U-014"],
+      "max_concurrent": 4
+    },
+    {
+      "wave": 7,
+      "units": ["U-010"],
+      "max_concurrent": 1,
+      "note": "Serialized after U-009 due to shared parsers/ directory"
+    },
+    {
+      "wave": 8,
+      "units": ["U-012"],
+      "max_concurrent": 1
+    },
+    {
+      "wave": 9,
+      "units": ["U-015"],
+      "max_concurrent": 1
+    },
+    {
+      "wave": 10,
+      "units": ["U-016"],
+      "max_concurrent": 1
+    },
+    {
+      "wave": "SYNTHESIS",
+      "units": ["SYNTHESIS-GATE"],
+      "max_concurrent": 1,
+      "requires_explicit_approval": true
+    }
+  ]
+}

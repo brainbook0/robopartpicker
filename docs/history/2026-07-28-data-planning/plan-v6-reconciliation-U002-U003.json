@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "scope_units": ["U-002", "U-003"],
+  "plan_version": 6,
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "plan_hash": "b0884f1fef62e40ce1aae45bd1eadb335fa4e2d66e9d8e3b86882ed2714ec773",
+  "reviewed_entry_keys": [
+    "U-002-v6-pass1:D-U002-P1-001",
+    "U-002-v6-pass1:D-U002-P1-002",
+    "U-002-v6-pass1:D-U002-P1-003",
+    "U-002-v6-pass1:D-U002-P1-004",
+    "U-003-v6-pass1:U003-P1-001",
+    "U-003-v6-pass1:U003-P1-002",
+    "U-003-v6-pass1:U003-P1-003",
+    "U-003-v6-pass2:D-001"
+  ],
+  "dispositions": [
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-002-v6-pass1.json",
+      "source_sha256": "6ab79363a7b3875302f2e3e6f8101f4037751b6444af0bffb629b6771e4909c7",
+      "defect_id": "D-U002-P1-001",
+      "unit_id": "U-002",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "Canonical plan v6 procedure step 2: 'Treat complete inventory lines 1 through 1693 and the known line-1694 provenance prefix as normative. Record the unknown truncated suffix as a deferred inventory-tail item and do not infer it.'",
+        "Canonical plan v6 stop_conditions: 'The truncated inventory suffix would need to be invented.'",
+        "Canonical plan v6 acceptance: 'The schema covers every complete canonical-inventory requirement through line 1693 plus the known line-1694 fields for exact source, date, applicable version, and extraction metadata; the unknown truncated suffix remains explicitly deferred and is never invented.'",
+        "Canonical plan v6 forward_proof: 'A coverage assertion in tests/worker/data-collection-provenance.test.ts records the truncated inventory tail as deferred instead of silently treating it as known or complete.'"
+      ],
+      "rationale": "The defect correctly identifies a risk that an executor could fabricate the truncated inventory suffix. However, the plan already addresses this at every level: procedure step 2 explicitly says to record it as deferred, the stop conditions forbid inventing it, the acceptance criteria require explicit deferral, and the forward proof requires a test assertion for the deferred tail. The defect validates rather than contradicts the plan. The plan already contains the resolution.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-002-v6-pass1.json",
+      "source_sha256": "6ab79363a7b3875302f2e3e6f8101f4037751b6444af0bffb629b6771e4909c7",
+      "defect_id": "D-U002-P1-002",
+      "unit_id": "U-002",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "reject_expected_unit_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "U-002 pass1 packet write_scope includes: 'tests/worker/data-collection-provenance.test.ts', 'tests/worker/data-collection-capacity.test.ts'",
+        "U-002 pass1 packet commands include: 'rtk npm run test:worker -- tests/worker/data-collection-provenance.test.ts tests/worker/data-collection-capacity.test.ts tests/worker/api.test.ts'",
+        "Canonical plan v6 procedure step 10: 'Update scripts/validate-schema.ts only to require migration 0015 and the eleven exact tables while retaining PRAGMA foreign_key_check and prior required tables. Update tests/worker/api.test.ts only to advance the migration-count assertion from 14 to 15.'",
+        "The rehearsaler's evidence claim that 'Packet write_scope does not include tests/worker/data-collection-provenance.test.ts or tests/worker/data-collection-capacity.test.ts' is factually incorrect; the packet explicitly includes both files in write_scope."
+      ],
+      "rationale": "The defect is rejected because the test files are the unit's expected output. The packet's write_scope explicitly includes tests/worker/data-collection-provenance.test.ts and tests/worker/data-collection-capacity.test.ts, and the commands reference them for use after creation. The rehearsaler's assertion that write_scope does not include these files is contradicted by the packet itself. The chicken-and-egg concern (files must exist to run commands, but commands create them) is the normal pattern for test-driven development: the unit creates the test files, then runs them. No plan mutation is needed.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-002-v6-pass1.json",
+      "source_sha256": "6ab79363a7b3875302f2e3e6f8101f4037751b6444af0bffb629b6771e4909c7",
+      "defect_id": "D-U002-P1-003",
+      "unit_id": "U-002",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "Canonical plan v6 procedure step 10: 'Update scripts/validate-schema.ts only to require migration 0015 and the eleven exact tables while retaining PRAGMA foreign_key_check and prior required tables. Update tests/worker/api.test.ts only to advance the migration-count assertion from 14 to 15.'",
+        "scripts/validate-schema.ts currently has expectedMigrationCount = 14",
+        "tests/worker/api.test.ts currently has expect(Number(migrations?.value)).toBe(14)",
+        "The unit's write_scope already includes both scripts/validate-schema.ts and tests/worker/api.test.ts"
+      ],
+      "rationale": "The defect correctly identifies that the migration-count assertions in scripts/validate-schema.ts and tests/worker/api.test.ts are hardcoded to 14 and must be updated to 15. The plan already addresses this in procedure step 10 and includes both files in write_scope. The defect is valid and confirms the plan's correctness. No additional plan mutation is needed beyond what the plan already specifies.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-002-v6-pass1.json",
+      "source_sha256": "6ab79363a7b3875302f2e3e6f8101f4037751b6444af0bffb629b6771e4909c7",
+      "defect_id": "D-U002-P1-004",
+      "unit_id": "U-002",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P2",
+      "evidence_citations": [
+        "Canonical plan v6 procedure step 6: 'Create docs/database/ if absent, then write the capacity report and schema ownership map.'",
+        "Canonical plan v6 write_scope: 'docs/database/data-collection-capacity.md'",
+        "The docs/database/ directory does not currently exist in the repository",
+        "The rehearsaler's consequence: 'Executor may be blocked from writing the capacity report due to missing directory, or may create unauthorized directory structure.'"
+      ],
+      "rationale": "The defect identifies a legitimate ambiguity: the plan's procedure says 'Create docs/database/ if absent' but the write_scope only lists the file, not the directory. However, the procedure step explicitly authorizes directory creation ('Create docs/database/ if absent'), so the executor has clear authorization. The risk of being blocked is minimal because the procedure explicitly says to create the directory. The severity should be downgraded from P1 to P2 because the plan already contains the resolution in the procedure text, and the only gap is that write_scope does not explicitly list the directory. A senior implementer would understand that file creation implicitly authorizes parent directory creation when the procedure says so.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-003-v6-pass1.json",
+      "source_sha256": "59b207fbc4e7175ac09e7e6e306ba2a0360681bf9b1fc51f0fe6a44b1c82040c",
+      "defect_id": "U003-P1-001",
+      "unit_id": "U-003",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-003 dependencies: ['U-002']",
+        "Canonical plan v6 execution graph: U-002 -> U-003",
+        "U-003 procedure step 8: 'Persist trace_id only through the nullable migration-0015 columns on import_jobs, import_records, import_errors, and import_audit_events'",
+        "U-003 acceptance: 'Every v2 batch carries a lowercase 32-hex trace_id and may carry a validated W3C traceparent; the same trace_id reaches staging and audit rows.'"
+      ],
+      "rationale": "The defect correctly observes that U-003 depends on U-002's migration 0015 for trace_id columns. However, this is an ordered dependency, not a plan defect. The plan explicitly declares U-002 as a dependency of U-003, and the execution graph enforces U-002 -> U-003 ordering. U-003 cannot execute until U-002 completes; this is the intended design. The rehearsaler's proposed resolution ('U-002 must complete and publish migration 0015 before U-003 execution begins') is exactly what the plan already requires. The defect is a valid observation about dependency ordering, not a plan flaw.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-003-v6-pass1.json",
+      "source_sha256": "59b207fbc4e7175ac09e7e6e306ba2a0360681bf9b1fc51f0fe6a44b1c82040c",
+      "defect_id": "U003-P1-002",
+      "unit_id": "U-003",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "U-003 acceptance criteria: 'Every accepted v1 and v2 record type maps to typed staging, claim/evidence review storage, or an explicit unsupported/deferred state'",
+        "U-003 forward_proof: 'Fixtures cover every legacy record type, including evidence, teardown, commercial_robot, and marketplace_reference, and prove none can become an unreviewable raw-only success'",
+        "ingestion.ts stagingStatements returns [] for evidence, teardown, commercial_robot, marketplace_reference",
+        "These 4 record types are in the v1 recordType enum and accepted by the current endpoint",
+        "U-003 stop condition: 'An accepted record type has no reviewable storage or explicit unsupported state.'"
+      ],
+      "rationale": "This is a genuine plan defect. Four legacy record types (evidence, teardown, commercial_robot, marketplace_reference) are accepted by the v1 endpoint but have no staging storage in the current codebase. The plan's acceptance criteria require every accepted type to map to staging, claim/evidence storage, or explicit unsupported state. The plan's forward_proof explicitly requires test coverage for these types. The plan's stop condition prohibits accepted types with no storage. The trilemma is clear: (a) add staging tables for these types in U-002 migration, (b) declare them UNSUPPORTED_RECORD_TYPE in v2 with explicit deferred state, or (c) reject them in v1 with a deprecation path. The plan must resolve this before U-003 can complete. The U-003 procedure step 'Inventory all legacy accepted record types and assign each a reviewed staging, typed-claim/evidence, or explicit unsupported/deferred path' is the correct resolution path, but the plan does not pre-declare the disposition for these four types.",
+      "exact_plan_mutation": "Add to U-003 procedure: 'For evidence, teardown, commercial_robot, and marketplace_reference record types: (a) accept them in v1 with an explicit metadata-only quarantine path that records the record with no D1 evidence spill, (b) map them to UNSUPPORTED_RECORD_TYPE in v2 with a deferred state until a separate staging schema is approved, and (c) document the deprecation timeline in docs/data-ingestion-contract.md. The v2 rejection must return stable UNSUPPORTED_RECORD_TYPE error codes.'"
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-003-v6-pass1.json",
+      "source_sha256": "59b207fbc4e7175ac09e7e6e306ba2a0360681bf9b1fc51f0fe6a44b1c82040c",
+      "defect_id": "U003-P1-003",
+      "unit_id": "U-003",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "U-003 interfaces: 'Stable v2 error codes include CANONICAL_REFERENCE_NOT_FOUND, CANONICAL_REFERENCE_TYPE_MISMATCH'",
+        "U-003 procedure: 'Validate claimed canonical dependencies by existence and entity type before staging and again before promotion'",
+        "U-003 acceptance: 'Nonexistent or entity-type-mismatched canonical references are rejected before review or promotion in both contract versions.'",
+        "Current imports.ts: resolveCanonicalReference only runs at approval time (line 333), not at ingestion time",
+        "The plan explicitly requires pre-staging validation, which is a new behavior not present in the current codebase"
+      ],
+      "rationale": "The defect correctly identifies that the plan requires canonical reference validation at ingestion time (before staging), but the current codebase only validates at approval time. This is a genuine implementation gap that the plan correctly identifies. The procedure step 'Validate claimed canonical dependencies by existence and entity type before staging and again before promotion' is the correct resolution. The defect validates rather than contradicts the plan. The plan is correct; the implementation must add a new validation function that queries canonical tables directly at ingestion time.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-003-v6-pass2.json",
+      "source_sha256": "2c82480b736a4da4ac004d13eba33b1b620de14e140837427f50c3d8364181c2",
+      "defect_id": "D-001",
+      "unit_id": "U-003",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_rehearsal_protocol_false_positive",
+      "final_severity": null,
+      "evidence_citations": [
+        "The rehearsaler's evidence: 'Packet specifies commands to execute (rtk npm run ...) but execution is forbidden by instructions: Simulate execution only...'",
+        "The rehearsaler's consequence: 'Unit cannot be completed in this cold rehearsal environment as it requires live execution and repository inspection beyond read-only scope'",
+        "The rehearsaler's proposed resolution: 'Either grant full access to read files, execute commands, and run tests; or redesign the unit to be purely theoretical'",
+        "The raw summary classification: 'likely_protocol_or_expected_output_false_positive'",
+        "The pass2 rehearsaler's confidence: 'low'",
+        "The pass2 rehearsaler's executable verdict: false, with blocking questions that are all about the rehearsal protocol, not the plan",
+        "U-002 pass2 (same protocol, different model) produced executable: true with high confidence and 6 P2/P3 defects, demonstrating the U-003 pass2 model failed to understand the cold rehearsal protocol"
+      ],
+      "rationale": "This is a clear rehearsal protocol false positive. The pass2 rehearsaler (Cohere north-mini-code:free) fundamentally misunderstood the cold rehearsal protocol. The rehearsaler's five blocking questions are all about the protocol itself ('Can the v2 schema be validated without executing the commands?', 'How can the v2 contract test be verified without running the test command?', etc.) rather than about plan defects. The rehearsaler's consequence ('Unit cannot be completed in this cold rehearsal environment') misinterprets the cold rehearsal as requiring actual execution rather than simulated analysis. The rehearsaler's confidence rating of 'low' and its single defect that is entirely about the protocol confirm this is a false positive. By contrast, U-002 pass2 (a different model, Cohere north-mini-code:free) correctly understood the protocol and produced executable: true with high confidence and six substantive P2/P3 defects. The D-001 defect is entirely about the rehearsaler's inability to execute commands, not about any plan deficiency. The defect is rejected.",
+      "exact_plan_mutation": null
+    }
+  ],
+  "accepted_packet_local_count": 5,
+  "unresolved_questions": [
+    "U003-P1-002 (evidence/teardown/commercial_robot/marketplace_reference disposition): The plan requires a disposition decision for these four legacy record types. The proposed mutation adds them as UNSUPPORTED_RECORD_TYPE in v2 with metadata-only quarantine in v1. This needs user or Director confirmation before plan mutation.",
+    "U-003 pass2: The Cohere north-mini-code:free model produced a false positive for pass2. A replacement pass2 with a different model (e.g., the same Nemotron used for pass1) should be run to get a valid independent second pass. The current pass2 report is invalid for reconciliation purposes.",
+    "D-U002-P1-004 (directory creation): Whether write_scope should explicitly list new directories or whether procedure text suffices for directory creation authorization. The plan was downgraded to P2 on the basis that the procedure already says 'Create docs/database/ if absent.'"
+  ],
+  "confidence": "medium",
+  "what_i_did_not_check": [
+    "I did not verify the actual contents of ingestion.ts to confirm the stagingStatements returns [] for the four legacy types; I relied on the rehearsaler's evidence.",
+    "I did not verify the actual line numbers in imports.ts for resolveCanonicalReference; I relied on the rehearsaler's evidence.",
+    "I did not re-read the U-003-v6-pass2.json to confirm it matches the raw summary; I read it directly.",
+    "I did not verify the exact contents of scripts/validate-schema.ts or tests/worker/api.test.ts to confirm the hardcoded migration counts; I relied on the rehearsaler's evidence.",
+    "I did not check whether the contracts/ directory exists in the repository for U-003's v2 schema output; I relied on the raw summary's evidence.",
+    "I did not verify that the U-002 pass1 packet's write_scope actually includes the test files; I read it directly and confirmed.",
+    "I did not disposition any P2 or P3 defects; the reconciliation scope is limited to P0 and P1 only.",
+    "I did not check whether the plan-v6-rerehearsal-raw-summary.json contains any additional U-002/U-003 defects beyond those in the individual reports."
+  ]
+}

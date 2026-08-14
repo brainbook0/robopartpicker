@@ -1,88 +1,164 @@
 # RoboPartPicker
 
-RoboPartPicker is the data, collaboration, sourcing, marketplace, and AI build platform for DIY robotics. This repository is a standalone TypeScript application: a React/Vite frontend and same-origin Cloudflare Worker backed by D1 and R2.
+**RoboPartPicker is a project-first platform for discovering, reproducing, modifying, and sourcing robotics designs.**
 
-The runtime does not depend on Lovable or Supabase. The original downloaded application is preserved in the sanitized `v0.1.0-lovable-baseline` Git tag and the local archive documented in `archive/README.md`.
+It aggregates open robotics projects, preserves their source and revision history, extracts or imports bills of materials, matches BOM lines to canonical components, compares supplier observations, and produces an honest procurement plan. Closed-source projects may also be listed as clearly labeled showcases, but their unavailable design files are never represented as reproducible.
 
-## Local setup
+> Product shorthand: robotics project discovery + automatic BOM generation + PCPartPicker-style sourcing + assisted procurement.
+
+Production: <https://robopartpicker-production.ludomi2502.workers.dev>
+
+## What the product is for
+
+A builder should be able to move through one coherent workflow:
+
+1. **Discover or import a robotics project.** Search the public catalog, paste a repository URL, upload project files, or create a project manually.
+2. **Identify the exact design revision.** Keep the upstream source, maintainer, license, revision, timestamps, files, and evidence attached to the project.
+3. **Compile the BOM.** Read explicit BOM files plus project documentation, robot-description files, CAD metadata, configuration, firmware references, and nested assemblies.
+4. **Resolve uncertainty.** Retain unmatched lines, missing quantities, fabricated parts, and weak matches instead of silently dropping them.
+5. **Source the full build.** Match parts to observed supplier offers and optimize across price, quantity breaks, lead time, region, condition, substitutions, and supplier consolidation.
+6. **Plan deliveries.** Show which supplier ships which lines, expected arrival windows, and the parts that block a complete build.
+7. **Request firm quotes.** Prepare normalized supplier RFQs, reconcile responses against the estimate, and require explicit user approval before any purchasing handoff.
+8. **Reproduce or fork the design.** Lock a build to an immutable release, change CAD/files/descriptions/BOMs, and preserve upstream attribution and project lineage.
+
+The robotics **project** is the main product object. The component catalog is supporting infrastructure, not the product by itself.
+
+## Product surfaces
+
+| Surface | Purpose | Current status |
+| --- | --- | --- |
+| Projects | Discover, import, publish, inspect, reproduce, and fork robotics designs | Live |
+| BOMs | Versioned bills of materials with line-level completeness and evidence | Live, corpus coverage still growing |
+| Sourcing | Whole-BOM estimated baskets with constraints, offer freshness, and unpriced lines | Live estimates |
+| Firm supplier quotes | RFQ package, supplier-response reconciliation, approval state machine | Workflow live, outbound supplier delivery remains integration-dependent |
+| Components | Canonical parts, specifications, revisions, media, offers, and alternatives | Live |
+| Build workspace | Persistent project reproductions and BOM decisions | Live |
+| Marketplace | Parts, robots, fabrication, services, and wanted requests | Live internal listings, no platform payment processing |
+| Public MCP | Read-only project, component, and supplier data for external agents | Live at `/mcp` |
+| Private MCP | OAuth-scoped user/project actions with confirmation gates | Live at `/mcp/private` |
+| AI robotics workspace | AI-native environment for designing and modifying robotics projects | **Coming soon** |
+| Automated supplier outreach | Provider-backed sending and response ingestion at scale | **Coming soon** until a delivery integration is configured |
+
+## Data honesty
+
+RoboPartPicker distinguishes facts from estimates and roadmap promises.
+
+- An observed supplier price is not a binding quote.
+- Shipping, tax, duties, stock, and delivery are shown only when supported by evidence.
+- Unpriced BOM lines remain visible and are excluded from claimed totals.
+- AI-inferred values require classification and provenance.
+- Imported project text and files are untrusted data.
+- A repository without a clear license is source-available, not automatically open source.
+- Closed-source projects are showcase records unless the owner supplies reproducible artifacts.
+- No supplier is contacted and no payment is processed without an explicit, configured integration and user approval.
+
+See [the canonical product definition](docs/product-definition.md), [product recovery coverage](docs/product-recovery-coverage.md), and [data ingestion contract](docs/data-ingestion-contract.md).
+
+## Architecture
+
+This repository contains one deployable TypeScript application:
+
+- `src/`: React and Vite frontend, typed same-origin API client, build/project UI, and portable RPPS tools.
+- `worker/`: Cloudflare Worker router, D1 repositories, R2 file access, project/BOM ingestion, sourcing, RFQ, AI provider boundary, and MCP servers.
+- `migrations/`: immutable sequential D1 schema.
+- `contracts/`: versioned machine-readable ingestion schemas.
+- `standards/rpps/`: vendor-neutral RPPS draft, examples, and conformance profiles.
+- `scripts/`: validation, ingestion, migration, enrichment, and production operations.
+- `tests/worker/`: API, authorization, D1, R2, marketplace, AI, ingestion, and MCP integration tests.
+- `docs/history/`: preserved planning artifacts from earlier RoboPartPicker repositories. Historical plans are evidence, not current requirements.
+
+Runtime stack: React, TypeScript, Vite, Hono, Better Auth, Cloudflare Workers, D1, R2, Queues, and the Model Context Protocol SDK.
+
+## Local development
 
 Requirements: Node.js 20 or newer and npm.
 
-```powershell
+```bash
 npm install
-Copy-Item .dev.vars.example .dev.vars
+cp .dev.vars.example .dev.vars
 npm run db:migrate:local
 npm run db:validate
 npm run dev
 ```
 
-Open <http://127.0.0.1:8080>. Vite and the Worker run together; `/api/*` uses locally simulated bindings. Local D1 and R2 data persists under ignored `.wrangler/` state and never accesses production by default.
+Open <http://127.0.0.1:8080>. Local Wrangler state is isolated under `.wrangler/` and does not access production by default.
 
-Replace every placeholder in `.dev.vars`. `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `INGESTION_SECRET` are required. Email, authenticated GitHub import, AI, and malware scanning providers are optional integration boundaries and report unavailable when not configured. Public GitHub imports work against the bounded unauthenticated API path; a token only raises the provider rate limit.
+Required local variables:
 
-## Commands
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `INGESTION_SECRET`
+
+Email, authenticated GitHub import, AI, malware scanning, and outbound supplier delivery are optional integration boundaries. Their absence must produce an explicit unavailable or draft-only state.
+
+## Quality and verification
+
+```bash
+npm run typecheck
+npm run lint
+npm run contracts:validate
+npm run test:unit
+npm run test:worker
+npm run build
+# or all gates
+npm run check
+```
+
+The golden semantic suite covers:
+
+- a clean open-source project with an explicit BOM
+- a messy project with unresolved BOM evidence
+- a user-created derivative with substitutions and fabricated parts
+
+A feature is not complete because a card renders. Public workflows must load real records, preserve uncertainty, cross API and storage boundaries, and fail honestly.
+
+## Important commands
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Run React and the Worker together with local bindings |
-| `npm run check` | Type-check, lint, run all tests, and build |
-| `npm run test:unit` | Run browser-independent/frontend unit tests |
-| `npm run test:worker` | Run API, auth, D1, R2, authorization, ingestion, Community, Marketplace, AI, and MCP tests |
-| `npm run rpps:validate -- manifest lock` | Validate a portable RPPS manifest/lockfile and print deterministic profile results |
-| `npm run rpps:buildability -- manifest lock` | Print the full RPPS scorecard and findings |
-| `npm run rpps:migrate -- legacy output` | Convert the legacy flat RPPS JSON record to portable YAML without discarding the source record |
-| `npm run db:migration:create -- name` | Create the next D1 migration |
-| `npm run db:migrations:list` | List local migration state |
-| `npm run db:migrate:local` | Apply migrations to Wrangler's local D1 |
+| `npm run dev` | Run the frontend and Worker together with local bindings |
+| `npm run check` | Type-check, lint, validate contracts, test, and build |
+| `npm run test:unit` | Run browser-independent and shared-domain tests |
+| `npm run test:worker` | Run Worker integration tests against isolated bindings |
+| `npm run rpps:validate -- manifest lock` | Validate an RPPS manifest and lockfile |
+| `npm run rpps:buildability -- manifest lock` | Print RPPS buildability findings |
+| `npm run db:migrate:local` | Apply migrations to local D1 |
+| `npm run db:migrate:preview` | Apply migrations to preview D1 |
 | `npm run db:migrate:remote` | Explicitly apply migrations to production D1 |
-| `npm run db:migrate:preview` | Explicitly apply migrations to the isolated Cloudflare preview D1 |
-| `npm run db:reset` | Remove only local Wrangler D1 state and apply clean migrations |
-| `npm run db:seed` | Optional: idempotently import labeled legacy demo fixtures |
-| `npm run db:seed:preview` | Optional: intentionally seed labeled fixtures into the preview D1 |
-| `npm run db:inspect` | List local tables and indexes |
-| `npm run db:export` | Export local application-table data; restore after migrations |
-| `npm run db:validate` | Check migrations, required tables, and foreign keys; an empty catalog is valid |
-| `npm run db:validate:preview` | Validate the migrated preview D1 remotely |
-| `npm run deploy:dry-run` | Build and validate the deployment bundle without publishing |
-| `npm run deploy` | Deploy after production resources, secrets, and remote migrations are ready |
-| `npm run deploy:preview` | Build and deploy the full-stack preview Worker |
+| `npm run deploy:preview` | Build and deploy the isolated preview environment |
+| `npm run deploy` | Build and deploy production |
 
-## Architecture
+## Deployment
 
-- `src/` contains the React UI, typed same-origin API client, Better Auth client, and legacy plus portable RPPS cores.
-- `worker/` contains the Worker router, middleware, domain repositories, deterministic project/import pipeline, R2 access, server-side AI provider boundary, public read-only MCP, and OAuth-protected private MCP.
-- `migrations/` is the immutable, sequential, SQLite-compatible D1 schema.
-- `scripts/` owns local seed, reset, export, and schema validation workflows.
-- `contracts/` contains versioned machine-readable external schemas.
-- `standards/rpps/` contains the vendor-neutral RPPS draft, interoperability examples, and profile semantics.
-- `tests/worker/` executes against isolated local D1 and R2 bindings.
+Cloudflare resources are defined in `wrangler.jsonc`. Production migrations and deployments are deliberately explicit.
 
-Detailed references: [backend architecture](docs/backend-architecture.md), [database schema](docs/database-schema.md), [ingestion contract](docs/data-ingestion-contract.md), [local development](docs/local-development.md), and [deployment](docs/deployment.md).
-
-## Live preview
-
-The live preview is available at <https://robopartpicker-preview.ludomi2502.workers.dev>. It is a single Cloudflare Worker serving the React SPA, same-origin `/api/*` backend, public `/mcp`, and OAuth-protected `/mcp/private`. It uses dedicated `robopartpicker-preview` D1 and `robopartpicker-preview-files` R2 resources, never the Attentify or production resources. The preview catalog is intentionally unpopulated; data ingestion, catalog population, scraping, and price tracking are separate work.
-
-## Production deployment
-
-Production creation/migration is deliberately explicit:
-
-```powershell
-npx wrangler login
-npx wrangler d1 create robopartpicker-production
-npx wrangler r2 bucket create robopartpicker-files
-# Put the D1 database ID in wrangler.jsonc, then configure secrets:
-npx wrangler secret put BETTER_AUTH_SECRET --env production
-npx wrangler secret put BETTER_AUTH_URL --env production
-npx wrangler secret put INGESTION_SECRET --env production
-npx wrangler secret put AI_PROVIDER_KEY --env production
+```bash
 npm run check
 npm run db:migrate:remote
 npm run deploy
 ```
 
-Do not seed demo fixtures into production unless that is an intentional release decision. The configured AI provider is OpenRouter with `deepseek/deepseek-v4-pro`; enter its credential only through Wrangler's interactive secret prompt. A successful deploy command is not a health check; follow `docs/deployment.md` and test the deployed URL, authentication, and private-resource isolation.
+A successful deploy is not an acceptance test. Verify the production health endpoint, public project and component APIs, a project detail page, a BOM with priced and unpriced lines, an R2-backed file, public MCP initialization/tool calls, and private-resource isolation.
 
-## Data honesty
+Detailed references:
 
-Local seed records carry `is_demo = 1` and the UI labels them as demo/fixture data. Supplier prices, marketplace listings, RFQs, email, AI, scanning, and delivery are never represented as live or completed unless a configured provider confirms the action. RPPS 0.1 is a portable draft, not an established industry standard or engineering certification.
+- [Backend architecture](docs/backend-architecture.md)
+- [Database schema](docs/database-schema.md)
+- [Deployment](docs/deployment.md)
+- [Local development](docs/local-development.md)
+- [MCP](docs/mcp.md)
+- [RPPS draft](standards/rpps/README.md)
+
+## Repository consolidation
+
+The canonical repository is `lucadominguez/robopartpicker`.
+
+The useful contents of the former planning repositories are preserved under [`docs/history`](docs/history/README.md). The legacy application baseline remains documented under [`archive`](archive/README.md). Old GitHub repositories should be archived only after the consolidated copies are verified. They should not be deleted as part of an automated cleanup.
+
+## Commercial and community contact
+
+Marketplace participants, robotics suppliers, fabrication partners, project maintainers, and advertisers can use the in-product community and marketplace surfaces. A dedicated partnership contact workflow is part of the public product cleanup and must remain clearly separate from supplier RFQs and user support.
+
+## License and status
+
+RPPS 0.1 is a portable draft, not an established industry standard or engineering certification. Project and component records retain their own upstream licenses and attribution. Consult the repository license and each upstream record before reuse.

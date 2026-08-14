@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "scope_units": ["U-013", "U-014"],
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "plan_version": 6,
+  "plan_hash": "b0884f1fef62e40ce1aae45bd1eadb335fa4e2d66e9d8e3b86882ed2714ec773",
+  "source_packets": [
+    ".agent-planning/rehearsal/packets/U-013-pass1.json",
+    ".agent-planning/rehearsal/packets/U-013-pass2.json",
+    ".agent-planning/rehearsal/packets/U-014-pass1.json"
+  ],
+  "source_reports": [
+    ".agent-planning/rehearsal/reports/U-013-v6-pass1.json",
+    ".agent-planning/rehearsal/reports/U-013-v6-pass2.json",
+    ".agent-planning/rehearsal/reports/U-014-v6-pass1.json"
+  ],
+  "raw_summary_artifact": ".agent-planning/artifacts/plan-v6-rerehearsal-raw-summary.json",
+  "review_type": "read-only APS reconciliation",
+  "scope_constraint": "No mutation of plan, no shell/tests, no network/secrets, no scraping, no deploy, no cloud/DB state mutation",
+  "reviewed_entry_keys": [
+    "U-013-v6-pass1:U013-P1-001",
+    "U-013-v6-pass1:U013-P1-002",
+    "U-013-v6-pass1:U013-P1-003",
+    "U-013-v6-pass1:U013-P1-004",
+    "U-013-v6-pass1:U013-P1-005",
+    "U-014-v6-pass1:U-014-D1",
+    "U-014-v6-pass1:U-014-D2",
+    "U-014-v6-pass1:U-014-D3"
+  ],
+  "dispositions": [
+    {
+      "key": "U-013-v6-pass1:U013-P1-001",
+      "source_report": ".agent-planning/rehearsal/reports/U-013-v6-pass1.json",
+      "defect_id": "U013-P1-001",
+      "unit_id": "U-013",
+      "source_pass": 1,
+      "reported_severity": "P0",
+      "classification": "external_u001_gate",
+      "disposition": "preserve_external_u001_stop",
+      "final_severity": "P0",
+      "evidence_citations": [
+        ".agent-planning/artifacts/execution-readiness-recheck.json: decision=STOP_BEFORE_U002",
+        ".agent-planning/artifacts/execution-readiness-recheck.json: git_remote.status=STOP",
+        ".agent-planning/artifacts/execution-readiness-recheck.json: cloudflare_authentication.status=STOP",
+        ".agent-planning/artifacts/execution-readiness-recheck.json: provider_key_rotation.status=STOP_ROTATION_UNVERIFIED",
+        ".agent-planning/artifacts/execution-readiness-recheck.json: remote_d1_history_and_recovery.status=STOP_FRESHNESS_ONLY",
+        "docs/plans/2026-07-28-robopartpicker-data-collection-plan.md line 656-659 (U-001 stop_conditions)"
+      ],
+      "rationale": "Defect references U-001 execution-readiness gates that are external prerequisites owned by U-001, not packet-local to U-013. The U-013 procedure step 1 explicitly says 'Verify every U-001 authority gate from execution-readiness-recheck.json and stop if any remains unresolved.' This is an authoritative external U-001 STOP that must be preserved as P0 until resolved; it is not a packet defect.",
+      "exact_plan_mutation": null
+    },
+    {
+      "key": "U-013-v6-pass1:U013-P1-002",
+      "source_report": ".agent-planning/rehearsal/reports/U-013-v6-pass1.json",
+      "defect_id": "U013-P1-002",
+      "unit_id": "U-013",
+      "source_pass": 1,
+      "reported_severity": "P0",
+      "classification": "dependency_artifact_gate",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "migrations/ directory listing: 0001_auth_identity_and_files.sql through 0014_cross_product_systems.sql (no 0015_data_collection_provenance.sql)",
+        "config/data-collection/ directory does not exist",
+        "collector/ directory does not exist",
+        "worker/services/scrape-ingestion-jobs.ts does not exist",
+        "worker/services/data-collection-scheduler.ts does not exist",
+        "tests/worker/data-collection-scheduler.test.ts does not exist",
+        "docs/plans/2026-07-28-robopartpicker-data-collection-plan.md line 2152 (U-013 dependencies: U-001, U-002, U-005, U-006, U-012, U-014)"
+      ],
+      "rationale": "Defect cites five required upstream producer artifacts (migration 0015 from U-002, scrape-ingestion-jobs from U-005, collector core from U-006, review trace from U-012, pilot sources from U-014). These are ordered dependencies, not U-013 output. The U-013 procedure step 1 correctly requires these to exist before implementation. U-013 cannot emit these artifacts; they belong to other units in the graph. This is not a U-013 packet defect.",
+      "exact_plan_mutation": null
+    },
+    {
+      "key": "U-013-v6-pass1:U013-P1-003",
+      "source_report": ".agent-planning/rehearsal/reports/U-013-v6-pass1.json",
+      "defect_id": "U013-P1-003",
+      "unit_id": "U-013",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "classification": "packet_local_candidate",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "U-013 packet inspect_target list: 'current wrangler observability'",
+        "U-013 procedure step: 'Verify the lowercase 32-hex trace_id remains identical across collector, ingestion, queue, review, scheduler, and audit fixtures; validate optional W3C traceparent and publish the metrics catalog.'",
+        "U-013 interface: 'versioned metrics catalog in docs/operations/data-collection-metrics.json'",
+        "wrangler.jsonc observability section: only head_sampling_rate and logs.enabled are defined; no Analytics Engine binding, no metrics namespace, no custom metrics sampling"
+      ],
+      "rationale": "The U-013 packet references 'current wrangler observability' and a metrics catalog output, but the inspected wrangler.jsonc observability baseline does not contain an Analytics Engine binding or metrics namespace. This is a packet-local defect because the inspect target assumes infrastructure that the packet itself does not include in write_scope. Accepting it triggers a plan mutation that adds the observability baseline requirement to U-013 write_scope or extends it to include wrangler.jsonc observability config beyond the cron trigger.",
+      "exact_plan_mutation": "Extend U-013 write_scope to include observability config in wrangler.jsonc (Analytics Engine binding + metrics namespace + sampling) OR add a prerequisite unit that defines the observability baseline before U-013 executes. Decision required at plan-mutation stage."
+    },
+    {
+      "key": "U-013-v6-pass1:U013-P1-004",
+      "source_report": ".agent-planning/rehearsal/reports/U-013-v6-pass1.json",
+      "defect_id": "U013-P1-004",
+      "unit_id": "U-013",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "classification": "packet_local_candidate",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "U-013 procedure step: 'Validate the exact Wrangler cron syntax against authoritative documentation for the installed Wrangler version, add YAML syntax validation, and keep secret values out of CLI arguments and logs.'",
+        "U-013 inspect_targets: 'wrangler.jsonc'",
+        "wrangler.jsonc current state: no cron triggers defined",
+        ".agent-planning/artifacts/execution-readiness-recheck.json: Wrangler version 4.112.0"
+      ],
+      "rationale": "The U-013 packet requires validating Wrangler cron syntax against authoritative documentation for the installed version but does not name the authoritative URL or the expected cron expression. Without that, the implementer must perform an external lookup at execution time, which contradicts 'repository evidence and authoritative current platform documentation outrank model memory'. Accepting the defect triggers a plan mutation that pins the authoritative Cloudflare Workers cron triggers documentation URL and the expected cron expression inside the packet or a referenced artifact.",
+      "exact_plan_mutation": "Add to U-013 packet inspect_targets or input_artifacts: the canonical Cloudflare Workers cron triggers documentation URL (e.g., https://developers.cloudflare.com/workers/configuration/cron-triggers/) and the expected cron expression for the lightweight maintenance handler (e.g., '*/5 * * * *' or hourly). Record the source snapshot reference in the plan."
+    },
+    {
+      "key": "U-013-v6-pass1:U013-P1-005",
+      "source_report": ".agent-planning/rehearsal/reports/U-013-v6-pass1.json",
+      "defect_id": "U013-P1-005",
+      "unit_id": "U-013",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "classification": "dependency_artifact_gate",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "U-013 interface: 'BudgetLedger exact reserve/commit/release/status contract over collection_budget_ledger'",
+        "U-006 write_scope: collector/src/robopartpicker_collector/core/** (Python BudgetLedger implementation)",
+        "U-002 write_scope: migrations/0015_data_collection_provenance.sql (TypeScript/D1 collection_budget_ledger schema)",
+        "docs/plans/2026-07-28-robopartpicker-data-collection-plan.md line 2210 ('Implement hard class-local gates through BudgetLedger: USD 50 per calendar month for ai_token, separately configured cloudflare_infra and paid_source_api limits')",
+        "U-006 dependencies listed in plan include U-002 (line 1333); U-013 depends on both U-002 and U-006"
+      ],
+      "rationale": "The defect cites a schema-interface drift risk between the Python BudgetLedger (U-006) and the TypeScript scheduler (U-013) over the same collection_budget_ledger (U-002). All three artifacts are owned by other units in the graph. U-013 cannot emit the canonical shared contract; U-006 owns the Python BudgetLedger surface and U-002 owns the D1 schema. This is a coordination defect across ordered dependencies, not a U-013 packet defect.",
+      "exact_plan_mutation": null
+    },
+    {
+      "key": "U-014-v6-pass1:U-014-D1",
+      "source_report": ".agent-planning/rehearsal/reports/U-014-v6-pass1.json",
+      "defect_id": "U-014-D1",
+      "unit_id": "U-014",
+      "source_pass": 1,
+      "reported_severity": "P0",
+      "classification": "dependency_artifact_gate",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "migrations/ directory listing contains only 0001_auth_identity_and_files.sql through 0014_cross_product_systems.sql",
+        "docs/plans/2026-07-28-robopartpicker-data-collection-plan.md lines 740, 755-763, 786-816: U-002 authors migration 0015 and creates source_collection_profiles and source_policy_revisions tables",
+        "U-014 packet input_artifacts include 'migrations/0015_data_collection_provenance.sql'",
+        "U-014 packet inspect_targets include 'migration 0015 source_collection_profiles and source_policy_revisions contract'",
+        "U-014 unit_contract.dependencies: ['U-002']"
+      ],
+      "rationale": "The defect cites migration 0015 as a missing input artifact. Migration 0015 is explicitly owned by U-002 (per canonical plan). U-014 is a dependent unit that lists U-002 in its dependencies and the migration in its input_artifacts. U-014 cannot emit the migration; this is an ordered dependency output that must be produced by U-002 before U-014 executes. Not a U-014 packet defect.",
+      "exact_plan_mutation": null
+    },
+    {
+      "key": "U-014-v6-pass1:U-014-D2",
+      "source_report": ".agent-planning/rehearsal/reports/U-014-v6-pass1.json",
+      "defect_id": "U-014-D2",
+      "unit_id": "U-014",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "classification": "packet_local_candidate",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "U-014 packet inspect_target: 'canonical inventory source families and product-contract source tiers used to author the adapter-family taxonomy output'",
+        "U-014 unit_contract.acceptance[0]: 'Sections 1 through 38, source tiers, canonical object types, every named source family, and every named inventory field are accounted for.'",
+        "docs/plans/2026-07-28-robopartpicker-data-collection-plan.md line 758 enumerates eight-tier source_tier enum (official_manufacturer|authorized_distributor|repository|standards_reference|community|marketplace|media|other)",
+        ".agent-planning/artifacts/product-contract.json contains only metadata (phase, status, plan_id, requirements:30, acceptance_examples:30, invariants:12, monthly_pilot_budget_usd:50); no source_tier enum"
+      ],
+      "rationale": "U-014 inspects 'product-contract source tiers' but product-contract.json does not expose the eight-tier source_tier enum. The enum is documented in the canonical plan (line 758) but not packaged into product-contract.json or any input_artifact. The mapping from inventory sections to source tiers is underspecified. This is a packet-local defect because the packet requires a referenced artifact that does not exist in scope. Accepting it triggers a plan mutation that adds an authoritative source-tier artifact.",
+      "exact_plan_mutation": "Add a new product-decision artifact (e.g., .agent-planning/artifacts/source-tier-definitions.json) that publishes the eight-tier enum and the deterministic mapping rules from canonical inventory section patterns to tiers. Reference this artifact by name in U-014 input_artifacts."
+    },
+    {
+      "key": "U-014-v6-pass1:U-014-D3",
+      "source_report": ".agent-planning/rehearsal/reports/U-014-v6-pass1.json",
+      "defect_id": "U-014-D3",
+      "unit_id": "U-014",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "classification": "dependency_artifact_gate",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "U-014 procedure step 2: 'Publish config/data-collection/adapter-families.yaml with the common adapter families and exact SourceAdapter capability flags without depending on collector implementation files.'",
+        "U-014 unit_contract.forbidden_scope: ['source adapters'] and U-014 read_scope excludes collector implementation files",
+        "U-014 unit_contract.forward_proof[3]: 'Adapter-family and pilot-source schemas validate without importing or requiring collector implementation files.'",
+        "U-006 write_scope (per docs/plans/2026-07-28-robopartpicker-data-collection-plan.md line 1360-1368): collector/src/robopartpicker_collector/core/**, including SourceAdapter protocol definition",
+        "No standalone adapter-interface document referenced in U-014 input_artifacts"
+      ],
+      "rationale": "The defect cites that the SourceAdapter capability flag enum is never enumerated and that U-014's forbidden_scope excludes reading collector implementation files (where U-006 defines the protocol). The capability flags are an ordered dependency output owned by U-006 (or a companion interface document authored alongside U-006). U-014 cannot emit the enum and cannot read the collector implementation. Not a U-014 packet defect.",
+      "exact_plan_mutation": null
+    }
+  ],
+  "accepted_packet_local_count": 3,
+  "rejected_dependency_artifact_count": 4,
+  "preserved_external_u001_stop_count": 1,
+  "downgraded_p2_or_p3_count": 0,
+  "rejected_rehearsal_protocol_false_positive_count": 0,
+  "total_p0_p1_disposed": 8,
+  "unresolved_questions": [
+    "Should U-013 observability baseline additions (Analytics Engine binding, metrics namespace) be added to U-013 write_scope or to a prerequisite unit? Plan-mutation decision required.",
+    "Which authoritative URL and which cron expression should be pinned for Wrangler 4.112.0 in U-013? Plan-mutation decision required.",
+    "Where should the eight-tier source_tier enum be packaged (extend product-contract.json, new source-tier-definitions.json artifact, or inline in plan)? Plan-mutation decision required for U-014.",
+    "Should the cross-unit SourceAdapter capability flag enum be co-authored with U-006 or placed in a standalone interface document? Plan-mutation decision required."
+  ],
+  "entries_not_disposed": {
+    "U-013-pass2": "0 defects reported (executable: true, confidence: high); no P0/P1 entries to disposition",
+    "U-013-pass1 P2 entries": "Out of P0/P1 scope; recorded in raw summary but not in this reconciliation: U013-P2-001, U013-P2-002, U013-P2-003, U013-P2-004",
+    "U-014-pass1 P2 entries": "Out of P0/P1 scope; recorded in raw summary but not in this reconciliation: U-014-D4, U-014-D5, U-014-D6",
+    "U-014-pass1 P3 entries": "Out of P0/P1 scope; recorded in raw summary but not in this reconciliation: U-014-D7"
+  },
+  "classification_cross_reference": {
+    "U013-P1-001 (P0, external_u001_gate)": "preserve_external_u001_stop",
+    "U013-P1-002 (P0, dependency_artifact_gate)": "reject_ordered_dependency_output",
+    "U013-P1-003 (P1, packet_local_candidate)": "accept_packet_local",
+    "U013-P1-004 (P1, packet_local_candidate)": "accept_packet_local",
+    "U013-P1-005 (P1, dependency_artifact_gate)": "reject_ordered_dependency_output",
+    "U-014-D1 (P0, dependency_artifact_gate)": "reject_ordered_dependency_output",
+    "U-014-D2 (P1, packet_local_candidate)": "accept_packet_local",
+    "U-014-D3 (P1, dependency_artifact_gate)": "reject_ordered_dependency_output"
+  },
+  "confidence": "high",
+  "what_i_did_not_check": [
+    "Did not execute any shell commands or tests.",
+    "Did not access network, secrets, or remote services.",
+    "Did not mutate the canonical plan, packet JSON files, or report JSON files.",
+    "Did not mutate the .agent-planning/artifacts/plan-v6-rerehearsal-raw-summary.json artifact.",
+    "Did not mutate cloud/DB state.",
+    "Did not run a Swarm coordination step (this is a read-only reconciliation, not a planning/coordination task).",
+    "Did not run lints, validators, or schema checks beyond reading source JSON files.",
+    "Did not verify whether the raw summary's top-level severity counts (P0=17, P1=26) include U-002/U-003/U-004/U-005/U-006/U-012 entries; reconciliation scope was bounded to U-013/U-014 only as instructed.",
+    "Did not re-read CHANGELOG.md or docs/implementation-plan.md (outside the cited canonical plan and the four packet/report artifacts).",
+    "Did not check for any additional hidden U-013 or U-014 v6 reports beyond the three listed (U-013-v6-pass1, U-013-v6-pass2, U-014-v6-pass1)."
+  ]
+}

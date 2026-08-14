@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "scope_units": ["U-006", "U-012"],
+  "plan_version": 6,
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "plan_hash": "b0884f1fef62e40ce1ae45bd1eadb335fa4e2d66e9d8e3b86882ed2714ec773",
+  "reviewed_entry_keys": [
+    "U-006-v6-pass1:D-U006-001",
+    "U-006-v6-pass1:D-U006-002",
+    "U-006-v6-pass1:D-U006-003",
+    "U-006-v6-pass1:D-U006-004",
+    "U-006-v6-pass1:D-U006-005",
+    "U-006-v6-pass2:D-U006-P2-P0-001",
+    "U-006-v6-pass2:D-U006-P2-P0-002",
+    "U-006-v6-pass2:D-U006-P2-P0-003",
+    "U-006-v6-pass2:D-U006-P2-P0-004",
+    "U-006-v6-pass2:D-U006-P2-P1-001",
+    "U-006-v6-pass2:D-U006-P2-P1-002",
+    "U-012-v6-pass2:D-U012-001",
+    "U-012-v6-pass2:D-U012-002",
+    "U-012-v6-pass2:D-U012-003",
+    "U-012-v6-pass2:D-U012-004",
+    "U-012-v6-pass2:D-U012-005",
+    "U-012-v6-pass2:D-U012-006"
+  ],
+  "dispositions": [
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass1.json",
+      "source_sha256": "57105327ca1d9a2a91f11cf5a618e8ea65cfbfe7bdc815ebc38168f1848a9ddd",
+      "defect_id": "D-U006-001",
+      "unit_id": "U-006",
+      "source_pass": 1,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-002 unit definition: title 'Add the provenance, source-policy, claim, observation, and lifecycle schema', write_scope includes 'migrations/0015_data_collection_provenance.sql', dependencies ['U-001'].",
+        "Canonical plan v6 U-002 interfaces confirm migration 0015 creates exactly source_collection_profiles, source_policy_revisions, source_snapshots, field_claims, temporal_observations, collection_missing_information, claim_conflict_sets, claim_conflict_members, collection_jobs, collection_budget_ledger, and collection_lifecycle_events.",
+        "Canonical plan v6 U-006 dependencies: ['U-002', 'U-003', 'U-004', 'U-014']. U-002 precedes U-006 in the execution graph.",
+        "The defect says 'U-014 is listed as a dependency and is presumably its producer' but U-014 write_scope contains only config YAMLs and source-coverage documentation, not migration 0015. Canonical plan v6 U-002 is the correct producer."
+      ],
+      "rationale": "The defect correctly identifies that migration 0015 is absent and that U-006 cannot implement BudgetLedger or SourcePolicy without it. However, migration 0015 is the ordered dependency output of U-002 (canonical plan v6 U-002.write_scope explicitly includes 'migrations/0015_data_collection_provenance.sql'). The defect's pass1 attribution to U-014 is incorrect per canonical plan v6 U-002 and U-014 write_scope; the correct producer is U-002. U-006 cannot proceed until U-002 completes and publishes migration 0015 with a recorded hash, which is exactly what the canonical plan's ordered dependencies enforce. The defect is a valid observation about a dependency gate, not a plan defect. No plan mutation is needed; the plan's ordered dependency on U-002 already enforces the resolution.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass1.json",
+      "source_sha256": "57105327ca1d9a2a91f11cf5a618e8ea65cfbfe7bdc815ebc38168f1848a9ddd",
+      "defect_id": "D-U006-002",
+      "unit_id": "U-006",
+      "source_pass": 1,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-006 procedure step 9: 'Validate v2 through the U-003-updated contracts:validate command and prove the HTTP client uses the documented endpoint, bearer credential, and idempotency contract without exposing credential values.'",
+        "Canonical plan v6 U-006 dependencies include U-003 as the v2 producer.",
+        "contracts/import-batch.v2.schema.json is absent; only contracts/import-batch.v1.schema.json exists in the repository.",
+        "docs/data-ingestion-contract.md still references v1 schema and schemaVersion 1.0."
+      ],
+      "rationale": "The defect correctly identifies that contracts/import-batch.v2.schema.json is absent and that U-006 cannot produce ExtractedRecord v2 records without it. However, the v2 schema is the ordered dependency output of U-003 (canonical plan v6 procedure step 9 explicitly says 'U-003-updated contracts:validate command'). U-006's procedure step 9 already enforces this: 'Validate v2 through the U-003-updated contracts:validate command'. U-006 cannot proceed until U-003 produces the v2 schema and updates contracts:validate. The defect is a valid dependency gate observation, not a plan defect. No plan mutation is needed.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass1.json",
+      "source_sha256": "57105327ca1d9a2a91f11cf5a618e8ea65cfbfe7bdc815ebc38168f1848a9ddd",
+      "defect_id": "D-U006-003",
+      "unit_id": "U-006",
+      "source_pass": 1,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-006 interfaces: 'SnapshotManifest conforming exactly to contracts/evidence-registration.v1.schema.json'.",
+        "Canonical plan v6 U-006 forward_proof: 'Collector evidence references register successfully against the U-004 fixture API with identical hashes, retention states, and deduplication semantics.'",
+        "Canonical plan v6 U-006 procedure step 8: 'Generate snapshot manifests and submission fixtures from the exact U-004 evidence contract and fail contract drift in tests.'",
+        "Canonical plan v6 U-006 dependencies include U-004 as the evidence contract producer."
+      ],
+      "rationale": "The defect correctly identifies that contracts/evidence-registration.v1.schema.json and contracts/examples/evidence-registration.v1.json are absent and that U-006 cannot produce conformant SnapshotManifests without them. However, both artifacts are the ordered dependency output of U-004 (canonical plan v6 procedure step 8 explicitly says 'the exact U-004 evidence contract' and U-006 dependencies include U-004). U-006 cannot proceed until U-004 produces the evidence registration contract, example, and fixture API. The defect is a valid dependency gate observation, not a plan defect. No plan mutation is needed.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass1.json",
+      "source_sha256": "57105327ca1d9a2a91f11cf5a618e8ea65cfbfe7bdc815ebc38168f1848a9ddd",
+      "defect_id": "D-U006-004",
+      "unit_id": "U-006",
+      "source_pass": 1,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-014 unit definition: title 'Create the complete source coverage matrix and pilot registry', write_scope explicitly includes 'config/data-collection/source-coverage.yaml', 'config/data-collection/pilot-sources.yaml', 'config/data-collection/field-coverage.yaml', and 'config/data-collection/adapter-families.yaml'.",
+        "Canonical plan v6 U-014 dependencies: ['U-002']. U-002 precedes U-014, and U-014 precedes U-006 in the execution graph.",
+        "The four config/data-collection YAML files do not exist in the repository."
+      ],
+      "rationale": "The defect correctly identifies that all four config/data-collection YAML files are absent and that U-006 cannot derive the SourceAdapter protocol or run against fixture sources without them. However, all four files are the ordered dependency output of U-014 (canonical plan v6 U-014.write_scope explicitly lists each of these four files). U-006 cannot proceed until U-014 completes and produces the four YAML files with recorded hashes. The defect is a valid dependency gate observation, not a plan defect. No plan mutation is needed; the canonical plan's ordered U-014 -> U-006 dependency already enforces the resolution.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass1.json",
+      "source_sha256": "57105327ca1d9a2a91f11cf5a618e8ea65cfbfe7bdc815ebc38168f1848a9ddd",
+      "defect_id": "D-U006-005",
+      "unit_id": "U-006",
+      "source_pass": 1,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "Canonical plan v6 U-006 procedure step 1: 'Before implementation, require every exact U-002/U-003/U-004/U-014 producer artifact to exist, parse, validate, and have a recorded hash; stop rather than inventing a missing dependency.'",
+        "The procedure says 'recorded hash' but the plan does not specify WHERE to record hashes (no sidecar path, no hash manifest file, no hash field in any plan section).",
+        "Canonical plan v6 U-006 procedure step 9: 'Validate v2 through the U-003-updated contracts:validate command'. The plan does not specify that scripts/validate-contracts.ts must include v2 and evidence-registration schemas (this is implicitly assigned to U-003).",
+        "Canonical plan v6 U-006 packet input_artifacts lists 11 artifacts; 8 are absent and would each need a hash record."
+      ],
+      "rationale": "The defect correctly identifies that the canonical plan's procedure step 1 requires 'a recorded hash' for every producer artifact but does not specify the hash recording mechanism (sidecar path, manifest schema, hash field) or who maintains it. This is a packet-local plan specification gap: a senior executor would not know where to write hashes, what hash algorithm to use, or how to verify recorded hashes match producer artifacts. The defect also correctly identifies that contracts:validate must be extended to include v2 and evidence-registration schemas once those schemas exist. These are real plan specification gaps that require plan mutation. The defect is valid and requires a canonical plan mutation to specify hash sidecar format, location, and algorithms, plus explicit ownership of scripts/validate-contracts.ts extension.",
+      "exact_plan_mutation": "Add to U-006 procedure: 'Step 0: Create .agent-planning/artifacts/producer-artifact-hashes.json as the canonical hash sidecar. The sidecar must contain one record per producer artifact with sha256, recorded_at, source_path, and producer_unit_id fields. When scripts/hash-artifacts.mjs (referenced as a U-006 procedure dependency) runs rtk sha256sum against each producer artifact, the output must match the sidecar entry; mismatch is a stop condition. Add to U-006 interface dependencies: scripts/validate-contracts.ts must include contracts/import-batch.v2.schema.json, contracts/examples/import-batch.v2.json, contracts/evidence-registration.v1.schema.json, and contracts/examples/evidence-registration.v1.json as validation targets once those schemas exist. The contracts:validate command must fail if any of these four schemas is referenced but absent.'"
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass2.json",
+      "source_sha256": "11f1bf9f470e589ed28a23e16e5990a705dcdd446a1ac5ff3035765285835ac0",
+      "defect_id": "D-U006-P2-P0-001",
+      "unit_id": "U-006",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-006 procedure step 9: 'Validate v2 through the U-003-updated contracts:validate command'.",
+        "U-003 is the v2 schema producer per canonical plan v6 U-006 dependencies ['U-002', 'U-003', 'U-004', 'U-014'].",
+        "contracts/import-batch.v2.schema.json is absent; only contracts/import-batch.v1.schema.json exists.",
+        "This is a duplicate of U-006-v6-pass1:D-U006-002 with identical classification."
+      ],
+      "rationale": "Duplicate of U-006-v6-pass1:D-U006-002. Same defect, same resolution: v2 schema is the ordered dependency output of U-003 per canonical plan v6 U-006 procedure step 9 ('U-003-updated contracts:validate command'). U-006 cannot proceed until U-003 produces v2 schema. This is a dependency gate, not a plan defect. No plan mutation is needed.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass2.json",
+      "source_sha256": "11f1bf9f470e589ed28a23e16e5990a705dcdd446a1ac5ff3035765285835ac0",
+      "defect_id": "D-U006-P2-P0-002",
+      "unit_id": "U-006",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-006 procedure step 8: 'Generate snapshot manifests and submission fixtures from the exact U-004 evidence contract and fail contract drift in tests.'",
+        "U-004 is the evidence contract producer per canonical plan v6 U-006 dependencies.",
+        "contracts/evidence-registration.v1.schema.json and contracts/examples/evidence-registration.v1.json are absent.",
+        "This is a duplicate of U-006-v6-pass1:D-U006-003 with identical classification."
+      ],
+      "rationale": "Duplicate of U-006-v6-pass1:D-U006-003. Same defect, same resolution: evidence-registration contract and example are the ordered dependency output of U-004 per canonical plan v6 U-006 procedure step 8 ('the exact U-004 evidence contract'). U-006 cannot proceed until U-004 produces the evidence registration contract, example, and fixture API. This is a dependency gate, not a plan defect. No plan mutation is needed.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass2.json",
+      "source_sha256": "11f1bf9f470e589ed28a23e16e5990a705dcdd446a1ac5ff3035765285835ac0",
+      "defect_id": "D-U006-P2-P0-003",
+      "unit_id": "U-006",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-014 unit definition: write_scope explicitly includes all four config/data-collection YAML files.",
+        "Canonical plan v6 U-014 dependencies: ['U-002']. U-002 precedes U-014, and U-014 precedes U-006.",
+        "All four config/data-collection YAML files and the config/ directory itself are absent.",
+        "This is a duplicate of U-006-v6-pass1:D-U006-004 with identical classification, though pass2 explicitly states 'No upstream unit in the packet dependency list (U-002, U-003, U-004, U-014) is documented as producing the config/data-collection/ config layer' which is incorrect."
+      ],
+      "rationale": "Duplicate of U-006-v6-pass1:D-U006-004. The pass2 defect's claim that 'No upstream unit in the packet dependency list is documented as producing the config/data-collection/ config layer' is incorrect: canonical plan v6 U-014.write_scope explicitly lists all four config/data-collection YAML files as U-014 output_artifacts. The dependency gate resolution is the same as U-006-v6-pass1:D-U006-004: U-006 cannot proceed until U-014 produces the four YAML files. This is a dependency gate, not a plan defect. No plan mutation is needed.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass2.json",
+      "source_sha256": "11f1bf9f470e589ed28a23e16e5990a705dcdd446a1ac5ff3035765285835ac0",
+      "defect_id": "D-U006-P2-P0-004",
+      "unit_id": "U-006",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-002 unit definition: title 'Add the provenance, source-policy, claim, observation, and lifecycle schema', write_scope explicitly includes 'migrations/0015_data_collection_provenance.sql'.",
+        "Canonical plan v6 U-002 interfaces confirm migration 0015 contains source_tier, policy_state enums and collection_budget_ledger table.",
+        "Pass2 correctly identifies 'U-002 was the expected producer of migration 0015' (pass1 incorrectly identified U-014).",
+        "U-002 precedes U-006 in the execution graph per canonical plan v6 U-006 dependencies."
+      ],
+      "rationale": "Duplicate of U-006-v6-pass1:D-U006-001 with corrected producer attribution. Pass2 correctly identifies U-002 as the migration 0015 producer (canonical plan v6 U-002.write_scope explicitly includes 'migrations/0015_data_collection_provenance.sql'), which supersedes pass1's incorrect U-014 attribution. U-006 cannot proceed until U-002 completes and publishes migration 0015 with a recorded hash. This is a dependency gate, not a plan defect. No plan mutation is needed.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass2.json",
+      "source_sha256": "11f1bf9f470e589ed28a23e16e5990a705dcdd446a1ac5ff3035765285835ac0",
+      "defect_id": "D-U006-P2-P1-001",
+      "unit_id": "U-006",
+      "source_pass": 2,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "Canonical plan v6 U-006 procedure step 1: 'Before implementation, require every exact U-002/U-003/U-004/U-014 producer artifact to exist, parse, validate, and have a recorded hash; stop rather than inventing a missing dependency.'",
+        "Canonical plan v6 U-006 input_artifacts lists config YAML files but does not map each artifact to its producer unit.",
+        "Canonical plan v6 U-014 write_scope explicitly lists all four config/data-collection YAML files, confirming U-014 is the producer.",
+        "The defect's claim 'No preceding unit is identified as producing the data-collection config layer' is contradicted by U-014 write_scope, but the canonical plan's U-006 procedure step 1 wording is ambiguous about which unit produces which artifact."
+      ],
+      "rationale": "The defect correctly identifies that the canonical plan's U-006 procedure step 1 references 'U-002/U-003/U-004/U-014 producer artifact' as a set but does not explicitly map each of the 11 input_artifacts to its producing unit. Although U-014's write_scope in the canonical plan does list all four config YAML files, the U-006 unit's procedure step 1 wording requires the executor to infer the producer mapping. This is a packet-local plan specification gap that would benefit from explicit per-artifact producer mapping in the U-006 procedure. The defect is valid and requires a canonical plan mutation to enumerate producer-unit assignments for each input artifact, even though the underlying resolution (U-014 produces YAMLs, U-002 produces migration, etc.) is correct in the canonical plan today.",
+      "exact_plan_mutation": "Add to U-006 procedure step 1: 'The 11 input_artifacts map to producer units as follows: migrations/0015_data_collection_provenance.sql and docs/database-schema.md -> U-002; contracts/import-batch.v2.schema.json -> U-003; contracts/evidence-registration.v1.schema.json and contracts/examples/evidence-registration.v1.json -> U-004; config/data-collection/source-coverage.yaml, field-coverage.yaml, pilot-sources.yaml, and adapter-families.yaml -> U-014; docs/research/technical-findings.md -> standalone research artifact; docs/data-ingestion-contract.md -> U-003 (must be updated to v2 alongside the v2 schema).'"
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-006-v6-pass2.json",
+      "source_sha256": "11f1bf9f470e589ed28a23e16e5990a705dcdd446a1ac5ff3035765285835ac0",
+      "defect_id": "D-U006-P2-P1-002",
+      "unit_id": "U-006",
+      "source_pass": 2,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P2",
+      "evidence_citations": [
+        "Canonical plan v6 U-006 packet inspect_targets includes 'docs/data-ingestion-contract.md POST /api/v1/imports/batches, Authorization Bearer, and Idempotency-Key semantics'.",
+        "docs/data-ingestion-contract.md currently references contracts/import-batch.v1.schema.json and schemaVersion 1.0 in its envelope example.",
+        "Canonical plan v6 U-006 procedure step 9: 'Validate v2 through the U-003-updated contracts:validate command'.",
+        "The canonical plan does not specify whether U-003 must also update docs/data-ingestion-contract.md or how U-006 should handle the v1-v2 doc transition during in-flight implementation."
+      ],
+      "rationale": "The defect correctly identifies that docs/data-ingestion-contract.md still references the v1 schema while the U-006 unit is expected to submit v2 batches per the packet's interfaces. This is a documentation timing concern: if U-003 produces the v2 schema and updates contracts:validate but does not update the ingestion contract document, the document will mislead future readers and may cause U-006 implementers to use the wrong schema version reference. The canonical plan's U-006 procedure step 9 implies contracts:validate is updated by U-003 but does not extend this to the contract document. This is a packet-local plan specification gap: the plan should require U-003 to update both contracts:validate and docs/data-ingestion-contract.md atomically when producing v2. The defect is valid and requires a canonical plan mutation. Severity is downgraded from P1 to P2 because the underlying v2 schema dependency is already captured as a P0 dependency gate (D-U006-002, D-U006-P2-P0-001); this defect only adds the documentation update requirement on top of an already-known dependency.",
+      "exact_plan_mutation": "Add to U-006 procedure step 9: 'U-003 must atomically update both scripts/validate-contracts.ts (to include contracts/import-batch.v2.schema.json and contracts/examples/import-batch.v2.json as validation targets) and docs/data-ingestion-contract.md (to reference the v2 schema and schemaVersion 2.0). Until U-003 ships both updates, U-006 cannot validate v2 conformance or implement the v2 HTTP client.'"
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-012-v6-pass2.json",
+      "source_sha256": "75d3bf353b27e55b9ce2d9d7dc43bb7bd4dced69540eb3de9d85ffc848c9d70b",
+      "defect_id": "D-U012-001",
+      "unit_id": "U-012",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-012 dependencies: ['U-003', 'U-004', 'U-011']. U-003 precedes U-012 in the execution graph.",
+        "Canonical plan v6 U-012 interfaces: 'administrator review detail endpoint returns record, ordered field claims, evidence metadata references, conflict sets, lifecycle events, AI provenance labels, exact proposed mutation diff, and originating lowercase 32-hex trace_id'.",
+        "U-003 v6 pass2 report: executable: false. The v2 ingestion contract, field_claim schemas, trace_id propagation, and per-record lifecycle events are not implemented.",
+        "The current v1 ingestion (imports.ts) has record-level approval with raw_payload_json and parsed_data_json but no claim-level data."
+      ],
+      "rationale": "The defect correctly identifies that the v2 claim data, trace_id, and lifecycle events required by the U-012 review detail endpoint do not exist in the current codebase. However, all of these are the ordered dependency output of U-003 per canonical plan v6 U-012 dependencies ['U-003', 'U-004', 'U-011'] and U-012 interfaces explicitly requiring v2 trace_id and lifecycle events. U-012 cannot proceed until U-003 completes v2 implementation. This is a dependency gate, not a plan defect. No plan mutation is needed; the canonical plan's ordered U-003 -> U-012 dependency already enforces the resolution.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-012-v6-pass2.json",
+      "source_sha256": "75d3bf353b27e55b9ce2d9d7dc43bb7bd4dced69540eb3de9d85ffc848c9d70b",
+      "defect_id": "D-U012-002",
+      "unit_id": "U-012",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-012 dependencies: ['U-003', 'U-004', 'U-011']. U-004 precedes U-012 in the execution graph.",
+        "Canonical plan v6 U-012 interfaces: 'previews are UTF-8 text only, at most 16 KiB per item and 64 KiB total, with binary/oversized evidence represented by authorized metadata links'.",
+        "U-004 v6 pass1 report P0 defect D-U004-001: migration 0015 for source_snapshots is missing. No v6 pass2 report exists for U-004.",
+        "No contracts/evidence-registration.v1.schema.json, worker/routes/source-evidence.ts, or collection_lifecycle_events exist."
+      ],
+      "rationale": "The defect correctly identifies that the evidence registration infrastructure (R2 content-addressed keys, source_snapshots, retention states, evidence-registration schema, source-evidence route) required by U-012's review DTO is not yet implemented. However, all of these are the ordered dependency output of U-004 per canonical plan v6 U-012 dependencies. U-012 cannot proceed until U-004 completes both rehearsal passes and produces the evidence registration infrastructure. This is a dependency gate, not a plan defect. No plan mutation is needed; the canonical plan's ordered U-004 -> U-012 dependency already enforces the resolution.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-012-v6-pass2.json",
+      "source_sha256": "75d3bf353b27e55b9ce2d9d7dc43bb7bd4dced69540eb3de9d85ffc848c9d70b",
+      "defect_id": "D-U012-003",
+      "unit_id": "U-012",
+      "source_pass": 2,
+      "reported_severity": "P0",
+      "disposition": "reject_ordered_dependency_output",
+      "final_severity": null,
+      "evidence_citations": [
+        "Canonical plan v6 U-012 dependencies: ['U-003', 'U-004', 'U-011']. U-011 precedes U-012 in the execution graph.",
+        "Canonical plan v6 U-012 interfaces: 'conflict command requires claim IDs and conflict_type, creates or attaches a U-011 claim_conflict_set, leaves the record in review, and never mutates canonical data'.",
+        "U-011 has no v6 rehearsal reports at all; no claim_conflict_set, field_claim, or collection_lifecycle_events tables exist in migrations 0001-0014.",
+        "No worker/services/data-normalization.ts, identity-resolution.ts, claim-conflicts.ts, or record-lifecycle.ts exist."
+      ],
+      "rationale": "The defect correctly identifies that U-011's claim_conflict_set, ConflictSet type, NormalizedClaim type, and LifecycleTransition type are not yet implemented and are required by U-012's conflict command and lifecycle context. However, all of these are the ordered dependency output of U-011 per canonical plan v6 U-012 dependencies. U-012 cannot proceed until U-011 is rehearsed, implemented, and produces these types and tables. This is a dependency gate, not a plan defect. No plan mutation is needed; the canonical plan's ordered U-011 -> U-012 dependency already enforces the resolution.",
+      "exact_plan_mutation": null
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-012-v6-pass2.json",
+      "source_sha256": "75d3bf353b27e55b9ce2d9d7dc43bb7bd4dced69540eb3de9d85ffc848c9d70b",
+      "defect_id": "D-U012-004",
+      "unit_id": "U-012",
+      "source_pass": 2,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "Canonical plan v6 U-012 write_scope: ['worker/routes/imports.ts', 'worker/routes/catalog.ts', 'src/lib/api/imports.ts', 'src/components/admin/data-review/**', 'src/pages/Admin.tsx', 'tests/worker/import-review-v2.test.ts', 'tests/ui/data-review.test.tsx'].",
+        "Canonical plan v6 U-012 interfaces: 'approve command accepts create|merge plus expected_diff_hash, revalidates canonical references, applies exactly the displayed mutation, and records decision/audit rows'; 'reject command'; 'defer command'; 'conflict command'.",
+        "Current worker/routes/imports.ts has record-level approve/reject (no defer, no conflict, no expected_diff_hash, no review detail endpoint).",
+        "The canonical plan does not specify endpoint paths for the new review API surface (e.g., whether to extend /admin/import-records/:id or create a new /admin/data-review/:id namespace)."
+      ],
+      "rationale": "The defect correctly identifies that the current imports.ts lacks the review detail, defer, conflict, and expected_diff_hash-on-approve endpoints required by the canonical plan v6 U-012 interfaces. The defect correctly observes that the entire review API surface must be created. However, the canonical plan does not specify the exact endpoint paths (e.g., POST /admin/data-review/:id/approve vs. PUT /admin/import-records/:id/decision), HTTP methods, or how the new endpoints integrate with existing imports.ts approve/reject routes. This is a packet-local plan specification gap: the executor would have to invent the endpoint structure, risking API compatibility regressions and inconsistent URL conventions. The defect is valid and requires a canonical plan mutation to enumerate the exact endpoint paths, HTTP methods, request/response schemas, and migration notes for retiring any superseded endpoints.",
+      "exact_plan_mutation": "Add to U-012 procedure: 'Create new endpoints at GET /admin/data-review/import-records/:recordId (review detail returning DTO with field claims, evidence metadata references, conflict sets, lifecycle events, AI provenance labels, mutation diff, trace_id), POST /admin/data-review/import-records/:recordId/approve (body: { create|merge, expected_diff_hash }), POST /admin/data-review/import-records/:recordId/reject (body: { reason }), POST /admin/data-review/import-records/:recordId/defer (body: { reason, review_after? }), POST /admin/data-review/import-records/:recordId/conflict (body: { claim_ids: [], conflict_type }). The existing record-level /admin/import-records/:id/approve and /reject endpoints remain for v1 ingestion only; v2 ingestion routes all decisions through the new /admin/data-review/* namespace. Both namespaces share the worker/routes/imports.ts module but route registrations are namespaced. Authorization: moderator read on GET, administrator mutation on POST.'"
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-012-v6-pass2.json",
+      "source_sha256": "75d3bf353b27e55b9ce2d9d7dc43bb7bd4dced69540eb3de9d85ffc848c9d70b",
+      "defect_id": "D-U012-005",
+      "unit_id": "U-012",
+      "source_pass": 2,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "Canonical plan v6 U-012 write_scope: ['worker/routes/imports.ts', 'worker/routes/catalog.ts', 'src/lib/api/imports.ts', 'src/components/admin/data-review/**', 'src/pages/Admin.tsx', 'tests/worker/import-review-v2.test.ts', 'tests/ui/data-review.test.tsx']. The canonical plan explicitly includes src/pages/Admin.tsx.",
+        "Canonical plan v6 U-012 procedure step 1: 'Extend the existing /imports/:jobId ImportJobs surface and add focused data-review components; do not create or reference a nonexistent Admin.tsx page.'",
+        "The U-012 packet procedure step 1 contradicts the canonical plan v6 write_scope which lists Admin.tsx.",
+        "No admin routes exist in src/App.tsx today."
+      ],
+      "rationale": "The defect correctly identifies an internal contradiction in the U-012 packet and the canonical plan v6: the packet's procedure step 1 forbids creating or referencing a 'nonexistent Admin.tsx page' and instead mandates extending ImportJobs.tsx, but canonical plan v6 U-012.write_scope explicitly lists 'src/pages/Admin.tsx' as a writable target. This packet-vs-canonical-plan divergence must be resolved. The canonical plan v6 write_scope is the source of truth for the plan, but the packet's procedure step 1 carries forward the older wording. The defect is valid and requires a canonical plan mutation to harmonize: either (a) keep Admin.tsx in write_scope and update the procedure step 1 wording to permit creating Admin.tsx as a focused admin review page mounted by App.tsx, or (b) retire Admin.tsx from write_scope and require all review UI to be mounted inside ImportJobs.tsx. The defect requires plan-level resolution, not just packet regeneration.",
+      "exact_plan_mutation": "Harmonize U-012 packet and canonical plan v6 procedure step 1: 'Create src/pages/Admin.tsx as a focused admin review page with route /admin/data-review (admin role required). Mount it in src/App.tsx alongside the existing /imports route. Extend ImportJobs.tsx only for the user-facing project-import flow; do not colocate admin review UI inside ImportJobs.tsx. The src/components/admin/data-review/** component tree is consumed by src/pages/Admin.tsx; ImportJobs.tsx must not import from src/components/admin/data-review/**.'"
+    },
+    {
+      "source_report": ".agent-planning/rehearsal/reports/U-012-v6-pass2.json",
+      "source_sha256": "75d3bf353b27e55b9ce2d9d7dc43bb7bd4dced69540eb3de9d85ffc848c9d70b",
+      "defect_id": "D-U012-006",
+      "unit_id": "U-012",
+      "source_pass": 2,
+      "reported_severity": "P1",
+      "disposition": "accept_packet_local",
+      "final_severity": "P1",
+      "evidence_citations": [
+        "Canonical plan v6 U-012 interfaces: 'approve command accepts create|merge plus expected_diff_hash, revalidates canonical references, applies exactly the displayed mutation, and records decision/audit rows'.",
+        "Canonical plan v6 U-012 procedure step 3: 'Compute a deterministic mutation diff and hash server-side, display it before approval, and require expected_diff_hash on approve to prevent stale review writes.'",
+        "Current worker/services/imports.ts prepareCanonical uses crypto.randomUUID() for new canonical IDs and slug generation with random suffixes.",
+        "Canonical plan v6 U-012 escalation_conditions includes 'mutation diff cannot be made deterministic'."
+      ],
+      "rationale": "The defect correctly identifies that the canonical plan v6 U-012 procedure step 3 requires a deterministic mutation diff and hash but does not specify the diff algorithm, hash algorithm, normalization strategy, or how to exclude non-deterministic elements (random UUIDs, random slugs) from the diff. The current prepareCanonical function uses crypto.randomUUID() which would cause diff mismatch even for identical data. This is a real plan specification gap: an executor cannot implement the diff deterministically without explicit guidance on what fields to include, what normalization to apply (whitespace, casing, unicode), what hash algorithm to use (sha256 of canonicalized JSON), and how to handle auto-generated IDs (exclude from diff or freeze seed). The defect is valid and requires a canonical plan mutation to specify the exact deterministic diff algorithm.",
+      "exact_plan_mutation": "Add to U-012 procedure step 3: 'The deterministic mutation diff algorithm is: (1) take a JSON snapshot of the canonical row at the exact moment the review DTO is fetched; (2) compute the prospective canonical row from the staging data using the same prepareCanonical logic but with a fixed seed for crypto.randomUUID() and slug suffix generation (seed derived from trace_id); (3) compute structural diff via RFC 6902 (JSON Patch) restricted to whitelisted canonical fields; (4) canonicalize both pre- and post-snapshots via the same JSON canonicalization scheme (sorted keys, UTF-8 NFC, no whitespace); (5) compute sha256 of the canonicalized JSON Patch document as expected_diff_hash; (6) on approve, re-fetch the current canonical row, re-compute the diff against the prospective, and reject if either the current canonical row or the prospective canonical row has changed (stale-diff rejection). Random IDs and slugs are excluded from the diff payload but the seeded pre-computed values are persisted on the import_records row for replay.'"
+    }
+  ],
+  "accepted_packet_local_count": 6,
+  "unresolved_questions": [
+    "U-006 D-U006-005 (hash sidecar): The plan must specify the hash sidecar file path, JSON schema, hash algorithm, and which unit maintains it. The proposed mutation adds .agent-planning/artifacts/producer-artifact-hashes.json but the user/Director should confirm whether the .agent-planning directory is the appropriate location or whether a hash sidecar should live at the repository root (e.g., .producer-artifact-hashes.json).",
+    "U-006 D-U006-P2-P1-001 (producer mapping): The plan should explicitly map each input artifact to its producer unit. The proposed mutation lists the mapping but the user/Director should confirm that U-014 is the sole producer of all four config/data-collection YAML files (no split between U-002 and U-014) and that the technical-findings.md is correctly classified as a standalone research artifact.",
+    "U-006 D-U006-P2-P1-002 (ingestion contract doc): Whether U-003 should atomically update docs/data-ingestion-contract.md alongside contracts:validate, or whether the doc update should be a separate task assigned to documentation work.",
+    "U-012 D-U012-005 (Admin.tsx vs ImportJobs.tsx): The U-012 packet and canonical plan v6 disagree about which page hosts the admin review UI. The proposed mutation aligns both to Admin.tsx, but the user/Director should confirm whether the older ImportJobs.tsx mounting was deliberate or a packet staleness.",
+    "U-012 D-U012-006 (mutation diff algorithm): The proposed mutation specifies a deterministic diff algorithm using RFC 6902 JSON Patch and seeded UUIDs. The user/Director should confirm whether RFC 6902 is the preferred diff format or whether the team prefers a custom field-by-field diff representation. Also confirm whether the seeded UUID persistence on import_records is acceptable or whether the diff must use field-level projection that excludes ID fields entirely.",
+    "U-012 v6 pass1 (executable: true, 3 P2/P3 defects): The pass1 rehearsaler rated U-012 as executable with three P2/P3 packet-local defects (U-012-D1 claim_conflict_set reference, U-012-D2 imports.ts vs systems.ts migration, U-012-D3 data-review component enumeration). These defects were out of scope for the P0/P1 reconciliation and are not dispositioned here; they should be reviewed separately by the plan author."
+  ],
+  "confidence": "high",
+  "what_i_did_not_check": [
+    "I did not verify the actual content of worker/routes/imports.ts to confirm line numbers (141-184, 186-199, 226-331) cited by the U-012 pass2 defect D-U012-004 and D-U012-006; I relied on the rehearsaler's evidence.",
+    "I did not verify whether scripts/validate-contracts.ts currently includes v2 or evidence-registration schemas; the U-006 pass1 defect D-U006-005 claims it does not, and I treated this as authoritative.",
+    "I did not inspect contracts/evidence-registration.v1.schema.json, worker/routes/source-evidence.ts, or collection_lifecycle_events in the codebase because they are confirmed absent by both the U-006 and U-012 rehearsalers.",
+    "I did not verify the actual SHA256 hash of the canonical plan v6 file (.agent-planning/snapshots/P-robopartpicker-data-collection-v1/v6.json) against the plan_hash field; I used the same plan_hash as the existing reconciliation artifact (.agent-planning/artifacts/plan-v6-reconciliation-U002-U003.json) for consistency.",
+    "I did not read the raw rehearsal packets' (U-006-pass1.json, U-006-pass2.json, U-012-pass1.json, U-012-pass2.json) write_scope details beyond what is in the canonical plan v6; the packets and the canonical plan v6 are slightly different (e.g., U-012 packet write_scope says ImportJobs.tsx while canonical plan v6 write_scope says Admin.tsx), and I prioritized the canonical plan v6 as the source of truth.",
+    "I did not disposition any P2 or P3 defects; the reconciliation scope is limited to P0 and P1 only, per the task instructions. U-012 pass1 had three P2/P3 defects (U-012-D1, U-012-D2, U-012-D3) and U-012 pass2 had two P2 defects (D-U012-007, D-U012-008) and U-006 pass2 had one P2 defect (D-U006-P2-P2-001) that are not addressed here.",
+    "I did not verify whether the U-001 unit has external stop conditions that intersect with U-006 or U-012 defects (preserve_external_u001_stop disposition was not used).",
+    "I did not check whether the U-011 unit (referenced by U-012 defects D-U012-003) has any v6 rehearsal reports in the reports directory; the U-012 pass2 defect claims none exist, and I treated this as authoritative.",
+    "I did not verify that scripts/hash-artifacts.mjs (referenced in the proposed D-U006-005 mutation) exists in the repository or is planned; the mutation references a script that may not exist yet, and the user/Director should confirm whether to add it as a new script or use an existing tool.",
+    "I did not inspect the packet-vs-plan discrepancy for U-006 packet write_scope against canonical plan v6 write_scope; U-006 packet and canonical plan v6 U-006 write_scope both list collector/, .dockerignore, etc. and appear to match."
+  ]
+}

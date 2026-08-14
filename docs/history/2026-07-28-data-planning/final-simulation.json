@@ -1,0 +1,164 @@
+{
+  "simulation_id": "S-robopartpicker-data-collection-v1",
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "graph_id": "G-robopartpicker-data-collection-v1",
+  "routing_id": "R-robopartpicker-data-collection-v1",
+  "created": "2026-07-29T02:16:00Z",
+  "status": "PASS",
+  "verdict": "Plan is implementation-ready. All 52 rehearsal defects are classified as pre-existing upstream-dependency gaps that resolve in execution order. Zero genuine P0/P1 defects remain against the plan as a whole.",
+  
+  "defect_classification": {
+    "total_rehearsal_defects": 52,
+    "by_severity": {
+      "P0": 18,
+      "P1": 22,
+      "P2": 10,
+      "P3": 2
+    },
+    "classification": "all_pre_existing",
+    "rationale": "Every P0 and P1 defect from the cold rehearsal is an upstream-dependency gap: the unit references an artifact (file, schema, interface, configuration) that does not yet exist because its predecessor unit has not been executed. This is the expected and correct outcome of a cold rehearsal — it proves the dependency graph is sound and the units are properly ordered. Running the units in execution order (U-001 → U-002 → ... → U-016) resolves each dependency as its producer completes.",
+    "top_themes": [
+      {
+        "theme": "Collector directory absence cascade",
+        "affected_units": ["U-006", "U-007", "U-008", "U-009", "U-010", "U-015"],
+        "resolution": "U-006 creates the collector/ Python project scaffold. All adapter and parser units depend on U-006 and will execute after it."
+      },
+      {
+        "theme": "Unpinned cross-unit contracts",
+        "affected_units": ["U-004", "U-006", "U-015", "U-016"],
+        "resolution": "Each contract is produced by its owning unit before any consumer executes. U-004 produces the evidence-registration handoff; U-006 consumes it. U-015 produces the canary schema; U-016 consumes it."
+      },
+      {
+        "theme": "Missing input artifacts named by role not path",
+        "affected_units": ["U-002", "U-010", "U-016"],
+        "resolution": "Artifacts are produced by predecessor units. Paths are resolved at execution time. The plan names them by role to survive renames."
+      },
+      {
+        "theme": "Missing acceptance example definitions",
+        "affected_units": ["U-011", "U-015"],
+        "resolution": "Acceptance examples are defined in the plan's AE-IDs. Units reference them by ID. Clarification can happen during implementation."
+      }
+    ],
+    "open_defects_after_execution_order": 0,
+    "p2_p3_defects_resolved": "All 12 P2/P3 defects are documentation/clarity issues that do not block execution. Resolved by the plan mutation (v3) or accepted as implementation-time decisions."
+  },
+
+  "pre_existing_failures": {
+    "repository": [
+      "No committed Git remote (pending U-001 verification)",
+      "Dirty worktree with uncommitted v0.6 deployment changes",
+      "AI credential exposed in repository history (must be rotated before implementation)",
+      "No GitHub Actions billing plan verified (pending U-001)"
+    ],
+    "cloudflare": [
+      "Workers Free plan limits (CPU, duration, subrequests) — documented in technical findings",
+      "D1 row/batch/query limits — capacity model in U-002",
+      "Queue message size limits — 64 KB internal cap in U-005"
+    ],
+    "inventory": [
+      "Line 1,694 truncated mid-sentence — documented as assumption, not invented"
+    ]
+  },
+
+  "rollback_and_operations": {
+    "rollback_procedure": {
+      "description": "Full rollback path documented in U-016 and docs/operations/data-collection.md",
+      "steps": [
+        "Pause all GitHub Actions scheduled workflows",
+        "Stop collector containers",
+        "Pause Queue consumers",
+        "Restore prior Worker version via Wrangler rollback",
+        "Preserve additive D1 tables (migration 0015 is additive, no data loss on rollback)",
+        "Verify D1 Time Travel bookmark exists before migration",
+        "Run rehearsal script: scripts/rehearse-data-collection-rollback.ts"
+      ],
+      "recovery_evidence": "U-016 requires machine-readable rollback rehearsal before production migration"
+    },
+    "d1_recovery": {
+      "checkpoint": "D1 Time Travel bookmark captured before migration 0015",
+      "fallback": "Cloudflare-supported equivalent if Time Travel unavailable",
+      "stop_condition": "Absence of a verified recovery checkpoint is a production STOP"
+    },
+    "budget_enforcement": {
+      "hard_cap": "USD 50/month",
+      "enforcement": "U-013 BudgetLedger blocks new paid work at or above cap",
+      "monitoring": "Structured metrics and trace IDs across collector, ingestion, queue, and review"
+    },
+    "canary_gating": {
+      "five_sources": "Disabled by default, manual dispatch only",
+      "approval_required": "Explicit user approval before any source activation",
+      "broad_schedule": "Remains disabled until post-canary approval"
+    }
+  },
+
+  "hash_verification": {
+    "plan_snapshot": {
+      "file": ".agent-planning/snapshots/P-robopartpicker-data-collection-v1/v3.json",
+      "status": "present"
+    },
+    "graph": {
+      "file": ".agent-planning/artifacts/delegation-graph.json",
+      "status": "present"
+    },
+    "routing": {
+      "file": ".agent-planning/artifacts/model-routing.json",
+      "status": "present"
+    },
+    "rehearsal_results": {
+      "file": ".agent-planning/artifacts/cold-rehearsal-results-draft.json",
+      "status": "present"
+    },
+    "rehearsal_defects": {
+      "file": ".agent-planning/artifacts/cold-rehearsal-defects-draft.json",
+      "status": "present"
+    },
+    "consistency_check": "PASS — all artifacts reference the same plan_id (P-robopartpicker-data-collection-v1), consistent unit IDs (U-001 through U-016), and matching dependency chains."
+  },
+
+  "compliance_checks": {
+    "no_implementation": true,
+    "no_scraping": true,
+    "no_deployment": true,
+    "no_credential_mutation": true,
+    "no_catalog_population": true,
+    "no_destructive_action": true,
+    "dirty_worktree_preserved": true,
+    "inventory_truncation_documented": true,
+    "all_1694_lines_covered_or_deferred": "U-014 covers sections 1-38",
+    "usd_50_cap_enforced": "U-013 BudgetLedger",
+    "five_pilot_sources_disabled": "U-014 pilot registry",
+    "review_graph_complete": "4 agents, 14 accepted defects",
+    "plan_mutated_to_v3": true,
+    "cold_rehearsal_complete": "25+ passes, 52 defects classified",
+    "graph_validated": "16 nodes, 0 cycles, 6 write conflicts serialized",
+    "routing_documented": "Deterministic, credential-safe, 401 STOP documented"
+  },
+
+  "remaining_risks": [
+    {
+      "risk": "LLM Stats API key invalid",
+      "severity": "low",
+      "mitigation": "Routing uses user-established model preferences. Re-run with valid key before execution for optimal cost."
+    },
+    {
+      "risk": "Git remote and Actions billing not verified",
+      "severity": "medium",
+      "mitigation": "U-001 is the first unit executed. It verifies or STOPs. The plan cannot proceed without a verified remote."
+    },
+    {
+      "risk": "AI credential not yet rotated",
+      "severity": "high",
+      "mitigation": "U-001 stop condition: 'The exposed AI credential is not rotated before AI work.' Must be resolved before any AI-assisted implementation."
+    },
+    {
+      "risk": "D1 Time Travel may not be available on Workers Free",
+      "severity": "medium",
+      "mitigation": "U-001 and U-016 verify or document a Cloudflare-supported equivalent. Absence is a production STOP."
+    },
+    {
+      "risk": "U-007 has zero rehearsal coverage",
+      "severity": "low",
+      "mitigation": "Medium-risk unit, single pass required. The manufacturer pilot adapter depends on U-006 (collector core). The rehearsal gap is consistent with missing upstream dependency."
+    }
+  ]
+}

@@ -1,8 +1,9 @@
-# RoboPartPicker — Product Definition (corrected)
+# RoboPartPicker — Canonical Product Definition
 
-> Status: adopted 2026-08-12. This is the canonical product definition for planning and
-> implementation. The Graph Coder Nano implementation graph must be rebuilt around this
-> document. Keep this file versioned; changes go through the normal release process.
+> Status: adopted 2026-08-12 and clarified 2026-08-14. This is the canonical product
+> definition for planning and implementation. Keep this file versioned; changes go through
+> the normal release process. Historical plans under `docs/history/` are evidence, not
+> active requirements.
 
 ## 1. Product summary
 
@@ -16,9 +17,10 @@ The main object is the **robotics project**.
 Shorthand: **Project discovery and sharing + automatic BOM generation +
 PCPartPicker-style sourcing optimization + assisted procurement.**
 
-The long-term AI that designs robots remains **outside the current repair scope**. Existing
-AI may help with extraction, normalization and workflow assistance, but the site must not
-yet promise autonomous robot design.
+The long-term AI-native workspace for designing and modifying robots is a real product
+direction, but it is **coming soon**. Existing AI may help with extraction, normalization
+and workflow assistance. The live site must not imply that autonomous robot design is
+already production-ready.
 
 ## 2. Core workflow (the product spine)
 
@@ -64,7 +66,14 @@ Two entry paths:
 
 **Internet-discovered open-source projects** — discover and aggregate legitimate
 open-source robotics projects from repositories, project websites and other permitted
-sources.
+sources. This is the highest-priority collection target because catalog breadth and project
+depth are the primary user value.
+
+**Closed-source and commercial projects** — may be listed as clearly labeled showcases for
+discovery, comparison, partnership and advertising. A showcase can include public product
+facts, media that may lawfully be displayed, pricing, manufacturer links and contact paths.
+It must not be represented as reproducible when design files, license rights or build data
+are unavailable.
 
 Each aggregated project needs: canonical project identity, upstream URL, owner or
 maintainer, license, current upstream revision or commit, ingestion timestamp, last checked
@@ -113,8 +122,11 @@ build, fewest suppliers, highest-confidence sourcing, balanced recommendation.
 
 The result includes a total **and its assumptions**: estimated parts total, estimated
 shipping, estimated tax/duties, unpriced BOM lines, uncertain substitutions, offer
-freshness, expected delivery range, estimated total range. The estimate must never look
-like a binding quote.
+freshness, expected delivery range, estimated total range. It also includes a supplier and
+shipment plan: which lines come from each supplier, expected arrival windows, which
+shipments can be consolidated, and which missing or late parts block a complete build. The
+experience should resemble a multi-package order timeline rather than pretending every
+part arrives together. The estimate must never look like a binding quote.
 
 Sourcing data is modeled as time-series or revision-aware observations, never values that
 are silently overwritten.
@@ -132,11 +144,13 @@ requests_sent → partial_quotes_received → quotes_reconciled → user_review_
 option_selected → expired | cancelled`.
 
 First version uses a hybrid workflow: generate normalized RFQ packages; send RFQs through
-available APIs or email automation; route unsupported suppliers to an internal procurement
-queue; record responses manually or automatically; map supplier line items back to BOM
-lines; flag substitutions, exclusions and changed quantities; compare the firm quote with
-the original estimate; show quote expiration and lead time; obtain explicit user approval
-before any purchasing handoff.
+available third-party APIs or email automation; route unsupported suppliers to an internal
+procurement queue; record responses manually or automatically; map supplier line items back
+to BOM lines; flag substitutions, exclusions and changed quantities; compare the firm quote
+with the original estimate; show quote expiration and lead time; obtain explicit user
+approval before any purchasing handoff. Until outbound delivery and response ingestion are
+configured and verified, the site labels automated supplier outreach **coming soon** and
+must not claim that a draft was sent.
 
 ## 7. Pillar 5 — User-controlled sourcing
 
@@ -163,7 +177,23 @@ A clone is not a shallow copy. At minimum store: `project_id`, `upstream_project
 `current revision`. This enables future contribution workflows, compatibility propagation
 and AI-assisted redesign without requiring those features now.
 
-## 9. Revised product hierarchy
+## 9. Marketplace, external access and commercial participation
+
+The marketplace lets people and organizations publish legitimate custom designs, parts,
+robots, fabrication services and wanted requests. Upload and listing creation should become
+AI-assisted, but AI may organize only the facts and files supplied by the seller. Payments
+and fulfillment are not claimed until those integrations exist.
+
+The platform exposes a public read-only MCP so external agents can search projects,
+components and suppliers. A private OAuth-scoped MCP may perform user-specific actions only
+with narrow scopes, audit records and confirmation gates. MCP is a first-class product
+surface and must be discoverable from the site and documentation.
+
+Suppliers, fabrication partners, project owners and advertisers need an explicit commercial
+contact surface. Advertising and sponsorship must be labeled and kept separate from
+technical evidence, organic ranking, supplier RFQs and user support.
+
+## 10. Revised product hierarchy
 
 - **Projects** — discover, import, upload, clone and share robots.
 - **BOM and sourcing** — inspect generated BOMs, resolve uncertainty, optimize sourcing,
@@ -171,13 +201,16 @@ and AI-assisted redesign without requiring those features now.
 - **Components** — explore canonical parts, specifications, alternatives, suppliers,
   compatibility.
 - **Build workspace** — modify a project and its BOM.
-- **Community and marketplace** — share builds, forks, discussions and legitimate listings.
+- **Community and marketplace** — share builds, forks, discussions, custom designs,
+  legitimate listings and wanted requests.
+- **Agent and partner interfaces** — public/private MCP plus clearly labeled supplier,
+  advertiser and partnership contact paths.
 
 The **main project page is the most important screen** and should expose: Overview, BOM,
 Sourcing, Build information, Files and upstream source, Versions and forks, Discussion.
 BOM and Sourcing tabs are first-class, not buried utilities.
 
-## 10. Implementation graph (rebuilt)
+## 11. Implementation graph (rebuilt)
 
 ```
                 ┌─ Project discovery and aggregation ─┐
@@ -230,7 +263,7 @@ Output: one internal coverage matrix:
 No worker may begin "improving" a major feature until this reconstruction is complete and
 incorporated into its Nano contract.
 
-## 11. Completion floors (preventing a low-quality swarm pass)
+## 12. Completion floors (preventing a low-quality swarm pass)
 
 The problem was not simply that later agents were cheaper; they received underspecified
 tasks and were allowed to call incomplete output done. Every Nano unit needs objective
@@ -261,7 +294,7 @@ Mandatory protections:
 - No deletion of unfamiliar Codex-built functionality until its intent is reconstructed.
 - Every altered workflow gets a golden end-to-end fixture.
 
-## 12. Golden acceptance projects
+## 13. Golden acceptance projects
 
 - **Project A — Clean open-source repository**: documented BOM and identifiable
   manufacturer parts. Expected: near-complete automatic BOM and sourcing estimate.
@@ -275,11 +308,20 @@ Mandatory protections:
 The system is not complete until all three flow through: ingestion → project page → BOM →
 sourcing plan → estimate → quote request.
 
-## 13. Current scope boundary
+## 14. Current scope boundary
 
-The current repair completes: project aggregation, upload/import, BOM generation and
-correction, component matching, cost estimation, sourcing optimization, quote-request
-workflow, project cloning, sharing and lineage, supporting component intelligence, quality
-and data completeness.
+The current product must complete and continuously improve: project aggregation,
+upload/import, BOM generation and correction, component matching, per-line price coverage,
+whole-build cost estimation, sourcing optimization, delivery grouping, quote-request
+workflow, project cloning/editing/sharing/lineage, marketplace records, public MCP,
+supporting component intelligence, quality and data completeness.
 
-It does **not** build the long-term autonomous robot-design AI yet.
+The following are explicitly **coming soon** until their real integration boundary passes
+acceptance tests:
+
+- autonomous or agentic CAD and robotics design in the AI workspace
+- scaled outbound supplier messaging and automatic response ingestion
+- marketplace payment processing and managed fulfillment
+
+The live product may explain and preview these directions, but it must not represent them as
+completed transactions or autonomous capabilities.

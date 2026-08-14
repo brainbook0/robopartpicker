@@ -1,0 +1,16 @@
+{
+  "phase": "PRODUCT_CONTRACT",
+  "status": "completed",
+  "plan_id": "P-robopartpicker-data-collection-v1",
+  "plan_version": 1,
+  "artifact_readiness": "requirements-ready",
+  "plan_path": "docs/plans/2026-07-28-robopartpicker-data-collection-plan.md",
+  "plan_hash": "0d92cb7995721e5b84feba638e208a60e8da593146bf0b69cbde8cfa134424da",
+  "snapshot_path": ".agent-planning/snapshots/P-robopartpicker-data-collection-v1/v1.json",
+  "requirements": 30,
+  "acceptance_examples": 30,
+  "invariants": 12,
+  "monthly_pilot_budget_usd": 50,
+  "validation": "aps plan status parsed successfully; ledger valid; requirements-ready snapshot created",
+  "implementation_started": false
+}

@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-07-29T06:14:10Z",
+  "currency": "USD",
+  "scope": "AI model token spend only",
+  "monthly_ceiling": 50,
+  "cloudflare_costs": "tracked separately; no automatic paid-tier upgrade",
+  "paid_source_api_costs": "tracked separately; explicit approval and per-source limits required",
+  "cumulative_actual_cost_usd": null,
+  "accounting_status": "BLOCKED_PENDING_OPENROUTER_PROVIDER_USAGE_RECEIPT",
+  "reason_actual_unknown": "Historical and current rehearsal sessions do not expose durable provider usage/cost receipts. Reference-task estimates are routing estimates, not actual charges.",
+  "reference_estimate_history": [
+    {
+      "purpose": "Plan-v4 materially changed-unit rerehearsal",
+      "passes": 7,
+      "estimated_reference_cost_usd": 0.21,
+      "replacement_supplement_usd": 0.01,
+      "note": "The original free U-008 report was nonconforming and a MiniMax M3 replacement was used."
+    }
+  ],
+  "current_planned_batch": {
+    "purpose": "Plan-v5 fresh cold rerehearsal for nine materially changed units",
+    "passes": 16,
+    "estimated_reference_cost_usd": 0.51,
+    "estimate_source": "swarm list_models live LLM Stats output at 2026-07-29T04:53Z: DeepSeek V4 Pro $0.02/ref-task, Qwen 3.7 Max $0.05/ref-task, MiniMax M3 $0.01/ref-task",
+    "entries": [
+      {"unit": "U-002", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_clover_1785301362529_89f663e38a2eed5c"},
+      {"unit": "U-002", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_bird_1785301391955_6f58e4a3a1ad443b"},
+      {"unit": "U-003", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_blossom_1785301363792_a08bcbf437ca3634"},
+      {"unit": "U-003", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_herb_1785301391544_8005a10b806d1924"},
+      {"unit": "U-004", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_mushroom_1785301361640_ff98cfd5b5ad7fed"},
+      {"unit": "U-004", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_bug_1785301392370_45bbebe4551d8a88"},
+      {"unit": "U-005", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_cactus_1785301362106_36c9b6a17aa5143b"},
+      {"unit": "U-005", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_seedling_1785301390298_65c652d45bbfb5bd"},
+      {"unit": "U-006", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_sunflower_1785301362951_0a313312b7ab689d"},
+      {"unit": "U-006", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_palmtree_1785301391133_a0b7d0e97c558952"},
+      {"unit": "U-008", "pass": 1, "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01, "session": "session_daisy_1785301364217_0c0a000d39180908"},
+      {"unit": "U-012", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_tulip_1785301364634_b90b5524368aa42a"},
+      {"unit": "U-012", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_evergreen_1785301390720_5e5b32bea6b3e17b"},
+      {"unit": "U-013", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_hibiscus_1785301363381_e17f9a575a0dc750"},
+      {"unit": "U-013", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_maple_1785301389881_7f2e59613c7fbdf8"},
+      {"unit": "U-014", "pass": 1, "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01, "session": "session_rose_1785301389467_26c50ba7660bb5c9"}
+    ]
+  },
+  "replacement_batch_after_server_reload": {
+    "purpose": "Replace sixteen plan-v5 rehearsal sessions that never advanced beyond initial task delivery and became unreachable across swarm ownership after reload",
+    "passes": 16,
+    "estimated_reference_cost_usd": 0.51,
+    "accounting_treatment": "Conservative possible exposure. Actual provider charges for both original and replacement sessions remain unknown until a durable provider usage receipt is recovered.",
+    "entries": [
+      {"unit": "U-002", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_cat_1785301684067_eb5d1bad48d21a60"},
+      {"unit": "U-002", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_dove_1785301710301_e390b2690029f6ae"},
+      {"unit": "U-003", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_cricket_1785301686637_143cb3fc5459ed76"},
+      {"unit": "U-003", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_fish_1785301711157_cac9b7ee2a72a647"},
+      {"unit": "U-004", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_dog_1785301687080_11486b615c342685"},
+      {"unit": "U-004", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_fox_1785301711593_bb23148cdd364b65"},
+      {"unit": "U-005", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_cow_1785301685787_9ff9706bf29b20e5"},
+      {"unit": "U-005", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_lobster_1785301713320_83098980fec5b58a"},
+      {"unit": "U-006", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_chipmunk_1785301685370_0feb30491532a297"},
+      {"unit": "U-006", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_eagle_1785301710734_c3ffcdb8027bd4b9"},
+      {"unit": "U-008", "pass": 1, "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01, "session": "session_crocodile_1785301686208_87c8ba90fc4b0be1"},
+      {"unit": "U-012", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_chicken_1785301684501_77b40126004a7a6f"},
+      {"unit": "U-012", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_ladybug_1785301712885_a731a348ed6973db"},
+      {"unit": "U-013", "pass": 1, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "session": "session_chick_1785301684936_53b6a6dee02af363"},
+      {"unit": "U-013", "pass": 2, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05, "session": "session_hamster_1785301712449_4e555f3bb41af0f7"},
+      {"unit": "U-014", "pass": 1, "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01, "session": "session_giraffe_1785301712022_227844babd3d19a0"}
+    ]
+  },
+  "plan_v6_initial_free_batch": {
+    "purpose": "Plan-v6 fresh cold rerehearsal after plan-v5 reconciliation",
+    "passes": 15,
+    "estimated_reference_cost_usd": 0.0,
+    "note": "Initial routes were OpenRouter free Nemotron Ultra, Cohere North Mini Code, and Nemotron Nano. Failed or nonconforming passes are replaced below."
+  },
+  "plan_v6_paid_replacement_batch": {
+    "purpose": "Immediate concurrent replacement of provider failures and two nonconforming packet-copy reports",
+    "passes": 9,
+    "estimated_reference_cost_usd": 0.20,
+    "accounting_treatment": "Conservative reference exposure before dispatch; actual provider charges remain pending durable receipts.",
+    "entries": [
+      {"unit": "U-005", "pass": 1, "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05},
+      {"unit": "U-014", "pass": 1, "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01},
+      {"unit": "U-005", "pass": 2, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02},
+      {"unit": "U-006", "pass": 1, "model": "z-ai/glm-5.2", "provider": "OpenRouter", "reference_cost_usd": 0.03},
+      {"unit": "U-006", "pass": 2, "model": "qwen/qwen3.7-plus", "provider": "OpenRouter", "reference_cost_usd": 0.01},
+      {"unit": "U-012", "pass": 1, "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01},
+      {"unit": "U-012", "pass": 2, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02},
+      {"unit": "U-013", "pass": 2, "model": "z-ai/glm-5.2", "provider": "OpenRouter", "reference_cost_usd": 0.03},
+      {"unit": "U-004", "pass": 2, "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02}
+    ]
+  },
+  "plan_v6_reconciliation_review_batch": {
+    "purpose": "Four independent bounded reviews of all plan-v6 P0/P1 findings before final Director synthesis",
+    "passes": 4,
+    "estimated_reference_cost_usd": 0.11,
+    "entries": [
+      {"scope": "U-002,U-003", "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02},
+      {"scope": "U-004,U-005", "model": "qwen/qwen3.7-max", "provider": "OpenRouter", "reference_cost_usd": 0.05},
+      {"scope": "U-006,U-012", "model": "z-ai/glm-5.2", "provider": "OpenRouter", "reference_cost_usd": 0.03},
+      {"scope": "U-013,U-014", "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01}
+    ]
+  },
+  "plan_v6_reconciliation_stall_recovery_batch": {
+    "purpose": "Replace two reconciliation reviewers with no persisted artifact or measurable progress after six minutes across a reload ownership boundary",
+    "passes": 2,
+    "estimated_reference_cost_usd": 0.03,
+    "accounting_treatment": "Conservative additive possible exposure. Original late results are retained for comparison; actual provider charges remain pending durable receipts.",
+    "entries": [
+      {"scope": "U-004,U-005", "model": "deepseek/deepseek-v4-pro", "provider": "OpenRouter", "reference_cost_usd": 0.02, "output": "plan-v6-reconciliation-U004-U005.recovery.json"},
+      {"scope": "U-006,U-012", "model": "minimax/minimax-m3", "provider": "OpenRouter", "reference_cost_usd": 0.01, "output": "plan-v6-reconciliation-U006-U012.recovery.json"}
+    ]
+  },
+  "cumulative_reference_estimate_usd": 1.58,
+  "policy_checks": {
+    "claude_used": false,
+    "openrouter_duplicate_of_direct_subscription_used": false,
+    "direct_openai_used": false,
+    "estimated_batch_below_monthly_ceiling": true
+  },
+  "release_gate": "Recover and persist actual provider charges before claiming cumulative AI-token cost compliance."
+}
