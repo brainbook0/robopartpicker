@@ -63,7 +63,15 @@ export function normalizeSourceUrl(value: unknown): string | null {
     const blobIndex = parts.indexOf('blob');
     if (blobIndex === 2 && parts.length >= 5) {
       const [owner, repo] = parts;
-      const refAndPath = parts.slice(3).map(encodeURIComponent).join('/');
+      // URL.pathname preserves percent escapes. Decode each segment before
+      // encoding it for raw.githubusercontent.com so paths such as
+      // `CAD%20Files/part.stl` do not become `CAD%2520Files/part.stl`.
+      let refAndPath: string;
+      try {
+        refAndPath = parts.slice(3).map((part) => encodeURIComponent(decodeURIComponent(part))).join('/');
+      } catch {
+        return null;
+      }
       return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${refAndPath}`;
     }
   }
@@ -142,24 +150,24 @@ export function sqlString(value: string | null): string {
 }
 
 export function buildVerifiedBackfillSql(files: VerifiedArtifact[], now = 'CURRENT_TIMESTAMP'): string {
-  const lines = ['BEGIN TRANSACTION;'];
+  // Wrangler's remote D1 file executor supplies its own safe batching and
+  // rejects explicit BEGIN/COMMIT statements.
+  const lines: string[] = [];
   for (const file of files) {
     const metadata = JSON.stringify({ sourceUrl: file.sourceUrl, sourceRevision: file.sourceRevision, r2Bucket: file.r2Bucket, backfill: 'catalog-completeness-2026-08-14' });
     lines.push(`INSERT INTO files (id, object_key, original_name, media_type, size_bytes, checksum_sha256, owner_user_id, organization_id, visibility, status, kind, metadata_json, created_at, updated_at)`);
     lines.push(`SELECT ${sqlString(file.fileId)}, ${sqlString(file.objectKey)}, ${sqlString(file.originalName)}, ${sqlString(file.mediaType)}, ${file.sizeBytes}, ${sqlString(file.checksumSha256)}, p.owner_user_id, p.organization_id, p.visibility, 'ready', ${sqlString(file.kind)}, json(${sqlString(metadata)}), ${now}, ${now} FROM projects p WHERE p.slug = ${sqlString(file.slug)} AND p.project_kind = 'physical_design' AND p.deleted_at IS NULL AND p.current_version_id IS NOT NULL AND (p.owner_user_id IS NOT NULL OR p.organization_id IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM files f WHERE f.id = ${sqlString(file.fileId)} OR f.object_key = ${sqlString(file.objectKey)});`);
     lines.push(`INSERT OR IGNORE INTO project_files (project_id, project_version_id, file_id, purpose, relative_path, created_at) SELECT p.id, p.current_version_id, ${sqlString(file.fileId)}, ${sqlString(file.purpose)}, ${sqlString(file.relativePath)}, ${now} FROM projects p JOIN files f ON f.id = ${sqlString(file.fileId)} AND f.status = 'ready' AND f.size_bytes = ${file.sizeBytes} AND f.checksum_sha256 = ${sqlString(file.checksumSha256)} AND f.object_key = ${sqlString(file.objectKey)} WHERE p.slug = ${sqlString(file.slug)} AND p.project_kind = 'physical_design' AND p.deleted_at IS NULL AND p.current_version_id IS NOT NULL;`);
   }
-  lines.push('COMMIT;');
   return `${lines.join('\n')}\n`;
 }
 
 export function buildVerifiedBackfillRollbackSql(files: VerifiedArtifact[], runTimestamp: string): string {
   const timestamp = sqlString(runTimestamp);
-  const lines = ['BEGIN TRANSACTION;'];
+  const lines: string[] = [];
   for (const file of [...files].reverse()) {
     lines.push(`DELETE FROM project_files WHERE file_id = ${sqlString(file.fileId)} AND created_at = ${timestamp};`);
     lines.push(`DELETE FROM files WHERE id = ${sqlString(file.fileId)} AND object_key = ${sqlString(file.objectKey)} AND checksum_sha256 = ${sqlString(file.checksumSha256)} AND created_at = ${timestamp} AND json_extract(metadata_json, '$.backfill') = 'catalog-completeness-2026-08-14';`);
   }
-  lines.push('COMMIT;');
   return `${lines.join('\n')}\n`;
 }

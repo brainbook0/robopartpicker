@@ -7,9 +7,11 @@ const sha = 'a'.repeat(64);
 describe('catalog completeness backfill hardening', () => {
   it('normalizes only supported GitHub source URLs', () => {
     expect(normalizeSourceUrl('https://github.com/acme/sample/blob/main/cad/part.stl')).toBe('https://raw.githubusercontent.com/acme/sample/main/cad/part.stl');
+    expect(normalizeSourceUrl('https://github.com/acme/sample/blob/main/CAD%20Files/part.stl')).toBe('https://raw.githubusercontent.com/acme/sample/main/CAD%20Files/part.stl');
     expect(normalizeSourceUrl('https://raw.githubusercontent.com/acme/sample/main/cad/part.stl')).toBe('https://raw.githubusercontent.com/acme/sample/main/cad/part.stl');
     expect(normalizeSourceUrl('http://github.com/acme/sample/blob/main/cad/part.stl')).toBeNull();
     expect(normalizeSourceUrl('https://github.com/acme/sample/tree/main/cad')).toBeNull();
+    expect(normalizeSourceUrl('https://github.com/acme/sample/blob/main/bad%escape.stl')).toBeNull();
     expect(normalizeSourceUrl('https://example.com/cad/part.stl')).toBeNull();
   });
 
@@ -69,11 +71,15 @@ describe('catalog completeness backfill hardening', () => {
     expect(sql).toContain(`f.checksum_sha256 = '${sha}'`);
     expect(sql).toContain('robopartpicker-preview-files');
     expect(sql).toContain('NOT EXISTS (SELECT 1 FROM files');
-    expect(buildVerifiedBackfillSql([])).toBe('BEGIN TRANSACTION;\nCOMMIT;\n');
+    expect(sql).not.toContain('BEGIN TRANSACTION');
+    expect(sql).not.toContain('COMMIT;');
+    expect(buildVerifiedBackfillSql([])).toBe('\n');
 
     const rollback = buildVerifiedBackfillRollbackSql([file], '2026-08-14T00:00:00.000Z');
     expect(rollback).toContain(`DELETE FROM project_files WHERE file_id = '${file.fileId}' AND created_at = '2026-08-14T00:00:00.000Z'`);
     expect(rollback).toContain(`DELETE FROM files WHERE id = '${file.fileId}'`);
     expect(rollback).toContain("json_extract(metadata_json, '$.backfill') = 'catalog-completeness-2026-08-14'");
+    expect(rollback).not.toContain('BEGIN TRANSACTION');
+    expect(rollback).not.toContain('COMMIT;');
   });
 });
