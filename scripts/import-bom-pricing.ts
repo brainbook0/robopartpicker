@@ -122,7 +122,7 @@ function validateResult(result: ManifestResult): asserts result is ResolvedResul
   if (normalizeDigiKeyMpn(result.product.manufacturerProductNumber) !== normalizeDigiKeyMpn(result.queryMpn)) {
     throw new Error(`exact MPN mismatch for ${result.originalMpn}`);
   }
-  if (!/^raw-collection\/2026-08-14\/bom-pricing\/digikey\//.test(evidenceKey(result))) {
+  if (!/^raw-collection\/2026-08-14\/bom-pricing\/digikey(?:-generic)?\//.test(evidenceKey(result))) {
     throw new Error(`unexpected R2 evidence key for ${result.originalMpn}`);
   }
   evidenceSha256(result);
