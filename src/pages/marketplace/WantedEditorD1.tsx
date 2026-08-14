@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Save, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { marketplaceApi } from "@/lib/api/marketplace";
+import { marketplaceApi, useMarketplaceListing } from "@/lib/api/marketplace";
 import { AiFormDraft } from "@/components/ai/AiFormDraft";
 
 export default function WantedEditorD1() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [search] = useSearchParams();
+  const draftId = search.get("draft") ?? undefined;
+  const existing = useMarketplaceListing(draftId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("actuator");
@@ -17,6 +20,12 @@ export default function WantedEditorD1() {
   const [region, setRegion] = useState("Global");
   const [busy, setBusy] = useState(false);
   useEffect(() => { if (!loading && !user) navigate("/auth", { replace: true, state: { from: "/marketplace/wanted/new" } }); }, [loading, navigate, user]);
+  useEffect(() => {
+    const item = existing.data?.item;
+    if (!item || item.listingType !== "wanted") return;
+    setTitle(item.title); setDescription(item.description); setCategory(item.category); setQuantity(String(item.quantity));
+    setBudget(item.price == null ? "" : String(item.price)); setRegion(item.region ?? "Global");
+  }, [existing.data?.item]);
   const errors = useMemo(() => {
     const result: string[] = [];
     if (title.trim().length < 4) result.push("Title must be at least 4 characters.");
@@ -29,11 +38,15 @@ export default function WantedEditorD1() {
     if (errors.length) return toast.error(errors[0]);
     setBusy(true);
     try {
-      const draft = (await marketplaceApi.create({ listingType: "wanted", title: title.trim(), description: description.trim(), category,
-        conditionGrade: "not_applicable", currency: "USD", price: budget ? Number(budget) : null, quantity: Number(quantity), region, visibility: "public" })).item;
+      const input = { listingType: "wanted" as const, title: title.trim(), description: description.trim(), category,
+        conditionGrade: "not_applicable" as const, currency: "USD", price: budget ? Number(budget) : null, quantity: Number(quantity), region, visibility: "private" as const };
+      const draft = existing.data?.item
+        ? (await marketplaceApi.update(existing.data.item.id, existing.data.item.version, input)).item
+        : (await marketplaceApi.create(input)).item;
       const item = publish ? (await marketplaceApi.status(draft.id, "published")).item : draft;
       toast.success(publish ? "Wanted request published" : "Wanted draft saved", { description: "No RFQ was sent to external suppliers." });
-      navigate(publish ? `/marketplace/${item.slug}` : "/marketplace");
+      navigate(publish ? `/marketplace/${item.slug}` : `/marketplace/wanted/new?draft=${item.id}`, { replace: true });
+      if (!publish) await existing.refetch();
     } catch (error) { toast.error("Wanted request could not be saved", { description: error instanceof Error ? error.message : String(error) }); }
     finally { setBusy(false); }
   };
@@ -46,7 +59,9 @@ export default function WantedEditorD1() {
     if (typeof draft.region === "string" && ["US", "EU", "CN", "JP", "KR", "Global"].includes(draft.region)) setRegion(draft.region);
   };
   if (!user) return null;
-  return <main className="mx-auto max-w-[850px] px-4 py-6"><div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / wanted</div><div className="mt-1 flex items-center justify-between gap-3"><h1 className="text-[22px] font-bold tracking-tight">Create a wanted request</h1><AiFormDraft form="marketplace_wanted" current={{ title, description, category, quantity, budget, region }} onApply={applyAiDraft} hint="Describe the required component or service, acceptable revisions, quantity, evidence, destination, deadline, and budget." /></div><p className="text-[12px] text-muted-foreground mt-1">Publish demand to the internal Marketplace. This does not send an RFQ or contact suppliers automatically.</p>
+  if (draftId && existing.isPending) return <div className="p-8" role="status">Loading wanted draft…</div>;
+  if (draftId && (existing.isError || !existing.data?.item || existing.data.item.listingType !== "wanted")) return <div className="p-8 text-negative" role="alert">Wanted draft could not be loaded.</div>;
+  return <main className="mx-auto max-w-[850px] px-4 py-6"><div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / wanted</div><div className="mt-1 flex items-center justify-between gap-3"><h1 className="text-[22px] font-bold tracking-tight">{draftId ? "Edit wanted draft" : "Create a wanted request"}</h1><AiFormDraft form="marketplace_wanted" current={{ title, description, category, quantity, budget, region }} onApply={applyAiDraft} hint="Describe the required component or service, acceptable revisions, quantity, evidence, destination, deadline, and budget." /></div><p className="text-[12px] text-muted-foreground mt-1">Publish demand to the internal Marketplace. This does not send an RFQ or contact suppliers automatically.</p>
     <form className="surface-card mt-4 p-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void save(false); }}>
       <Field label="Title"><input className="input-bare" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="e.g. Need 12× RMD-X8 Pro, matched revision" /></Field>
       <Field label="Technical requirements"><textarea className="input-bare min-h-32" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Acceptable models/revisions, condition, test evidence, destination, and deadline…" /></Field>

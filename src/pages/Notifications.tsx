@@ -42,11 +42,11 @@ export default function Notifications() {
   };
 
   if (loading) return <Centered><Loader2 className="h-5 w-5 animate-spin" /> Loading account…</Centered>;
-  if (!user) return <Centered><Bell className="h-6 w-6 text-primary" /><h1 className="text-xl font-bold">Sign in to view notifications</h1><Link to="/auth?next=%2Fnotifications" className="btn-primary">Sign in</Link></Centered>;
+  if (!user) return <Centered><Bell className="h-6 w-6 text-primary" /><h1 className="text-xl font-bold">Sign in to view notifications</h1><Link to="/auth?redirect=%2Fnotifications" className="btn-primary">Sign in</Link></Centered>;
 
   return <div className="mx-auto max-w-5xl px-4 py-6">
     <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-      <div><div className="section-title">Account · notification center</div><h1 className="text-[22px] font-bold">Notifications</h1><p className="text-xs text-muted-foreground">D1-persisted alerts with safe links and per-channel preferences.</p></div>
+      <div><div className="section-title">Account · notification center</div><h1 className="text-[22px] font-bold">Notifications</h1><p className="text-xs text-muted-foreground">Account alerts with safe links and per-channel preferences.</p></div>
       <div className="flex items-center gap-2"><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} /> Unread only</label><button disabled={busy !== null || !notifications.data?.unreadCount} onClick={() => void markAllRead()} className="btn-ghost btn-sm inline-flex items-center gap-1 disabled:opacity-50"><CheckCheck className="h-3.5 w-3.5" /> Mark all read</button></div>
     </div>
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">

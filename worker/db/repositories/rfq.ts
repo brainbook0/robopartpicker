@@ -80,7 +80,18 @@ export class RfqRepository {
   }
 
   async recordResponse(id: string, items: Array<{ lineKey: string; quoteUnitPriceMinor?: number | null; quoteCurrency?: string | null; supplierId?: string | null; supplierSku?: string | null; leadTimeDays?: number | null; isSubstitute?: boolean }>): Promise<void> {
-    const now = new Date().toISOString();
+    const request = await this.get(id);
+    if (!request) throw new AppError(404, "RFQ_NOT_FOUND", "Quote request not found.");
+    if (!transitionRfq(request.status, "receive_partial")) throw new AppError(409, "RFQ_INVALID_TRANSITION", `Cannot receive_partial from ${request.status}.`);
+
+    const lineKeys = [...new Set(items.map((item) => item.lineKey))];
+    const placeholders = lineKeys.map((_, index) => `?${index + 2}`).join(", ");
+    const existing = await this.db.prepare(`SELECT line_key AS lineKey FROM rfq_line_items WHERE rfq_request_id = ?1 AND line_key IN (${placeholders})`)
+      .bind(id, ...lineKeys).all<{ lineKey: string }>();
+    const existingKeys = new Set(existing.results.map((row) => row.lineKey));
+    const unknown = lineKeys.filter((lineKey) => !existingKeys.has(lineKey));
+    if (unknown.length) throw new AppError(400, "RFQ_UNKNOWN_LINE", `Unknown RFQ lineKey: ${unknown[0]}.`);
+
     const statements: D1PreparedStatement[] = [];
     for (const item of items) {
       statements.push(this.db.prepare(`UPDATE rfq_line_items SET
@@ -89,10 +100,10 @@ export class RfqRepository {
           supplier_id = COALESCE(?3, supplier_id),
           supplier_sku = COALESCE(?4, supplier_sku),
           lead_time_days = COALESCE(?5, lead_time_days),
-          is_substitute = ?6
+          is_substitute = CASE WHEN ?6 IS NULL THEN is_substitute ELSE ?6 END
         WHERE rfq_request_id = ?7 AND line_key = ?8`)
         .bind(item.quoteUnitPriceMinor ?? null, item.quoteCurrency ?? null, item.supplierId ?? null, item.supplierSku ?? null,
-          item.leadTimeDays ?? null, item.isSubstitute ? 1 : 0, id, item.lineKey));
+          item.leadTimeDays ?? null, item.isSubstitute === undefined ? null : item.isSubstitute ? 1 : 0, id, item.lineKey));
     }
     if (statements.length) await this.db.batch(statements);
     await this.transition(id, "receive_partial");

@@ -43,7 +43,7 @@ export default function MarketplaceD1() {
 
       {user && (drafts.data?.items.length ?? 0) > 0 && <section className="surface-card mb-3 p-3">
         <div className="section-title mb-2">Your server-backed drafts</div>
-        <div className="flex flex-wrap gap-2">{drafts.data!.items.map((draft) => <Link key={draft.id} to={`/marketplace/new?draft=${draft.id}`} className="pill pill-yellow">{draft.title}</Link>)}</div>
+        <div className="flex flex-wrap gap-2">{drafts.data!.items.map((draft) => <Link key={draft.id} to={draft.listingType === "wanted" ? `/marketplace/wanted/new?draft=${draft.id}` : `/marketplace/new?draft=${draft.id}`} className="pill pill-yellow">{draft.title}</Link>)}</div>
       </section>}
 
       <div className="surface-card mb-3 flex flex-wrap gap-2 p-2 items-center">

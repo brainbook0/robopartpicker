@@ -49,7 +49,7 @@ export default function ListingEditorD1() {
   useEffect(() => { if (!loading && !user) navigate("/auth", { replace: true, state: { from: `/marketplace/new${location.search}` } }); }, [loading, location.search, navigate, user]);
   useEffect(() => {
     const item = existing.data?.item;
-    if (!item) return;
+    if (!item || item.listingType !== "sell") return;
     setTitle(item.title); setDescription(item.description); setComponentId(item.sourceComponentId ?? ""); setSourceBuildId(item.sourceBuildId ?? ""); setCategory(item.category);
     setGrade(item.conditionGrade); setPrice(item.price == null ? "" : String(item.price)); setQuantity(String(item.quantity)); setRegion(item.region ?? "Global");
     setRuntimeHours(item.details.runtimeHours == null ? "" : String(item.details.runtimeHours)); setProvenance(item.details.provenanceText ?? "");
@@ -149,6 +149,7 @@ export default function ListingEditorD1() {
   if (!user) return null;
   if (draftId && existing.isPending) return <div className="p-8" role="status">Loading draft…</div>;
   if (draftId && (existing.isError || !existing.data?.item)) return <div className="p-8 text-negative" role="alert">Draft could not be loaded.</div>;
+  if (draftId && existing.data.item.listingType !== "sell") return <div className="p-8 text-negative" role="alert">This draft is a {existing.data.item.listingType} record. Open it from the matching Marketplace editor.</div>;
 
   return <main className="mx-auto max-w-[1080px] px-4 py-6">
     <div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / {draftId ? "edit draft" : "new listing"}</div>

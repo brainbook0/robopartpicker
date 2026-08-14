@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Hardened RFQ response recording so quotes can only be written from states that allow `receive_partial`, unknown line keys are rejected, omitted substitute flags preserve existing values, and the frontend exposes a typed response-recording client binding.
+
+- Accepted both `redirect` and legacy `next` authentication return parameters safely, normalized product sign-in links to `redirect`, and replaced stale header/data wording with current API-derived labels.
+
 - Made whole-BOM sourcing objective selection deterministic across line order for fewest-suppliers and balanced estimates, and added honest delivery grouping metadata with supplier subtotals, lead ranges, and unpriced/unknown-lead blockers without inventing shipping, tax, or arrival dates.
 
 - Replaced unsafe catalog completeness backfill mapping with a dry-run-first harvested-artifact workflow that restricts candidates to production `physical_design` projects and only writes ready file rows after verified R2 upload size and SHA-256 checks.

@@ -159,6 +159,9 @@ export class MarketplaceRepository {
     await this.assertWrite(userId, current.row);
     if (input.sourceBuildId) await this.assertSourceBuild(userId, input.sourceBuildId);
     const old = current.item;
+    if (input.listingType !== undefined && input.listingType !== old.listingType) {
+      throw new AppError(422, "LISTING_TYPE_IMMUTABLE", "Marketplace draft type cannot be changed. Open the matching editor for this draft.");
+    }
     const now = new Date().toISOString();
     const result = await this.db.prepare(`UPDATE marketplace_listings SET title = ?1, description = ?2, category = ?3,
       condition_grade = ?4, currency = ?5, price_minor = ?6, quantity = ?7, region_code = ?8,

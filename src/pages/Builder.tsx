@@ -80,7 +80,7 @@ export default function Builder() {
       const next = new URLSearchParams(search);
       next.set("build", result.item.id);
       setSearch(next);
-      toast({ title: "Persistent build created", description: "This build is stored in the Cloudflare D1 database for this environment." });
+      toast({ title: "Persistent build created", description: "This build is stored for your account in this environment." });
       setQualityReview(null); setReviewedFingerprint(null); setReviewUnavailable(false); setNewDescription("");
       await queryClient.invalidateQueries({ queryKey: ["builds"] });
     } catch (error) {
@@ -127,9 +127,9 @@ export default function Builder() {
   if (!user) return (
     <Centered>
       <div className="section-title">Persistent build workspace</div>
-      <h1 className="text-xl font-bold">Sign in to create a D1-backed build</h1>
+      <h1 className="text-xl font-bold">Sign in to create a persistent build</h1>
       <p className="max-w-xl text-sm text-muted-foreground">Build items, supplier selections, progress, and exports are private by default and authorized by the Worker.</p>
-      <Link to={`/auth?next=${encodeURIComponent(`/builder?${search}`)}`} className="btn-primary">Sign in</Link>
+      <Link to={`/auth?redirect=${encodeURIComponent(`/builder?${search}`)}`} className="btn-primary">Sign in</Link>
     </Centered>
   );
 
@@ -367,7 +367,7 @@ function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefres
       await operation();
       reset?.();
       await onRefresh();
-      toast({ title: success, description: "Saved to this D1-backed build." });
+      toast({ title: success, description: "Saved to this persistent build." });
     } catch (error) {
       toast({ title: "Technical record update failed", description: message(error), variant: "destructive" });
     } finally { setBusy(null); }

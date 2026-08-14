@@ -15,7 +15,9 @@ export default function Auth() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const requested = new URLSearchParams(location.search).get("redirect")
+  const params = new URLSearchParams(location.search);
+  const requested = params.get("redirect")
+    ?? params.get("next")
     ?? (location.state as { from?: string } | null)?.from
     ?? "/community";
   const redirect = isSafeInternalPath(requested) ? requested : "/community";

@@ -33,10 +33,21 @@ export type RfqLine = {
   sortOrder: number;
 };
 
+export type RfqResponseItemInput = {
+  lineKey: string;
+  quoteUnitPriceMinor?: number | null;
+  quoteCurrency?: string | null;
+  supplierId?: string | null;
+  supplierSku?: string | null;
+  leadTimeDays?: number | null;
+  isSubstitute?: boolean;
+};
+
 export const rfqApi = {
   create: (input: { projectId?: string; bomId?: string; expiresInDays?: number }) => api.post<{ item: RfqRequest }>("/api/v1/rfq", input),
   get: (id: string) => api.get<{ item: RfqRequest; lines: RfqLine[] }>(`/api/v1/rfq/${encodeURIComponent(id)}`),
   transition: (id: string, action: RfqAction) => api.post<{ item: RfqRequest }>(`/api/v1/rfq/${encodeURIComponent(id)}/transition`, { action }),
+  recordResponse: (id: string, items: RfqResponseItemInput[]) => api.post<{ item: RfqRequest }>(`/api/v1/rfq/${encodeURIComponent(id)}/responses`, { items }),
   reconcile: (id: string) => api.post<{ item: RfqRequest }>(`/api/v1/rfq/${encodeURIComponent(id)}/reconcile`, {}),
   approve: (id: string) => api.post<{ item: RfqRequest }>(`/api/v1/rfq/${encodeURIComponent(id)}/approve`, {}),
   cancel: (id: string) => api.post<{ item: RfqRequest }>(`/api/v1/rfq/${encodeURIComponent(id)}/cancel`, {}),

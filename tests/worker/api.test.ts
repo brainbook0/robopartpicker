@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { strToU8, zipSync } from "fflate";
 import { emptyRpps } from "../../src/lib/rpps/schema";
 import { artifactKind, classifyGithubProviderError, parseCsvObjects, selectGithubFetchCandidates } from "../../worker/services/project-import";
+import packageJson from "../../package.json";
 
 const origin = "https://example.com";
 const ingestionSecret = "test-only-ingestion-secret-32-characters-minimum";
@@ -260,7 +261,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
     expect(Number(migrations?.value)).toBe(21);
-    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: "0.5.0" });
+    const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: packageJson.version });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
     const manufacturers = await call("/api/v1/manufacturers"); expect(manufacturers.status).toBe(200);
@@ -341,6 +342,57 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(publicAllowed.status).toBe(201);
     expect((await body<{ item: { projectId: string; createdByUserId: string; estimateSnapshot: { basket: unknown[] } } }>(publicAllowed)).item)
       .toMatchObject({ projectId: publicProject.id, createdByUserId: otherId, estimateSnapshot: { basket: expect.any(Array) } });
+  });
+
+  it("runs the RFQ response lifecycle safely and rejects invalid response writes", async () => {
+    const createdBom = await call("/api/v1/boms", { method: "POST", body: jsonBody({
+      name: "RFQ Response BOM",
+      visibility: "private",
+      items: [{ componentId: "c-test", slotKey: "drive-motor", description: "TM-42 Motor", quantity: 2 }],
+    }) }, ownerCookie);
+    expect(createdBom.status).toBe(201);
+    const bomId = (await body<{ item: { id: string } }>(createdBom)).item.id;
+
+    const created = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const request = (await body<{ item: { id: string; status: string } }>(created)).item;
+    expect(request.status).toBe("estimate_ready");
+
+    const premature = await call(`/api/v1/rfq/${request.id}/responses`, { method: "POST", body: jsonBody({ items: [{ lineKey: "drive-motor", quoteUnitPriceMinor: 1200, quoteCurrency: "USD" }] }) }, ownerCookie);
+    expect(premature.status).toBe(409);
+    expect(await body<{ error: { code: string } }>(premature)).toMatchObject({ error: { code: "RFQ_INVALID_TRANSITION" } });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM rfq_line_items WHERE rfq_request_id = ?1 AND quote_unit_price_minor IS NOT NULL").bind(request.id).first<{ value: number }>())?.value)).toBe(0);
+
+    for (const action of ["request", "prepare", "send"] as const) {
+      const transitioned = await call(`/api/v1/rfq/${request.id}/transition`, { method: "POST", body: jsonBody({ action }) }, ownerCookie);
+      expect(transitioned.status, `${action}: ${await transitioned.clone().text()}`).toBe(200);
+    }
+
+    const detail = await call(`/api/v1/rfq/${request.id}`, {}, ownerCookie);
+    expect(detail.status).toBe(200);
+    const line = (await body<{ lines: Array<{ lineKey: string }> }>(detail)).lines[0];
+    expect(line.lineKey).toBe("drive-motor");
+
+    const unknownLine = await call(`/api/v1/rfq/${request.id}/responses`, { method: "POST", body: jsonBody({ items: [{ lineKey: "missing-line", quoteUnitPriceMinor: 1200, quoteCurrency: "USD" }] }) }, ownerCookie);
+    expect(unknownLine.status).toBe(400);
+    expect(await body<{ error: { code: string } }>(unknownLine)).toMatchObject({ error: { code: "RFQ_UNKNOWN_LINE" } });
+
+    const response = await call(`/api/v1/rfq/${request.id}/responses`, { method: "POST", body: jsonBody({ items: [{ lineKey: line.lineKey, quoteUnitPriceMinor: 1200, quoteCurrency: "USD", supplierSku: "ALT-1", isSubstitute: true }] }) }, ownerCookie);
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect((await body<{ item: { status: string } }>(response)).item.status).toBe("partial_quotes_received");
+
+    const omittedSubstitute = await call(`/api/v1/rfq/${request.id}/responses`, { method: "POST", body: jsonBody({ items: [{ lineKey: line.lineKey, supplierSku: "ALT-2" }] }) }, ownerCookie);
+    expect(omittedSubstitute.status, await omittedSubstitute.clone().text()).toBe(200);
+    const storedLine = await env.DB.prepare("SELECT quote_unit_price_minor AS price, quote_currency AS currency, supplier_sku AS sku, is_substitute AS substitute FROM rfq_line_items WHERE rfq_request_id = ?1 AND line_key = ?2")
+      .bind(request.id, line.lineKey).first<{ price: number; currency: string; sku: string; substitute: number }>();
+    expect(storedLine).toEqual({ price: 1200, currency: "USD", sku: "ALT-2", substitute: 1 });
+
+    const reconciled = await call(`/api/v1/rfq/${request.id}/reconcile`, { method: "POST", body: jsonBody({}) }, ownerCookie);
+    expect(reconciled.status, await reconciled.clone().text()).toBe(200);
+    expect((await body<{ item: { status: string } }>(reconciled)).item.status).toBe("user_review_required");
+    const approved = await call(`/api/v1/rfq/${request.id}/approve`, { method: "POST", body: jsonBody({}) }, ownerCookie);
+    expect(approved.status, await approved.clone().text()).toBe(200);
+    expect((await body<{ item: { status: string } }>(approved)).item.status).toBe("option_selected");
   });
 
   it("estimates a project BOM through the public project workflow", async () => {

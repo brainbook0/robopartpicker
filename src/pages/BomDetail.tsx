@@ -12,12 +12,12 @@ export default function BomDetail() {
   const navigate = useNavigate();
   const [forking, setForking] = useState(false);
   const query = useQuery({ queryKey: ["bom", slug], queryFn: ({ signal }) => bomsApi.get(slug, signal), enabled: Boolean(slug) });
-  if (query.isLoading) return <div className="mx-auto max-w-[1400px] p-8 text-sm text-muted-foreground">Loading BOM from D1…</div>;
+  if (query.isLoading) return <div className="mx-auto max-w-[1400px] p-8 text-sm text-muted-foreground">Loading BOM…</div>;
   if (query.error || !query.data) return <div className="mx-auto max-w-[1400px] p-8 text-negative">{query.error?.message ?? "BOM not found."}</div>;
   const bom = query.data.item;
 
   const fork = async () => {
-    if (!user) { navigate(`/auth?next=${encodeURIComponent(`/boms/${slug}`)}`); return; }
+    if (!user) { navigate(`/auth?redirect=${encodeURIComponent(`/boms/${slug}`)}`); return; }
     setForking(true);
     try {
       const result = await bomsApi.forkToBuild(bom.id, { name: `${bom.name} build`, visibility: "private" });

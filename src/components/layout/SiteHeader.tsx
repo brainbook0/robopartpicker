@@ -38,16 +38,16 @@ const fmtUsd = (n: number) => n >= 1e6 ? `$${(n/1e6).toFixed(1)}M` : n >= 1e3 ? 
 export const SiteHeader = () => {
   const catalogQuery = useComponents({ limit: 100 });
   const suppliersQuery = useSuppliers();
-  const parts = catalogQuery.data?.items ?? [];
-  const suppliers = suppliersQuery.data?.items ?? [];
   const kpis = useMemo(() => {
+    const parts = catalogQuery.data?.items ?? [];
+    const suppliers = suppliersQuery.data?.items ?? [];
     const avgLead = suppliers.length ? Math.round(suppliers.reduce((sum, supplier) => sum + supplier.leadDays, 0) / suppliers.length) : 0;
     const deltas = parts.map(priceDelta30).sort((a, b) => a - b);
     const medDelta = deltas[Math.floor(deltas.length / 2)] ?? 0;
     const prices = parts.filter((part) => part.offers.length > 0).map(lowestPrice).sort((a, b) => a - b);
     const medPrice = prices[Math.floor(prices.length / 2)] ?? 0;
     return { avgLead, medDelta, medPrice };
-  }, [parts, suppliers]);
+  }, [catalogQuery.data?.items, suppliersQuery.data?.items]);
   const [dark, setDark] = useState<boolean>(() => typeof window !== "undefined" && document.documentElement.classList.contains("dark"));
   const [q, setQ] = useState("");
   const nav = useNavigate();
@@ -67,6 +67,9 @@ export const SiteHeader = () => {
     staleTime: 5 * 60_000,
   });
   const aiEnabled = healthQuery.data?.capabilities.ai === true;
+  const catalogDataMode = catalogQuery.data?.dataMode;
+  const suppliersDataMode = suppliersQuery.data?.dataMode;
+  const dataModeLabel = catalogDataMode === "live" && suppliersDataMode === "live" ? "LIVE DATA" : "CATALOG DATA";
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -173,15 +176,15 @@ export const SiteHeader = () => {
           <Link to="/marketplace" className="shrink-0 text-muted-foreground hover:text-foreground">Used deals</Link>
           <Link to="/suppliers" className="shrink-0 text-muted-foreground hover:text-foreground">Suppliers</Link>
           <Link to="/teardowns" className="shrink-0 text-muted-foreground hover:text-foreground">Teardowns</Link>
-          <span className="ml-auto hidden md:inline shrink-0 mono text-[10px] text-muted-foreground">v0.2 · Worker + D1 · demo data</span>
+          <span className="ml-auto hidden md:inline shrink-0 mono text-[10px] text-muted-foreground">Current catalog workspace</span>
         </div>
       </div>
 
-      {/* Tertiary KPI ticker — explicitly labelled persisted demo data until live imports are approved. */}
+      {/* Tertiary KPI ticker uses the API-reported data mode without overstating live coverage. */}
       <div className="border-t border-border bg-background">
         <div className="mx-auto flex max-w-[1400px] items-center overflow-x-auto no-scrollbar px-4 text-[11px]">
           <span className="flex items-center gap-1 shrink-0 pr-3 text-muted-foreground">
-            <Activity className="h-3 w-3 text-primary" /> <span className="mono">D1 DEMO</span>
+            <Activity className="h-3 w-3 text-primary" /> <span className="mono">{dataModeLabel}</span>
           </span>
           <div className="stat-tile"><span className="k">parts</span><span className="v">{catalogQuery.data?.total ?? "—"}</span></div>
           <div className="stat-tile"><span className="k">suppliers</span><span className="v">{suppliersQuery.data?.total ?? "—"}</span></div>
