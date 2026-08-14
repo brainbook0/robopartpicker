@@ -1029,15 +1029,14 @@ extensions:`);
     expect(Object.keys(createdBody.item).sort()).toEqual(["receivedAt", "referenceId", "status"]);
     expect(createdBody.message).toContain("manual review");
 
-    const duplicate = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody({
+    const duplicate = await call("/api/v1/partner-interest", { method: "POST", headers: { "X-Request-Id": "fixed-client-reference" }, body: jsonBody({
       ...payload,
-      inquiryType: "partner",
-      contactName: "Untrusted Probe",
       email: "ADA@EXAMPLESUPPLIER.COM",
     }) });
     expect(duplicate.status).toBe(201);
     const duplicateBody = await body<{ item: { referenceId: string; status: string; receivedAt: string } }>(duplicate);
     expect(duplicateBody.item.referenceId).not.toBe(createdBody.item.referenceId);
+    expect(duplicateBody.item.referenceId).not.toBe("fixed-client-reference");
     expect(Object.keys(duplicateBody.item).sort()).toEqual(["receivedAt", "referenceId", "status"]);
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM partner_interest_submissions WHERE normalized_email = ?1 AND normalized_organization = ?2")
       .bind("ada@examplesupplier.com", "test robotics supply").first<{ value: number }>())?.value)).toBe(1);
@@ -1055,6 +1054,33 @@ extensions:`);
       .bind(partnerInterestId).first<{ inquiry_type: string; normalized_email: string; status: string; source: string; request_id: string }>();
     expect(row).toMatchObject({ inquiry_type: "supplier", normalized_email: "ada@examplesupplier.com", status: "received", source: "public_partners_page" });
     expect(row?.request_id).toBeTruthy();
+
+    const poisonedIdentity = {
+      ...payload,
+      inquiryType: "partner",
+      organizationName: "Victim Robotics Supply",
+      contactName: "Untrusted Probe",
+      email: "victim@example-supplier.com",
+      message: "We claim a robotics partnership and are attempting to preempt a later legitimate supplier submission for this organization.",
+    };
+    const poisoned = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody(poisonedIdentity) });
+    expect(poisoned.status).toBe(201);
+    const legitimate = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody({
+      ...payload,
+      organizationName: "Victim Robotics Supply",
+      email: "victim@example-supplier.com",
+    }) });
+    expect(legitimate.status).toBe(201);
+    const victimRows = await env.DB.prepare(`SELECT inquiry_type, contact_name FROM partner_interest_submissions
+      WHERE normalized_email = ?1 AND normalized_organization = ?2 ORDER BY created_at`).bind(
+      "victim@example-supplier.com",
+      "victim robotics supply",
+    ).all<{ inquiry_type: string; contact_name: string }>();
+    expect(victimRows.results).toEqual(expect.arrayContaining([
+      { inquiry_type: "partner", contact_name: "Untrusted Probe" },
+      { inquiry_type: "supplier", contact_name: "Ada Partner" },
+    ]));
+    expect(victimRows.results).toHaveLength(2);
 
     const concurrentPayload = {
       ...payload,

@@ -87,6 +87,8 @@ export async function createPartnerInterest(db: D1Database, input: CreatePartner
   const normalizedEmail = input.email.trim().toLowerCase();
   const normalizedOrganization = input.organizationName.trim().replace(/\s+/g, " ");
   const contactName = input.contactName.trim().replace(/\s+/g, " ");
+  const websiteUrl = input.websiteUrl?.trim() || null;
+  const message = input.message.trim();
   const recentCutoff = new Date(Date.now() - 6 * 60 * 60 * 1_000).toISOString();
 
   await db.prepare(`INSERT INTO partner_interest_submissions
@@ -94,7 +96,9 @@ export async function createPartnerInterest(db: D1Database, input: CreatePartner
     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'received', 'public_partners_page', ?10, ?11, ?12, ?13, ?13
     WHERE NOT EXISTS (
       SELECT 1 FROM partner_interest_submissions
-      WHERE normalized_email = ?7 AND normalized_organization = ?4 AND created_at >= ?14
+      WHERE normalized_email = ?7 AND normalized_organization = ?4 AND inquiry_type = ?2
+        AND lower(contact_name) = lower(?5) AND COALESCE(website_url, '') = COALESCE(?8, '')
+        AND message = ?9 AND created_at >= ?14
     )`)
     .bind(
       id,
@@ -104,8 +108,8 @@ export async function createPartnerInterest(db: D1Database, input: CreatePartner
       contactName,
       normalizedEmail,
       normalizedEmail,
-      input.websiteUrl?.trim() || null,
-      input.message.trim(),
+      websiteUrl,
+      message,
       input.ipHash ?? null,
       input.userAgent?.slice(0, 300) ?? null,
       input.requestId ?? null,
