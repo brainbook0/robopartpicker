@@ -1,0 +1,46 @@
+{
+  "slug": "tny-360",
+  "repository_url": "https://github.com/tny-robotics/tny-360",
+  "analysis": {
+    "draft": {
+      "slug": "tny-360",
+      "repo_url": "https://github.com/tny-robotics/tny-360"
+    },
+    "inventory": {
+      "artifacts": [
+        {
+          "path": "BOM/Components.md",
+          "kind": "bom",
+          "sizeBytes": 3213,
+          "sha256": "8ce9169d6f7f44958b532a89e3d47d1c7af0f4b08bc4154a36db3636d0dadaed",
+          "sourceUrl": "https://raw.githubusercontent.com/tny-robotics/tny-360/42bbc828656d3ef79a6c92a504544d601bce0b4f/BOM/Components.md",
+          "sourceRevision": "42bbc828656d3ef79a6c92a504544d601bce0b4f"
+        },
+        {
+          "path": "BOM/Screws.md",
+          "kind": "bom",
+          "sizeBytes": 8946,
+          "sha256": "650a4f68bb2b7b5e172e14f5bb0373f54e472bf668182178c10729c8ecfe1560",
+          "sourceUrl": "https://raw.githubusercontent.com/tny-robotics/tny-360/42bbc828656d3ef79a6c92a504544d601bce0b4f/BOM/Screws.md",
+          "sourceRevision": "42bbc828656d3ef79a6c92a504544d601bce0b4f"
+        },
+        {
+          "path": "BOM/Cables.md",
+          "kind": "bom",
+          "sizeBytes": 4878,
+          "sha256": "be34c722954612f621f35ccfc2e046b393672f720f144b1cffcb85009c6dca9f",
+          "sourceUrl": "https://raw.githubusercontent.com/tny-robotics/tny-360/42bbc828656d3ef79a6c92a504544d601bce0b4f/BOM/Cables.md",
+          "sourceRevision": "42bbc828656d3ef79a6c92a504544d601bce0b4f"
+        },
+        {
+          "path": "BOM/PCBs.md",
+          "kind": "bom",
+          "sizeBytes": 2039,
+          "sha256": "3577d07ceffb0d82cfac93404a822cb16d101778b613220b2e0a757bc725f702",
+          "sourceUrl": "https://raw.githubusercontent.com/tny-robotics/tny-360/42bbc828656d3ef79a6c92a504544d601bce0b4f/BOM/PCBs.md",
+          "sourceRevision": "42bbc828656d3ef79a6c92a504544d601bce0b4f"
+        }
+      ]
+    }
+  }
+}

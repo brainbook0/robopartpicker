@@ -30,6 +30,8 @@
 
 ### Added
 
+- Reviewed BOM Wave 2 for TNY-360 and NodeQuad, with immutable source revisions and SHA-256s, conservative Markdown/XLSX transforms, RPPS-safe deterministic refs, expected-line-count guards, explicit per-line completeness, source evidence, guarded production SQL and rollback generation, plus six verified BOM/document artifacts prepared for R2 publication.
+
 - Public partners/advertisers/suppliers interest intake on `/partners`, backed by same-origin protected `POST /api/v1/partner-interest`, D1 persistence, basic spam checks, IP-scoped rate limiting, and an honest manual-review success state.
 
 - Commercial showcase Wave 1 importer (`scripts/import-commercial-showcase-wave1.ts`) with 12 vendor-official closed-source records, dry-run default, explicit production gate, deterministic IDs, conflict checks, generated guarded rollback SQL, RPPS evidence, and explicit `search_index` population without repository, license, image, CAD, BOM, file, assembly, or pricing fields.

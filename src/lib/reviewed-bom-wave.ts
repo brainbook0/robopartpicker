@@ -8,6 +8,7 @@ export type ReviewedBomSourceDefinition = {
   format: ReviewedBomSourceFormat;
   sha256: string;
   transform: ReviewedBomTransform;
+  expected_items?: number;
   section?: { from_heading: string; until_before_heading: string };
   exclude_sections?: string[];
 };
@@ -60,6 +61,7 @@ export function validateReviewedBomWaveDefinition(wave: ReviewedBomWaveDefinitio
     if (!GIT_REV_RE.test(project.revision)) errors.push(`${project.project_id}: revision must be a 40-character lowercase git hash`);
     for (const source of project.sources ?? []) {
       if (!SHA256_RE.test(source.sha256)) errors.push(`${project.project_id}/${source.path}: sha256 must be a 64-character lowercase hex digest`);
+      if (source.expected_items != null && (!Number.isInteger(source.expected_items) || source.expected_items <= 0)) errors.push(`${project.project_id}/${source.path}: expected_items must be a positive integer`);
       if ((source.format === "markdown") !== source.path.endsWith(".md")) errors.push(`${project.project_id}/${source.path}: markdown sources must use .md paths`);
       if ((source.format === "xlsx") !== source.path.endsWith(".xlsx")) errors.push(`${project.project_id}/${source.path}: xlsx sources must use .xlsx paths`);
     }
@@ -121,20 +123,20 @@ function rowToItem(project: ReviewedBomProjectDefinition, source: ReviewedBomSou
   const quantity = parseQuantity(quantityText);
   if (!Number.isFinite(quantity) || quantity <= 0) return [];
 
-  const name = pick(row, ["名称", "name", "part", "component", "description", "item", "type", "pcb", "规格", "型号"]);
+  const name = itemNameFor(source, row);
   if (!name) return [];
-  const mpn = pick(row, ["mpn", "manufacturerpart", "manufacturerpartnumber", "lcscpart", "型号", "规格"]);
+  const mpn = itemMpnFor(source, row);
   const sourceUrl = pick(row, ["link", "链接", "files", "source"]);
 
   return [{
-    ref: `${project.project_id}:${source.path}:${source.transform}:${String(rowIndex + 1).padStart(4, "0")}`,
+    ref: `${project.project_id}-${source.transform}-${String(rowIndex + 1).padStart(4, "0")}`,
     name,
     quantity,
     category: categoryFor(source, row),
     fabricated: fabricatedFor(source),
     mpn: mpn || undefined,
     source_url: /^https?:\/\//u.test(sourceUrl) ? sourceUrl : undefined,
-    metadata: { ...row, source_label: name, transform: source.transform },
+    metadata: { ...row, source_label: pick(row, ["名称", "name", "part", "component", "description", "item", "type", "pcb", "规格", "型号"]), transform: source.transform },
     provenance: {
       project_id: project.project_id,
       repo_url: project.repo_url,
@@ -145,6 +147,44 @@ function rowToItem(project: ReviewedBomProjectDefinition, source: ReviewedBomSou
       row_index: rowIndex + 1,
     },
   }];
+}
+
+function itemNameFor(source: ReviewedBomSourceDefinition, row: Record<string, string>): string {
+  if (source.transform === "tny-components") {
+    return joinDistinct(pick(row, ["type"]), pick(row, ["description"]));
+  }
+  if (source.transform === "tny-screws-total") {
+    return joinDistinct(pick(row, ["type", "name", "part"]), pick(row, ["length"]));
+  }
+  if (source.transform === "tny-cables") {
+    return joinDistinct(pick(row, ["type"]), pick(row, ["pins"]), pick(row, ["length"]));
+  }
+  if (source.transform === "tny-pcbs") return pick(row, ["pcb", "name"]);
+  if (source.transform === "nodequad-xlsx-explicit") {
+    return joinDistinct(pick(row, ["名称"]), pick(row, ["规格", "型号"]));
+  }
+  return pick(row, ["名称", "name", "part", "component", "description", "item", "type", "pcb", "规格", "型号"]);
+}
+
+function joinDistinct(...parts: string[]): string {
+  const kept: string[] = [];
+  for (const part of parts.map((value) => value.trim()).filter(Boolean)) {
+    if (!kept.some((value) => value.localeCompare(part, undefined, { sensitivity: "accent" }) === 0)) kept.push(part);
+  }
+  return kept.join(" — ");
+}
+
+const SOURCE_BACKED_MODEL_TOKENS = [
+  "NodeMCU-32S", "PCA9685", "MPU6050", "AMS1117", "1N4004", "XT60-F", "KCD1-101", "TD-8120MG", "MINI360",
+  "VL53L0X", "SH1106", "TTP223", "OV2640", "SG90", "MG996R",
+];
+
+function itemMpnFor(source: ReviewedBomSourceDefinition, row: Record<string, string>): string | undefined {
+  const explicit = pick(row, ["mpn", "manufacturerpart", "manufacturerpartnumber", "lcscpart", "型号"]);
+  if (explicit) return explicit;
+  const candidate = [pick(row, ["名称", "type"]), pick(row, ["规格", "description"])].filter(Boolean).join(" ");
+  const token = SOURCE_BACKED_MODEL_TOKENS.find((value) => candidate.toLowerCase().includes(value.toLowerCase()));
+  return token;
 }
 
 function pick(row: Record<string, string>, keys: string[]): string {
@@ -164,6 +204,12 @@ function categoryFor(source: ReviewedBomSourceDefinition, row: Record<string, st
   if (source.transform.includes("screws")) return "fastener";
   if (source.transform.includes("cables")) return "cable";
   if (source.transform.includes("pcbs") || pick(row, ["pcb"])) return "pcb";
+  if (source.transform === "nodequad-xlsx-explicit") {
+    const label = `${pick(row, ["名称"])} ${pick(row, ["规格"])}`;
+    if (/螺钉|螺丝|螺母/u.test(label)) return "fastener";
+    if (/舵机/u.test(label)) return "actuator";
+    if (/主控|驱动|陀螺|模块|电阻|二极管|LED|接线|开关|排针|排母/iu.test(label)) return "electronics";
+  }
   return undefined;
 }
 

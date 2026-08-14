@@ -1,0 +1,30 @@
+{
+  "slug": "nodequad12-micropython",
+  "repository_url": "https://github.com/violinlee/nodequad12-micropython",
+  "analysis": {
+    "draft": {
+      "slug": "nodequad12-micropython",
+      "repo_url": "https://github.com/violinlee/nodequad12-micropython"
+    },
+    "inventory": {
+      "artifacts": [
+        {
+          "path": "README.md",
+          "kind": "document",
+          "sizeBytes": 1835,
+          "sha256": "351012b9ca0a4f69facbd16fc8559e114fac7eab2f020f6d64e25d49880d109b",
+          "sourceUrl": "https://raw.githubusercontent.com/violinlee/nodequad12-micropython/5cc7b911f470a33c144a8aaf10234c1e55b55d58/README.md",
+          "sourceRevision": "5cc7b911f470a33c144a8aaf10234c1e55b55d58"
+        },
+        {
+          "path": "resource/BOM.xlsx",
+          "kind": "bom",
+          "sizeBytes": 15146,
+          "sha256": "7afa77ac3604c2d374de66082b0e031c621b560f57bfa75607fb601db407c89c",
+          "sourceUrl": "https://raw.githubusercontent.com/violinlee/nodequad12-micropython/5cc7b911f470a33c144a8aaf10234c1e55b55d58/resource/BOM.xlsx",
+          "sourceRevision": "5cc7b911f470a33c144a8aaf10234c1e55b55d58"
+        }
+      ]
+    }
+  }
+}

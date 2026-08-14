@@ -4,8 +4,8 @@ import wave from "../../data/bom-waves/2026-08-14-reviewed-wave2.json";
 import { transformReviewedBomSource, validateReviewedBomWaveDefinition, type ReviewedBomProjectDefinition, type ReviewedBomSourceDefinition, type ReviewedBomWaveDefinition } from "./reviewed-bom-wave";
 
 const project: ReviewedBomProjectDefinition = {
-  project_id: "robothouse_tny_robot",
-  repo_url: "https://github.com/robot-house/tny-robot.git",
+  project_id: "tny-360",
+  repo_url: "https://github.com/tny-robotics/tny-360.git",
   revision: "42bbc828656d3ef79a6c92a504544d601bce0b4f",
   sources: [],
 };
@@ -50,8 +50,8 @@ describe("reviewed BOM wave transforms", () => {
     expect(items.map((item) => item.name)).toEqual(["M2x6 screw", "M3x8 screw"]);
     expect(items.every((item) => item.category === "fastener")).toBe(true);
     expect(items.map((item) => item.ref)).toEqual([
-      "robothouse_tny_robot:BOM/Screws.md:tny-screws-total:0001",
-      "robothouse_tny_robot:BOM/Screws.md:tny-screws-total:0002",
+      "tny-360-tny-screws-total-0001",
+      "tny-360-tny-screws-total-0002",
     ]);
   });
 
@@ -88,17 +88,18 @@ describe("reviewed BOM wave transforms", () => {
 <row r="3"><c r="A3"><v>2</v></c><c r="B3"/><c r="C3" t="s"><v>6</v></c><c r="D3"><v>4</v></c></row>
 <row r="4"><c r="A4"><v>3</v></c><c r="B4" t="s"><v>7</v></c><c r="C4" t="s"><v>8</v></c><c r="D4"/></row>
 </sheetData></worksheet>`);
-    const nodequad: ReviewedBomProjectDefinition = { ...project, project_id: "yf3014_nodequad", repo_url: "https://github.com/yf3014/NodeQuad.git" };
+    const nodequad: ReviewedBomProjectDefinition = { ...project, project_id: "nodequad12-micropython", repo_url: "https://github.com/violinlee/nodequad12-micropython.git" };
 
     const items = transformReviewedBomSource(nodequad, source("nodequad-xlsx-explicit", "resource/BOM.xlsx", "xlsx"), bytes);
 
     expect(items).toHaveLength(2);
     expect(items.map((item) => [item.name, item.mpn, item.quantity])).toEqual([
-      ["螺丝", "M2x6", 8],
-      ["螺丝", "M2x8", 4],
+      ["螺丝 — M2x6", undefined, 8],
+      ["螺丝 — M2x8", undefined, 4],
     ]);
     expect(items[0].metadata.source_label).toBe("螺丝");
-    expect(items[1].ref).toBe("yf3014_nodequad:resource/BOM.xlsx:nodequad-xlsx-explicit:0002");
+    expect(items[1].ref).toBe("nodequad12-micropython-nodequad-xlsx-explicit-0002");
+    expect(items.every((item) => item.ref.length <= 64)).toBe(true);
   });
 
   it("validates immutable reviewed wave hashes and rejects malformed config", () => {
