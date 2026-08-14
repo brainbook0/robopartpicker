@@ -169,6 +169,72 @@ async function uploadTestFile(name: string, content: string, cookie: string, kin
   return upload.file.id;
 }
 
+async function issuePrivateMcpToken(cookie: string, scope = "openid profile rpp:read rpp:write") {
+  const redirectUri = `http://127.0.0.1:7777/oauth/callback/${crypto.randomUUID()}`;
+  const registered = await call("/api/auth/oauth2/register", {
+    method: "POST",
+    body: jsonBody({
+      client_name: "RoboPartPicker Worker Test",
+      redirect_uris: [redirectUri],
+      token_endpoint_auth_method: "none",
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"],
+      scope,
+      type: "native",
+    }),
+  });
+  const registrationText = await registered.text();
+  expect(registered.status, registrationText).toBe(200);
+  const registration = JSON.parse(registrationText) as { client_id: string };
+  const verifier = `worker-test-pkce-verifier-${crypto.randomUUID()}-abcdefghijklmnopqrstuvwxyz0123456789`;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/gu, "-").replace(/\//gu, "_").replace(/=+$/gu, "");
+  const authorize = new URLSearchParams({
+    response_type: "code",
+    client_id: registration.client_id,
+    redirect_uri: redirectUri,
+    scope,
+    state: "worker-test-state",
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+  });
+  const authorization = await call(`/api/auth/oauth2/authorize?${authorize}`, { redirect: "manual" }, cookie);
+  const authorizationText = await authorization.clone().text();
+  expect(authorization.status, authorizationText).toBe(302);
+  const oauthQuery = new URL(authorization.headers.get("location")!, origin).search.slice(1);
+  const consent = await call("/api/auth/oauth2/consent", {
+    method: "POST",
+    headers: { accept: "application/json" },
+    body: jsonBody({ accept: true, oauth_query: oauthQuery }),
+  }, cookie);
+  expect(consent.status).toBe(200);
+  const callback = new URL((await body<{ url: string }>(consent)).url);
+  const tokenForm = new URLSearchParams({
+    grant_type: "authorization_code",
+    client_id: registration.client_id,
+    redirect_uri: redirectUri,
+    code: callback.searchParams.get("code")!,
+    code_verifier: verifier,
+    resource: `${origin}/mcp/private`,
+  });
+  const token = await call("/api/auth/oauth2/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
+    body: tokenForm.toString(),
+  });
+  const tokenText = await token.text();
+  expect(token.status, tokenText).toBe(200);
+  return (JSON.parse(tokenText) as { access_token: string }).access_token;
+}
+
+function privateMcpHeaders(accessToken: string) {
+  return {
+    authorization: `Bearer ${accessToken}`,
+    accept: "application/json, text/event-stream",
+    "content-type": "application/json",
+  };
+}
+
 beforeAll(async () => {
   const now = new Date().toISOString();
   await env.DB.batch([
@@ -1035,6 +1101,47 @@ extensions:`);
     expect(confirmed.status).toBe(200);
     expect((await body<{ result: { structuredContent: { applied: boolean } } }>(confirmed)).result.structuredContent.applied).toBe(true);
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM build_problems WHERE build_id = ?1 AND title = 'Intermittent encoder reading'").bind(oauthBuildId).first<{ value: number }>())?.value)).toBe(1);
+  });
+
+  it("filters private file metadata from get_my_project for non-owner public project readers", async () => {
+    const created = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      visibility: "public",
+      rpps: emptyRpps({ name: "Public MCP File Visibility Robot", slug: "public-mcp-file-visibility-robot" }),
+    }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const project = (await body<{ item: { id: string; slug: string } }>(created)).item;
+    const privateFileId = await uploadTestFile("private-notes.txt", "private assembly notes", ownerCookie);
+    const publicFileId = await uploadTestFile("public-readme.txt", "public readme", ownerCookie);
+    await env.DB.prepare("UPDATE files SET visibility = 'public' WHERE id = ?1").bind(publicFileId).run();
+    expect((await call(`/api/v1/files/${privateFileId}/attachments`, { method: "POST", body: jsonBody({ entityType: "project", entityId: project.id, purpose: "reference", relativePath: "private/notes.txt" }) }, ownerCookie)).status).toBe(201);
+    expect((await call(`/api/v1/files/${publicFileId}/attachments`, { method: "POST", body: jsonBody({ entityType: "project", entityId: project.id, purpose: "reference", relativePath: "README.txt" }) }, ownerCookie)).status).toBe(201);
+
+    const accessToken = await issuePrivateMcpToken(otherCookie, "openid profile rpp:read");
+    const response = await call("/mcp/private", { method: "POST", headers: privateMcpHeaders(accessToken), body: jsonBody({
+      jsonrpc: "2.0", id: 101, method: "tools/call", params: { name: "get_my_project", arguments: { idOrSlug: project.slug } },
+    }) });
+    expect(response.status).toBe(200);
+    const result = await body<{ result: { structuredContent: { files: Array<{ id: string; visibility: string; name: string }> } } }>(response);
+    expect(result.result.structuredContent.files).toEqual([expect.objectContaining({ id: publicFileId, visibility: "public", name: "public-readme.txt" })]);
+    expect(result.result.structuredContent.files.some((file) => file.id === privateFileId || file.name === "private-notes.txt")).toBe(false);
+  });
+
+  it("returns a stable MCP tool authorization error when write scope is missing", async () => {
+    const oauthBuildResponse = await call("/api/v1/builds", { method: "POST", body: jsonBody({ name: "Read-only MCP scope build", visibility: "private" }) }, ownerCookie);
+    expect(oauthBuildResponse.status).toBe(201);
+    const oauthBuildId = (await body<{ item: { id: string } }>(oauthBuildResponse)).item.id;
+    const accessToken = await issuePrivateMcpToken(ownerCookie, "openid profile rpp:read");
+    const response = await call("/mcp/private", { method: "POST", headers: privateMcpHeaders(accessToken), body: jsonBody({
+      jsonrpc: "2.0", id: 102, method: "tools/call", params: { name: "propose_build_problem", arguments: {
+        buildId: oauthBuildId, title: "Missing write scope", description: "This must not create a proposal.", severity: "low",
+      } },
+    }) });
+    expect(response.status).toBe(200);
+    const result = await body<{ result: { isError: boolean; content: Array<{ text: string }>; structuredContent: { error: { code: string; requiredScope: string } } } }>(response);
+    expect(result.result.isError).toBe(true);
+    expect(result.result.content[0].text).toContain("OAuth scope rpp:write is required.");
+    expect(result.result.structuredContent.error).toMatchObject({ code: "INSUFFICIENT_SCOPE", requiredScope: "rpp:write" });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM ai_tool_calls WHERE input_json LIKE '%Missing write scope%'").first<{ value: number }>())?.value)).toBe(0);
   });
 
   it("persists and revokes Better Auth sessions across sign-out and sign-in", async () => {

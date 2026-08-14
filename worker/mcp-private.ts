@@ -116,13 +116,14 @@ function createPrivateMcpServer(env: Env, userId: string, claims: McpClaims): Mc
         SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id
         AND om.user_id = ?2 AND om.status = 'active'))`).bind(idOrSlug, userId).first<Record<string, unknown>>();
     if (!project) return toolError("Authorized project not found.");
+    const canReadPrivateFiles = numericFlag(project.canReadPrivateFiles);
     const files = await env.DB.prepare(`SELECT f.id, f.original_name AS name, f.media_type AS mediaType,
       f.size_bytes AS sizeBytes, f.kind, f.visibility, f.status, pf.purpose, pf.relative_path AS relativePath
       FROM project_files pf JOIN files f ON f.id = pf.file_id
       WHERE pf.project_id = ?1 AND f.deleted_at IS NULL
         AND (?2 = 1 OR (f.visibility = 'public' AND f.status = 'ready'))
       ORDER BY pf.relative_path, f.original_name`)
-      .bind(project.id, project.canReadPrivateFiles === 1 ? 1 : 0).all();
+      .bind(project.id, canReadPrivateFiles ? 1 : 0).all();
     const { canReadPrivateFiles: _privateFiles, ...publicProject } = project;
     return jsonResult({ project: publicProject, files: files.results });
   });
@@ -343,7 +344,11 @@ function scopesOf(claims: McpClaims): string[] {
 }
 
 function requireScope(claims: McpClaims, scope: string) {
-  return scopesOf(claims).includes(scope) ? null : toolError(`OAuth scope ${scope} is required.`);
+  return scopesOf(claims).includes(scope) ? null : authorizationToolError(`OAuth scope ${scope} is required.`, scope);
+}
+
+function numericFlag(value: unknown): boolean {
+  return value === 1 || value === true;
 }
 
 function bearerToken(request: Request): string | null {
@@ -373,4 +378,12 @@ function jsonResult(value: unknown) {
 
 function toolError(message: string) {
   return { isError: true, content: [{ type: "text" as const, text: message }] };
+}
+
+function authorizationToolError(message: string, requiredScope: string) {
+  return {
+    isError: true,
+    content: [{ type: "text" as const, text: message }],
+    structuredContent: { error: { code: "INSUFFICIENT_SCOPE", message, requiredScope } },
+  };
 }
