@@ -3,6 +3,7 @@ import { z } from "zod";
 import { RppsPackage } from "../../src/lib/rpps/schema";
 import type { AppBindings } from "../env";
 import { ProjectsRepository } from "../db/repositories/projects";
+import type { ProjectKind } from "../../src/shared/projectKind";
 import { AppError, parsePositiveInt } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
 import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId, organizationRole } from "../middleware/authorization";
@@ -36,6 +37,7 @@ const analysisSchema = z.object({
 });
 const archiveAnalysisSchema = z.object({ fileId: z.string().uuid() }).strict();
 const storedFilesAnalysisSchema = z.object({ fileIds: z.array(z.string().uuid()).min(1).max(100) }).strict();
+const projectKinds: ProjectKind[] = ["physical_design", "robotics_software", "commercial_showcase", "unknown"];
 
 export const projectRoutes = new Hono<AppBindings>();
 
@@ -46,9 +48,12 @@ projectRoutes.get("/projects", loadAuthSession, async (c) => {
   const sort = ["popularity", "updated", "name"].includes(c.req.query("sort") ?? "")
     ? (c.req.query("sort") as "popularity" | "updated" | "name")
     : "popularity";
+  const kindParam = c.req.query("kind");
+  const kind = projectKinds.includes(kindParam as ProjectKind) ? (kindParam as ProjectKind) : undefined;
   const result = await new ProjectsRepository(c.env.DB).listVisible(userId, {
     q: c.req.query("q")?.trim().slice(0, 100) || undefined,
     mine: c.req.query("mine") === "true",
+    kind,
     sort,
     limit,
     offset: (page - 1) * limit,

@@ -14,6 +14,7 @@ export type ProjectRow = {
   version: string;
   record_version?: number;
   status: "draft" | "review" | "published" | "archived";
+  project_kind: ProjectKind;
   visibility: "public" | "organization" | "unlisted" | "private";
   repo_url: string | null;
   docs_url: string | null;
@@ -39,12 +40,16 @@ export type ProjectRow = {
   publishability: "ready" | "review" | "incomplete" | "blocked";
 };
 
+export type ProjectKind = "physical_design" | "robotics_software" | "commercial_showcase" | "unknown";
+
 export async function listPublicProjects(): Promise<ProjectRow[]> {
   return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?limit=1000&sort=popularity")).items;
 }
 
-export async function listProjectsPage(page: number, limit = 1000): Promise<{ items: ProjectRow[]; total: number }> {
-  return await api.get<{ items: ProjectRow[]; total: number }>(`/api/v1/projects?limit=${limit}&sort=popularity&page=${page}`);
+export async function listProjectsPage(page: number, limit = 1000, options: { kind?: ProjectKind | "" } = {}): Promise<{ items: ProjectRow[]; total: number }> {
+  const params = new URLSearchParams({ limit: String(limit), sort: "popularity", page: String(page) });
+  if (options.kind) params.set("kind", options.kind);
+  return await api.get<{ items: ProjectRow[]; total: number }>(`/api/v1/projects?${params.toString()}`);
 }
 
 export async function listMyProjects(userId: string): Promise<ProjectRow[]> {
@@ -174,11 +179,14 @@ export type SourcingEstimate = {
     name: string;
     quantity: number;
     unitPriceMinor: number | null;
+    selectedOfferId: string | null;
     supplierId: string | null;
     supplierName: string | null;
+    condition: string | null;
     riskLabel: string | null;
     freshnessLabel: string | null;
     leadTimeDays: number | null;
+    currency: string | null;
     subtotalMinor: number | null;
     isSubstitute: boolean;
     unpriced: boolean;

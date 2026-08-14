@@ -1,4 +1,5 @@
 import type { RppsPackage } from "../../../src/lib/rpps/schema";
+import { classifyProjectKind, type ProjectKind } from "../../../src/shared/projectKind";
 import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
 import { AppError } from "../../http";
 
@@ -12,6 +13,7 @@ type ProjectDatabaseRow = {
   organization_id: string | null;
   visibility: "private" | "organization" | "unlisted" | "public";
   status: "draft" | "review" | "published" | "archived";
+  project_kind: ProjectKind;
   license_spdx: string | null;
   repository_url: string | null;
   difficulty: string | null;
@@ -52,6 +54,7 @@ export type ProjectDto = {
   version: string;
   record_version: number;
   status: ProjectDatabaseRow["status"];
+  project_kind: ProjectKind;
   visibility: ProjectDatabaseRow["visibility"];
   repo_url: string | null;
   docs_url: string | null;
@@ -101,7 +104,7 @@ export type ProjectFileDto = {
 };
 
 const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p.owner_user_id,
-  p.organization_id, p.visibility, p.status, p.license_spdx, p.repository_url, p.difficulty,
+  p.organization_id, p.visibility, p.status, p.project_kind, p.license_spdx, p.repository_url, p.difficulty,
   p.estimated_cost_minor, p.estimated_cost_currency, p.is_demo, p.version, p.created_at, p.updated_at,
   p.github_stars, p.upstream_url, p.upstream_identity, p.maintainer, p.revision, p.ingested_at,
   p.last_checked_at, p.publishability, p.upstream_project_id, p.upstream_revision, p.clone_created_at, p.change_summary,
@@ -119,7 +122,7 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
 export class ProjectsRepository {
   constructor(private readonly db: D1Database) {}
 
-  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number }> {
+  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
     const access = options.mine
@@ -132,6 +135,7 @@ export class ProjectsRepository {
       const term = bind(`%${options.q.toLowerCase()}%`);
       clauses.push(`(lower(p.name) LIKE ${term} OR lower(COALESCE(p.summary, '')) LIKE ${term})`);
     }
+    if (options.kind) clauses.push(`p.project_kind = ${bind(options.kind)}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
     const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM projects p ${where}`).bind(...values).first<{ total: number }>();
     const rows = await this.db.prepare(`${SELECT_PROJECT} ${where} ORDER BY ${this.orderBy(options.sort)} LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`)
@@ -144,7 +148,7 @@ export class ProjectsRepository {
       case "name": return "p.name COLLATE NOCASE ASC, p.github_stars DESC";
       case "updated": return "p.updated_at DESC";
       case "popularity":
-      default: return "COALESCE(p.github_stars, -1) DESC, p.updated_at DESC";
+      default: return "CASE p.project_kind WHEN 'physical_design' THEN 0 WHEN 'robotics_software' THEN 1 WHEN 'commercial_showcase' THEN 2 ELSE 3 END ASC, COALESCE(p.github_stars, -1) DESC, p.updated_at DESC";
     }
   }
 
@@ -234,17 +238,18 @@ export class ProjectsRepository {
       if (existing) throw new AppError(409, "PROJECT_UPSTREAM_EXISTS", "A project for this upstream repository already exists.");
     }
     const status = publishability === "ready" ? "published" : "review";
+    const projectKind = classifyProjectKind(rpps);
     try {
       await this.db.batch([
         this.db.prepare(`INSERT INTO projects
-          (id, slug, name, summary, description, owner_user_id, organization_id, visibility, status,
+          (id, slug, name, summary, description, owner_user_id, organization_id, visibility, status, project_kind,
            current_version_id, license_spdx, repository_url, difficulty, estimated_cost_minor,
            estimated_cost_currency, is_demo, version, upstream_url, upstream_identity, maintainer, revision,
            ingested_at, last_checked_at, publishability, upstream_project_id, upstream_revision,
            clone_created_at, change_summary, created_at, updated_at)
-          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 'USD', 0, 1, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?21, ?22, ?23, ?24, ?19, ?19)`)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, 'USD', 0, 1, ?16, ?17, ?18, ?19, ?20, ?20, ?21, ?22, ?23, ?24, ?25, ?20, ?20)`)
           .bind(projectId, rpps.slug, rpps.name, rpps.summary ?? null, rpps.description ?? null, input.ownerUserId,
-            input.organizationId ?? null, input.visibility, status, versionId, rpps.license ?? null, rpps.repo_url ?? null,
+            input.organizationId ?? null, input.visibility, status, projectKind, versionId, rpps.license ?? null, rpps.repo_url ?? null,
             rpps.build?.difficulty ?? null, rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100),
             upstreamUrl, upstreamIdentity, maintainer, input.revision ?? null, now, publishability,
             input.upstreamProjectId ?? null, input.upstreamRevision ?? null,
@@ -302,13 +307,13 @@ export class ProjectsRepository {
           AND EXISTS (SELECT 1 FROM projects WHERE id = ?1 AND version = ?3)`).bind(projectId, versionId, expectedVersion),
         this.db.prepare(`UPDATE projects SET slug = ?1, name = ?2, summary = ?3, description = ?4,
           current_version_id = ?5, license_spdx = ?6, repository_url = ?7, difficulty = ?8,
-          estimated_cost_minor = ?9, upstream_url = ?10, upstream_identity = ?11, maintainer = ?12,
-          publishability = ?13, last_checked_at = ?14, version = version + 1, updated_at = ?14
-          WHERE id = ?15 AND version = ?16`)
+          estimated_cost_minor = ?9, project_kind = ?10, upstream_url = ?11, upstream_identity = ?12, maintainer = ?13,
+          publishability = ?14, last_checked_at = ?15, version = version + 1, updated_at = ?15
+          WHERE id = ?16 AND version = ?17`)
           .bind(rpps.slug, rpps.name, rpps.summary ?? null, rpps.description ?? null, versionId, rpps.license ?? null,
             rpps.repo_url ?? null, rpps.build?.difficulty ?? null,
             rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100),
-            upstreamUrl, upstreamIdentity, current.row.maintainer ?? rpps.authors?.[0]?.name ?? null,
+            classifyProjectKind(rpps), upstreamUrl, upstreamIdentity, current.row.maintainer ?? rpps.authors?.[0]?.name ?? null,
             publishability, now, projectId, expectedVersion),
       ]);
       if (Number(results[2].meta.changes) < 1) throw new AppError(409, "PROJECT_VERSION_CONFLICT", "The project changed; refresh and retry.");
@@ -443,6 +448,7 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     version: row.version_label ?? rpps.version,
     record_version: row.version,
     status: row.status,
+    project_kind: row.project_kind ?? "unknown",
     visibility: row.visibility,
     repo_url: row.repository_url,
     docs_url: rpps.docs_url ?? null,

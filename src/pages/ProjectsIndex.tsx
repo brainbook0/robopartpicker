@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Search, FileJson, GitBranch, Package, X, Cpu, Boxes, Clock, Star } from "lucide-react";
-import { listProjectsPage, type ProjectRow } from "@/lib/projects";
+import { Plus, Search, FileJson, GitBranch, Package, X, Cpu, Boxes, Clock, Star, ShieldCheck, AlertTriangle } from "lucide-react";
+import { listProjectsPage, type ProjectKind, type ProjectRow } from "@/lib/projects";
 import { useAuth } from "@/contexts/AuthContext";
 
 type SortKey = "popularity" | "updated" | "cost_asc" | "repro_desc" | "name";
@@ -27,6 +27,13 @@ const fmtStars = (n: number | null | undefined) => {
   return `${n}`;
 };
 
+const kindLabels: Record<ProjectKind, string> = {
+  physical_design: "Physical design",
+  robotics_software: "Robotics software",
+  commercial_showcase: "Commercial showcase",
+  unknown: "Unclassified",
+};
+
 const relTime = (iso: string) => {
   const d = (Date.now() - new Date(iso).getTime()) / 1000;
   if (d < 60) return "just now";
@@ -50,6 +57,7 @@ export default function ProjectsIndex() {
   const q = params.get("q") ?? "";
   const tag = params.get("tag");
   const difficulty = params.get("difficulty") ?? "";
+  const kind = (params.get("kind") as ProjectKind | null) ?? "";
   const sort = (params.get("sort") as SortKey) || "popularity";
   const quickParam = params.get("f") ?? "";
   const quick = useMemo(() => new Set(quickParam.split(",").filter(Boolean)), [quickParam]);
@@ -66,16 +74,19 @@ export default function ProjectsIndex() {
   };
   const clearFilters = () => setParams(new URLSearchParams(), { replace: false });
 
+  const pageSize = 60;
+
   useEffect(() => {
-    listProjectsPage(1).then(r => {
+    setLoading(true);
+    listProjectsPage(1, pageSize, { kind }).then(r => {
       setRows(r.items); setTotal(r.total); setPage(1); setLoading(false);
     }).catch(e => { setErr(e.message); setLoading(false); });
-  }, []);
+  }, [kind]);
 
   const loadMore = () => {
     if (loading) return;
     setLoadingMore(true);
-    listProjectsPage(page + 1).then(r => {
+    listProjectsPage(page + 1, pageSize, { kind }).then(r => {
       setRows(prev => {
         const seen = new Set(prev.map(p => p.id));
         return [...prev, ...r.items.filter(p => !seen.has(p.id))];
@@ -114,16 +125,17 @@ export default function ProjectsIndex() {
     const costs = rows.map(r => r.estimated_cost_usd).filter((n): n is number => n != null);
     const weekAgo = Date.now() - 7 * 86400_000;
     return {
-      total: rows.length,
+      total,
+      loaded: rows.length,
       medianCost: median(costs),
       reproductions: rows.reduce((sum, project) => sum + project.reproduction_count, 0),
       successes: rows.reduce((sum, project) => sum + project.successful_reproduction_count, 0),
       withBom: rows.filter(r => bomLineCount(r) > 0).length,
       recent: rows.filter(r => new Date(r.updated_at).getTime() > weekAgo).length,
     };
-  }, [rows]);
+  }, [rows, total]);
 
-  const hasActiveFilters = !!(q || tag || difficulty || quick.size || sort !== "updated");
+  const hasActiveFilters = !!(q || tag || difficulty || kind || quick.size || sort !== "updated");
   const noProjectsExist = !loading && rows.length === 0;
   const noMatches = !loading && rows.length > 0 && filtered.length === 0;
   const demoOnly = rows.length > 0 && rows.every((project) => project.is_demo);
@@ -138,7 +150,7 @@ export default function ProjectsIndex() {
             <Package className="h-4 w-4 text-primary" /> Discover robotics projects
           </h1>
           <p className="text-[12px] text-muted-foreground max-w-[720px] mt-0.5">
-            Structured, reproducible DIY robotics builds. Every project is a portable RPPS package with a BOM, files, and integration evidence.
+            The broad robotics design catalog. Source, revision, license, BOM, pricing, and reproducibility are shown as separate evidence states rather than assumed complete.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -151,11 +163,11 @@ export default function ProjectsIndex() {
 
       {/* Overview strip */}
       <div className="surface-card mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border">
-        <StatCell label="Projects" value={stats.total.toString()} />
+        <StatCell label="Projects" value={stats.total.toLocaleString()} />
         <StatCell label="Median cost" value={stats.medianCost != null ? `$${Math.round(stats.medianCost).toLocaleString()}` : "—"} />
         <StatCell label="Reproductions" value={`${stats.reproductions} · ${stats.successes} succeeded`} />
-        <StatCell label="With BOM" value={`${stats.withBom}/${stats.total || 0}`} />
-        <StatCell label="Updated this week" value={stats.recent.toString()} />
+        <StatCell label="Loaded now" value={stats.loaded.toLocaleString()} />
+        <StatCell label="With BOM (loaded)" value={`${stats.withBom}/${stats.loaded || 0}`} />
       </div>
       {demoOnly && <div className="mb-3 border border-warning/30 bg-warning/5 p-2 text-[11px] text-muted-foreground">All projects shown are derived from downloaded demo BOM fixtures. They are example RPPS records, not validated build instructions or live community publications.</div>}
 
@@ -185,6 +197,15 @@ export default function ProjectsIndex() {
           <option value="advanced">Advanced</option>
           <option value="expert">Expert</option>
         </select>
+        <select value={kind} onChange={e => setParam("kind", e.target.value || null)}
+          aria-label="Filter by project type"
+          className="h-7 rounded border border-input bg-surface px-2 text-[12px]">
+          <option value="">Any project type</option>
+          <option value="physical_design">Physical designs</option>
+          <option value="robotics_software">Robotics software</option>
+          <option value="commercial_showcase">Commercial showcases</option>
+          <option value="unknown">Unclassified</option>
+        </select>
         <select value={sort} onChange={e => setParam("sort", e.target.value === "updated" ? null : e.target.value)}
           aria-label="Sort projects"
           className="h-7 rounded border border-input bg-surface px-2 text-[12px]">
@@ -203,6 +224,7 @@ export default function ProjectsIndex() {
 
       {/* Quick + tag filters */}
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        <Chip active={kind === "physical_design"} onClick={() => setParam("kind", kind === "physical_design" ? null : "physical_design")}>Physical designs</Chip>
         <Chip active={quick.has("bom")} onClick={() => toggleQuick("bom")}>Has BOM</Chip>
         <Chip active={quick.has("repo")} onClick={() => toggleQuick("repo")}>Has repo</Chip>
         <Chip active={quick.has("under1k")} onClick={() => toggleQuick("under1k")}>Under $1k</Chip>
@@ -253,13 +275,12 @@ export default function ProjectsIndex() {
 
       {!loading && rows.length > 0 && rows.length < total && !noMatches && (
         <div className="mt-4 flex justify-center">
-          {filtered.length < rows.length
-            ? <span className="text-[11px] text-muted-foreground">{filtered.length} shown after filters · loading more lets you search deeper</span>
-            : (
-              <button onClick={loadMore} disabled={loadingMore} className="btn-ghost btn-sm">
-                {loadingMore ? "Loading…" : `Load more (${rows.length.toLocaleString()} of ${total.toLocaleString()})`}
-              </button>
-            )}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {filtered.length < rows.length && <span className="text-[11px] text-muted-foreground">{filtered.length} loaded records match these filters.</span>}
+            <button onClick={loadMore} disabled={loadingMore} className="btn-ghost btn-sm">
+              {loadingMore ? "Loading…" : `Load more (${rows.length.toLocaleString()} of ${total.toLocaleString()})`}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -295,6 +316,8 @@ function ProjectCard({ p }: { p: ProjectRow }) {
   const compute = p.rpps?.hardware?.compute;
   const middleware = p.rpps?.software?.middleware;
   const ros = rosSupport(p);
+  const sourceLabel = p.license ? "licensed source" : p.repo_url ? "license unclear" : "showcase";
+  const kindLabel = kindLabels[p.project_kind ?? "unknown"];
   return (
     <Link to={`/projects/${p.slug}`} className="surface-card overflow-hidden hover:border-primary/50 transition-colors flex flex-col group">
       <div className="relative aspect-[16/8] bg-muted border-b border-border overflow-hidden">
@@ -311,7 +334,12 @@ function ProjectCard({ p }: { p: ProjectRow }) {
             {p.difficulty}
           </span>
         )}
-        {p.is_demo && <span className="absolute left-1.5 top-1.5 rounded border border-warning/40 bg-background/90 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-warning">demo fixture</span>}
+        <span className={`absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded border bg-background/90 px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${p.license ? "border-positive/40 text-positive" : "border-warning/40 text-warning"}`}>
+          {p.license ? <ShieldCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />} {p.is_demo ? "demo fixture" : sourceLabel}
+        </span>
+        <span className="absolute left-1.5 bottom-1.5 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-foreground backdrop-blur">
+          {kindLabel}
+        </span>
       </div>
       <div className="p-3 flex flex-col flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
@@ -328,7 +356,7 @@ function ProjectCard({ p }: { p: ProjectRow }) {
             {p.repo_url && <GitBranch className="h-3.5 w-3.5 text-muted-foreground" aria-label="Has repository" />}
           </div>
         </div>
-        {p.summary && <p className="text-[12px] text-muted-foreground line-clamp-2 mt-1.5">{p.summary}</p>}
+        <p className="text-[12px] text-muted-foreground line-clamp-2 mt-1.5">{p.summary ?? (p.repo_url ? "Source-available robotics project. Summary enrichment is pending." : "Commercial or closed-source project showcase.")}</p>
 
         <div className="mt-2 grid grid-cols-3 gap-1.5 text-[11px]">
           <MetaCell label="Cost" value={p.estimated_cost_usd != null ? `$${p.estimated_cost_usd.toLocaleString()}` : "—"} />
