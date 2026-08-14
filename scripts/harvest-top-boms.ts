@@ -32,29 +32,35 @@ function parseRepoUrl(url: string): { owner: string; repo: string } {
   return { owner: m[1], repo: m[2].replace(/\.git$/i, "") };
 }
 
-async function listTree(cloneDir: string, url: string): Promise<string[]> {
+async function listTree(cloneDir: string, url: string, revision?: string): Promise<{ paths: string[]; resolvedRevision: string }> {
   if (!existsSync(cloneDir)) {
     await run("git", ["-c", "protocol.version=2", "clone", "--depth", "1",
       "--filter=blob:none", "--no-checkout", "--single-branch", url, cloneDir]);
   }
-  const out = await run("git", ["-C", cloneDir, "ls-tree", "-r", "--name-only", "HEAD"]);
-  return out.split("\n").filter((l) => l.length);
+  if (revision) await run("git", ["-C", cloneDir, "fetch", "--depth", "1", "origin", revision]);
+  const ref = revision || "HEAD";
+  const resolvedRevision = (await run("git", ["-C", cloneDir, "rev-parse", ref])).trim();
+  if (revision && resolvedRevision.toLowerCase() !== revision.toLowerCase()) {
+    throw new Error(`revision mismatch for ${url}: ${resolvedRevision} != ${revision}`);
+  }
+  const out = await run("git", ["-C", cloneDir, "ls-tree", "-r", "--name-only", resolvedRevision]);
+  return { paths: out.split("\n").filter((l) => l.length), resolvedRevision };
 }
 
-async function fetchBlob(cloneDir: string, path: string): Promise<Uint8Array> {
+async function fetchBlob(cloneDir: string, revision: string, path: string): Promise<Uint8Array> {
   // Lazy blob fetch via git's smart protocol (no raw.githubusercontent / API rate limits).
-  const { stdout } = await exec("git", ["-C", cloneDir, "show", `HEAD:${path}`],
+  const { stdout } = await exec("git", ["-C", cloneDir, "show", `${revision}:${path}`],
     { encoding: "buffer" as const, maxBuffer: 16 * 1024 * 1024 });
   return new Uint8Array(stdout as unknown as Buffer);
 }
 
-async function analyzeRepo(row: { slug: string; repository_url: string; stars: number }): Promise<any> {
+async function analyzeRepo(row: { slug: string; repository_url: string; stars: number; revision?: string }): Promise<any> {
   const { repository_url: url } = row;
   const { owner, repo } = parseRepoUrl(url);
   const label = `${owner}/${repo}`;
   const cloneDir = join(SCRATCH, `${row.slug}-${owner}-${repo}`.replace(/[^A-Za-z0-9_.-]/g, "_"));
   try {
-    const paths = await listTree(cloneDir, url);
+    const { paths, resolvedRevision } = await listTree(cloneDir, url, row.revision);
     const relevant = paths
       .filter((p) => artifactKind(p) !== "other" || isProjectMetadata(p))
       .sort((a, b) => (artifactKind(b) === "bom" ? 1 : 0) - (artifactKind(a) === "bom" ? 1 : 0))
@@ -67,10 +73,10 @@ async function analyzeRepo(row: { slug: string; repository_url: string; stars: n
       if (files.length >= MAX_FETCH || fetchedBytes >= MAX_BYTES) break;
       attempted += 1;
       try {
-        const bytes = await fetchBlob(cloneDir, p);
+        const bytes = await fetchBlob(cloneDir, resolvedRevision, p);
         if (bytes.byteLength > MAX_FILE) continue;
         fetchedBytes += bytes.byteLength;
-        files.push({ path: p, sizeBytes: bytes.byteLength, bytes, sourceUrl: `https://github.com/${owner}/${repo}/blob/HEAD/${p}`, sourceRevision: "HEAD" });
+        files.push({ path: p, sizeBytes: bytes.byteLength, bytes, sourceUrl: `https://github.com/${owner}/${repo}/blob/${resolvedRevision}/${p}`, sourceRevision: resolvedRevision });
       } catch {
         /* skip */
       }
@@ -78,7 +84,7 @@ async function analyzeRepo(row: { slug: string; repository_url: string; stars: n
     const analysis = await analyzeFileSet("github", label, files, {
       sourceLabel: label,
       repositoryUrl: url,
-      revision: "HEAD",
+      revision: resolvedRevision,
       name: repo,
       owner,
       totalFiles: paths.length,
@@ -92,7 +98,7 @@ async function analyzeRepo(row: { slug: string; repository_url: string; stars: n
 }
 
 async function main() {
-  const rows: { slug: string; repository_url: string; stars: number }[] =
+  const rows: { slug: string; repository_url: string; stars: number; revision?: string }[] =
     readFileSync(process.argv[2], "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
   const results: any[] = [];
   let i = 0;
