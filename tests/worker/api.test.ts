@@ -12,6 +12,7 @@ let otherCookie = "";
 let ownerId = "";
 let otherId = "";
 let buildId = "";
+let partnerInterestId = "";
 const portableRpps = `
 rpps: "0.1"
 project:
@@ -1022,14 +1023,74 @@ extensions:`);
 
     const created = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody(payload) });
     expect(created.status).toBe(201);
-    const createdBody = await body<{ item: { id: string; status: string; email: string }; message: string }>(created);
+    const createdBody = await body<{ item: { id: string; status: string; email: string; createdAt: string }; message: string }>(created);
+    partnerInterestId = createdBody.item.id;
     expect(createdBody.item).toMatchObject({ status: "received", email: "ada@examplesupplier.com" });
     expect(createdBody.message).toContain("manual review");
+
+    const duplicate = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody(payload) });
+    expect(duplicate.status).toBe(201);
+    expect((await body<{ item: { id: string; createdAt: string } }>(duplicate)).item).toMatchObject({ id: partnerInterestId, createdAt: createdBody.item.createdAt });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM partner_interest_submissions WHERE normalized_email = ?1 AND normalized_organization = ?2")
+      .bind("ada@examplesupplier.com", "test robotics supply").first<{ value: number }>())?.value)).toBe(1);
 
     const row = await env.DB.prepare("SELECT inquiry_type, normalized_email, status, source, request_id FROM partner_interest_submissions WHERE id = ?1")
       .bind(createdBody.item.id).first<{ inquiry_type: string; normalized_email: string; status: string; source: string; request_id: string }>();
     expect(row).toMatchObject({ inquiry_type: "supplier", normalized_email: "ada@examplesupplier.com", status: "received", source: "public_partners_page" });
     expect(row?.request_id).toBeTruthy();
+  });
+
+  it("publishes redacted supplier safeguards and restricts no-send triage to platform moderators", async () => {
+    const policy = await call("/api/v1/supplier-relationships/policy");
+    expect(policy.status).toBe(200);
+    expect(policy.headers.get("cache-control")).toBe("no-store");
+    const policyBody = await body<{ item: { counts: { leads: number; high_priority: number }; safeguards: Record<string, unknown> } }>(policy);
+    expect(policyBody.item).toMatchObject({
+      counts: { leads: 7, high_priority: 5 },
+      safeguards: { contact_details_exposed: false, outbound_action_available: false, status: "research-only" },
+    });
+    expect(JSON.stringify(policyBody)).not.toContain("contact_channel");
+    expect(JSON.stringify(policyBody)).not.toContain("@feetechrc.com.cn");
+
+    const anonymous = await call("/api/v1/admin/supplier-relationships");
+    expect(anonymous.status).toBe(401);
+    const forbidden = await call("/api/v1/admin/supplier-relationships", {}, otherCookie);
+    expect(forbidden.status).toBe(403);
+
+    const queue = await call("/api/v1/admin/supplier-relationships?status=received&limit=10", {}, ownerCookie);
+    expect(queue.status).toBe(200);
+    const queueBody = await body<{ research: { leads: unknown[] }; inbound: { items: Array<{ id: string; status: string }>; total: number }; safeguards: Record<string, unknown> }>(queue);
+    expect(queueBody.research.leads).toHaveLength(7);
+    expect(queueBody.inbound.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: partnerInterestId, status: "received" })]));
+    expect(queueBody.safeguards).toMatchObject({ outboundMessagesSent: false, outboundMutationAvailable: false, explicitApprovalRequired: true });
+
+    const invalidFilter = await call("/api/v1/admin/supplier-relationships?status=sent", {}, ownerCookie);
+    expect(invalidFilter.status).toBe(422);
+    const unsafeTriage = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+      method: "PATCH",
+      body: jsonBody({ status: "approved", adminNotes: "This must never imply approval." }),
+    }, ownerCookie);
+    expect(unsafeTriage.status).toBe(422);
+
+    const reviewed = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+      method: "PATCH",
+      body: jsonBody({ status: "reviewing", adminNotes: "Validate public supplier evidence before any approval request." }),
+    }, ownerCookie);
+    expect(reviewed.status).toBe(200);
+    expect(await body(reviewed)).toMatchObject({
+      item: { id: partnerInterestId, status: "reviewing", adminNotes: "Validate public supplier evidence before any approval request." },
+      safeguards: { outboundMessagesSent: false, approvalGranted: false },
+    });
+    expect(await env.DB.prepare("SELECT status, admin_notes FROM partner_interest_submissions WHERE id = ?1").bind(partnerInterestId).first())
+      .toMatchObject({ status: "reviewing", admin_notes: "Validate public supplier evidence before any approval request." });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM audit_events WHERE action = 'supplier_relationship.triage' AND entity_id = ?1")
+      .bind(partnerInterestId).first<{ value: number }>())?.value)).toBe(1);
+
+    const missing = await call(`/api/v1/admin/supplier-relationships/submissions/${crypto.randomUUID()}`, {
+      method: "PATCH",
+      body: jsonBody({ status: "closed", adminNotes: null }),
+    }, ownerCookie);
+    expect(missing.status).toBe(404);
   });
 
   it("fails AI requests honestly when no provider secret is configured", async () => {

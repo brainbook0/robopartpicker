@@ -1,8 +1,9 @@
 import { FormEvent, useState } from "react";
-import { Building2, Megaphone, PackageCheck, Store, Users } from "lucide-react";
+import { Building2, Megaphone, PackageCheck, ShieldCheck, Store, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ApiError } from "@/lib/api/client";
 import { partnerInterestApi, type PartnerInterestKind } from "@/lib/api/partner-interest";
+import { useSupplierRelationshipPolicy } from "@/lib/api/supplier-relationships";
 
 const inquiryTypes: Array<{ value: PartnerInterestKind; label: string }> = [
   { value: "advertiser", label: "Advertiser or sponsor" },
@@ -13,6 +14,8 @@ const inquiryTypes: Array<{ value: PartnerInterestKind; label: string }> = [
 ];
 
 export default function Partners() {
+  const policyQuery = useSupplierRelationshipPolicy();
+  const researchPolicy = policyQuery.data?.item;
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [feedback, setFeedback] = useState("");
   const [referenceId, setReferenceId] = useState("");
@@ -54,6 +57,12 @@ export default function Partners() {
       <Option icon={Megaphone} title="Advertisers and sponsors" text="Discuss clearly labeled project showcases, category sponsorships, or educational partnerships. Sponsored material must remain visually and analytically separate from technical evidence." action="Read policy below" to="#interest" />
     </div>
 
+    <section className="mt-6 rounded-md border border-primary/30 bg-primary/5 p-4 text-xs leading-5">
+      <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4 text-primary" /> Supplier relationship safeguards</div>
+      <p className="mt-2 text-muted-foreground">RoboPartPicker's current supplier relationship queue is research-only. Contact details are not exposed here, no outbound action is available, and explicit approval is required before any external outreach.</p>
+      {researchPolicy ? <p className="mt-2 font-medium">Current queue: {researchPolicy.counts.leads} source-backed leads, {researchPolicy.counts.high_priority} high priority, covering {researchPolicy.coverage.project_slugs.length} reviewed projects. Outbound messages sent: no.</p> : null}
+    </section>
+
     <section id="interest" className="surface-card mt-6 p-5">
       <div className="flex items-center gap-2 font-semibold"><Users className="h-4 w-4 text-primary" /> Public interest intake</div>
       <p className="mt-2 text-xs leading-5 text-muted-foreground">Use this form for advertiser, supplier, and partner inquiries while the rest of the site is being built. Submissions are stored for manual review. This is not a guarantee of placement, a quote, or a change to technical rankings.</p>
@@ -66,7 +75,7 @@ export default function Partners() {
         <label className="hidden">Company<input name="company" tabIndex={-1} autoComplete="off" /></label>
         <label className="grid gap-1 text-xs font-medium md:col-span-2">How would you like to participate?<textarea name="message" required minLength={40} maxLength={2000} rows={6} placeholder="Mention the robotics category, products or projects involved, evidence you can provide, and whether this is advertising, supplier data, or partnership related." className="rounded-md border border-border bg-background px-3 py-2 text-sm" /></label>
         <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={status === "submitting"} className="btn-primary disabled:opacity-60">{status === "submitting" ? "Sending…" : "Submit interest"}</button>
+          <button type="submit" disabled={status === "submitting"} className="btn-primary disabled:opacity-60">{status === "submitting" ? "Submitting…" : "Submit interest"}</button>
           <Link to="/developers" className="btn-ghost">Agent and MCP access</Link>
         </div>
       </form>

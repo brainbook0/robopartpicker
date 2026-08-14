@@ -26,6 +26,7 @@ import { discoveryRoutes } from "./routes/discovery";
 import { rppsRoutes } from "./routes/rpps";
 import { notificationRoutes } from "./routes/notifications";
 import { partnerInterestRoutes } from "./routes/partner-interest";
+import { supplierRelationshipRoutes } from "./routes/supplier-relationships";
 import { adminRoutes } from "./routes/admin";
 import { apiRateLimit } from "./middleware/rate-limit";
 import { handleMcpRequest } from "./mcp";
@@ -97,6 +98,7 @@ app.route("/api/v1", discoveryRoutes);
 app.route("/api/v1", rppsRoutes);
 app.route("/api/v1", notificationRoutes);
 app.route("/api/v1", partnerInterestRoutes);
+app.route("/api/v1", supplierRelationshipRoutes);
 app.route("/api/v1", adminRoutes);
 app.route("/api/v1", catalogRoutes);
 

@@ -36,6 +36,26 @@ export type SupplierRelationshipPipeline = {
   leads: SupplierRelationshipLead[];
 };
 
+export type SupplierRelationshipPublicSummary = {
+  wave: string;
+  generated_at: string;
+  policy: SupplierRelationshipPipeline["policy"];
+  counts: {
+    leads: number;
+    high_priority: number;
+    by_relationship_type: Record<SupplierRelationshipLead["relationship_type"], number>;
+  };
+  coverage: {
+    regions: string[];
+    project_slugs: string[];
+  };
+  safeguards: {
+    contact_details_exposed: false;
+    outbound_action_available: false;
+    status: "research-only";
+  };
+};
+
 const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 
@@ -89,4 +109,37 @@ export function validateSupplierRelationshipPipeline(pipeline: SupplierRelations
     if (!lead.first_contact_goal?.trim()) errors.push(`${prefix}: first_contact_goal is required`);
   }
   return errors;
+}
+
+export function buildSupplierRelationshipPublicSummary(pipeline: SupplierRelationshipPipeline): SupplierRelationshipPublicSummary {
+  const errors = validateSupplierRelationshipPipeline(pipeline);
+  if (errors.length) throw new Error(`Invalid supplier relationship pipeline: ${errors.join("; ")}`);
+
+  const byRelationshipType: SupplierRelationshipPublicSummary["counts"]["by_relationship_type"] = {
+    manufacturer: 0,
+    "authorized-distributor": 0,
+    "project-vendor": 0,
+    "kit-vendor": 0,
+  };
+  for (const lead of pipeline.leads) byRelationshipType[lead.relationship_type] += 1;
+
+  return {
+    wave: pipeline.wave,
+    generated_at: pipeline.generated_at,
+    policy: pipeline.policy,
+    counts: {
+      leads: pipeline.leads.length,
+      high_priority: pipeline.leads.filter((lead) => lead.priority === "high").length,
+      by_relationship_type: byRelationshipType,
+    },
+    coverage: {
+      regions: [...new Set(pipeline.leads.flatMap((lead) => lead.regions))].sort(),
+      project_slugs: [...new Set(pipeline.leads.flatMap((lead) => lead.project_slugs))].sort(),
+    },
+    safeguards: {
+      contact_details_exposed: false,
+      outbound_action_available: false,
+      status: "research-only",
+    },
+  };
 }

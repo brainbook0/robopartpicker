@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import pipelineJson from "../../data/supplier-relationships/2026-08-14-wave1.json";
 import {
+  buildSupplierRelationshipPublicSummary,
   validateSupplierRelationshipPipeline,
   type SupplierRelationshipPipeline,
 } from "./supplier-relationship-pipeline";
@@ -33,5 +34,24 @@ describe("supplier relationship research pipeline", () => {
     expect(errors).toContain("feetech: do_not_send must be true");
     expect(errors).toContain("feetech: approval_state must remain not_requested");
     expect(errors).toContain("feetech: contact public_source_url must be HTTP(S)");
+  });
+
+  it("publishes only aggregate research policy without contact details or outbound actions", () => {
+    const summary = buildSupplierRelationshipPublicSummary(pipeline);
+
+    expect(summary).toMatchObject({
+      counts: { leads: 7, high_priority: 5 },
+      policy: { outbound_messages_sent: false, explicit_approval_required: true, reversible_research_only: true },
+      safeguards: { contact_details_exposed: false, outbound_action_available: false, status: "research-only" },
+    });
+    expect(summary.coverage.project_slugs).toEqual(["alohamini", "therobotstudio-so-arm100"]);
+    expect(JSON.stringify(summary)).not.toContain("contact_channel");
+    expect(JSON.stringify(summary)).not.toContain("@");
+  });
+
+  it("refuses to summarize an unsafe pipeline", () => {
+    const unsafe = structuredClone(pipeline) as unknown as Record<string, unknown>;
+    (unsafe.policy as Record<string, unknown>).outbound_messages_sent = true;
+    expect(() => buildSupplierRelationshipPublicSummary(unsafe as unknown as SupplierRelationshipPipeline)).toThrow("policy.outbound_messages_sent must be false");
   });
 });
