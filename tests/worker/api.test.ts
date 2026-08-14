@@ -241,6 +241,40 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(ambiguous.status).toBe(400);
   });
 
+  it("requires RFQ auth and project access before sourcing estimation", async () => {
+    const privateProjectResponse = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      visibility: "private",
+      rpps: emptyRpps({ name: "Private RFQ Project", slug: "private-rfq-project", bom: [{ name: "TM-42 Motor", manufacturer: "Test Motors", mpn: "TM-42", qty: 2 }] }),
+    }) }, ownerCookie);
+    expect(privateProjectResponse.status).toBe(201);
+    const privateProject = (await body<{ item: { id: string } }>(privateProjectResponse)).item;
+
+    const denied = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ projectId: privateProject.id }) }, otherCookie);
+    expect(denied.status).toBe(403);
+    expect(await body<{ error: { code: string } }>(denied)).toMatchObject({ error: { code: "RESOURCE_ACCESS_DENIED" } });
+
+    const ownerAllowed = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ projectId: privateProject.id }) }, ownerCookie);
+    expect(ownerAllowed.status).toBe(201);
+    expect((await body<{ item: { projectId: string; createdByUserId: string; estimateSnapshot: { basket: unknown[] } } }>(ownerAllowed)).item)
+      .toMatchObject({ projectId: privateProject.id, createdByUserId: ownerId, estimateSnapshot: { basket: expect.any(Array) } });
+
+    const publicProjectResponse = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      visibility: "public",
+      rpps: emptyRpps({ name: "Public RFQ Project", slug: "public-rfq-project", bom: [{ name: "TM-42 Motor", manufacturer: "Test Motors", mpn: "TM-42", qty: 1 }] }),
+    }) }, ownerCookie);
+    expect(publicProjectResponse.status).toBe(201);
+    const publicProject = (await body<{ item: { id: string } }>(publicProjectResponse)).item;
+
+    const unauthenticated = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ projectId: publicProject.id }) });
+    expect(unauthenticated.status).toBe(401);
+    expect(await body<{ error: { code: string } }>(unauthenticated)).toMatchObject({ error: { code: "AUTHENTICATION_REQUIRED" } });
+
+    const publicAllowed = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ projectId: publicProject.id }) }, otherCookie);
+    expect(publicAllowed.status).toBe(201);
+    expect((await body<{ item: { projectId: string; createdByUserId: string; estimateSnapshot: { basket: unknown[] } } }>(publicAllowed)).item)
+      .toMatchObject({ projectId: publicProject.id, createdByUserId: otherId, estimateSnapshot: { basket: expect.any(Array) } });
+  });
+
   it("estimates a project BOM through the public project workflow", async () => {
     const created = await call("/api/v1/projects", { method: "POST", body: jsonBody({
       visibility: "public",
