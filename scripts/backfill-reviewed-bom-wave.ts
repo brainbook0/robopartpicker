@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import waveJson from '../data/bom-waves/2026-08-14-reviewed-wave2.json';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { stableId, sqlNumber, sqlString } from '../src/lib/physical-design-wave-import';
 import { classifyCompleteness, confidenceFor } from '../src/lib/rpps/bom';
 import { validateRpps, type RppsBomItem, type RppsPackage } from '../src/lib/rpps/schema';
@@ -38,12 +37,14 @@ type PreparedProject = {
 const args = process.argv.slice(2);
 const envIndex = args.indexOf('--env');
 const env = envIndex >= 0 ? args[envIndex + 1] as EnvName : undefined;
+const waveIndex = args.indexOf('--wave');
+const wavePath = waveIndex >= 0 ? args[waveIndex + 1] : 'data/bom-waves/2026-08-14-reviewed-wave2.json';
 const apply = args.includes('--apply');
 const scratch = process.env.JCODE_SCRATCH_DIR;
-const wave = waveJson as ReviewedBomWaveDefinition;
+const wave = JSON.parse(readFileSync(resolve(wavePath), 'utf8')) as ReviewedBomWaveDefinition;
 
 if (env !== 'production' && env !== 'preview') {
-  console.error('Usage: tsx scripts/backfill-reviewed-bom-wave.ts --env production|preview [--apply]');
+  console.error('Usage: tsx scripts/backfill-reviewed-bom-wave.ts --env production|preview [--wave data/bom-waves/2026-08-14-reviewed-wave2.json] [--apply]');
   process.exit(2);
 }
 if (!scratch) {
@@ -165,8 +166,8 @@ function prepareProject(definition: ReviewedBomProjectDefinition, row: ProjectRo
     row,
     items,
     nextRpps: validation.data,
-    bomId: stableId('bom', `${row.id}:reviewed-bom-wave2`),
-    bomVersionId: stableId('bver', `${row.current_version_id}:reviewed-bom-wave2`),
+    bomId: stableId('bom', `${row.id}:${wave.wave}`),
+    bomVersionId: stableId('bver', `${row.current_version_id}:${wave.wave}`),
     evidence: definition.sources.map((source) => ({
       id: stableId('evidence', `${row.id}:${definition.revision}:${source.path}`),
       claimId: stableId('eclaim', `${row.id}:${definition.revision}:${source.path}:bom-source`),
@@ -201,7 +202,7 @@ function buildForwardSql(projects: PreparedProject[], now: string): string {
 }
 
 function buildRollbackSql(projects: PreparedProject[], now: string): string {
-  const lines: string[] = ['-- Guarded rollback for reviewed BOM wave 2.'];
+  const lines: string[] = [`-- Guarded rollback for reviewed BOM ${wave.wave}.`];
   for (const project of [...projects].reverse()) {
     const currentWaveGuard = `EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(project.row.current_version_id)} AND pv.project_id = ${sqlString(project.row.id)} AND pv.rpps_json = ${sqlString(JSON.stringify(project.nextRpps))})`;
     lines.push(`DELETE FROM evidence_claims WHERE id IN (${project.evidence.map((item) => sqlString(item.claimId)).join(', ')}) AND created_at = ${sqlString(now)} AND ${currentWaveGuard};`);

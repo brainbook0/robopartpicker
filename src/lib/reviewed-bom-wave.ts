@@ -1,7 +1,7 @@
 import { parseMarkdownBomObjects, parseXlsxObjects } from "./bom-format-parser";
 
 export type ReviewedBomSourceFormat = "markdown" | "xlsx";
-export type ReviewedBomTransform = "tny-components" | "tny-screws-total" | "tny-cables" | "tny-pcbs" | "nodequad-xlsx-explicit";
+export type ReviewedBomTransform = "tny-components" | "tny-screws-total" | "tny-cables" | "tny-pcbs" | "nodequad-xlsx-explicit" | "aloha-mobile-base" | "aloha-follower-arms" | "aloha-leader-arms" | "aloha-fasteners-consumables";
 
 export type ReviewedBomSourceDefinition = {
   path: string;
@@ -79,6 +79,7 @@ export function transformReviewedBomSource(project: ReviewedBomProjectDefinition
 }
 
 function markdownForSource(source: ReviewedBomSourceDefinition, markdown: string): string {
+  if (source.section) return sliceHeadingRange(markdown, source.section.from_heading, source.section.until_before_heading);
   if (source.transform === "tny-screws-total") return sliceHeadingRange(markdown, "### Total", "### Complete kit");
   if (source.transform === "tny-cables") return removeHeadingSections(markdown, new Set(["### Complete kit"]));
   return markdown;
@@ -126,14 +127,14 @@ function rowToItem(project: ReviewedBomProjectDefinition, source: ReviewedBomSou
   const name = itemNameFor(source, row);
   if (!name) return [];
   const mpn = itemMpnFor(source, row);
-  const sourceUrl = pick(row, ["link", "链接", "files", "source"]);
+  const sourceUrl = pick(row, ["buyusurl", "buycnurl", "link", "链接", "files", "source"]);
 
   return [{
     ref: `${project.project_id}-${source.transform}-${String(rowIndex + 1).padStart(4, "0")}`,
     name,
     quantity,
     category: categoryFor(source, row),
-    fabricated: fabricatedFor(source),
+    fabricated: fabricatedFor(source, row),
     mpn: mpn || undefined,
     source_url: /^https?:\/\//u.test(sourceUrl) ? sourceUrl : undefined,
     metadata: { ...row, source_label: pick(row, ["名称", "name", "part", "component", "description", "item", "type", "pcb", "规格", "型号"]), transform: source.transform },
@@ -163,7 +164,15 @@ function itemNameFor(source: ReviewedBomSourceDefinition, row: Record<string, st
   if (source.transform === "nodequad-xlsx-explicit") {
     return joinDistinct(pick(row, ["名称"]), pick(row, ["规格", "型号"]));
   }
+  if (source.transform.startsWith("aloha-")) {
+    return joinDistinct(alohaSectionLabel(source), pick(row, ["item", "part", "component", "name", "description", "type"]), pick(row, ["model", "mpn", "spec", "specification"]));
+  }
   return pick(row, ["名称", "name", "part", "component", "description", "item", "type", "pcb", "规格", "型号"]);
+}
+
+function alohaSectionLabel(source: ReviewedBomSourceDefinition): string {
+  const heading = source.section?.from_heading.replace(/^#+\s*/u, "").trim();
+  return heading || source.transform.replace(/^aloha-/u, "Aloha ").replace(/-/gu, " ");
 }
 
 function joinDistinct(...parts: string[]): string {
@@ -177,12 +186,13 @@ function joinDistinct(...parts: string[]): string {
 const SOURCE_BACKED_MODEL_TOKENS = [
   "NodeMCU-32S", "PCA9685", "MPU6050", "AMS1117", "1N4004", "XT60-F", "KCD1-101", "TD-8120MG", "MINI360",
   "VL53L0X", "SH1106", "TTP223", "OV2640", "SG90", "MG996R",
+  "ST-3215-C018", "ST-3095-C002", "H65V1", "Raspberry Pi 5", "Waveshare Bus Servo Adapter A",
 ];
 
 function itemMpnFor(source: ReviewedBomSourceDefinition, row: Record<string, string>): string | undefined {
-  const explicit = pick(row, ["mpn", "manufacturerpart", "manufacturerpartnumber", "lcscpart", "型号"]);
+  const explicit = pick(row, ["mpn", "model", "manufacturerpart", "manufacturerpartnumber", "lcscpart", "型号"]);
   if (explicit) return explicit;
-  const candidate = [pick(row, ["名称", "type"]), pick(row, ["规格", "description"])].filter(Boolean).join(" ");
+  const candidate = [pick(row, ["名称", "type", "item", "part", "component", "name"]), pick(row, ["规格", "description", "spec", "specification"]), pick(row, ["buyusurl", "buycnurl"])].filter(Boolean).join(" ");
   const token = SOURCE_BACKED_MODEL_TOKENS.find((value) => candidate.toLowerCase().includes(value.toLowerCase()));
   return token;
 }
@@ -210,10 +220,24 @@ function categoryFor(source: ReviewedBomSourceDefinition, row: Record<string, st
     if (/舵机/u.test(label)) return "actuator";
     if (/主控|驱动|陀螺|模块|电阻|二极管|LED|接线|开关|排针|排母/iu.test(label)) return "electronics";
   }
+  if (source.transform.startsWith("aloha-")) {
+    const label = `${itemNameFor(source, row)} ${pick(row, ["category", "section", "description", "notes"])}`;
+    if (/3d\s*print|printed|fabricated|printable/iu.test(label)) return "fabricated";
+    if (/servo|actuator|motor/iu.test(label)) return "actuator";
+    if (/screw|nut|bolt|washer|fastener|threadlocker|loctite/iu.test(label)) return "fastener";
+    if (/camera|raspberry\s*pi|adapter|board|electronics|sensor|waveshare/iu.test(label)) return "electronics";
+    if (/cable|wire|connector/iu.test(label)) return "cable";
+    if (/bearing|shaft|extrusion|bracket|plate|mechanical/iu.test(label)) return "mechanical";
+    if (/battery|power|supply|charger|buck|dc-dc/iu.test(label)) return "power";
+  }
   return undefined;
 }
 
-function fabricatedFor(source: ReviewedBomSourceDefinition): boolean | undefined {
+function fabricatedFor(source: ReviewedBomSourceDefinition, row?: Record<string, string>): boolean | undefined {
   if (source.transform.includes("pcbs")) return true;
+  if (source.transform.startsWith("aloha-") && row) {
+    const label = `${itemNameFor(source, row)} ${pick(row, ["category", "description", "notes"])}`;
+    if (/3d\s*print|printed|fabricated|printable/iu.test(label)) return true;
+  }
   return undefined;
 }

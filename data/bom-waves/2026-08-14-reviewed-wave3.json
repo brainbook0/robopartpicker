@@ -1,0 +1,17 @@
+{
+  "wave": "2026-08-14-reviewed-wave3",
+  "schema_version": 1,
+  "projects": [
+    {
+      "project_id": "alohamini",
+      "repo_url": "https://github.com/liyiteng/alohamini.git",
+      "revision": "17c6a98d79881a45ab869c1f392ed89c0723a298",
+      "sources": [
+        { "path": "AlohaMini2/docs/BOM.md", "format": "markdown", "sha256": "80eddaab35649fc27c2793dce5b4459a6ebc8c67d3866f294f4d976f6df879f2", "transform": "aloha-mobile-base", "expected_items": 21, "section": { "from_heading": "## Mobile Base", "until_before_heading": "## Follower Arms (×2)" } },
+        { "path": "AlohaMini2/docs/BOM.md", "format": "markdown", "sha256": "80eddaab35649fc27c2793dce5b4459a6ebc8c67d3866f294f4d976f6df879f2", "transform": "aloha-follower-arms", "expected_items": 8, "section": { "from_heading": "## Follower Arms (×2)", "until_before_heading": "## Leader Arms (×2)" } },
+        { "path": "AlohaMini2/docs/BOM.md", "format": "markdown", "sha256": "80eddaab35649fc27c2793dce5b4459a6ebc8c67d3866f294f4d976f6df879f2", "transform": "aloha-leader-arms", "expected_items": 6, "section": { "from_heading": "## Leader Arms (×2)", "until_before_heading": "## Fasteners & Consumables" } },
+        { "path": "AlohaMini2/docs/BOM.md", "format": "markdown", "sha256": "80eddaab35649fc27c2793dce5b4459a6ebc8c67d3866f294f4d976f6df879f2", "transform": "aloha-fasteners-consumables", "expected_items": 4, "section": { "from_heading": "## Fasteners & Consumables", "until_before_heading": "## Total Estimate" } }
+      ]
+    }
+  ]
+}
