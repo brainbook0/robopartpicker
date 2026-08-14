@@ -296,6 +296,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const denied = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId }) }, otherCookie);
     expect(denied.status).toBe(403);
     expect(await body<{ error: { code: string } }>(denied)).toMatchObject({ error: { code: "RESOURCE_ACCESS_DENIED" } });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM rfq_requests WHERE bom_id = ?1").bind(bomId).first<{ value: number }>())?.value)).toBe(0);
 
     const allowed = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId, expiresInDays: 30 }) }, ownerCookie);
     expect(allowed.status).toBe(201);
@@ -318,6 +319,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     const denied = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ projectId: privateProject.id }) }, otherCookie);
     expect(denied.status).toBe(403);
     expect(await body<{ error: { code: string } }>(denied)).toMatchObject({ error: { code: "RESOURCE_ACCESS_DENIED" } });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM rfq_requests WHERE project_id = ?1").bind(privateProject.id).first<{ value: number }>())?.value)).toBe(0);
 
     const ownerAllowed = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ projectId: privateProject.id }) }, ownerCookie);
     expect(ownerAllowed.status).toBe(201);
@@ -1121,9 +1123,10 @@ extensions:`);
       jsonrpc: "2.0", id: 101, method: "tools/call", params: { name: "get_my_project", arguments: { idOrSlug: project.slug } },
     }) });
     expect(response.status).toBe(200);
-    const result = await body<{ result: { structuredContent: { files: Array<{ id: string; visibility: string; name: string }> } } }>(response);
+    const result = await body<{ result: { structuredContent: { files: Array<{ id: string; visibility: string; name: string; storageKey?: string; sizeBytes?: number; sha256?: string }> } } }>(response);
     expect(result.result.structuredContent.files).toEqual([expect.objectContaining({ id: publicFileId, visibility: "public", name: "public-readme.txt" })]);
     expect(result.result.structuredContent.files.some((file) => file.id === privateFileId || file.name === "private-notes.txt")).toBe(false);
+    expect(result.result.structuredContent.files).toEqual([expect.not.objectContaining({ storageKey: expect.any(String), sizeBytes: expect.any(Number), sha256: expect.any(String) })]);
   });
 
   it("returns a stable MCP tool authorization error when write scope is missing", async () => {
@@ -1137,6 +1140,8 @@ extensions:`);
       } },
     }) });
     expect(response.status).toBe(200);
+    const responseText = await response.clone().text();
+    expect(responseText).not.toContain("Internal Server Error");
     const result = await body<{ result: { isError: boolean; content: Array<{ text: string }>; structuredContent: { error: { code: string; requiredScope: string } } } }>(response);
     expect(result.result.isError).toBe(true);
     expect(result.result.content[0].text).toContain("OAuth scope rpp:write is required.");
