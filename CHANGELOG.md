@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Safe BOM data repair tooling (`scripts/repair-production-boms.ts`) that dry-runs by default, requires explicit preview/production environment selection, writes auditable SQL under `/tmp`, removes partition-table false BOMs by deterministic quality predicate, and conservatively matches snapshot BOM lines to current catalog components without fabricating prices.
+
+## Unreleased
+
 ### Fixed
 
 - Hardened project import BOM detection so ESP32 partition tables and arbitrary CSVs are not classified or parsed as bills of materials unless their filename and headers are credible BOM inputs.
