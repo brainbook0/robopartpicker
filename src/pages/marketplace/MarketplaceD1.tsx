@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, Star, Wrench, Plus, AlertTriangle } from "lucide-react";
+import { Search, Star, Wrench, Plus, AlertTriangle, ClipboardList } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketplace } from "@/lib/api/marketplace";
@@ -30,6 +30,8 @@ export default function MarketplaceD1() {
     if (value) next.set(key, value); else next.delete(key);
     setParams(next, { replace: true });
   };
+  const hasFilters = Boolean(q || category || region || condition || minPrice || maxPrice || sort !== "newest");
+  const emptyKind = type === "wanted" ? "wanted requests" : type === "service" ? "service listings" : "for-sale listings";
 
   return <>
     <PageHeader kicker="Marketplace" title="Robots, parts, kits, fabrication, and services"
@@ -54,13 +56,44 @@ export default function MarketplaceD1() {
         <select className="input-bare w-auto" value={condition ?? ""} onChange={(event) => setParam("condition", event.target.value || null)}><option value="">All conditions</option><option value="A">A · like new</option><option value="B">B · functional</option><option value="C">C · worn</option><option value="untested">Untested</option><option value="for_parts">For parts</option><option value="not_applicable">Not applicable</option></select>
         <label className="flex items-center gap-1 text-[10px] text-muted-foreground">USD <input type="number" min="0" step="1" value={minPrice} onChange={(event) => setParam("minPrice", event.target.value || null)} className="input-bare w-20" placeholder="min" aria-label="Minimum price" />–<input type="number" min="0" step="1" value={maxPrice} onChange={(event) => setParam("maxPrice", event.target.value || null)} className="input-bare w-20" placeholder="max" aria-label="Maximum price" /></label>
         <select className="input-bare w-auto" value={sort} onChange={(event) => setParam("sort", event.target.value === "newest" ? null : event.target.value)} aria-label="Sort listings"><option value="newest">Newest</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="parts_cost_asc">Known parts cost</option></select>
-        {(q || category || region || condition || minPrice || maxPrice || sort !== "newest") && <button type="button" className="btn-ghost btn-sm" onClick={() => setParams(type === "sell" ? {} : { type })}>Clear filters</button>}
+        {hasFilters && <button type="button" className="btn-ghost btn-sm" onClick={() => setParams(type === "sell" ? {} : { type })}>Clear filters</button>}
       </div>
 
-      {query.isPending ? <State>Loading Marketplace records from D1…</State> : query.isError ? <State error>{query.error.message}</State> : query.data!.items.length === 0 ? <State>No published records match these filters.</State> :
+      {query.isPending ? <State>Loading Marketplace records from D1…</State> : query.isError ? <State error>{query.error.message}</State> : query.data!.items.length === 0 ? <EmptyCatalog type={type} label={emptyKind} hasFilters={hasFilters} signedIn={Boolean(user)} onClear={() => setParams(type === "sell" ? {} : { type })} /> :
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{query.data!.items.map((item) => <ListingCard key={item.id} item={item} />)}</div>}
     </main>
   </>;
+}
+
+function EmptyCatalog({ type, label, hasFilters, signedIn, onClear }: { type: MarketplaceListing["listingType"]; label: string; hasFilters: boolean; signedIn: boolean; onClear: () => void }) {
+  const primaryPath = type === "wanted" || type === "service" ? "/marketplace/wanted/new" : "/marketplace/new";
+  const primaryLabel = type === "wanted" ? "Post demand" : type === "service" ? "Express service demand" : "Create a listing";
+  return <section role="status" className="surface-card overflow-hidden border-warning/30">
+    <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
+      <div className="p-5">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary"><ClipboardList className="h-4 w-4" /> Empty catalog</div>
+        <h2 className="mt-2 text-[20px] font-bold tracking-tight">No published {label} are available yet{hasFilters ? " for these filters" : ""}.</h2>
+        <p className="mt-2 max-w-2xl text-[13px] leading-6 text-muted-foreground">Marketplace is intended for robots, parts, kits, fabrication, integration services, and wanted demand. Today, the working server-backed paths are for-sale listings and wanted requests with technical requirements, quantities, budgets, region, provenance, and evidence disclosures. Current posts are visible inside RoboPartPicker only.</p>
+        <div className="mt-4 grid gap-2 text-[12px] sm:grid-cols-2">
+          <div className="rounded border border-border bg-background/70 p-3"><div className="section-title">Available now</div><p className="mt-1 text-muted-foreground">Create private drafts, publish for-sale listings or wanted demand, browse public posts, and use internal offer/message records when listings exist.</p></div>
+          <div className="rounded border border-border bg-muted/40 p-3"><div className="section-title">Coming soon / not enabled</div><p className="mt-1 text-muted-foreground">Dedicated service listing publishing, automatic supplier RFQs, matching, checkout, escrow, shipping, inspection, and transaction guarantees are not configured.</p></div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link to={primaryPath} className="btn-primary">{signedIn ? primaryLabel : `Sign in to ${primaryLabel.toLowerCase()}`}</Link>
+          <Link to="/marketplace/wanted/new" className="btn-ghost">Express demand</Link>
+          {hasFilters && <button type="button" className="btn-ghost" onClick={onClear}>Clear filters</button>}
+        </div>
+      </div>
+      <div className="border-t border-border bg-warning/5 p-5 text-[12px] lg:border-l lg:border-t-0">
+        <div className="section-title mb-2">Good first posts</div>
+        <ul className="space-y-2 text-muted-foreground">
+          <li>• A wanted request for specific parts, service needs, revisions, quantity, destination, evidence, and budget.</li>
+          <li>• A for-sale component, robot, kit, or fabrication slot you can document.</li>
+          <li>• Service-provider demand is best posted as a wanted request until dedicated service listing publishing is enabled.</li>
+        </ul>
+      </div>
+    </div>
+  </section>;
 }
 
 function ListingCard({ item }: { item: MarketplaceListing }) {
