@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Added the missing MCP setup guide and clarified the developer page with a usable remote Streamable HTTP configuration, discovery URLs, and the expected browser-only `GET /mcp` 406 response.
+
 - Ensured Marketplace wanted private drafts stay private, reopen in the wanted editor, and cannot be overwritten from the sell-listing editor or converted across listing types.
 
 - Hardened RFQ response recording so quotes can only be written from states that allow `receive_partial`, unknown line keys are rejected, omitted substitute flags preserve existing values, and the frontend exposes a typed response-recording client binding.
