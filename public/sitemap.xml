@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://robopartpicker-production.ludomi2502.workers.dev/</loc></url>
+<url><loc>https://robopartpicker-production.ludomi2502.workers.dev/about</loc></url>
 <url><loc>https://robopartpicker-production.ludomi2502.workers.dev/parts/actuator</loc></url>
 <url><loc>https://robopartpicker-production.ludomi2502.workers.dev/parts/hand</loc></url>
 <url><loc>https://robopartpicker-production.ludomi2502.workers.dev/parts/sensor</loc></url>

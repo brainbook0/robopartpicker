@@ -35,6 +35,7 @@ export const SiteFooter = () => (
       <div>
         <div className="section-title mb-2">Platform</div>
         <ul className="space-y-1.5">
+          <li><Link to="/about" className="hover:text-primary">About RoboPartPicker</Link></li>
           <li><Link to="/marketplace" className="hover:text-primary">Marketplace</Link></li>
           <li><Link to="/community" className="hover:text-primary">Community</Link></li>
           <li><Link to="/partners" className="hover:text-primary">Partners & advertising</Link></li>

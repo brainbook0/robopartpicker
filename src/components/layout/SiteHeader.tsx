@@ -19,6 +19,7 @@ const navItems: { label: string; to: string }[] = [
 ];
 
 const moreItems: { label: string; to: string }[] = [
+  { label: "About RoboPartPicker", to: "/about" },
   { label: "Parts catalog", to: "/parts/actuator" },
   { label: "Robots", to: "/robots" },
   { label: "BOMs", to: "/boms" },
@@ -52,6 +53,7 @@ export const SiteHeader = () => {
   const nav = useNavigate();
   const loc = useLocation();
   const onParts = loc.pathname.startsWith("/parts");
+  const isMarketingPage = loc.pathname === "/about";
   const { user, profile, signOut } = useAuth();
   const notificationCount = useQuery({
     queryKey: ["notification-count", user?.id],
@@ -151,7 +153,8 @@ export const SiteHeader = () => {
         </div>
       </div>
 
-      {/* Secondary nav: part categories — always visible, density-first */}
+      {!isMarketingPage && <>
+      {/* Secondary nav: part categories — always visible on product surfaces, density-first */}
       <div className="border-t border-border bg-surface/60">
         <div className="mx-auto flex max-w-[1400px] items-center gap-1 overflow-x-auto px-4 py-1 text-[12px] no-scrollbar">
           <span className="section-title mr-2 shrink-0">Categories</span>
@@ -188,6 +191,7 @@ export const SiteHeader = () => {
           <Link to="/finder/actuator" className="ml-auto shrink-0 text-[11px] text-muted-foreground hover:text-primary pl-3">Guided finder →</Link>
         </div>
       </div>
+      </>}
     </header>
   );
 };
