@@ -220,6 +220,13 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(createdBom.status).toBe(201);
     const bomId = (await body<{ item: { id: string } }>(createdBom)).item.id;
 
+    const deniedEstimate = await call("/api/v1/sourcing/estimate", { method: "POST", body: jsonBody({ bomId }) }, otherCookie);
+    expect(deniedEstimate.status).toBe(403);
+    expect(await body<{ error: { code: string } }>(deniedEstimate)).toMatchObject({ error: { code: "RESOURCE_ACCESS_DENIED" } });
+    const allowedEstimate = await call("/api/v1/sourcing/estimate", { method: "POST", body: jsonBody({ bomId }) }, ownerCookie);
+    expect(allowedEstimate.status).toBe(200);
+    expect((await body<{ estimate: { basket: unknown[] } }>(allowedEstimate)).estimate.basket).toHaveLength(1);
+
     const denied = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId }) }, otherCookie);
     expect(denied.status).toBe(403);
     expect(await body<{ error: { code: string } }>(denied)).toMatchObject({ error: { code: "RESOURCE_ACCESS_DENIED" } });
@@ -232,6 +239,23 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
 
     const ambiguous = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId, projectId: crypto.randomUUID() }) }, ownerCookie);
     expect(ambiguous.status).toBe(400);
+  });
+
+  it("estimates a project BOM through the public project workflow", async () => {
+    const created = await call("/api/v1/projects", { method: "POST", body: jsonBody({
+      visibility: "public",
+      rpps: emptyRpps({ name: "Public Sourcing Robot", slug: "public-sourcing-robot", bom: [{ name: "TM-42 Motor", manufacturer: "Test Motors", mpn: "TM-42", qty: 2 }] }),
+    }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const project = (await body<{ item: { id: string; slug: string } }>(created)).item;
+
+    const byId = await call("/api/v1/sourcing/estimate", { method: "POST", body: jsonBody({ projectId: project.id }) });
+    expect(byId.status).toBe(200);
+    expect((await body<{ estimate: { basket: Array<{ name: string; quantity: number }> } }>(byId)).estimate.basket)
+      .toEqual([expect.objectContaining({ name: "TM-42 Motor", quantity: 2 })]);
+
+    const bySlug = await call("/api/v1/sourcing/estimate", { method: "POST", body: jsonBody({ projectId: project.slug }) });
+    expect(bySlug.status).toBe(200);
   });
 
   it("persists build configuration, firmware, calibration, and test records with build authorization", async () => {

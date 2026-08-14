@@ -3,8 +3,11 @@ import { z } from "zod";
 import type { AppBindings } from "../env";
 import { SourcingOptimizerService } from "../services/sourcing-optimizer";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
-import { authenticatedUserId } from "../middleware/authorization";
+import { assertScopedRead, authenticatedUserId } from "../middleware/authorization";
 import { parseJson } from "../validation";
+import { BomsRepository } from "../db/repositories/boms";
+import { ProjectsRepository } from "../db/repositories/projects";
+import { AppError } from "../http";
 
 const constraintsSchema = z.object({
   preferredSupplierIds: z.array(z.string().max(200)).max(100).optional(),
@@ -30,10 +33,20 @@ export const sourcingRoutes = new Hono<AppBindings>();
 
 sourcingRoutes.post("/sourcing/estimate", loadAuthSession, async (c) => {
   const body = await parseJson(c, estimateSchema);
+  const userId = c.get("authSession")?.user?.id ?? null;
   const service = new SourcingOptimizerService(c.env.DB);
-  const estimate = body.bomId
-    ? await service.estimateForBom(body.bomId, body.constraints ?? {})
-    : await service.estimateForProject(body.projectId!, body.constraints ?? {});
+  let estimate;
+  if (body.bomId) {
+    const bom = await new BomsRepository(c.env.DB).find(body.bomId);
+    if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
+    await assertScopedRead(c.env.DB, userId, bom);
+    estimate = await service.estimateForBom(bom.id, body.constraints ?? {});
+  } else {
+    const project = await new ProjectsRepository(c.env.DB).find(body.projectId!);
+    if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+    await assertScopedRead(c.env.DB, userId, project.row);
+    estimate = await service.estimateForProject(project.row.id, body.constraints ?? {});
+  }
   return c.json({ estimate });
 });
 

@@ -35,25 +35,29 @@ export const rfqRoutes = new Hono<AppBindings>();
 rfqRoutes.post("/rfq", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, createSchema);
+  let bomId: string | null = null;
+  let projectId: string | null = null;
   if (body.bomId) {
     const bom = await new BomsRepository(c.env.DB).find(body.bomId);
     if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
     await assertScopedRead(c.env.DB, userId, bom);
+    bomId = bom.id;
   } else {
     const project = await new ProjectsRepository(c.env.DB).find(body.projectId!);
     if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
     await assertScopedRead(c.env.DB, userId, project.row);
+    projectId = project.row.id;
   }
   const service = new SourcingOptimizerService(c.env.DB);
-  const estimate = body.bomId
-    ? await service.estimateForBom(body.bomId)
-    : await service.estimateForProject(body.projectId!);
+  const estimate = bomId
+    ? await service.estimateForBom(bomId)
+    : await service.estimateForProject(projectId!);
   const expiresAt = body.expiresInDays
     ? new Date(Date.now() + body.expiresInDays * 86_400_000).toISOString()
     : null;
   const request = await new RfqRepository(c.env.DB).create(userId, {
-    projectId: body.projectId ?? null,
-    bomId: body.bomId ?? null,
+    projectId,
+    bomId,
     estimate,
     expiresAt,
   });

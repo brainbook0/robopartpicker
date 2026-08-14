@@ -45,7 +45,7 @@ export class SourcingOptimizerService {
   }
 
   async estimateForProject(projectId: string, constraints: SourcingConstraints = {}): Promise<SourcingEstimate> {
-    const bom = await this.db.prepare(`SELECT id FROM boms WHERE project_id = ?1 AND deleted_at IS NULL LIMIT 1`)
+    const bom = await this.db.prepare(`SELECT id FROM boms WHERE project_id = ?1 ORDER BY updated_at DESC LIMIT 1`)
       .bind(projectId).first<{ id: string }>();
     if (!bom) throw new AppError(404, "PROJECT_BOM_NOT_FOUND", "This project has no BOM to estimate.");
     return this.estimateForBom(bom.id, constraints);
