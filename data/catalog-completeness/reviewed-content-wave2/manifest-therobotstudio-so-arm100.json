@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "slug": "therobotstudio-so-arm100",
+  "repository_url": "https://github.com/TheRobotStudio/SO-ARM100.git",
+  "analysis": {
+    "draft": {
+      "slug": "therobotstudio-so-arm100",
+      "repo_url": "https://github.com/TheRobotStudio/SO-ARM100.git"
+    },
+    "inventory": {
+      "artifacts": [
+        {
+          "path": "README.md",
+          "kind": "document",
+          "sizeBytes": 26343,
+          "sha256": "7897cb890a06d3e532469917543cd3380cfc256a2a8d2b1706df670951b79bf3",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/README.md",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "SO100.md",
+          "kind": "document",
+          "sizeBytes": 13570,
+          "sha256": "754354d06bf8ff488cd87811f43fa49d9ce122c8c4584a0c3b4e04508d729e18",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/SO100.md",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "3DPRINT.md",
+          "kind": "document",
+          "sizeBytes": 3792,
+          "sha256": "c734900f07e2501cfa8f9d508380cb3293baa2fc463bb77de2a09c173bc482b3",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/3DPRINT.md",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "CITATION.cff",
+          "kind": "document",
+          "sizeBytes": 760,
+          "sha256": "357d040c6099ec36765fe5fa22e50db9679b16205aa29b01b765cbc809f2d1b0",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/CITATION.cff",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "LICENSE",
+          "kind": "license",
+          "sizeBytes": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/LICENSE",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "media/SO101_Follower.webp",
+          "kind": "image",
+          "sizeBytes": 133522,
+          "sha256": "855809851ecf2ac5a28b2f0050b4baca3adc5a18c5175908399f9c6a52dd6877",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/media/SO101_Follower.webp",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "media/SO101_Leader.webp",
+          "kind": "image",
+          "sizeBytes": 154650,
+          "sha256": "5f60d1c14a0d322d077c5a239bf9ee3599a1488e7234706eed35f6986366961b",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/media/SO101_Leader.webp",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "STL/SO101/Follower/Prusa_Follower_SO101.stl",
+          "kind": "cad",
+          "sizeBytes": 4829284,
+          "sha256": "e1604c622f0d48d7e83e939b3ca7d7b199057da1b99b8a1d76ba43bbfb93363d",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/STL/SO101/Follower/Prusa_Follower_SO101.stl",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "path": "STL/SO101/Leader/Prusa_Leader_SO101.stl",
+          "kind": "cad",
+          "sizeBytes": 4980384,
+          "sha256": "e0169d49114c47f9b10ba1604f96c670ba7ec5bcd71447ffd74899ceb2c15f1e",
+          "sourceUrl": "https://raw.githubusercontent.com/TheRobotStudio/SO-ARM100/7629d2ad9853d10fb903093a33ef6114099d97e5/STL/SO101/Leader/Prusa_Leader_SO101.stl",
+          "sourceRevision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        }
+      ]
+    }
+  }
+}

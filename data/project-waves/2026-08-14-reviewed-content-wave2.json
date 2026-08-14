@@ -1,0 +1,34 @@
+{
+  "wave": "2026-08-14-reviewed-content-wave2",
+  "schema_version": 1,
+  "projects": [
+    {
+      "project_id": "therobotstudio-so-arm100",
+      "repo_url": "https://github.com/TheRobotStudio/SO-ARM100.git",
+      "revision": "7629d2ad9853d10fb903093a33ef6114099d97e5",
+      "name": "SO-101 Robot Arms",
+      "summary": "Open-source SO-101 leader and follower robot arms with sourcing tables, printable STL plates, optional hardware, and LeRobot setup links.",
+      "description": "The SO-101 is TheRobotStudio and Hugging Face's next-generation SO-100 arm design, updated for easier assembly, improved wiring, and leader-arm motor changes. The repository provides kit sources, BOM-style sourcing tables, 3D printing guidance, optional mounts and accessories, debugging notes, and official SO-101 leader and follower visuals.",
+      "docs_path": "README.md",
+      "docs_sha256": "7897cb890a06d3e532469917543cd3380cfc256a2a8d2b1706df670951b79bf3",
+      "cover": {
+        "path": "media/SO101_Follower.webp",
+        "sha256": "855809851ecf2ac5a28b2f0050b4baca3adc5a18c5175908399f9c6a52dd6877",
+        "size_bytes": 133522,
+        "caption": "Official SO-101 follower arm image from the project README",
+        "alt_text": "SO-101 follower robot arm"
+      },
+      "assembly_source": {
+        "path": "README.md",
+        "sha256": "7897cb890a06d3e532469917543cd3380cfc256a2a8d2b1706df670951b79bf3"
+      },
+      "steps": [
+        { "step_key": "kits", "heading": "## Kits", "title": "Choose a kit or vendor" },
+        { "step_key": "sourcing-parts", "heading": "## Sourcing Parts", "title": "Source the arm components" },
+        { "step_key": "printing-the-parts", "heading": "## Printing the Parts", "title": "Print the arm parts" },
+        { "step_key": "optional-hardware", "heading": "## Optional Hardware", "title": "Review optional hardware" },
+        { "step_key": "debugging-motors", "heading": "## Debugging Motors", "title": "Debug motor issues" }
+      ]
+    }
+  ]
+}
