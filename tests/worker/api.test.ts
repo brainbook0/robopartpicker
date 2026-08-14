@@ -1126,7 +1126,10 @@ extensions:`);
     const result = await body<{ result: { structuredContent: { files: Array<{ id: string; visibility: string; name: string; storageKey?: string; sizeBytes?: number; sha256?: string }> } } }>(response);
     expect(result.result.structuredContent.files).toEqual([expect.objectContaining({ id: publicFileId, visibility: "public", name: "public-readme.txt" })]);
     expect(result.result.structuredContent.files.some((file) => file.id === privateFileId || file.name === "private-notes.txt")).toBe(false);
-    expect(result.result.structuredContent.files).toEqual([expect.not.objectContaining({ storageKey: expect.any(String), sizeBytes: expect.any(Number), sha256: expect.any(String) })]);
+    for (const file of result.result.structuredContent.files) {
+      expect(file).not.toHaveProperty("storageKey");
+      expect(file).not.toHaveProperty("sha256");
+    }
   });
 
   it("returns a stable MCP tool authorization error when write scope is missing", async () => {
