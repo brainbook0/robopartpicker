@@ -1,3 +1,4 @@
+import { readdirSync } from "node:fs";
 import { captureWranglerJson } from "./wrangler-cli";
 
 type D1Result<Row> = Array<{
@@ -86,7 +87,9 @@ const demoCounts = query<{ components: number; suppliers: number; boms: number }
 );
 
 const migrationCount = Number(migrationRows[0]?.count ?? 0);
-const expectedMigrationCount = 13;
+const expectedMigrationCount = readdirSync(new URL("../migrations/", import.meta.url))
+  .filter((fileName) => /^\d+.*\.sql$/u.test(fileName))
+  .length;
 if (migrationCount !== expectedMigrationCount) {
   throw new Error(`Expected exactly ${expectedMigrationCount} applied migrations; found ${migrationCount}`);
 }
