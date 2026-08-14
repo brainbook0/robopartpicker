@@ -1,7 +1,7 @@
 import { parseMarkdownBomObjects, parseXlsxObjects } from "./bom-format-parser";
 
 export type ReviewedBomSourceFormat = "markdown" | "xlsx";
-export type ReviewedBomTransform = "tny-components" | "tny-screws-total" | "tny-cables" | "tny-pcbs" | "nodequad-xlsx-explicit" | "aloha-mobile-base" | "aloha-follower-arms" | "aloha-leader-arms" | "aloha-fasteners-consumables";
+export type ReviewedBomTransform = "tny-components" | "tny-screws-total" | "tny-cables" | "tny-pcbs" | "nodequad-xlsx-explicit" | "aloha-mobile-base" | "aloha-follower-arms" | "aloha-leader-arms" | "aloha-fasteners-consumables" | "so101-two-arm";
 
 export type ReviewedBomSourceDefinition = {
   path: string;
@@ -82,6 +82,7 @@ function markdownForSource(source: ReviewedBomSourceDefinition, markdown: string
   if (source.section) return sliceHeadingRange(markdown, source.section.from_heading, source.section.until_before_heading);
   if (source.transform === "tny-screws-total") return sliceHeadingRange(markdown, "### Total", "### Complete kit");
   if (source.transform === "tny-cables") return removeHeadingSections(markdown, new Set(["### Complete kit"]));
+  if (source.transform === "so101-two-arm") return markdown.replace(/(^\s*\|[^\n]*?)\bAmount\b/imu, "$1Qty");
   return markdown;
 }
 
@@ -167,7 +168,17 @@ function itemNameFor(source: ReviewedBomSourceDefinition, row: Record<string, st
   if (source.transform.startsWith("aloha-")) {
     return joinDistinct(alohaSectionLabel(source), pick(row, ["item", "part", "component", "name", "description", "type"]), pick(row, ["model", "mpn", "spec", "specification"]));
   }
+  if (source.transform === "so101-two-arm") return cleanMarkdownPartName(pick(row, ["part", "item", "name", "component", "description"]));
   return pick(row, ["名称", "name", "part", "component", "description", "item", "type", "pcb", "规格", "型号"]);
+}
+
+function cleanMarkdownPartName(value: string): string {
+  return value
+    .replace(/<sup\b[^>]*>[\s\S]*?<\/sup>/giu, "")
+    .replace(/<[^>]*>/gu, "")
+    .replace(/\[\^[^\]]+\]/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim();
 }
 
 function alohaSectionLabel(source: ReviewedBomSourceDefinition): string {
@@ -187,6 +198,7 @@ const SOURCE_BACKED_MODEL_TOKENS = [
   "NodeMCU-32S", "PCA9685", "MPU6050", "AMS1117", "1N4004", "XT60-F", "KCD1-101", "TD-8120MG", "MINI360",
   "VL53L0X", "SH1106", "TTP223", "OV2640", "SG90", "MG996R",
   "ST-3215-C018", "ST-3095-C002", "H65V1", "Raspberry Pi 5", "Waveshare Bus Servo Adapter A",
+  "C001", "C044", "C046",
 ];
 
 function itemMpnFor(source: ReviewedBomSourceDefinition, row: Record<string, string>): string | undefined {
@@ -211,6 +223,14 @@ function parseQuantity(value: string): number {
 }
 
 function categoryFor(source: ReviewedBomSourceDefinition, row: Record<string, string>): string | undefined {
+  if (source.transform === "so101-two-arm") {
+    const label = `${itemNameFor(source, row)} ${pick(row, ["category", "notes", "description"])}`;
+    if (/servo/iu.test(label)) return "actuator";
+    if (/clamp|screwdriver|tool/iu.test(label)) return "tool";
+    if (/motor\s*control\s*board|controller|driver|board/iu.test(label)) return "electronics";
+    if (/cable|wire/iu.test(label)) return "cable";
+    if (/power\s*supply|charger|battery|psu/iu.test(label)) return "power";
+  }
   if (source.transform.includes("screws")) return "fastener";
   if (source.transform.includes("cables")) return "cable";
   if (source.transform.includes("pcbs") || pick(row, ["pcb"])) return "pcb";

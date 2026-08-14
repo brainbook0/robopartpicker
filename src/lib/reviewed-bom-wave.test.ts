@@ -172,4 +172,48 @@ describe("reviewed BOM wave transforms", () => {
     expect(items.map((item) => item.ref)).toContain("alohamini-aloha-follower-arms-0001");
     expect(new Set(items.map((item) => item.ref)).size).toBe(items.length);
   });
+
+  it("parses SO-101 two-arm canonical README table Amount, cleaned names, MPNs, categories, and Buy US links", () => {
+    const so101: ReviewedBomProjectDefinition = { project_id: "so101", repo_url: "https://github.com/TheRobotStudio/SO-101.git", revision: "1234567890abcdef1234567890abcdef12345678", sources: [] };
+    const markdown = `# SO-101
+
+## Parts
+| Part | Amount | Buy US | Buy US | Buy EU | Notes |
+| --- | ---: | --- | --- | --- | --- |
+| **Servo Motor C001**<sup id="fnref-1"><a href="#fn-1">1</a></sup> | 12 | [Buy US](https://us.example/servo-c001) | [Backup](https://backup.example/servo-c001) | [EU](https://eu.example/servo-c001) | servo actuator |
+| *Motor Control Board C044*[^ctrl] | 2 | [Buy US](https://us.example/c044) |  |  | electronics |
+| USB-C cable <span class="note">1m</span> | 2 | [Buy US](https://us.example/usb-cable) |  |  | cable |
+| Power supply C046 | 2 | [Buy US](https://us.example/c046) |  |  | power |
+| Table clamp | 2 | [Buy US](https://us.example/clamp) |  |  | tool |
+| Screwdriver | 1 | [Buy US](https://us.example/screwdriver) |  |  | tool |
+| Jumper cable set | 4 | [Buy US](https://us.example/jumper-cables) |  |  | cable |
+| Spare servo horn C001 | 2 | [Buy US](https://us.example/servo-horn) |  |  | servo accessory |
+
+<div class="footnotes"><ol><li id="fn-1">Footnote HTML should not leak into the part name.</li></ol></div>
+
+| Part | Amount | Buy US |
+| --- | ---: | --- |
+| Regional header duplicate only, no real amount | US | https://example.invalid |
+`;
+
+    const items = transformReviewedBomSource(so101, source("so101-two-arm", "README.md"), markdown);
+
+    expect(items).toHaveLength(8);
+    expect(items.map((item) => item.quantity)).toEqual([12, 2, 2, 2, 2, 1, 4, 2]);
+    expect(items.map((item) => item.name)).toEqual([
+      "Servo Motor C001",
+      "Motor Control Board C044",
+      "USB-C cable 1m",
+      "Power supply C046",
+      "Table clamp",
+      "Screwdriver",
+      "Jumper cable set",
+      "Spare servo horn C001",
+    ]);
+    expect(items.map((item) => item.mpn)).toEqual(["C001", "C044", undefined, "C046", undefined, undefined, undefined, "C001"]);
+    expect(items.map((item) => item.category)).toEqual(["actuator", "electronics", "cable", "power", "tool", "tool", "cable", "actuator"]);
+    expect(items[0].source_url).toBe("https://us.example/servo-c001");
+    expect(items[1].source_url).toBe("https://us.example/c044");
+    expect(items.every((item) => !/[<*>]|\[\^/u.test(item.name))).toBe(true);
+  });
 });
