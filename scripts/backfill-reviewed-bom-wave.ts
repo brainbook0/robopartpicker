@@ -182,8 +182,8 @@ function buildForwardSql(projects: PreparedProject[], now: string): string {
   const lines: string[] = [];
   for (const project of projects) {
     const { row, definition } = project;
-    lines.push(`INSERT INTO boms (id, project_id, owner_user_id, slug, name, current_version_id, visibility, is_demo, created_at, updated_at) SELECT ${sqlString(project.bomId)}, ${sqlString(row.id)}, ${sqlString(row.owner_user_id)}, ${sqlString(`${row.slug}-bom`)}, ${sqlString(`${row.name} BOM`)}, ${sqlString(project.bomVersionId)}, ${sqlString(row.visibility)}, 0, ${sqlString(now)}, ${sqlString(now)} FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND pv.rpps_json = ${sqlString(row.rpps_json)};`);
-    lines.push(`INSERT INTO bom_versions (id, bom_id, version_label, notes, currency, created_by_user_id, created_at) VALUES (${sqlString(project.bomVersionId)}, ${sqlString(project.bomId)}, ${sqlString(row.version_label)}, ${sqlString(`Reviewed explicit BOM wave ${wave.wave}; sources pinned to ${definition.revision}.`)}, 'USD', ${sqlString(row.owner_user_id)}, ${sqlString(now)});`);
+    lines.push(`INSERT INTO boms (id, project_id, owner_user_id, slug, name, current_version_id, visibility, is_demo, created_at, updated_at) SELECT ${sqlString(project.bomId)}, ${sqlString(row.id)}, ${sqlString(row.owner_user_id)}, ${sqlString(`${row.slug}-bom`)}, ${sqlString(`${row.name} BOM`)}, ${sqlString(project.bomVersionId)}, ${sqlString(row.visibility)}, 0, ${sqlString(now)}, ${sqlString(now)} FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND pv.rpps_json = ${sqlString(row.rpps_json)} AND NOT EXISTS (SELECT 1 FROM boms existing WHERE existing.project_id = ${sqlString(row.id)});`);
+    lines.push(`INSERT INTO bom_versions (id, bom_id, version_label, notes, currency, created_by_user_id, created_at) VALUES (${sqlString(project.bomVersionId)}, (SELECT id FROM boms WHERE id = ${sqlString(project.bomId)} AND project_id = ${sqlString(row.id)} AND created_at = ${sqlString(now)}), ${sqlString(row.version_label)}, ${sqlString(`Reviewed explicit BOM wave ${wave.wave}; sources pinned to ${definition.revision}.`)}, 'USD', ${sqlString(row.owner_user_id)}, ${sqlString(now)});`);
     project.items.forEach((item, index) => {
       const itemId = stableId('bitem', `${row.id}:${project.bomVersionId}:${item.ref}`);
       const evidenceLocator = item.source_url ?? sourceBlobUrl(definition, item.provenance.source_path);
@@ -203,11 +203,12 @@ function buildForwardSql(projects: PreparedProject[], now: string): string {
 function buildRollbackSql(projects: PreparedProject[], now: string): string {
   const lines: string[] = ['-- Guarded rollback for reviewed BOM wave 2.'];
   for (const project of [...projects].reverse()) {
-    lines.push(`DELETE FROM evidence_claims WHERE id IN (${project.evidence.map((item) => sqlString(item.claimId)).join(', ')}) AND created_at = ${sqlString(now)};`);
-    lines.push(`DELETE FROM evidence WHERE id IN (${project.evidence.map((item) => sqlString(item.id)).join(', ')}) AND created_at = ${sqlString(now)};`);
-    lines.push(`DELETE FROM boms WHERE id = ${sqlString(project.bomId)} AND project_id = ${sqlString(project.row.id)} AND created_at = ${sqlString(now)};`);
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.row.rpps_json)} WHERE id = ${sqlString(project.row.current_version_id)} AND project_id = ${sqlString(project.row.id)};`);
-    lines.push(`UPDATE projects SET project_kind = ${sqlString(project.row.project_kind)}, updated_at = ${sqlString(project.row.updated_at)} WHERE id = ${sqlString(project.row.id)} AND current_version_id = ${sqlString(project.row.current_version_id)};`);
+    const currentWaveGuard = `EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(project.row.current_version_id)} AND pv.project_id = ${sqlString(project.row.id)} AND pv.rpps_json = ${sqlString(JSON.stringify(project.nextRpps))})`;
+    lines.push(`DELETE FROM evidence_claims WHERE id IN (${project.evidence.map((item) => sqlString(item.claimId)).join(', ')}) AND created_at = ${sqlString(now)} AND ${currentWaveGuard};`);
+    lines.push(`DELETE FROM evidence WHERE id IN (${project.evidence.map((item) => sqlString(item.id)).join(', ')}) AND created_at = ${sqlString(now)} AND ${currentWaveGuard};`);
+    lines.push(`DELETE FROM boms WHERE id = ${sqlString(project.bomId)} AND project_id = ${sqlString(project.row.id)} AND created_at = ${sqlString(now)} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(project.row.current_version_id)} AND pv.project_id = ${sqlString(project.row.id)} AND pv.rpps_json = ${sqlString(JSON.stringify(project.nextRpps))});`);
+    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.row.rpps_json)} WHERE id = ${sqlString(project.row.current_version_id)} AND project_id = ${sqlString(project.row.id)} AND rpps_json = ${sqlString(JSON.stringify(project.nextRpps))};`);
+    lines.push(`UPDATE projects SET project_kind = ${sqlString(project.row.project_kind)}, updated_at = ${sqlString(project.row.updated_at)} WHERE id = ${sqlString(project.row.id)} AND current_version_id = ${sqlString(project.row.current_version_id)} AND project_kind = 'physical_design' AND updated_at = ${sqlString(now)};`);
   }
   return `${lines.join('\n')}\n`;
 }
