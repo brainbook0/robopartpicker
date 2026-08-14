@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildVerifiedBackfillSql, selectHarvestArtifacts, type HarvestManifest, type SelectedArtifact, type SelectionSummary, type VerifiedArtifact } from '../src/lib/catalog-completeness-backfill';
+import { buildVerifiedBackfillRollbackSql, buildVerifiedBackfillSql, selectHarvestArtifacts, sqlString, type HarvestManifest, type SelectedArtifact, type SelectionSummary, type VerifiedArtifact } from '../src/lib/catalog-completeness-backfill';
 
 type EnvName = 'production' | 'preview';
 
@@ -13,6 +12,7 @@ const env = envArgIndex >= 0 ? args[envArgIndex + 1] as EnvName : undefined;
 const apply = args.includes('--apply');
 const manifestDir = process.env.HARVEST_MANIFEST_DIR ?? '.ingest/bom-harvest-2026-08-12';
 const scratch = process.env.JCODE_SCRATCH_DIR;
+const r2Python = process.env.R2_PYTHON ?? '/root/.jcode/scratch/r2-venv/bin/python';
 const buckets: Record<EnvName, string> = { production: 'robopartpicker-files', preview: 'robopartpicker-preview-files' };
 
 if (env !== 'production' && env !== 'preview') {
@@ -50,15 +50,15 @@ function loadSummaries(physicalDesignSlugs: Set<string>): SelectionSummary[] {
 
 function r2Head(bucket: string, key: string): { size: number; sha256: string | null } | null {
   const code = `import sys, importlib.util\nspec=importlib.util.spec_from_file_location('r2','/root/.cloudflare/r2.py')\nr2=importlib.util.module_from_spec(spec); spec.loader.exec_module(r2)\ns3=r2.get_client()\ntry:\n o=s3.head_object(Bucket=sys.argv[1], Key=sys.argv[2]); print(str(o.get('ContentLength',-1))+' '+o.get('Metadata',{}).get('sha256',''))\nexcept Exception:\n sys.exit(3)\n`;
-  const result = spawnSync('python3', ['-c', code, bucket, key], { encoding: 'utf8' });
+  const result = spawnSync(r2Python, ['-c', code, bucket, key], { encoding: 'utf8' });
   if (result.status !== 0) return null;
   const [size, sha256] = result.stdout.trim().split(' ');
   return { size: Number(size), sha256: sha256 || null };
 }
 
-function r2Put(bucket: string, key: string, filePath: string, sha256: string) {
-  const code = `import sys, importlib.util\nspec=importlib.util.spec_from_file_location('r2','/root/.cloudflare/r2.py')\nr2=importlib.util.module_from_spec(spec); spec.loader.exec_module(r2)\ns3=r2.get_client()\ns3.upload_file(sys.argv[3], sys.argv[1], sys.argv[2], ExtraArgs={'Metadata': {'sha256': sys.argv[4]}})\n`;
-  execFileSync('python3', ['-c', code, bucket, key, filePath, sha256], { stdio: 'inherit' });
+function r2Put(bucket: string, key: string, filePath: string, sha256: string, mediaType: string) {
+  const code = `import sys, importlib.util\nspec=importlib.util.spec_from_file_location('r2','/root/.cloudflare/r2.py')\nr2=importlib.util.module_from_spec(spec); spec.loader.exec_module(r2)\ns3=r2.get_client()\ns3.upload_file(sys.argv[3], sys.argv[1], sys.argv[2], ExtraArgs={'Metadata': {'sha256': sys.argv[4]}, 'ContentType': sys.argv[5]})\n`;
+  execFileSync(r2Python, ['-c', code, bucket, key, filePath, sha256, mediaType], { stdio: 'inherit' });
 }
 
 async function downloadAndVerify(file: SelectedArtifact, tempDir: string): Promise<string> {
@@ -76,7 +76,7 @@ async function downloadAndVerify(file: SelectedArtifact, tempDir: string): Promi
 }
 
 async function uploadVerified(files: SelectedArtifact[], bucket: string): Promise<VerifiedArtifact[]> {
-  const tempDir = mkdtempSync(join(tmpdir(), 'catalog-backfill-'));
+  const tempDir = mkdtempSync(join(scratch!, 'catalog-backfill-'));
   try {
     const verified: VerifiedArtifact[] = [];
     for (const file of files) {
@@ -86,7 +86,7 @@ async function uploadVerified(files: SelectedArtifact[], bucket: string): Promis
         continue;
       }
       const localPath = await downloadAndVerify(file, tempDir);
-      r2Put(bucket, file.objectKey, localPath, file.checksumSha256);
+      r2Put(bucket, file.objectKey, localPath, file.checksumSha256, file.mediaType);
       const head = r2Head(bucket, file.objectKey);
       if (head?.size !== file.sizeBytes || head.sha256 !== file.checksumSha256) throw new Error(`R2 HEAD verification failed for ${bucket}/${file.objectKey}`);
       verified.push({ ...file, r2Bucket: bucket });
@@ -116,8 +116,13 @@ if (!apply) {
 }
 
 const verified = await uploadVerified(selected, buckets[env]);
-const sql = buildVerifiedBackfillSql(verified);
-const out = join(scratch, `catalog-completeness-backfill-${env}-${new Date().toISOString().replace(/[:.]/g, '-')}.sql`);
+const runTimestamp = new Date().toISOString();
+const sql = buildVerifiedBackfillSql(verified, sqlString(runTimestamp));
+const rollbackSql = buildVerifiedBackfillRollbackSql(verified, runTimestamp);
+const stamp = runTimestamp.replace(/[:.]/g, '-');
+const out = join(scratch, `catalog-completeness-backfill-${env}-${stamp}.sql`);
+const rollback = join(scratch, `rollback-catalog-completeness-backfill-${env}-${stamp}.sql`);
 writeFileSync(out, sql);
-console.log(JSON.stringify({ verifiedFiles: verified.length, sql: out }, null, 2));
+writeFileSync(rollback, rollbackSql);
+console.log(JSON.stringify({ verifiedFiles: verified.length, sql: out, rollback }, null, 2));
 execFileSync('npx', ['wrangler', 'd1', 'execute', 'DB', '--env', env, '--remote', '--file', out], { stdio: 'inherit' });

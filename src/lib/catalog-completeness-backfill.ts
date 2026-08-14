@@ -152,3 +152,14 @@ export function buildVerifiedBackfillSql(files: VerifiedArtifact[], now = 'CURRE
   lines.push('COMMIT;');
   return `${lines.join('\n')}\n`;
 }
+
+export function buildVerifiedBackfillRollbackSql(files: VerifiedArtifact[], runTimestamp: string): string {
+  const timestamp = sqlString(runTimestamp);
+  const lines = ['BEGIN TRANSACTION;'];
+  for (const file of [...files].reverse()) {
+    lines.push(`DELETE FROM project_files WHERE file_id = ${sqlString(file.fileId)} AND created_at = ${timestamp};`);
+    lines.push(`DELETE FROM files WHERE id = ${sqlString(file.fileId)} AND object_key = ${sqlString(file.objectKey)} AND checksum_sha256 = ${sqlString(file.checksumSha256)} AND created_at = ${timestamp} AND json_extract(metadata_json, '$.backfill') = 'catalog-completeness-2026-08-14';`);
+  }
+  lines.push('COMMIT;');
+  return `${lines.join('\n')}\n`;
+}

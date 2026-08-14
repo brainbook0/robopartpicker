@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildVerifiedBackfillSql, normalizeSourceUrl, selectHarvestArtifacts, type VerifiedArtifact } from './catalog-completeness-backfill';
+import { buildVerifiedBackfillRollbackSql, buildVerifiedBackfillSql, normalizeSourceUrl, selectHarvestArtifacts, type VerifiedArtifact } from './catalog-completeness-backfill';
 
 const physical = new Set(['sample-bot']);
 const sha = 'a'.repeat(64);
@@ -70,5 +70,10 @@ describe('catalog completeness backfill hardening', () => {
     expect(sql).toContain('robopartpicker-preview-files');
     expect(sql).toContain('NOT EXISTS (SELECT 1 FROM files');
     expect(buildVerifiedBackfillSql([])).toBe('BEGIN TRANSACTION;\nCOMMIT;\n');
+
+    const rollback = buildVerifiedBackfillRollbackSql([file], '2026-08-14T00:00:00.000Z');
+    expect(rollback).toContain(`DELETE FROM project_files WHERE file_id = '${file.fileId}' AND created_at = '2026-08-14T00:00:00.000Z'`);
+    expect(rollback).toContain(`DELETE FROM files WHERE id = '${file.fileId}'`);
+    expect(rollback).toContain("json_extract(metadata_json, '$.backfill') = 'catalog-completeness-2026-08-14'");
   });
 });
