@@ -71,7 +71,7 @@ Runtime stack: React, TypeScript, Vite, Hono, Better Auth, Cloudflare Workers, D
 
 ## Local development
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Node.js 22 or newer and npm. The pinned Wrangler release requires Node.js 22.
 
 ```bash
 npm install
