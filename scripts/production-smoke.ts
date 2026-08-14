@@ -13,11 +13,33 @@ const jsonHeaders = { accept: "application/json", "content-type": "application/j
 const mcpHeaders = { accept: "application/json, text/event-stream", "content-type": "application/json" };
 
 const portableRppsManifest = `rpps: "0.1"
-metadata:
+project:
+  id: project:production-smoke
   name: Smoke Test Manifest
+  slug: production-smoke
+release:
+  id: release:production-smoke:0.0.1
   version: 0.0.1
-  license: MIT
-parts: []
+authors:
+  - id: author:production-smoke
+    name: Production Smoke
+licenses:
+  hardware: CERN-OHL-S-2.0
+  software: Apache-2.0
+  documentation: CC-BY-4.0
+artifacts:
+  - id: artifact:readme
+    path: README.md
+    kind: documentation
+    sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+components:
+  - id: component:motor
+    name: Smoke motor
+    quantity: 1
+    manufacturer: Example Robotics
+    mpn: SMOKE-MOTOR-1
+extensions:
+  org.robopartpicker.production-smoke: true
 `;
 
 function baseUrlFromArgs(argv: string[]): string {
