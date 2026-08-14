@@ -19,3 +19,12 @@ export function classifyProjectKind(rpps: RppsPackage): ProjectKind {
 
   return "unknown";
 }
+
+export function projectKindAfterRppsUpdate(currentKind: ProjectKind, rpps: RppsPackage): ProjectKind {
+  // A commercial showcase is an explicit editorial/access classification, not
+  // an inference from how many vendor-published specs happen to be recorded.
+  // Keep it sticky so adding payload, DoF, or weight metadata cannot silently
+  // turn a closed product into a purportedly reproducible physical design.
+  if (currentKind === "commercial_showcase") return currentKind;
+  return classifyProjectKind(rpps);
+}

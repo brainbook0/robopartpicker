@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emptyRpps } from "../lib/rpps/schema";
-import { classifyProjectKind } from "./projectKind";
+import { classifyProjectKind, projectKindAfterRppsUpdate } from "./projectKind";
 
 describe("project kind classifier", () => {
   it("classifies RPPS packages with BOM or hardware evidence as physical designs", () => {
@@ -34,5 +34,19 @@ describe("project kind classifier", () => {
     }))).toBe("commercial_showcase");
 
     expect(classifyProjectKind(emptyRpps({ name: "Mystery Robot", slug: "mystery-robot" }))).toBe("unknown");
+  });
+
+  it("keeps an editorially classified commercial showcase sticky when vendor specs are added", () => {
+    const vendorSpecs = emptyRpps({
+      name: "Vendor Humanoid",
+      slug: "vendor-humanoid",
+      summary: "Closed-source commercial product showcase.",
+      hardware: { dof: 40, weight_kg: 60, height_cm: 170 },
+      tags: ["commercial-showcase", "closed-source"],
+    });
+
+    expect(classifyProjectKind(vendorSpecs)).toBe("physical_design");
+    expect(projectKindAfterRppsUpdate("commercial_showcase", vendorSpecs)).toBe("commercial_showcase");
+    expect(projectKindAfterRppsUpdate("unknown", vendorSpecs)).toBe("physical_design");
   });
 });

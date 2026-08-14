@@ -1,5 +1,5 @@
 import type { RppsPackage } from "../../../src/lib/rpps/schema";
-import { classifyProjectKind, type ProjectKind } from "../../../src/shared/projectKind";
+import { classifyProjectKind, projectKindAfterRppsUpdate, type ProjectKind } from "../../../src/shared/projectKind";
 import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
 import { AppError } from "../../http";
 import { fileContentUrl } from "../../services/file-urls";
@@ -321,7 +321,7 @@ export class ProjectsRepository {
           .bind(rpps.slug, rpps.name, rpps.summary ?? null, rpps.description ?? null, versionId, rpps.license ?? null,
             rpps.repo_url ?? null, rpps.build?.difficulty ?? null,
             rpps.build?.estimated_cost_usd == null ? null : Math.round(rpps.build.estimated_cost_usd * 100),
-            classifyProjectKind(rpps), upstreamUrl, upstreamIdentity, current.row.maintainer ?? rpps.authors?.[0]?.name ?? null,
+            projectKindAfterRppsUpdate(current.row.project_kind, rpps), upstreamUrl, upstreamIdentity, current.row.maintainer ?? rpps.authors?.[0]?.name ?? null,
             publishability, now, projectId, expectedVersion),
       ]);
       if (Number(results[2].meta.changes) < 1) throw new AppError(409, "PROJECT_VERSION_CONFLICT", "The project changed; refresh and retry.");
