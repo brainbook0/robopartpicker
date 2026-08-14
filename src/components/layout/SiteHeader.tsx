@@ -8,6 +8,7 @@ import logoUrl from "@/assets/logo.png";
 import { categoryLabel, lowestPrice, priceDelta30, type PartCategory } from "@/shared/catalog";
 import { useComponents, useSuppliers } from "@/lib/api/catalog";
 import { notificationsApi } from "@/lib/api/notifications";
+import { healthApi } from "@/lib/api/health";
 
 const navItems: { label: string; to: string }[] = [
   { label: "Discover", to: "/" },
@@ -56,6 +57,12 @@ export const SiteHeader = () => {
     enabled: Boolean(user),
     refetchInterval: 60_000,
   });
+  const healthQuery = useQuery({
+    queryKey: ["health-capabilities"],
+    queryFn: ({ signal }) => healthApi.get(signal),
+    staleTime: 5 * 60_000,
+  });
+  const aiEnabled = healthQuery.data?.capabilities.ai === true;
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -105,7 +112,7 @@ export const SiteHeader = () => {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <Link to="/assistant" className="hidden sm:inline-flex btn-ghost btn-sm" aria-label="Ask AI"><Sparkles className="h-3.5 w-3.5" /> Ask AI</Link>
+          <Link to="/assistant" className="hidden sm:inline-flex btn-ghost btn-sm" aria-label={aiEnabled ? "Ask AI" : "AI assistant coming soon"}><Sparkles className="h-3.5 w-3.5" /> {aiEnabled ? "Ask AI" : "AI soon"}</Link>
           <Link to="/marketplace/wanted/new" className="hidden lg:inline-flex btn-ghost btn-sm"><GitPullRequest className="h-3.5 w-3.5" /> RFQ</Link>
           {user && <Link to="/notifications" className="relative hidden sm:inline-flex btn-ghost btn-sm" aria-label={`${notificationCount.data?.unreadCount ?? 0} unread notifications`}><Bell className="h-3.5 w-3.5" />{Boolean(notificationCount.data?.unreadCount) && <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[9px] font-bold text-primary-foreground">{Math.min(notificationCount.data!.unreadCount, 99)}</span>}</Link>}
           <button onClick={() => setDark(!dark)} aria-label="Toggle theme"

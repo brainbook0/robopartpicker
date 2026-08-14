@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Bot, Check, Loader2, Plus, Sparkle, Trash2, Wrench, Cpu, Package, FolderKanban, X } from "lucide-react";
@@ -26,6 +27,7 @@ import {
   type ChatThread,
 } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
+import { healthApi } from "@/lib/api/health";
 
 const SUGGESTIONS = [
   { icon: Cpu, label: "Recommend a 6-DOF arm control MCU under $30" },
@@ -36,6 +38,12 @@ const SUGGESTIONS = [
 
 export default function Assistant() {
   const { user, loading: authLoading } = useAuth();
+  const healthQuery = useQuery({
+    queryKey: ["health-capabilities"],
+    queryFn: ({ signal }) => healthApi.get(signal),
+    staleTime: 5 * 60_000,
+  });
+  const aiEnabled = healthQuery.data?.capabilities.ai === true;
   const navigate = useNavigate();
   const { threadId } = useParams<{ threadId?: string }>();
   const [threads, setThreads] = useState<ChatThread[]>([]);
@@ -119,6 +127,19 @@ export default function Assistant() {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (healthQuery.isSuccess && !aiEnabled) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <div className="rounded-lg border border-warning/40 bg-warning/5 p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold"><Bot className="h-4 w-4 text-primary" /> Build Assistant coming soon</div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            AI chat is not currently available in this environment because the provider is not configured. Catalog, project, BOM, and community pages remain available.
+          </p>
+        </div>
       </div>
     );
   }
