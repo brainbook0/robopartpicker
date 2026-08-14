@@ -5,7 +5,7 @@
 This report validates the deployed RoboPartPicker product against the clarified product intent: aggregate robotics projects, preserve reproducibility evidence, expose BOMs and sourcing gaps, support forks and quote workflows, distinguish closed-source showcases, publish an honest demand-test explainer, accept commercial interest, and expose public MCP access.
 
 **Production:** <https://robopartpicker-production.ludomi2502.workers.dev>  
-**Active Worker version during acceptance:** `ca65b0d5-9ead-4364-b8ac-5ac7db2a9f74`  
+**Active Worker version during final acceptance:** `c26e6a84-d229-407f-af2e-6fad143a6918`
 **Production D1 migrations:** no pending migrations
 
 **Verdict:** the deployed product is materially functional and the tested integration paths pass. It is not the complete commercial end state. In particular, broad per-BOM-line pricing, automated outbound supplier contact, carrier-aware delivery planning, AI workspace execution, marketplace liquidity, and payment processing remain incomplete or deliberately labeled as coming soon. The UI now states those boundaries instead of presenting placeholders as finished capabilities.

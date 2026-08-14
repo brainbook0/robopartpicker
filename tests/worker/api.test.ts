@@ -260,7 +260,7 @@ beforeAll(async () => {
 describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
-    expect(Number(migrations?.value)).toBe(21);
+    expect(Number(migrations?.value)).toBe(22);
     const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: packageJson.version });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
@@ -306,7 +306,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect((await call(`/api/v1/rfq/${request.id}`, {}, otherCookie)).status).toBe(403);
 
     const ambiguous = await call("/api/v1/rfq", { method: "POST", body: jsonBody({ bomId, projectId: crypto.randomUUID() }) }, ownerCookie);
-    expect(ambiguous.status).toBe(400);
+    expect(ambiguous.status).toBe(422);
   });
 
   it("requires RFQ auth and project access before sourcing estimation", async () => {
@@ -531,6 +531,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
 
     const ambiguousOldRoute = await call(`/api/v1/files/${encodeURIComponent(fileId)}/content`, {}, ownerCookie);
     expect(ambiguousOldRoute.status).toBe(404);
+    await ambiguousOldRoute.text();
   });
 
   it("keeps the legacy UUID content route working", async () => {

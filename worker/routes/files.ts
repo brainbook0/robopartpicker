@@ -214,7 +214,9 @@ fileRoutes.post("/files/:id/attachments", loadAuthSession, requireAuth, async (c
 });
 
 fileRoutes.get("/files/:id/content", loadAuthSession, async (c) => {
-  return serveFileContent(c, c.req.param("id"));
+  const id = c.req.param("id");
+  if (!z.string().uuid().safeParse(id).success) throw new AppError(404, "FILE_NOT_FOUND", "File not found.");
+  return serveFileContent(c, id);
 });
 
 fileRoutes.delete("/files/:id", loadAuthSession, requireAuth, async (c) => {

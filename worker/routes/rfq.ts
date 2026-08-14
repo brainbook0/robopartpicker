@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { AppBindings } from "../env";
 import { RfqRepository } from "../db/repositories/rfq";
 import { SourcingOptimizerService } from "../services/sourcing-optimizer";
-import { isRfqAction, transitionRfq, type RfqAction } from "../../src/shared/rfq";
+import { isRfqAction, type RfqAction } from "../../src/shared/rfq";
 import { AppError } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
 import { assertScopedRead, authenticatedUserId } from "../middleware/authorization";
@@ -91,7 +91,6 @@ rfqRoutes.post("/rfq/:id/responses", loadAuthSession, requireAuth, async (c) => 
   const request = await repository.get(c.req.param("id"));
   if (!request) throw new AppError(404, "RFQ_NOT_FOUND", "Quote request not found.");
   if (request.createdByUserId !== userId) throw new AppError(403, "RFQ_ACCESS_DENIED", "You cannot modify this quote request.");
-  if (!transitionRfq(request.status, "receive_partial")) throw new AppError(409, "RFQ_INVALID_TRANSITION", `Cannot receive_partial from ${request.status}.`);
   const body = await parseJson(c, responsesSchema);
   await repository.recordResponse(request.id, body.items);
   return c.json({ item: await repository.get(request.id) });

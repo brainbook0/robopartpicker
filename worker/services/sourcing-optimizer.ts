@@ -32,7 +32,7 @@ export class SourcingOptimizerService {
     const bom = await new BomsRepository(this.db).detail(bomId);
     if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
     const lines: SourcingLineInput[] = bom.items.map((item, index) => ({
-      id: String(item.id ?? `line-${index + 1}`),
+      id: String(item.slotKey ?? item.id ?? `line-${index + 1}`),
       componentId: typeof item.componentId === "string" ? item.componentId : null,
       name: String(item.description ?? `Line ${index + 1}`),
       quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,

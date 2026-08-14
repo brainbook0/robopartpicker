@@ -7,9 +7,10 @@ const origin = "https://example.com";
 const ingestionSecret = "test-only-ingestion-secret-32-characters-minimum";
 const offerKey = { supplierId: "supplier-sd", componentId: "component-sd" };
 
-const baseInput = () =>
+const baseInput = (supplierSku: string) =>
   normalizeOfferWriteInput({
     ...offerKey,
+    supplierSku,
     currency: "USD",
     unitPriceMinor: 1200,
     stockQuantity: 10,
@@ -39,7 +40,7 @@ describe("IU-SOURCING-DATA: offer history and provenance", () => {
 
   it("inserts an offer and appends its initial observation", async () => {
     const repo = new CatalogRepository(env.DB);
-    const created = await repo.upsertOffer(baseInput());
+    const created = await repo.upsertOffer(baseInput("insert"));
     expect(created.historyAppended).toBe(true);
     const history = await repo.listOfferHistory(created.offerId);
     expect(history).toHaveLength(1);
@@ -51,8 +52,8 @@ describe("IU-SOURCING-DATA: offer history and provenance", () => {
 
   it("appends history on price change and never overwrites the prior observation", async () => {
     const repo = new CatalogRepository(env.DB);
-    const created = await repo.upsertOffer(baseInput());
-    const updated = await repo.upsertOffer({ ...baseInput(), unitPriceMinor: 1350, stockQuantity: 10 });
+    const created = await repo.upsertOffer(baseInput("change"));
+    const updated = await repo.upsertOffer({ ...baseInput("change"), unitPriceMinor: 1350, stockQuantity: 10 });
     expect(updated.offerId).toBe(created.offerId);
     expect(updated.historyAppended).toBe(true);
     const history = await repo.listOfferHistory(created.offerId);
@@ -62,8 +63,8 @@ describe("IU-SOURCING-DATA: offer history and provenance", () => {
 
   it("does not append a duplicate observation on a no-op update", async () => {
     const repo = new CatalogRepository(env.DB);
-    const created = await repo.upsertOffer({ ...baseInput(), unitPriceMinor: 1500 });
-    const noop = await repo.upsertOffer({ ...baseInput(), unitPriceMinor: 1500 });
+    const created = await repo.upsertOffer({ ...baseInput("noop"), unitPriceMinor: 1500 });
+    const noop = await repo.upsertOffer({ ...baseInput("noop"), unitPriceMinor: 1500 });
     expect(noop.offerId).toBe(created.offerId);
     expect(noop.historyAppended).toBe(false);
     const history = await repo.listOfferHistory(created.offerId);
@@ -72,7 +73,7 @@ describe("IU-SOURCING-DATA: offer history and provenance", () => {
 
   it("rejects a placeholder price and accepts a valid update through the endpoint", async () => {
     const repo = new CatalogRepository(env.DB);
-    const created = await repo.upsertOffer(baseInput());
+    const created = await repo.upsertOffer(baseInput("endpoint"));
     const invalid = await call(`/api/v1/offers/${created.offerId}`, {
       method: "PUT",
       headers: { "content-type": "application/json", "x-ingestion-secret": ingestionSecret },

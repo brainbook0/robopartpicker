@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Made RFQ line keys stable against BOM storage IDs, preserved `RFQ_EXPIRED` errors for late supplier responses, and isolated offer-history regression fixtures so quote and sourcing behavior is deterministic across requests and tests.
+
+- Prioritized human-readable project documentation ahead of generic configuration files during bounded GitHub imports, while keeping slash-bearing imported file IDs on the unambiguous query-based content endpoint.
+
 - Corrected source-backed DigiKey BOM pricing imports to use the canonical `exact` match label and `{ quantity, unitPriceMinor }` price-break shape, so exact-part sourcing and quantity tiers are no longer silently filtered out.
 
 - Added a slash-safe file content endpoint, kept the legacy UUID content route, and updated file URL generation so harvested file IDs with path separators can be downloaded without bypassing auth or visibility checks.

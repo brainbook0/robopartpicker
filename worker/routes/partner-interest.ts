@@ -37,7 +37,7 @@ partnerInterestRoutes.post("/partner-interest", async (c) => {
     requestId: c.get("requestId"),
   });
 
-  return c.json({ item, message: "Interest received. The team will review it before any listing, sponsorship, or supplier change goes live." }, 201);
+  return c.json({ item, message: "Interest received. It will go through manual review before any listing, sponsorship, or supplier change goes live." }, 201);
 });
 
 function looksLikeSpam(message: string): boolean {

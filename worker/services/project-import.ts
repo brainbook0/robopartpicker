@@ -445,8 +445,9 @@ function githubFetchPriority(path: string): number {
   if (/(^|\/)(package\.xml|package\.json|pyproject\.toml|requirements[^/]*\.txt|cargo\.toml|platformio\.ini)$/u.test(lower)) return 3;
   if (/(^|\/)(readme|license|copying|contributing|changelog)(\.|$)/u.test(lower)) return 4;
   if (/(^|\/)(assembly|build|calibration|testing?|operation|maintenance)([^/]*)\.(md|txt|ya?ml)$/u.test(lower)) return 5;
-  if (/\.(ya?ml|json|toml|ini|cfg|conf)$/u.test(lower)) return 6;
-  return 7;
+  if (/\.(md|txt)$/u.test(lower)) return 6;
+  if (/\.(ya?ml|json|toml|ini|cfg|conf)$/u.test(lower)) return 7;
+  return 8;
 }
 
 function extractComponents(files: Map<string, string>, warnings: string[], slug: string, byteFiles?: Map<string, Uint8Array>): {
