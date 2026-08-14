@@ -68,6 +68,19 @@ export type ImportCandidate = {
   }>;
 };
 
+export type ExistingProjectIdentity = {
+  id: string;
+  slug: string;
+  repository_url: string | null;
+  upstream_identity: string | null;
+  current_version_id: string | null;
+};
+
+export type ExistingVersionIdentity = {
+  id: string;
+  project_id: string;
+};
+
 export function canonicalizeUpstreamIdentity(repositoryUrl: string): string {
   const url = new URL(repositoryUrl);
   const host = url.hostname.toLowerCase().replace(/^www\./, '');
@@ -104,6 +117,40 @@ export function validateHarvestManifest(wave: WaveRecord, manifest: unknown): vo
   if (!Array.isArray(artifacts) || artifacts.length === 0) throw new Error(`Harvest manifest has no reviewed artifacts for ${wave.slug}`);
   const mismatched = artifacts.find((artifact) => artifact.sourceRevision?.toLowerCase() !== wave.revision.toLowerCase());
   if (mismatched) throw new Error(`Harvest manifest revision mismatch for ${wave.slug}`);
+}
+
+function canonicalOrNull(repositoryUrl: string | null): string | null {
+  if (!repositoryUrl) return null;
+  try {
+    return canonicalizeUpstreamIdentity(repositoryUrl);
+  } catch {
+    return null;
+  }
+}
+
+export function findExistingWaveSlugs(records: WaveRecord[], projects: ExistingProjectIdentity[], versions: ExistingVersionIdentity[]): Set<string> {
+  const existing = new Set<string>();
+  for (const record of records) {
+    const upstream = canonicalizeUpstreamIdentity(record.repository_url);
+    const versionId = stableId('pver', `${record.id}:version:${record.revision}`);
+    const idMatch = projects.find((project) => project.id === record.id);
+    const slugMatch = projects.find((project) => project.slug.toLowerCase() === record.slug.toLowerCase());
+    const upstreamMatches = projects.filter((project) => project.upstream_identity === upstream || canonicalOrNull(project.repository_url) === upstream);
+    const versionMatch = versions.find((version) => version.id === versionId);
+
+    if (idMatch && (idMatch.slug.toLowerCase() !== record.slug.toLowerCase()
+      || (canonicalOrNull(idMatch.repository_url) ?? idMatch.upstream_identity) !== upstream)) {
+      throw new Error(`Wave 1 project id conflict for ${record.slug}: ${record.id}`);
+    }
+    if (slugMatch && slugMatch.id !== record.id && !upstreamMatches.includes(slugMatch)) {
+      throw new Error(`Wave 1 slug conflict for ${record.slug}`);
+    }
+    if (upstreamMatches.length > 1) throw new Error(`Multiple existing projects share Wave 1 upstream ${upstream}`);
+    if (versionMatch && versionMatch.project_id !== record.id) throw new Error(`Wave 1 version id conflict for ${record.slug}: ${versionId}`);
+
+    if (idMatch || slugMatch || upstreamMatches.length === 1) existing.add(record.slug);
+  }
+  return existing;
 }
 
 export function stableId(prefix: string, seed: string): string {
@@ -222,5 +269,17 @@ export function buildForwardSql(candidates: ImportCandidate[], now: string): str
 
 export function buildRollbackSql(candidates: ImportCandidate[]): string {
   const ids = candidates.map((c) => sqlString(c.projectId)).join(', ');
-  return [`-- Guarded rollback for wave1 importer. Deletes only deterministic project ids owned by robotics-catalog-import.`, 'BEGIN TRANSACTION;', `DELETE FROM projects WHERE owner_user_id = 'robotics-catalog-import' AND id IN (${ids || 'NULL'});`, 'COMMIT;', ''].join('\n');
+  const guardedProjects = `SELECT id FROM projects WHERE owner_user_id = 'robotics-catalog-import' AND id IN (${ids || 'NULL'})`;
+  return [
+    '-- Guarded rollback for wave1 importer. Deletes only deterministic project ids owned by robotics-catalog-import.',
+    'BEGIN TRANSACTION;',
+    `DELETE FROM bom_items WHERE bom_version_id IN (SELECT bv.id FROM bom_versions bv JOIN boms b ON b.id = bv.bom_id WHERE b.project_id IN (${guardedProjects}));`,
+    `DELETE FROM bom_versions WHERE bom_id IN (SELECT id FROM boms WHERE project_id IN (${guardedProjects}));`,
+    `DELETE FROM boms WHERE project_id IN (${guardedProjects});`,
+    `DELETE FROM project_versions WHERE project_id IN (${guardedProjects});`,
+    `DELETE FROM projects WHERE owner_user_id = 'robotics-catalog-import' AND id IN (${ids || 'NULL'});`,
+    'COMMIT;',
+    `SELECT COUNT(*) AS remaining_wave1_projects FROM projects WHERE id IN (${ids || 'NULL'});`,
+    '',
+  ].join('\n');
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCandidate, buildForwardSql, buildRollbackSql, canonicalizeUpstreamIdentity, sqlString, stableId, validateHarvestManifest, validateWaveRecords, type WaveRecord } from './physical-design-wave-import';
+import { buildCandidate, buildForwardSql, buildRollbackSql, canonicalizeUpstreamIdentity, findExistingWaveSlugs, sqlString, stableId, validateHarvestManifest, validateWaveRecords, type WaveRecord } from './physical-design-wave-import';
 
 const wave: WaveRecord = {
   id: '74b13950-c3ed-52e7-b47a-1198841323bc',
@@ -50,6 +50,9 @@ describe('physical design wave importer helpers', () => {
     const rollback = buildRollbackSql([candidate]);
     expect(rollback).toContain("owner_user_id = 'robotics-catalog-import'");
     expect(rollback).toContain(sqlString(wave.id));
+    expect(rollback).toContain('DELETE FROM bom_items');
+    expect(rollback).toContain('DELETE FROM project_versions');
+    expect(rollback).toContain('remaining_wave1_projects');
   });
 
   it('rejects mutable, duplicate, or provenance-mismatched inputs', () => {
@@ -58,5 +61,12 @@ describe('physical design wave importer helpers', () => {
     expect(() => validateWaveRecords([wave, { ...wave }])).toThrow(/Duplicate/);
     expect(() => validateHarvestManifest(wave, { ...manifest, repository_url: 'https://github.com/example/other' })).toThrow(/repository mismatch/);
     expect(() => validateHarvestManifest(wave, { ...manifest, analysis: { inventory: { artifacts: [{ sourceRevision: '0'.repeat(40) }] } } })).toThrow(/revision mismatch/);
+  });
+
+  it('skips exact existing upstreams and fails closed on identity collisions', () => {
+    const versionId = stableId('pver', `${wave.id}:version:${wave.revision}`);
+    expect(findExistingWaveSlugs([wave], [{ id: wave.id, slug: wave.slug, repository_url: `${wave.repository_url}.git`, upstream_identity: null, current_version_id: versionId }], [{ id: versionId, project_id: wave.id }])).toEqual(new Set([wave.slug]));
+    expect(() => findExistingWaveSlugs([wave], [{ id: wave.id, slug: 'different', repository_url: 'https://github.com/example/other', upstream_identity: null, current_version_id: null }], [])).toThrow(/project id conflict/);
+    expect(() => findExistingWaveSlugs([wave], [], [{ id: versionId, project_id: 'another-project' }])).toThrow(/version id conflict/);
   });
 });

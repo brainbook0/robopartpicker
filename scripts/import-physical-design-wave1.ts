@@ -1,6 +1,18 @@
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildCandidate, buildForwardSql, buildRollbackSql, canonicalizeUpstreamIdentity, sqlString, validateWaveRecords, type ImportCandidate, type WaveRecord } from '../src/lib/physical-design-wave-import';
+import {
+  buildCandidate,
+  buildForwardSql,
+  buildRollbackSql,
+  findExistingWaveSlugs,
+  sqlString,
+  stableId,
+  validateWaveRecords,
+  type ExistingProjectIdentity,
+  type ExistingVersionIdentity,
+  type ImportCandidate,
+  type WaveRecord,
+} from '../src/lib/physical-design-wave-import';
 import { captureWranglerJson, runWrangler } from './wrangler-cli';
 
 const WAVE = 'data/project-waves/2026-08-14-physical-design-wave1.ndjson';
@@ -43,20 +55,16 @@ function manifestFor(slug: string): unknown | undefined {
 }
 
 function queryExisting(records: WaveRecord[]): Set<string> {
-  const slugs = records.map((r) => sqlString(r.slug)).join(',');
-  const repos = records.map((r) => sqlString(r.repository_url)).join(',');
-  const identities = records.map((r) => sqlString(canonicalizeUpstreamIdentity(r.repository_url))).join(',');
-  const sql = `SELECT slug, repository_url, lower(upstream_identity) AS upstream_identity FROM projects WHERE slug IN (${slugs}) OR repository_url IN (${repos}) OR lower(upstream_identity) IN (${identities});`;
-  console.log('Querying D1 for duplicate slug, repository_url, or canonical upstream_identity before generating inserts...');
-  const rows = wranglerRows<{ slug: string; repository_url: string | null; upstream_identity: string | null }>(sql);
-  const existing = new Set<string>();
-  for (const r of records) {
-    const upstream = canonicalizeUpstreamIdentity(r.repository_url);
-    if (rows.some((row) => row.slug.toLowerCase() === r.slug.toLowerCase()
-      || row.repository_url?.toLowerCase() === r.repository_url.toLowerCase()
-      || row.upstream_identity === upstream)) existing.add(r.slug);
-  }
-  console.log(JSON.stringify(rows, null, 2));
+  console.log('Querying D1 for project, slug, canonical repository, upstream, and generated version identity conflicts...');
+  const projects = wranglerRows<ExistingProjectIdentity>(
+    'SELECT id, slug, repository_url, lower(upstream_identity) AS upstream_identity, current_version_id FROM projects;',
+  );
+  const versionIds = records.map((record) => stableId('pver', `${record.id}:version:${record.revision}`));
+  const versions = wranglerRows<ExistingVersionIdentity>(
+    `SELECT id, project_id FROM project_versions WHERE id IN (${versionIds.map(sqlString).join(',') || 'NULL'});`,
+  );
+  const existing = findExistingWaveSlugs(records, projects, versions);
+  console.log(`Preflight inspected ${projects.length} projects and ${versions.length} matching generated version IDs; ${existing.size} Wave 1 projects already exist.`);
   return existing;
 }
 
