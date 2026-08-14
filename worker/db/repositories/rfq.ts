@@ -1,5 +1,5 @@
 import type { SourcingEstimate } from "../../../src/shared/sourcing";
-import { isRfqState, transitionRfq, type RfqAction, type RfqState } from "../../../src/shared/rfq";
+import { effectiveRfqState, isRfqState, transitionRfq, type RfqAction, type RfqState } from "../../../src/shared/rfq";
 import { AppError } from "../../http";
 
 export type RfqRequest = {
@@ -45,15 +45,17 @@ export class RfqRepository {
         expires_at AS expiresAt, created_at AS createdAt, updated_at AS updatedAt
       FROM rfq_requests WHERE id = ?1`).bind(id).first<Record<string, unknown>>();
     if (!row) return null;
+    const persistedStatus = isRfqState(row.status) ? row.status : "estimate_ready";
+    const expiresAt = typeof row.expiresAt === "string" ? row.expiresAt : null;
     return {
       id: String(row.id),
       projectId: typeof row.projectId === "string" ? row.projectId : null,
       bomId: typeof row.bomId === "string" ? row.bomId : null,
       createdByUserId: String(row.createdByUserId),
-      status: isRfqState(row.status) ? row.status : "estimate_ready",
+      status: effectiveRfqState(persistedStatus, expiresAt),
       estimateSnapshot: JSON.parse(String(row.estimateSnapshot)) as SourcingEstimate,
       totalEstimateMinor: typeof row.totalEstimateMinor === "number" ? row.totalEstimateMinor : null,
-      expiresAt: typeof row.expiresAt === "string" ? row.expiresAt : null,
+      expiresAt,
       createdAt: String(row.createdAt),
       updatedAt: String(row.updatedAt),
     };
@@ -72,6 +74,7 @@ export class RfqRepository {
   async transition(id: string, action: RfqAction): Promise<RfqState> {
     const request = await this.get(id);
     if (!request) throw new AppError(404, "RFQ_NOT_FOUND", "Quote request not found.");
+    this.assertNotExpired(request);
     const next = transitionRfq(request.status, action);
     if (!next) throw new AppError(409, "RFQ_INVALID_TRANSITION", `Cannot ${action} from ${request.status}.`);
     await this.db.prepare(`UPDATE rfq_requests SET status = ?1, updated_at = ?2 WHERE id = ?3`)
@@ -79,9 +82,17 @@ export class RfqRepository {
     return next;
   }
 
+  /** Reject mutations on a request whose effective status is `expired`. */
+  private assertNotExpired(request: RfqRequest): void {
+    if (request.status === "expired") {
+      throw new AppError(409, "RFQ_EXPIRED", "This quote request has expired and can no longer be modified.");
+    }
+  }
+
   async recordResponse(id: string, items: Array<{ lineKey: string; quoteUnitPriceMinor?: number | null; quoteCurrency?: string | null; supplierId?: string | null; supplierSku?: string | null; leadTimeDays?: number | null; isSubstitute?: boolean }>): Promise<void> {
     const request = await this.get(id);
     if (!request) throw new AppError(404, "RFQ_NOT_FOUND", "Quote request not found.");
+    this.assertNotExpired(request);
     if (!transitionRfq(request.status, "receive_partial")) throw new AppError(409, "RFQ_INVALID_TRANSITION", `Cannot receive_partial from ${request.status}.`);
 
     const lineKeys = [...new Set(items.map((item) => item.lineKey))];

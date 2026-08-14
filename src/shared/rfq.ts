@@ -54,6 +54,17 @@ export function canApprove(state: RfqState): boolean {
   return transitionRfq(state, "approve") !== null;
 }
 
+/** Resolve the effective state for a quote request, applying time-based
+ *  expiry. A nonterminal request whose `expiresAt` has passed is reported as
+ *  `expired`; terminal states are never altered. This is a pure read and never
+ *  persists the resolved state, so read paths stay side-effect free. */
+export function effectiveRfqState(state: RfqState, expiresAt: string | null, now: Date = new Date()): RfqState {
+  if (isRfqTerminal(state) || !expiresAt) return state;
+  const expiresMs = Date.parse(expiresAt);
+  if (Number.isNaN(expiresMs)) return state;
+  return expiresMs <= now.getTime() ? "expired" : state;
+}
+
 /** Validate a full path of actions from estimate_ready to a target state. */
 export function reachesState(actions: RfqAction[], target: RfqState): boolean {
   let state: RfqState = "estimate_ready";
