@@ -82,7 +82,6 @@ function markdownForSource(source: ReviewedBomSourceDefinition, markdown: string
   if (source.section) return sliceHeadingRange(markdown, source.section.from_heading, source.section.until_before_heading);
   if (source.transform === "tny-screws-total") return sliceHeadingRange(markdown, "### Total", "### Complete kit");
   if (source.transform === "tny-cables") return removeHeadingSections(markdown, new Set(["### Complete kit"]));
-  if (source.transform === "so101-two-arm") return markdown.replace(/(^\s*\|[^\n]*?)\bAmount\b/imu, "$1Qty");
   return markdown;
 }
 
@@ -120,7 +119,7 @@ function fillDownNames(rows: Record<string, string>[]): Record<string, string>[]
 }
 
 function rowToItem(project: ReviewedBomProjectDefinition, source: ReviewedBomSourceDefinition, row: Record<string, string>, rowIndex: number): ReviewedBomItem[] {
-  const quantityText = pick(row, ["quantity", "qty", "count", "数量", "用量", "qtyperassembly", "qtyfor1platform"]);
+  const quantityText = pick(row, ["quantity", "qty", "amount", "count", "数量", "用量", "qtyperassembly", "qtyfor1platform"]);
   if (source.transform === "nodequad-xlsx-explicit" && !quantityText.trim()) return [];
   const quantity = parseQuantity(quantityText);
   if (!Number.isFinite(quantity) || quantity <= 0) return [];
