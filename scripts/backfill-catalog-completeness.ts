@@ -75,23 +75,35 @@ async function downloadAndVerify(file: SelectedArtifact, tempDir: string): Promi
   return path;
 }
 
-async function uploadVerified(files: SelectedArtifact[], bucket: string): Promise<VerifiedArtifact[]> {
+type UploadRejection = { slug: string; relativePath: string; reason: string };
+
+async function uploadVerified(files: SelectedArtifact[], bucket: string): Promise<{ verified: VerifiedArtifact[]; rejected: UploadRejection[] }> {
   const tempDir = mkdtempSync(join(scratch!, 'catalog-backfill-'));
   try {
     const verified: VerifiedArtifact[] = [];
-    for (const file of files) {
-      const existing = r2Head(bucket, file.objectKey);
-      if (existing?.size === file.sizeBytes && existing.sha256 === file.checksumSha256) {
-        verified.push({ ...file, r2Bucket: bucket });
-        continue;
+    const rejected: UploadRejection[] = [];
+    for (const [index, file] of files.entries()) {
+      try {
+        const existing = r2Head(bucket, file.objectKey);
+        if (existing?.size === file.sizeBytes && existing.sha256 === file.checksumSha256) {
+          verified.push({ ...file, r2Bucket: bucket });
+        } else {
+          const localPath = await downloadAndVerify(file, tempDir);
+          r2Put(bucket, file.objectKey, localPath, file.checksumSha256, file.mediaType);
+          const head = r2Head(bucket, file.objectKey);
+          if (head?.size !== file.sizeBytes || head.sha256 !== file.checksumSha256) throw new Error(`R2 HEAD verification failed for ${bucket}/${file.objectKey}`);
+          verified.push({ ...file, r2Bucket: bucket });
+        }
+      } catch (error) {
+        rejected.push({
+          slug: file.slug,
+          relativePath: file.relativePath,
+          reason: error instanceof Error ? error.message : String(error),
+        });
       }
-      const localPath = await downloadAndVerify(file, tempDir);
-      r2Put(bucket, file.objectKey, localPath, file.checksumSha256, file.mediaType);
-      const head = r2Head(bucket, file.objectKey);
-      if (head?.size !== file.sizeBytes || head.sha256 !== file.checksumSha256) throw new Error(`R2 HEAD verification failed for ${bucket}/${file.objectKey}`);
-      verified.push({ ...file, r2Bucket: bucket });
+      console.log(`JCODE_PROGRESS ${JSON.stringify({ current: index + 1, total: files.length, unit: 'artifacts', message: `Verified ${verified.length}; rejected ${rejected.length}` })}`);
     }
-    return verified;
+    return { verified, rejected };
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -115,7 +127,8 @@ if (!apply) {
   process.exit(0);
 }
 
-const verified = await uploadVerified(selected, buckets[env]);
+const { verified, rejected } = await uploadVerified(selected, buckets[env]);
+if (!verified.length) throw new Error(`No artifacts passed source and R2 verification; rejected ${rejected.length}.`);
 const runTimestamp = new Date().toISOString();
 const sql = buildVerifiedBackfillSql(verified, sqlString(runTimestamp));
 const rollbackSql = buildVerifiedBackfillRollbackSql(verified, runTimestamp);
@@ -124,5 +137,7 @@ const out = join(scratch, `catalog-completeness-backfill-${env}-${stamp}.sql`);
 const rollback = join(scratch, `rollback-catalog-completeness-backfill-${env}-${stamp}.sql`);
 writeFileSync(out, sql);
 writeFileSync(rollback, rollbackSql);
-console.log(JSON.stringify({ verifiedFiles: verified.length, sql: out, rollback }, null, 2));
+const rejectionReport = join(scratch, `catalog-completeness-rejections-${env}-${stamp}.json`);
+writeFileSync(rejectionReport, `${JSON.stringify(rejected, null, 2)}\n`);
+console.log(JSON.stringify({ verifiedFiles: verified.length, rejectedFiles: rejected.length, rejectionReport, sql: out, rollback }, null, 2));
 execFileSync('npx', ['wrangler', 'd1', 'execute', 'DB', '--env', env, '--remote', '--file', out], { stdio: 'inherit' });
