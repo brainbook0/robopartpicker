@@ -79,4 +79,18 @@ describe("project import BOM formats", () => {
       },
     ]);
   });
+
+  it("recognizes Amount as a quantity header in sourcing tables", () => {
+    const markdown = `| Part | Amount | Unit Cost (US) | Buy US |
+| --- | ---: | ---: | --- |
+| STS3215 Servo | 7 | $13.89 | [Alibaba](https://example.com/servo) |`;
+
+    expect(parseMarkdownBomObjects(markdown)).toEqual([{
+      part: "STS3215 Servo",
+      amount: "7",
+      unitcostus: "$13.89",
+      buyus: "Alibaba",
+      buyusurl: "https://example.com/servo",
+    }]);
+  });
 });

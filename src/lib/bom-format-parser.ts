@@ -16,7 +16,7 @@ const BOM_NAME_HEADERS = new Set([
   "名称", "规格", "型号", "物料编号", "物料编码",
 ]);
 const BOM_QTY_HEADERS = new Set([
-  "quantity", "qty", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform", "qtyforassembly", "数量", "用量",
+  "quantity", "qty", "amount", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform", "qtyforassembly", "数量", "用量",
 ]);
 const BOM_SUPPORT_HEADERS = new Set([
   "manufacturer", "supplier", "supplierpart", "footprint", "comment", "unit", "uom", "sku",

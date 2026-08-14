@@ -48,6 +48,26 @@ describe('catalog completeness backfill hardening', () => {
     expect(selected.files).toEqual([]);
   });
 
+  it('preserves WebP media types for reviewed project imagery', () => {
+    const selected = selectHarvestArtifacts({
+      slug: 'sample-bot',
+      analysis: { inventory: { artifacts: [
+        { path: 'media/hero.webp', kind: 'image', sizeBytes: 42, sha256: sha, sourceUrl: 'https://raw.githubusercontent.com/acme/sample/main/media/hero.webp' },
+      ] } },
+    }, physical);
+    expect(selected.files[0]?.mediaType).toBe('image/webp');
+  });
+
+  it('stores reviewed license artifacts as documents', () => {
+    const selected = selectHarvestArtifacts({
+      slug: 'sample-bot',
+      analysis: { inventory: { artifacts: [
+        { path: 'LICENSE', kind: 'license', sizeBytes: 42, sha256: sha, sourceUrl: 'https://raw.githubusercontent.com/acme/sample/main/LICENSE' },
+      ] } },
+    }, physical);
+    expect(selected.files[0]?.kind).toBe('document');
+  });
+
   it('builds guarded SQL only from R2-verified artifacts', () => {
     const file: VerifiedArtifact = {
       fileId: 'harvest-file:sample-bot:a:cad/part.stl',

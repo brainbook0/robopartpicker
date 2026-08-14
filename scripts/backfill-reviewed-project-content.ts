@@ -158,7 +158,7 @@ function prepareProject(
   const coverFile = loadCoverFile(definition, row);
   if (coverFile.project_version_id !== row.current_version_id) throw new Error(`${definition.project_id}: cover is linked to unexpected project version ${coverFile.project_version_id}`);
   if (coverFile.relative_path !== definition.cover.path) throw new Error(`${definition.project_id}: cover relative path mismatch ${coverFile.relative_path}`);
-  if (coverFile.media_type !== "image/png" || coverFile.kind !== "image") throw new Error(`${definition.project_id}: cover must be a PNG image artifact`);
+  if (!coverFile.media_type.startsWith("image/") || coverFile.kind !== "image") throw new Error(`${definition.project_id}: cover must be an image artifact`);
   if (coverFile.status !== "ready" || coverFile.visibility !== "public") throw new Error(`${definition.project_id}: cover artifact must be public and ready`);
   if (Number(coverFile.size_bytes) !== definition.cover.size_bytes || coverFile.checksum_sha256 !== definition.cover.sha256) throw new Error(`${definition.project_id}: cover artifact bytes do not match reviewed source`);
 

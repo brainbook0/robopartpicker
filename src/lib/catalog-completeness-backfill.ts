@@ -42,7 +42,7 @@ export type VerifiedArtifact = SelectedArtifact & { r2Bucket: string };
 export const MAX_ARTIFACT_BYTES = 25 * 1024 * 1024;
 
 const FILE_KINDS = new Set(['image', 'cad', 'urdf', 'mjcf', 'bom', 'document', 'firmware', 'configuration', 'test_evidence', 'attachment']);
-const KIND_ALIASES: Record<string, string> = { documentation: 'document', manufacturing: 'cad' };
+const KIND_ALIASES: Record<string, string> = { documentation: 'document', license: 'document', manufacturing: 'cad' };
 
 export function stableId(prefix: string, parts: string[]): string {
   const safe = parts.map((part) => part.toLowerCase().replace(/[^a-z0-9._/-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 96));
@@ -96,6 +96,7 @@ function mediaTypeForPath(path: string): string {
   if (ext === 'pdf') return 'application/pdf';
   if (ext === 'png') return 'image/png';
   if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  if (ext === 'webp') return 'image/webp';
   return 'application/octet-stream';
 }
 

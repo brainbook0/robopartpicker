@@ -101,14 +101,16 @@ function sourceBlobUrl(project: ReviewedBomProjectDefinition, path: string): str
 function rppsItem(item: ReviewedBomItem): RppsBomItem {
   const rowNote = typeof item.metadata['备注'] === 'string' ? item.metadata['备注'].trim() : '';
   const location = typeof item.metadata.location === 'string' ? item.metadata.location.trim() : '';
-  const notes = [item.mpn ? `Model: ${item.mpn}` : '', rowNote, location ? `Location: ${location}` : '', `Reviewed source: ${item.provenance.source_path} row ${item.provenance.row_index}`]
+  const notes = [item.mpn ? `Model: ${item.mpn}` : '', rowNote, location ? `Location: ${location}` : '', regionalSupplierNotes(item), `Reviewed source: ${item.provenance.source_path} row ${item.provenance.row_index}`]
     .filter(Boolean).join('. ').slice(0, 1000);
+  const unitCostUsd = sourceUnitCostUsd(item);
   return {
     ref: item.ref,
     name: item.name.slice(0, 500),
     qty: Math.max(1, Math.trunc(item.quantity)),
     category: item.category,
     mpn: item.mpn,
+    unit_cost_usd: unitCostUsd,
     supplier_url: item.source_url,
     fabricated: item.fabricated,
     notes,
@@ -120,9 +122,32 @@ function normalizedNotes(item: ReviewedBomItem): string {
   const details = [
     item.mpn ? `Model: ${item.mpn}` : '',
     rowNote,
+    regionalSupplierNotes(item),
     `Reviewed explicit BOM source ${item.provenance.source_path} at ${item.provenance.revision}, row ${item.provenance.row_index}.`,
   ].filter(Boolean).join(' ');
   return details.slice(0, 1000);
+}
+
+function sourceUnitCostUsd(item: ReviewedBomItem): number | undefined {
+  const value = item.metadata.unitcostus;
+  if (typeof value !== 'string') return undefined;
+  const match = value.replace(/,/gu, '').match(/\$\s*(\d+(?:\.\d+)?)/u);
+  if (!match) return undefined;
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function regionalSupplierNotes(item: ReviewedBomItem): string {
+  const regions: Array<[string, unknown]> = [
+    ['EU', item.metadata.buyeuurl],
+    ['CN', item.metadata.buycnurl],
+    ['JP', item.metadata.buyjpurl],
+  ];
+  const links = regions
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string' && /^https?:\/\//u.test(entry[1]))
+    .filter(([, url]) => url !== item.source_url)
+    .map(([region, url]) => `${region}: ${url}`);
+  return links.length ? `Alternate regional suppliers: ${links.join(', ')}` : '';
 }
 
 function prepareProject(definition: ReviewedBomProjectDefinition, row: ProjectRow, files: Map<string, Uint8Array>, retrievedAt: string): PreparedProject {
@@ -190,7 +215,9 @@ function buildForwardSql(projects: PreparedProject[], now: string): string {
       const itemId = stableId('bitem', `${row.id}:${project.bomVersionId}:${item.ref}`);
       const evidenceLocator = item.source_url ?? sourceBlobUrl(definition, item.provenance.source_path);
       const completeness = classifyCompleteness({ fabricated: item.fabricated === true, missingQty: false, mpn: item.mpn }, 'explicit-bom');
-      lines.push(`INSERT INTO bom_items (id, bom_version_id, slot_key, description, quantity, unit, notes, sort_order, extraction_method, completeness, evidence_locator, confidence) VALUES (${sqlString(itemId)}, ${sqlString(project.bomVersionId)}, ${sqlString(item.ref)}, ${sqlString(item.name.slice(0, 500))}, ${sqlNumber(item.quantity)}, 'each', ${sqlString(normalizedNotes(item))}, ${index}, 'explicit-bom', ${sqlString(completeness)}, ${sqlString(evidenceLocator)}, ${sqlNumber(confidenceFor(completeness))});`);
+      const unitCostUsd = sourceUnitCostUsd(item);
+      const targetUnitPriceMinor = unitCostUsd == null ? null : Math.round(unitCostUsd * 100);
+      lines.push(`INSERT INTO bom_items (id, bom_version_id, slot_key, description, quantity, unit, target_unit_price_minor, notes, sort_order, extraction_method, completeness, evidence_locator, confidence) VALUES (${sqlString(itemId)}, ${sqlString(project.bomVersionId)}, ${sqlString(item.ref)}, ${sqlString(item.name.slice(0, 500))}, ${sqlNumber(item.quantity)}, 'each', ${sqlNumber(targetUnitPriceMinor)}, ${sqlString(normalizedNotes(item))}, ${index}, 'explicit-bom', ${sqlString(completeness)}, ${sqlString(evidenceLocator)}, ${sqlNumber(confidenceFor(completeness))});`);
     });
     for (const evidence of project.evidence) {
       lines.push(`INSERT INTO evidence (id, source_type, source_url, title, publisher, retrieved_at, confidence, content_hash, excerpt, is_demo, created_at) VALUES (${sqlString(evidence.id)}, 'repo', ${sqlString(evidence.sourceUrl)}, ${sqlString(evidence.title)}, ${sqlString(new URL(definition.repo_url).hostname)}, ${sqlString(now)}, 0.98, ${sqlString(`sha256:${evidence.sha256}`)}, ${sqlString(`Explicit BOM source ${evidence.path} at immutable revision ${definition.revision}.`)}, 0, ${sqlString(now)});`);

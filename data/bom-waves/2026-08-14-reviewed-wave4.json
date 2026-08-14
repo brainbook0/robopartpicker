@@ -1,0 +1,24 @@
+{
+  "wave": "2026-08-14-reviewed-wave4",
+  "schema_version": 1,
+  "projects": [
+    {
+      "project_id": "therobotstudio-so-arm100",
+      "repo_url": "https://github.com/TheRobotStudio/SO-ARM100.git",
+      "revision": "7629d2ad9853d10fb903093a33ef6114099d97e5",
+      "sources": [
+        {
+          "path": "README.md",
+          "format": "markdown",
+          "sha256": "7897cb890a06d3e532469917543cd3380cfc256a2a8d2b1706df670951b79bf3",
+          "transform": "so101-two-arm",
+          "expected_items": 8,
+          "section": {
+            "from_heading": "#### Parts For Two Arms (Follower and Leader Setup):",
+            "until_before_heading": "#### Parts for One Follower Arm:"
+          }
+        }
+      ]
+    }
+  ]
+}
