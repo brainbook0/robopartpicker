@@ -1,0 +1,55 @@
+{
+  "ok": true,
+  "slug": "alohamini",
+  "repository_url": "https://github.com/liyiteng/alohamini",
+  "analysis": {
+    "draft": {
+      "slug": "alohamini",
+      "repo_url": "https://github.com/liyiteng/alohamini"
+    },
+    "inventory": {
+      "artifacts": [
+        {
+          "path": "README.md",
+          "kind": "document",
+          "sizeBytes": 4356,
+          "sha256": "f7163abb6b84d6233ea84dff3b1f9d0b08ed9d37997d2c681dd1dbe55a59e2a3",
+          "sourceUrl": "https://raw.githubusercontent.com/liyiteng/alohamini/17c6a98d79881a45ab869c1f392ed89c0723a298/README.md",
+          "sourceRevision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        },
+        {
+          "path": "AlohaMini2/docs/BOM.md",
+          "kind": "bom",
+          "sizeBytes": 8000,
+          "sha256": "80eddaab35649fc27c2793dce5b4459a6ebc8c67d3866f294f4d976f6df879f2",
+          "sourceUrl": "https://raw.githubusercontent.com/liyiteng/alohamini/17c6a98d79881a45ab869c1f392ed89c0723a298/AlohaMini2/docs/BOM.md",
+          "sourceRevision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        },
+        {
+          "path": "AlohaMini2/docs/assembly_guide.md",
+          "kind": "document",
+          "sizeBytes": 10943,
+          "sha256": "36e022a22f36cb86b4d899347db113bd43ad95fadef8aff8590c8776ffd9b472",
+          "sourceUrl": "https://raw.githubusercontent.com/liyiteng/alohamini/17c6a98d79881a45ab869c1f392ed89c0723a298/AlohaMini2/docs/assembly_guide.md",
+          "sourceRevision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        },
+        {
+          "path": "AlohaMini2/docs/print_guide.md",
+          "kind": "document",
+          "sizeBytes": 2906,
+          "sha256": "064b93bb19dd4c72d3c83de93359c03ce52537677ccd1cd71f0f1672ef4360f0",
+          "sourceUrl": "https://raw.githubusercontent.com/liyiteng/alohamini/17c6a98d79881a45ab869c1f392ed89c0723a298/AlohaMini2/docs/print_guide.md",
+          "sourceRevision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        },
+        {
+          "path": "AlohaMini1/docs/media/alohamini_git.png",
+          "kind": "image",
+          "sizeBytes": 731533,
+          "sha256": "0e74b5425e864114e2e460fa16b571c1b11590c044a26a7691bab1103d79f814",
+          "sourceUrl": "https://raw.githubusercontent.com/liyiteng/alohamini/17c6a98d79881a45ab869c1f392ed89c0723a298/AlohaMini1/docs/media/alohamini_git.png",
+          "sourceRevision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        }
+      ]
+    }
+  }
+}

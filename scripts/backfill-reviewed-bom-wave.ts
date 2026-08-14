@@ -149,7 +149,8 @@ function prepareProject(definition: ReviewedBomProjectDefinition, row: ProjectRo
   const refs = new Set(items.map((item) => item.ref));
   if (refs.size !== items.length) throw new Error(`${definition.project_id}: duplicate deterministic BOM refs`);
 
-  const sourceEvidence = definition.sources.map((source) => ({
+  const uniqueSources = [...new Map(definition.sources.map((source) => [source.path, source])).values()];
+  const sourceEvidence = uniqueSources.map((source) => ({
     claim: `BOM lines were extracted from ${source.path} at immutable revision ${definition.revision}.`,
     source_type: 'repo' as const,
     source_url: sourceBlobUrl(definition, source.path),
@@ -168,7 +169,7 @@ function prepareProject(definition: ReviewedBomProjectDefinition, row: ProjectRo
     nextRpps: validation.data,
     bomId: stableId('bom', `${row.id}:${wave.wave}`),
     bomVersionId: stableId('bver', `${row.current_version_id}:${wave.wave}`),
-    evidence: definition.sources.map((source) => ({
+    evidence: uniqueSources.map((source) => ({
       id: stableId('evidence', `${row.id}:${definition.revision}:${source.path}`),
       claimId: stableId('eclaim', `${row.id}:${definition.revision}:${source.path}:bom-source`),
       sourceUrl: sourceBlobUrl(definition, source.path),

@@ -1,0 +1,38 @@
+{
+  "wave": "2026-08-14-reviewed-content-wave1",
+  "schema_version": 1,
+  "projects": [
+    {
+      "project_id": "alohamini",
+      "repo_url": "https://github.com/liyiteng/alohamini.git",
+      "revision": "17c6a98d79881a45ab869c1f392ed89c0723a298",
+      "name": "AlohaMini2",
+      "summary": "Open-source dual-arm mobile manipulator with a motorized lift, five cameras, printable hardware, LeRobot integration, and an official sourcing BOM under $1,100.",
+      "description": "AlohaMini2 is the reinforced generation of the AlohaMini embodied-AI platform. It combines a printable omnidirectional mobile base, dual 6+1 DoF AM-ARM200 follower arms, a 30 kg lift, Raspberry Pi 5 compute, five cameras, and openly published CAD, assembly, printing, and sourcing documentation.",
+      "docs_path": "README.md",
+      "docs_sha256": "f7163abb6b84d6233ea84dff3b1f9d0b08ed9d37997d2c681dd1dbe55a59e2a3",
+      "cover": {
+        "path": "AlohaMini1/docs/media/alohamini_git.png",
+        "sha256": "0e74b5425e864114e2e460fa16b571c1b11590c044a26a7691bab1103d79f814",
+        "size_bytes": 731533,
+        "caption": "Official AlohaMini project image",
+        "alt_text": "White AlohaMini dual-arm mobile robot with a vertical lift on a white background"
+      },
+      "assembly_source": {
+        "path": "AlohaMini2/docs/assembly_guide.md",
+        "sha256": "36e022a22f36cb86b4d899347db113bd43ad95fadef8aff8590c8776ffd9b472"
+      },
+      "steps": [
+        { "step_key": "servo-id-setup", "heading": "## Servo ID Setup", "title": "Configure servo IDs" },
+        { "step_key": "build-chassis", "heading": "## 1. Build the Chassis", "title": "Build the chassis" },
+        { "step_key": "install-omni-wheels", "heading": "## 2. Install the Omni Wheels", "title": "Install the omni wheels" },
+        { "step_key": "build-lift-tower", "heading": "## 3. Build and Mount the Lift Tower", "title": "Build and mount the lift tower" },
+        { "step_key": "build-shoulder-block", "heading": "## 4. Build the Shoulder Lift Block", "title": "Build the shoulder lift block" },
+        { "step_key": "install-cameras", "heading": "## 5. Install the Cameras", "title": "Install the cameras" },
+        { "step_key": "mount-arms", "heading": "## 6. Mount the Follower Arms and Route Cables", "title": "Mount the follower arms and route cables" },
+        { "step_key": "install-electronics", "heading": "## 7. Install Display, Compute, and Power", "title": "Install display, compute, and power" },
+        { "step_key": "functional-test", "heading": "## 8. Functional Test", "title": "Run the functional test" }
+      ]
+    }
+  ]
+}
