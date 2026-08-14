@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Added a slash-safe file content endpoint, kept the legacy UUID content route, and updated file URL generation so harvested file IDs with path separators can be downloaded without bypassing auth or visibility checks.
+
 - Added the missing MCP setup guide and clarified the developer page with a usable remote Streamable HTTP configuration, discovery URLs, and the expected browser-only `GET /mcp` 406 response.
 
 - Ensured Marketplace wanted private drafts stay private, reopen in the wanted editor, and cannot be overwritten from the sell-listing editor or converted across listing types.

@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "../env";
 import { FilesRepository } from "../db/repositories/files";
@@ -9,6 +9,7 @@ import { BuildsRepository } from "../db/repositories/builds";
 import { ProjectsRepository } from "../db/repositories/projects";
 import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
+import { fileContentUrl } from "../services/file-urls";
 
 const kinds = ["image", "cad", "urdf", "mjcf", "bom", "document", "firmware", "configuration", "test_evidence", "attachment", "other"] as const;
 const visibility = ["private", "organization", "public"] as const;
@@ -134,7 +135,13 @@ fileRoutes.put("/files/uploads/:intentId", loadAuthSession, requireAuth, async (
       .bind(scan.status, JSON.stringify({ scanStatus: scan.scanStatus, r2Etag: object.etag, uploadedAt: object.uploaded.toISOString(), ...(imageMetadata ? { image: imageMetadata } : {}) }), now, intent.file_id),
   ]);
   await recordAuditEvent(c.env.DB, { actorUserId: userId, action: "file.upload", entityType: "file", entityId: intent.file_id, requestId: c.get("requestId"), after: { status: scan.status, scanStatus: scan.scanStatus, sizeBytes: object.size } });
-  return c.json({ fileId: intent.file_id, status: scan.status, scanStatus: scan.scanStatus, accessUrl: `/api/v1/files/${intent.file_id}/content` }, 201);
+  return c.json({ fileId: intent.file_id, status: scan.status, scanStatus: scan.scanStatus, accessUrl: fileContentUrl(intent.file_id) }, 201);
+});
+
+fileRoutes.get("/files/content", loadAuthSession, async (c) => {
+  const id = c.req.query("id");
+  if (!id) throw new AppError(422, "FILE_ID_REQUIRED", "The file id query parameter is required.");
+  return serveFileContent(c, id);
 });
 
 fileRoutes.get("/files/:id", loadAuthSession, async (c) => {
@@ -207,17 +214,7 @@ fileRoutes.post("/files/:id/attachments", loadAuthSession, requireAuth, async (c
 });
 
 fileRoutes.get("/files/:id/content", loadAuthSession, async (c) => {
-  const file = await authorizedFile(c.env.DB, c.get("authSession")?.user?.id ?? null, c.req.param("id"));
-  if (file.status !== "ready") throw new AppError(423, "FILE_NOT_READY", "The file is not available while safety review is pending.");
-  const object = await c.env.FILES.get(file.object_key, { onlyIf: c.req.raw.headers, range: c.req.raw.headers });
-  if (!object) throw new AppError(404, "FILE_OBJECT_NOT_FOUND", "The file object is missing from storage.");
-  const headers = new Headers();
-  object.writeHttpMetadata(headers);
-  headers.set("etag", object.httpEtag);
-  headers.set("x-content-type-options", "nosniff");
-  headers.set("content-security-policy", "default-src 'none'; sandbox");
-  headers.set("cache-control", file.visibility === "public" ? "public, max-age=3600" : "private, no-store");
-  return new Response("body" in object ? object.body : undefined, { status: "body" in object ? 200 : 412, headers });
+  return serveFileContent(c, c.req.param("id"));
 });
 
 fileRoutes.delete("/files/:id", loadAuthSession, requireAuth, async (c) => {
@@ -235,6 +232,20 @@ fileRoutes.delete("/files/:id", loadAuthSession, requireAuth, async (c) => {
   return c.body(null, 204);
 });
 
+async function serveFileContent(c: Context<AppBindings>, id: string) {
+  const file = await authorizedFile(c.env.DB, c.get("authSession")?.user?.id ?? null, id);
+  if (file.status !== "ready") throw new AppError(423, "FILE_NOT_READY", "The file is not available while safety review is pending.");
+  const object = await c.env.FILES.get(file.object_key, { onlyIf: c.req.raw.headers, range: c.req.raw.headers });
+  if (!object) throw new AppError(404, "FILE_OBJECT_NOT_FOUND", "The file object is missing from storage.");
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  headers.set("x-content-type-options", "nosniff");
+  headers.set("content-security-policy", "default-src 'none'; sandbox");
+  headers.set("cache-control", file.visibility === "public" ? "public, max-age=3600" : "private, no-store");
+  return new Response("body" in object ? object.body : undefined, { status: "body" in object ? 200 : 412, headers });
+}
+
 async function authorizedFile(db: D1Database, userId: string | null, id: string) {
   const file = await new FilesRepository(db).find(id);
   if (!file || file.deleted_at || file.status === "deleted") throw new AppError(404, "FILE_NOT_FOUND", "File not found.");
@@ -247,7 +258,7 @@ async function authorizedFile(db: D1Database, userId: string | null, id: string)
 
 function publicFile(file: Awaited<ReturnType<FilesRepository["find"]>> & {} | Record<string, unknown>) {
   const row = file as Record<string, unknown>;
-  return { id: row.id, originalName: row.original_name, mediaType: row.media_type, sizeBytes: row.size_bytes, visibility: row.visibility, status: row.status, kind: row.kind, createdAt: row.created_at, updatedAt: row.updated_at, contentUrl: `/api/v1/files/${row.id}/content` };
+  return { id: row.id, originalName: row.original_name, mediaType: row.media_type, sizeBytes: row.size_bytes, visibility: row.visibility, status: row.status, kind: row.kind, createdAt: row.created_at, updatedAt: row.updated_at, contentUrl: fileContentUrl(String(row.id)) };
 }
 
 async function scanBoundary(env: AppBindings["Bindings"], fileId: string, objectKey: string): Promise<{ status: "ready" | "quarantined" | "rejected"; scanStatus: string }> {

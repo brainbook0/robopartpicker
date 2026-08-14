@@ -502,14 +502,47 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM evidence WHERE title = 'Promotion actuator datasheet'").first<{ value: number }>())?.value)).toBe(1);
   });
 
-  it("stores a private file in R2, attaches it, and enforces content authorization", async () => {
+  it("serves files whose imported ids contain slashes through the safe content endpoint", async () => {
+    const now = new Date().toISOString();
+    const fileId = "harvest/github.com/example/robot/README.md";
+    const objectKey = `tests/${crypto.randomUUID()}/slash-id-readme.txt`;
+    await env.FILES.put(objectKey, "slash-id content", { httpMetadata: { contentType: "text/plain", cacheControl: "private, no-store" } });
+    await env.DB.prepare(`INSERT INTO files
+      (id, object_key, original_name, media_type, size_bytes, owner_user_id, visibility, status, kind, metadata_json, created_at, updated_at)
+      VALUES (?1, ?2, 'README.md', 'text/plain', 16, ?3, 'private', 'ready', 'document', '{}', ?4, ?4)`)
+      .bind(fileId, objectKey, ownerId, now).run();
+
+    const metadata = await call("/api/v1/files", {}, ownerCookie);
+    expect(metadata.status).toBe(200);
+    expect((await body<{ items: Array<{ id: string; contentUrl: string }> }>(metadata)).items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: fileId,
+        contentUrl: `/api/v1/files/content?id=${encodeURIComponent(fileId)}`,
+      }),
+    ]));
+
+    const denied = await call(`/api/v1/files/content?id=${encodeURIComponent(fileId)}`, {}, otherCookie);
+    expect(denied.status).toBe(403);
+    await denied.text();
+
+    const safeContent = await call(`/api/v1/files/content?id=${encodeURIComponent(fileId)}`, {}, ownerCookie);
+    expect(safeContent.status).toBe(200);
+    expect(await safeContent.text()).toBe("slash-id content");
+
+    const ambiguousOldRoute = await call(`/api/v1/files/${encodeURIComponent(fileId)}/content`, {}, ownerCookie);
+    expect(ambiguousOldRoute.status).toBe(404);
+  });
+
+  it("keeps the legacy UUID content route working", async () => {
     const initialized = await call("/api/v1/files/uploads", { method: "POST", body: jsonBody({ originalName: "evidence.txt", mediaType: "text/plain", sizeBytes: 5, kind: "document", visibility: "private" }) }, ownerCookie);
-    expect(initialized.status).toBe(201); const upload = await body<{ file: { id: string }; upload: { url: string; token: string } }>(initialized);
+    expect(initialized.status).toBe(201); const upload = await body<{ file: { id: string }; upload: { url: string; token: string }; accessUrl?: string }>(initialized);
     const stored = await call(upload.upload.url, { method: "PUT", headers: { "content-type": "text/plain", "content-length": "5", "x-upload-token": upload.upload.token }, body: "hello" }, ownerCookie);
-    expect(stored.status).toBe(201); expect((await body<{ status: string }>(stored)).status).toBe("ready");
+    expect(stored.status).toBe(201); const storedBody = await body<{ status: string; accessUrl: string }>(stored); expect(storedBody.status).toBe("ready");
+    expect(storedBody.accessUrl).toBe(`/api/v1/files/content?id=${encodeURIComponent(upload.file.id)}`);
     const attached = await call(`/api/v1/files/${upload.file.id}/attachments`, { method: "POST", body: jsonBody({ entityType: "build", entityId: buildId, purpose: "test_evidence" }) }, ownerCookie); expect(attached.status).toBe(201);
     const denied = await call(`/api/v1/files/${upload.file.id}/content`, {}, otherCookie); expect(denied.status).toBe(403); await denied.text();
     const content = await call(`/api/v1/files/${upload.file.id}/content`, {}, ownerCookie); expect(content.status).toBe(200); expect(await content.text()).toBe("hello");
+    const safeContent = await call(storedBody.accessUrl, {}, ownerCookie); expect(safeContent.status).toBe(200); expect(await safeContent.text()).toBe("hello");
   });
 
   it("analyzes portable RPPS, BOM, and URDF inputs anonymously without persisting product data", async () => {

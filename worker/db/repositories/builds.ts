@@ -1,5 +1,6 @@
 import { AppError } from "../../http";
 import type { PortableRppsManifest } from "../../../src/lib/rpps/portable";
+import { fileContentUrl } from "../../services/file-urls";
 
 export type BuildRow = {
   id: string; slug: string; name: string; description: string | null; owner_user_id: string | null; organization_id: string | null;
@@ -108,12 +109,16 @@ export class BuildsRepository {
       ...calibration,
       resultData: parseJsonObject(resultJson),
     }));
+    const filesWithContentUrls = (files.results as Array<Record<string, unknown>>).map((file) => ({
+      ...file,
+      contentUrl: fileContentUrl(String(file.id)),
+    }));
     return { ...build, items: hydratedItems, steps: steps.results as Array<Record<string, unknown>>,
       dependencies: dependencies.results as BuildDetail["dependencies"], configurations: configurations.results as Array<Record<string, unknown>>,
       firmware: firmware.results as Array<Record<string, unknown>>, calibrations: hydratedCalibrations,
       tests: tests.results as Array<Record<string, unknown>>, problems: problems.results as Array<Record<string, unknown>>,
       decisions: decisions.results as Array<Record<string, unknown>>, activity: activity.results as Array<Record<string, unknown>>,
-      files: files.results as Array<Record<string, unknown>> };
+      files: filesWithContentUrls };
   }
 
   async create(userId: string, input: {

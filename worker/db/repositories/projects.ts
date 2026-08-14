@@ -2,6 +2,7 @@ import type { RppsPackage } from "../../../src/lib/rpps/schema";
 import { classifyProjectKind, type ProjectKind } from "../../../src/shared/projectKind";
 import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
 import { AppError } from "../../http";
+import { fileContentUrl } from "../../services/file-urls";
 
 type ProjectDatabaseRow = {
   id: string;
@@ -197,7 +198,7 @@ export class ProjectsRepository {
       altText: row.alt_text,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      contentUrl: `/api/v1/files/${row.id}/content`,
+      contentUrl: fileContentUrl(row.id),
     }));
   }
 

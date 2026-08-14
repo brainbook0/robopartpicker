@@ -1,5 +1,6 @@
 import { AppError } from "../../http";
 import { assertOrganizationPermission } from "../../middleware/authorization";
+import { fileContentUrl } from "../../services/file-urls";
 
 export type MarketplaceListingDto = {
   id: string; slug: string; sellerUserId: string | null; organizationId: string | null;
@@ -110,7 +111,7 @@ export class MarketplaceRepository {
         AND (f.visibility = 'public' OR f.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM organization_members om
           WHERE om.organization_id = f.organization_id AND om.user_id = ?2 AND om.status = 'active'))
       ORDER BY mli.sort_order LIMIT 12`).bind(listingId, userId).all<{ file_id: string; alt_text: string | null; sort_order: number }>();
-    return rows.results.map((image) => ({ fileId: image.file_id, altText: image.alt_text, sortOrder: Number(image.sort_order), contentUrl: `/api/v1/files/${image.file_id}/content` }));
+    return rows.results.map((image) => ({ fileId: image.file_id, altText: image.alt_text, sortOrder: Number(image.sort_order), contentUrl: fileContentUrl(image.file_id) }));
   }
 
   private async assertSourceBuild(userId: string, sourceBuildId: string): Promise<void> {
@@ -325,7 +326,7 @@ function mapListing(row: ListingRow): MarketplaceListingDto {
     createdAt: row.created_at, updatedAt: row.updated_at, publishedAt: row.published_at,
     seller: row.seller_user_id ? { id: row.seller_user_id, displayName: row.seller_display_name, username: row.seller_username, avatarUrl: row.seller_avatar_url } : null,
     component: row.source_component_id && row.component_slug ? { id: row.source_component_id, slug: row.component_slug, name: row.component_name!, category: row.component_category! } : null,
-    images: row.primary_image_file_id ? [{ fileId: row.primary_image_file_id, altText: row.primary_image_alt_text, sortOrder: 0, contentUrl: `/api/v1/files/${row.primary_image_file_id}/content` }] : [],
+    images: row.primary_image_file_id ? [{ fileId: row.primary_image_file_id, altText: row.primary_image_alt_text, sortOrder: 0, contentUrl: fileContentUrl(row.primary_image_file_id) }] : [],
     partsCost: row.parts_cost_minor == null ? null : Number(row.parts_cost_minor) / 100,
     partsCostCurrency: row.parts_cost_currency,
     partsCostPricedItems: Number(row.parts_cost_priced_items ?? 0),

@@ -83,7 +83,7 @@ export type BuildDetail = BuildSummary & {
   problems: Array<Record<string, unknown>>;
   decisions: Array<Record<string, unknown>>;
   activity: Array<Record<string, unknown>>;
-  files: Array<{ id: string; originalName: string; mediaType: string; sizeBytes: number; visibility: string; status: string; kind: string; purpose: string; buildStepId: string | null; createdAt: string }>;
+  files: Array<{ id: string; originalName: string; mediaType: string; sizeBytes: number; visibility: string; status: string; kind: string; purpose: string; buildStepId: string | null; createdAt: string; contentUrl: string }>;
 };
 
 export type BomSummary = {
