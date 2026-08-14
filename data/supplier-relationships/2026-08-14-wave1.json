@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "wave": "2026-08-14-supplier-relationship-research-wave1",
+  "generated_at": "2026-08-14T20:17:00.000Z",
+  "policy": {
+    "outbound_messages_sent": false,
+    "explicit_approval_required": true,
+    "reversible_research_only": true
+  },
+  "leads": [
+    {
+      "id": "feetech",
+      "organization_name": "Shenzhen Feetech RC Model Co., Ltd.",
+      "relationship_type": "manufacturer",
+      "priority": "high",
+      "regions": ["global", "China"],
+      "products": ["STS-3215-C018 serial bus servo", "STS-3095-C002 high-torque servo", "3-pin servo extension cables"],
+      "project_slugs": ["alohamini", "therobotstudio-so-arm100"],
+      "status": "research_ready",
+      "approval_state": "not_requested",
+      "do_not_send": true,
+      "contact_channel": {
+        "type": "business-email",
+        "value": "aaron@feetechrc.com.cn",
+        "public_source_url": "https://www.feetechrc.com/"
+      },
+      "evidence": [
+        {
+          "claim": "The official AlohaMini2 BOM specifies Feetech STS-3215 and STS-3095 servos across the base and both arm systems.",
+          "source_url": "https://github.com/liyiteng/alohamini/blob/17c6a98d79881a45ab869c1f392ed89c0723a298/AlohaMini2/docs/BOM.md",
+          "source_revision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        },
+        {
+          "claim": "Feetech's official site publishes a business connection channel and describes customization and OEM services.",
+          "source_url": "https://www.feetechrc.com/"
+        }
+      ],
+      "proposed_value_exchange": "RoboPartPicker can publish verified model identifiers, regional sourcing links, and compatibility evidence while Feetech can supply canonical product data, lifecycle notices, and an approved distributor list.",
+      "first_contact_goal": "Request permission to maintain a verified Feetech manufacturer profile and obtain canonical specifications and distributor links for the servo models used by AlohaMini2 and SO-101.",
+      "notes": "Do not request pricing commitments in the first contact. Start with data accuracy and provenance."
+    },
+    {
+      "id": "waveshare",
+      "organization_name": "Waveshare",
+      "relationship_type": "manufacturer",
+      "priority": "high",
+      "regions": ["global", "China"],
+      "products": ["Bus Servo Adapter (A)"],
+      "project_slugs": ["alohamini", "therobotstudio-so-arm100"],
+      "status": "research_ready",
+      "approval_state": "not_requested",
+      "do_not_send": true,
+      "contact_channel": {
+        "type": "product-page",
+        "value": "https://www.waveshare.com/bus-servo-adapter-a.htm",
+        "public_source_url": "https://www.waveshare.com/bus-servo-adapter-a.htm"
+      },
+      "evidence": [
+        {
+          "claim": "The official AlohaMini2 BOM specifies the Waveshare Bus Servo Adapter A for the mobile base, follower arms, and leader arms.",
+          "source_url": "https://github.com/liyiteng/alohamini/blob/17c6a98d79881a45ab869c1f392ed89c0723a298/AlohaMini2/docs/BOM.md",
+          "source_revision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        },
+        {
+          "claim": "Waveshare's official page publishes electrical, interface, compatibility, support, distributor, and customization information for the adapter.",
+          "source_url": "https://www.waveshare.com/bus-servo-adapter-a.htm"
+        }
+      ],
+      "proposed_value_exchange": "RoboPartPicker can connect verified project BOM demand to the official product and documentation pages while Waveshare can provide stable SKUs, regional distributors, revision notices, and volume purchasing guidance.",
+      "first_contact_goal": "Ask for a verified catalog relationship for Bus Servo Adapter A and the correct regional distributor and lifecycle metadata."
+    },
+    {
+      "id": "alohamini-official-store",
+      "organization_name": "AlohaMini official project store",
+      "relationship_type": "project-vendor",
+      "priority": "high",
+      "regions": ["China", "global-community"],
+      "products": ["AlohaMini2", "AlohaMini2 Pro"],
+      "project_slugs": ["alohamini"],
+      "status": "research_ready",
+      "approval_state": "not_requested",
+      "do_not_send": true,
+      "contact_channel": {
+        "type": "business-email",
+        "value": "liyiteng+github@gmail.com",
+        "public_source_url": "https://github.com/liyiteng/alohamini/blob/17c6a98d79881a45ab869c1f392ed89c0723a298/README.md"
+      },
+      "evidence": [
+        {
+          "claim": "The official repository publishes AlohaMini2 and AlohaMini2 Pro store listings and a public project contact email.",
+          "source_url": "https://github.com/liyiteng/alohamini/blob/17c6a98d79881a45ab869c1f392ed89c0723a298/README.md",
+          "source_revision": "17c6a98d79881a45ab869c1f392ed89c0723a298"
+        }
+      ],
+      "proposed_value_exchange": "RoboPartPicker can maintain the source-pinned BOM, assembly guide, authentic imagery, and regional sourcing references while the project team can validate revisions and direct builders to official kits or support.",
+      "first_contact_goal": "Request review of the public AlohaMini2 catalog entry and permission to identify the official store and future revision notices."
+    },
+    {
+      "id": "robonine",
+      "organization_name": "Robonine",
+      "relationship_type": "kit-vendor",
+      "priority": "high",
+      "regions": ["international"],
+      "products": ["SO-ARM101 parts kit", "SO-ARM101 complete kit", "SO-ARM101 learning bundle"],
+      "project_slugs": ["therobotstudio-so-arm100"],
+      "status": "research_ready",
+      "approval_state": "not_requested",
+      "do_not_send": true,
+      "contact_channel": {
+        "type": "booking-page",
+        "value": "https://robonine.com/",
+        "public_source_url": "https://robonine.com/"
+      },
+      "evidence": [
+        {
+          "claim": "The canonical SO-ARM100 repository lists Robonine as an international kit vendor that includes parts kits.",
+          "source_url": "https://github.com/TheRobotStudio/SO-ARM100/blob/7629d2ad9853d10fb903093a33ef6114099d97e5/README.md",
+          "source_revision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        },
+        {
+          "claim": "Robonine publicly offers SO-ARM101 kits and a pre-purchase booking channel.",
+          "source_url": "https://robonine.com/"
+        }
+      ],
+      "proposed_value_exchange": "RoboPartPicker can surface kit completeness, region, lead-time evidence, and project compatibility while Robonine can provide current kit contents, fulfillment regions, and revision-specific substitutions.",
+      "first_contact_goal": "Request a machine-readable current kit manifest and permission to list Robonine as a verified SO-ARM101 kit source."
+    },
+    {
+      "id": "seeed-studio-so101",
+      "organization_name": "Seeed Studio",
+      "relationship_type": "kit-vendor",
+      "priority": "high",
+      "regions": ["international", "China", "Japan"],
+      "products": ["SO-ARM100 low-cost AI arm kit", "SO-ARM101-compatible printed kit"],
+      "project_slugs": ["therobotstudio-so-arm100"],
+      "status": "research_ready",
+      "approval_state": "not_requested",
+      "do_not_send": true,
+      "contact_channel": {
+        "type": "product-page",
+        "value": "https://www.seeedstudio.com/SO-ARM100-Low-Cost-AI-Arm-Kit.html",
+        "public_source_url": "https://www.seeedstudio.com/SO-ARM100-Low-Cost-AI-Arm-Kit.html"
+      },
+      "evidence": [
+        {
+          "claim": "The canonical SO-ARM100 repository lists Seeed Studio as an international and regional kit source.",
+          "source_url": "https://github.com/TheRobotStudio/SO-ARM100/blob/7629d2ad9853d10fb903093a33ef6114099d97e5/README.md",
+          "source_revision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        }
+      ],
+      "proposed_value_exchange": "RoboPartPicker can map official kits to exact project revisions and regional storefronts while Seeed can provide stable kit SKUs, contents, inventory regions, and substitution policies.",
+      "first_contact_goal": "Request an authoritative kit contents feed and revision compatibility statement for SO-100 and SO-101 variants."
+    },
+    {
+      "id": "forge-motion-labs",
+      "organization_name": "ForgeMotion Labs",
+      "relationship_type": "kit-vendor",
+      "priority": "medium",
+      "regions": ["United States"],
+      "products": ["SO-ARM101 printed frame kit", "SO-ARM101 electronics kit", "SO-ARM101 complete arm kit"],
+      "project_slugs": ["therobotstudio-so-arm100"],
+      "status": "research_ready",
+      "approval_state": "not_requested",
+      "do_not_send": true,
+      "contact_channel": {
+        "type": "website",
+        "value": "https://forgemotionlabs.com/products",
+        "public_source_url": "https://forgemotionlabs.com/products"
+      },
+      "evidence": [
+        {
+          "claim": "The canonical SO-ARM100 repository lists ForgeMotion Labs as a US source for printed frames, electronics, and complete arm kits.",
+          "source_url": "https://github.com/TheRobotStudio/SO-ARM100/blob/7629d2ad9853d10fb903093a33ef6114099d97e5/README.md",
+          "source_revision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        }
+      ],
+      "proposed_value_exchange": "RoboPartPicker can distinguish frame, electronics, and complete-kit offers against the canonical BOM while ForgeMotion can provide exact kit manifests and US fulfillment evidence.",
+      "first_contact_goal": "Request current contents and lead-time metadata for each kit tier and permission to label the listings as verified."
+    },
+    {
+      "id": "partabot",
+      "organization_name": "PartaBot",
+      "relationship_type": "kit-vendor",
+      "priority": "medium",
+      "regions": ["United States"],
+      "products": ["assembled SO-ARM100/SO-ARM101 systems", "LeKiwi", "Koch robots"],
+      "project_slugs": ["therobotstudio-so-arm100"],
+      "status": "research_ready",
+      "approval_state": "not_requested",
+      "do_not_send": true,
+      "contact_channel": {
+        "type": "website",
+        "value": "https://partabot.com/",
+        "public_source_url": "https://partabot.com/"
+      },
+      "evidence": [
+        {
+          "claim": "The canonical SO-ARM100 repository lists PartaBot as a US source for assembled systems and related LeKiwi and Koch robots.",
+          "source_url": "https://github.com/TheRobotStudio/SO-ARM100/blob/7629d2ad9853d10fb903093a33ef6114099d97e5/README.md",
+          "source_revision": "7629d2ad9853d10fb903093a33ef6114099d97e5"
+        }
+      ],
+      "proposed_value_exchange": "RoboPartPicker can connect builders who need assembled systems to revision-specific offers while PartaBot can provide build configuration, regional fulfillment, support scope, and lead-time data.",
+      "first_contact_goal": "Request a verified assembled-system configuration and clarify which canonical BOM revision each offer implements."
+    }
+  ]
+}
