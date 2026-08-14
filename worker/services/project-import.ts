@@ -446,7 +446,7 @@ function githubFetchPriority(path: string): number {
   if (/(^|\/)(readme|license|copying|contributing|changelog)(\.|$)/u.test(lower)) return 4;
   if (/(^|\/)(assembly|build|calibration|testing?|operation|maintenance)([^/]*)\.(md|txt|ya?ml)$/u.test(lower)) return 5;
   if (/\.(md|txt)$/u.test(lower)) return 6;
-  if (/\.(ya?ml|json|toml|ini|cfg|conf)$/u.test(lower)) return 7;
+  if (/\.(csv|ya?ml|json|toml|ini|cfg|conf)$/u.test(lower)) return 7;
   return 8;
 }
 
