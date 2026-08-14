@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Ensured Marketplace wanted private drafts stay private, reopen in the wanted editor, and cannot be overwritten from the sell-listing editor or converted across listing types.
+
 - Hardened RFQ response recording so quotes can only be written from states that allow `receive_partial`, unknown line keys are rejected, omitted substitute flags preserve existing values, and the frontend exposes a typed response-recording client binding.
 
 - Accepted both `redirect` and legacy `next` authentication return parameters safely, normalized product sign-in links to `redirect`, and replaced stale header/data wording with current API-derived labels.
