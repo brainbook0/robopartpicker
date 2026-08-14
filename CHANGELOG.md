@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Hardened BOM ingestion for real-world spreadsheets and documentation by preserving XLSX column alignment across self-closing empty cells, recognizing multilingual headers, and parsing credible Markdown BOM tables without relaxing partition-table safeguards.
+
 - Made RFQ line keys stable against BOM storage IDs, preserved `RFQ_EXPIRED` errors for late supplier responses, and isolated offer-history regression fixtures so quote and sourcing behavior is deterministic across requests and tests.
 
 - Prioritized human-readable project documentation ahead of generic configuration files during bounded GitHub imports, while keeping slash-bearing imported file IDs on the unambiguous query-based content endpoint.
