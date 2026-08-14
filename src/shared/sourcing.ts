@@ -156,6 +156,8 @@ function compareChoiceSets(a: PricedChoice[], b: PricedChoice[], objective: Sour
 }
 
 function selectPricedChoices(choiceGroups: PricedChoice[][], objective: SourcingObjective): PricedChoice[] {
+  const exhaustiveCombinations = choiceGroups.reduce((count, group) => count * group.length, 1);
+  if (exhaustiveCombinations > 50_000) return selectPricedChoicesWithBeam(choiceGroups, objective);
   let best: PricedChoice[] = [];
   const visit = (index: number, current: PricedChoice[]) => {
     if (index === choiceGroups.length) {
@@ -166,6 +168,17 @@ function selectPricedChoices(choiceGroups: PricedChoice[][], objective: Sourcing
   };
   visit(0, []);
   return best;
+}
+
+function selectPricedChoicesWithBeam(choiceGroups: PricedChoice[][], objective: SourcingObjective): PricedChoice[] {
+  const beamWidth = 2_048;
+  let partials: PricedChoice[][] = [[]];
+  for (const group of choiceGroups) {
+    partials = partials.flatMap((partial) => group.map((choice) => [...partial, choice]));
+    partials.sort((a, b) => compareChoiceSets(a, b, objective));
+    partials = partials.slice(0, beamWidth);
+  }
+  return partials[0] ?? [];
 }
 
 export function optimizeSourcing(lines: SourcingLineInput[], offers: SourcingOffer[], rawConstraints: SourcingConstraints = {}): SourcingEstimate {
