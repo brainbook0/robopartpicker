@@ -1,5 +1,15 @@
 import { unzipSync } from "fflate";
 
+type BomCell = string | { value: string; url?: string };
+
+function cellValue(cell: BomCell): string {
+  return typeof cell === "string" ? cell : cell.value;
+}
+
+function cellUrl(cell: BomCell): string | undefined {
+  return typeof cell === "string" ? undefined : cell.url;
+}
+
 const BOM_NAME_HEADERS = new Set([
   "name", "part", "partname", "partnumber", "component", "componentname", "description", "item", "value", "type", "pcb",
   "designator", "reference", "mpn", "manufacturerpart", "manufacturerpartnumber", "lcscpart",
@@ -30,7 +40,7 @@ export function parseMarkdownBomObjects(markdown: string): Record<string, string
     index += 2;
     while (index < lines.length && lines[index].includes("|")) {
       const row = markdownTableRow(lines[index]);
-      if (row.some(Boolean)) rows.push(row);
+      if (row.some((cell) => cellValue(cell))) rows.push(row);
       index += 1;
     }
     objects.push(...rowsToBomObjects(rows));
@@ -43,18 +53,24 @@ export function parseCsvObjects(text: string, delimiter: "," | "\t" = ","): Reco
   return rowsToBomObjects(parseCsvRaw(text, delimiter));
 }
 
-function markdownTableRow(line: string): string[] {
+function markdownTableRow(line: string): BomCell[] {
   const trimmed = line.trim().replace(/^\|/u, "").replace(/\|$/u, "");
-  return trimmed.split(/(?<!\\)\|/u).map((cell) => cell
-    .replace(/\\\|/gu, "|")
-    .replace(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
-    .replace(/[*_`]/gu, "")
-    .trim());
+  return trimmed.split(/(?<!\\)\|/u).map((cell) => {
+    const link = cell.match(/\[([^\]]+)\]\(([^)]+)\)/u);
+    return {
+      value: cell
+        .replace(/\\\|/gu, "|")
+        .replace(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
+        .replace(/[*_`]/gu, "")
+        .trim(),
+      url: link?.[2]?.trim(),
+    };
+  });
 }
 
 function isMarkdownTableDivider(line: string): boolean {
   const cells = markdownTableRow(line);
-  return cells.length > 1 && cells.every((cell) => /^:?-{2,}:?$/u.test(cell.replace(/\s/gu, "")));
+  return cells.length > 1 && cells.every((cell) => /^:?-{2,}:?$/u.test(cellValue(cell).replace(/\s/gu, "")));
 }
 
 function parseXlsxRaw(bytes: Uint8Array): string[][] {
@@ -119,22 +135,36 @@ function parseCsvRaw(text: string, delimiter: "," | "\t" = ","): string[][] {
   return rows;
 }
 
-function rowsToBomObjects(rows: string[][]): Record<string, string>[] {
+function rowsToBomObjects(rows: BomCell[][]): Record<string, string>[] {
   if (!rows.length) return [];
   let headerIndex = 0;
   let best = -1;
   for (let index = 0; index < Math.min(rows.length, 8); index += 1) {
-    const score = rows[index].reduce((total, header) => total + (isBomHeader(header) ? 1 : 0), 0);
+    const score = rows[index].reduce((total, header) => total + (isBomHeader(cellValue(header)) ? 1 : 0), 0);
     if (score > best) { best = score; headerIndex = index; }
   }
-  const headers = rows[headerIndex].map(normalizeBomHeader);
+  const headers = dedupeHeaders(rows[headerIndex].map((header) => normalizeBomHeader(cellValue(header))));
   if (!isCredibleBomHeader(headers)) return [];
   return rows.slice(headerIndex + 1).map((values) => {
     const record: Record<string, string> = {};
     headers.forEach((header, index) => {
-      if (header) record[header] = values[index] ?? "";
+      const value = values[index] ?? "";
+      const stringValue = cellValue(value);
+      if (header) record[header] = stringValue;
+      const url = cellUrl(value);
+      if (header && url) record[`${header}url`] = url;
     });
     return record;
+  });
+}
+
+function dedupeHeaders(headers: string[]): string[] {
+  const counts = new Map<string, number>();
+  return headers.map((header) => {
+    if (!header) return header;
+    const count = counts.get(header) ?? 0;
+    counts.set(header, count + 1);
+    return count === 0 ? header : `${header}${count + 1}`;
   });
 }
 
@@ -144,7 +174,7 @@ function isBomHeader(value: string): boolean {
 }
 
 function isCredibleBomHeader(headers: string[]): boolean {
-  const normalized = headers.map(normalizeBomHeader);
+  const normalized = headers;
   const hasName = normalized.some((header) => BOM_NAME_HEADERS.has(header));
   const hasQuantity = normalized.some((header) => BOM_QTY_HEADERS.has(header) || /^qty|^quantity/iu.test(header));
   const supportCount = normalized.reduce((total, header) => total + (BOM_SUPPORT_HEADERS.has(header) ? 1 : 0), 0);

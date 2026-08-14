@@ -42,8 +42,41 @@ describe("project import BOM formats", () => {
 `;
 
     expect(parseMarkdownBomObjects(markdown)).toEqual([
-      { type: "JST-PH", pins: "3", quantity: "4", link: "source" },
-      { pcb: "Main Board", purpose: "Controller", quantity: "1", files: "files" },
+      { type: "JST-PH", pins: "3", quantity: "4", link: "source", linkurl: "https://example.com/cable" },
+      { pcb: "Main Board", purpose: "Controller", quantity: "1", files: "files", filesurl: "https://example.com/pcb" },
+    ]);
+  });
+
+  it("preserves Markdown sourcing link URLs and suffixes duplicate normalized Unit headers", () => {
+    const markdown = `# Sourcing
+
+| Part | Qty | Unit ($) | Unit (¥) | Buy (US) | Buy (CN) |
+| --- | ---: | ---: | ---: | --- | --- |
+| M3 screw | 10 | 0.10 | 0.70 | [McMaster](https://www.mcmaster.com/screws) | [Taobao](https://item.taobao.com/item.htm?id=123) |
+| Bearing | 2 | 4.50 | 32.00 | [Amazon](https://example.com/us-bearing) | [1688](https://example.cn/bearing) |
+`;
+
+    expect(parseMarkdownBomObjects(markdown)).toEqual([
+      {
+        part: "M3 screw",
+        qty: "10",
+        unit: "0.10",
+        unit2: "0.70",
+        buyus: "McMaster",
+        buyusurl: "https://www.mcmaster.com/screws",
+        buycn: "Taobao",
+        buycnurl: "https://item.taobao.com/item.htm?id=123",
+      },
+      {
+        part: "Bearing",
+        qty: "2",
+        unit: "4.50",
+        unit2: "32.00",
+        buyus: "Amazon",
+        buyusurl: "https://example.com/us-bearing",
+        buycn: "1688",
+        buycnurl: "https://example.cn/bearing",
+      },
     ]);
   });
 });
