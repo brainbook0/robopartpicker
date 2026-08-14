@@ -1,0 +1,25 @@
+{
+  "wave": "2026-08-14-reviewed-wave2",
+  "schema_version": 1,
+  "projects": [
+    {
+      "project_id": "robothouse_tny_robot",
+      "repo_url": "https://github.com/robot-house/tny-robot.git",
+      "revision": "42bbc828656d3ef79a6c92a504544d601bce0b4f",
+      "sources": [
+        { "path": "BOM/Components.md", "format": "markdown", "sha256": "8ce9169d6f7f44958b532a89e3d47d1c7af0f4b08bc4154a36db3636d0dadaed", "transform": "tny-components" },
+        { "path": "BOM/Screws.md", "format": "markdown", "sha256": "650a4f68bb2b7b5e172e14f5bb0373f54e472bf668182178c10729c8ecfe1560", "transform": "tny-screws-total", "section": { "from_heading": "### Total", "until_before_heading": "### Complete kit" } },
+        { "path": "BOM/Cables.md", "format": "markdown", "sha256": "be34c722954612f621f35ccfc2e046b393672f720f144b1cffcb85009c6dca9f", "transform": "tny-cables", "exclude_sections": ["### Complete kit"] },
+        { "path": "BOM/PCBs.md", "format": "markdown", "sha256": "3577d07ceffb0d82cfac93404a822cb16d101778b613220b2e0a757bc725f702", "transform": "tny-pcbs" }
+      ]
+    },
+    {
+      "project_id": "yf3014_nodequad",
+      "repo_url": "https://github.com/yf3014/NodeQuad.git",
+      "revision": "5cc7b911f470a33c144a8aaf10234c1e55b55d58",
+      "sources": [
+        { "path": "resource/BOM.xlsx", "format": "xlsx", "sha256": "7afa77ac3604c2d374de66082b0e031c621b560f57bfa75607fb601db407c89c", "transform": "nodequad-xlsx-explicit" }
+      ]
+    }
+  ]
+}
