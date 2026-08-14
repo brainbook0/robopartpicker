@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Made whole-BOM sourcing objective selection deterministic across line order for fewest-suppliers and balanced estimates, and added honest delivery grouping metadata with supplier subtotals, lead ranges, and unpriced/unknown-lead blockers without inventing shipping, tax, or arrival dates.
+
 - Replaced unsafe catalog completeness backfill mapping with a dry-run-first harvested-artifact workflow that restricts candidates to production `physical_design` projects and only writes ready file rows after verified R2 upload size and SHA-256 checks.
 
 - Hardened project import BOM detection so ESP32 partition tables and arbitrary CSVs are not classified or parsed as bills of materials unless their filename and headers are credible BOM inputs.
