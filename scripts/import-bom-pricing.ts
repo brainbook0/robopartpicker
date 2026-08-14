@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
+import { canonicalImportedPriceBreaks, IMPORTED_EXACT_MATCH_RISK_LABEL } from "../src/lib/bom-pricing-import";
 import { promisify } from "node:util";
 import { pairSnapshotItemsWithNormalizedLines, type BomItemLike, type BomSnapshot } from "./bom-repair-lib";
 import { normalizeDigiKeyMpn, type DigiKeyProduct } from "./digikey-product-parser";
@@ -270,14 +271,10 @@ async function main() {
       insertedManufacturerIds.add(record.manufacturerId);
     }
 
-    const priceBreaks = JSON.stringify(product.priceBreaks.map((entry) => ({
-      minimumQuantity: entry.quantity,
-      unitPriceMinor: priceMinor(entry.unitPriceUsd),
-      packaging: entry.packaging,
-    })));
+    const priceBreaks = JSON.stringify(canonicalImportedPriceBreaks(product.priceBreaks));
     forward.push(
       `INSERT INTO components (id, slug, manufacturer_id, manufacturer_part_number, name, category, summary, lifecycle_status, source_url, provenance_label, freshness_at, is_demo, version, created_at, updated_at) VALUES (${sqlString(record.componentId)}, ${sqlString(record.componentSlug)}, ${sqlString(record.manufacturerId)}, ${sqlString(product.manufacturerProductNumber)}, ${sqlString(product.description)}, 'Electronics', ${sqlString(`${product.manufacturer} ${product.manufacturerProductNumber}`)}, 'active', ${sqlString(product.productUrl)}, 'supplier-source', ${sqlString(record.observedAt)}, 0, 1, ${sqlString(record.observedAt)}, ${sqlString(record.observedAt)});`,
-      `INSERT INTO supplier_offers (id, supplier_id, component_id, supplier_sku, product_url, region_code, currency, unit_price_minor, minimum_quantity, stock_quantity, lead_time_days, availability, observed_at, expires_at, is_demo, created_at, updated_at, condition, price_breaks, reliability_score, risk_label, freshness_label) VALUES (${sqlString(record.offerId)}, ${sqlString(supplierId)}, ${sqlString(record.componentId)}, ${sqlString(product.digiKeyPartNumber)}, ${sqlString(product.productUrl)}, 'US', 'USD', ${record.priceMinor}, 1, ${product.inStockQuantity}, NULL, ${sqlString(product.inStockQuantity > 0 ? "in_stock" : "out_of_stock")}, ${sqlString(record.observedAt)}, ${sqlString(record.expiresAt)}, 0, ${sqlString(record.observedAt)}, ${sqlString(record.observedAt)}, 'new', ${sqlString(priceBreaks)}, 0.95, 'low', 'fresh');`,
+      `INSERT INTO supplier_offers (id, supplier_id, component_id, supplier_sku, product_url, region_code, currency, unit_price_minor, minimum_quantity, stock_quantity, lead_time_days, availability, observed_at, expires_at, is_demo, created_at, updated_at, condition, price_breaks, reliability_score, risk_label, freshness_label) VALUES (${sqlString(record.offerId)}, ${sqlString(supplierId)}, ${sqlString(record.componentId)}, ${sqlString(product.digiKeyPartNumber)}, ${sqlString(product.productUrl)}, 'US', 'USD', ${record.priceMinor}, 1, ${product.inStockQuantity}, NULL, ${sqlString(product.inStockQuantity > 0 ? "in_stock" : "out_of_stock")}, ${sqlString(record.observedAt)}, ${sqlString(record.expiresAt)}, 0, ${sqlString(record.observedAt)}, ${sqlString(record.observedAt)}, 'new', ${sqlString(priceBreaks)}, 0.95, ${sqlString(IMPORTED_EXACT_MATCH_RISK_LABEL)}, 'fresh');`,
       `INSERT INTO offer_price_history (id, supplier_offer_id, currency, unit_price_minor, stock_quantity, observed_at, source_import_record_id, minimum_quantity, lead_time_days) VALUES (${sqlString(record.historyId)}, ${sqlString(record.offerId)}, 'USD', ${record.priceMinor}, ${product.inStockQuantity}, ${sqlString(record.observedAt)}, ${sqlString(record.evidenceKey)}, 1, NULL);`,
       `INSERT INTO evidence (id, source_type, source_url, title, publisher, retrieved_at, confidence, content_hash, excerpt, is_demo, created_at) VALUES (${sqlString(record.evidenceId)}, 'supplier-product-page', ${sqlString(product.productUrl)}, ${sqlString(`${product.manufacturerProductNumber} | DigiKey Electronics`)}, 'DigiKey', ${sqlString(record.observedAt)}, 0.95, ${sqlString(evidenceSha256(record.result))}, ${sqlString(`${product.description}; quantity-one price USD ${product.lowestQuantityOnePriceUsd.toFixed(2)}; stock ${product.inStockQuantity}; archived at r2://${record.evidenceKey}`)}, 0, ${sqlString(record.observedAt)});`,
       `INSERT INTO evidence_claims (id, evidence_id, entity_type, entity_id, claim_key, claim_value, unit, confidence, created_at) VALUES (${sqlString(stableId("claim", `${record.evidenceId}\0mpn`))}, ${sqlString(record.evidenceId)}, 'component', ${sqlString(record.componentId)}, 'manufacturer_part_number', ${sqlString(product.manufacturerProductNumber)}, NULL, 1.0, ${sqlString(record.observedAt)});`,

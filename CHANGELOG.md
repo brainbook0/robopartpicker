@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Corrected source-backed DigiKey BOM pricing imports to use the canonical `exact` match label and `{ quantity, unitPriceMinor }` price-break shape, so exact-part sourcing and quantity tiers are no longer silently filtered out.
+
 - Added a slash-safe file content endpoint, kept the legacy UUID content route, and updated file URL generation so harvested file IDs with path separators can be downloaded without bypassing auth or visibility checks.
 
 - Added the missing MCP setup guide and clarified the developer page with a usable remote Streamable HTTP configuration, discovery URLs, and the expected browser-only `GET /mcp` 406 response.
