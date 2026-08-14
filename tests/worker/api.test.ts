@@ -965,6 +965,39 @@ extensions:`);
     expect(preferenceItems.find((item) => item.notificationType === "build_activity")).toMatchObject({ inAppEnabled: 1, emailEnabled: 0 });
   });
 
+  it("persists public partner interest with same-origin and spam protections", async () => {
+    const payload = {
+      inquiryType: "supplier",
+      organizationName: "Test Robotics Supply",
+      contactName: "Ada Partner",
+      email: "Ada@ExampleSupplier.com",
+      websiteUrl: "https://example-supplier.test/robotics",
+      message: "We supply robotics actuator components and want to provide source-backed supplier records for RoboPartPicker review.",
+      company: "",
+    };
+
+    const crossOrigin = await exports.default.fetch(new Request(`${origin}/api/v1/partner-interest`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "https://evil.example" },
+      body: jsonBody(payload),
+    }));
+    expect(crossOrigin.status).toBe(403);
+
+    const spam = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody({ ...payload, message: "Buy links https://a.test https://b.test https://c.test https://d.test" }) });
+    expect(spam.status).toBe(422);
+
+    const created = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody(payload) });
+    expect(created.status).toBe(201);
+    const createdBody = await body<{ item: { id: string; status: string; email: string }; message: string }>(created);
+    expect(createdBody.item).toMatchObject({ status: "received", email: "ada@examplesupplier.com" });
+    expect(createdBody.message).toContain("manual review");
+
+    const row = await env.DB.prepare("SELECT inquiry_type, normalized_email, status, source, request_id FROM partner_interest_submissions WHERE id = ?1")
+      .bind(createdBody.item.id).first<{ inquiry_type: string; normalized_email: string; status: string; source: string; request_id: string }>();
+    expect(row).toMatchObject({ inquiry_type: "supplier", normalized_email: "ada@examplesupplier.com", status: "received", source: "public_partners_page" });
+    expect(row?.request_id).toBeTruthy();
+  });
+
   it("fails AI requests honestly when no provider secret is configured", async () => {
     const conversation = await call("/api/v1/ai/conversations", { method: "POST", body: jsonBody({ title: "New chat" }) }, ownerCookie);
     expect(conversation.status).toBe(201); const id = (await body<{ item: { id: string } }>(conversation)).item.id;
