@@ -24,6 +24,8 @@
 
 - Public partners/advertisers/suppliers interest intake on `/partners`, backed by same-origin protected `POST /api/v1/partner-interest`, D1 persistence, basic spam checks, IP-scoped rate limiting, and an honest manual-review success state.
 
+- Commercial showcase Wave 1 importer (`scripts/import-commercial-showcase-wave1.ts`) with 12 vendor-official closed-source records, dry-run default, explicit production gate, deterministic IDs, conflict checks, generated guarded rollback SQL, RPPS evidence, and explicit `search_index` population without repository, license, image, CAD, BOM, file, assembly, or pricing fields.
+
 - Safe physical-design wave importer (`scripts/import-physical-design-wave1.ts`) that is dry-run-first, requires explicit preview/production selection, gates production apply, queries D1 for duplicate upstreams before insert generation, emits forward/rollback SQL under `JCODE_SCRATCH_DIR`, and preserves reviewed provenance plus analyzer-only BOM components.
 
 - Configurable public SEO canonical base syncing for `index.html`, `robots.txt`, and `sitemap.xml`; production defaults to the active Workers URL until a custom domain resolves.
