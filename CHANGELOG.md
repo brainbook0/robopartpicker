@@ -10,6 +10,8 @@
 
 ### Added
 
+- Safe physical-design wave importer (`scripts/import-physical-design-wave1.ts`) that is dry-run-first, requires explicit preview/production selection, gates production apply, queries D1 for duplicate upstreams before insert generation, emits forward/rollback SQL under `JCODE_SCRATCH_DIR`, and preserves reviewed provenance plus analyzer-only BOM components.
+
 - Configurable public SEO canonical base syncing for `index.html`, `robots.txt`, and `sitemap.xml`; production defaults to the active Workers URL until a custom domain resolves.
 
 - Project records now carry a constrained `project_kind` (`physical_design`, `robotics_software`, `commercial_showcase`, `unknown`) with project-first popularity ordering, API filtering, and discovery badges/filters for physical robotics designs.
