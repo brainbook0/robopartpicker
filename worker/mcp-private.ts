@@ -71,7 +71,7 @@ export function privateMcpResourceMetadata(env: Env): Record<string, unknown> {
     scopes_supported: [READ_SCOPE, WRITE_SCOPE],
     bearer_methods_supported: ["header"],
     resource_name: "RoboPartPicker private robotics workspace",
-    resource_documentation: `${new URL(env.BETTER_AUTH_URL).origin}/rpps#mcp`,
+    resource_documentation: `${new URL(env.BETTER_AUTH_URL).origin}/developers`,
   };
 }
 

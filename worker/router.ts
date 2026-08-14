@@ -59,7 +59,7 @@ app.on(["GET", "HEAD"], "/.well-known/mcp.json", (c) => {
     endpoint: `${origin}/mcp`,
     documentation: `${origin}/developers`,
     authentication: { public: "none", privateEndpoint: `${origin}/mcp/private`, private: "oauth2" },
-    capabilities: ["search_projects", "get_project", "search_components", "compare_components", "search_suppliers"],
+    capabilities: ["search_projects", "get_project", "search_components", "compare_components", "search_suppliers", "validate_rpps"],
   };
   return new Response(c.req.method === "HEAD" ? null : JSON.stringify(metadata), {
     headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300, stale-while-revalidate=300" },

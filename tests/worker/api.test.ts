@@ -1031,7 +1031,7 @@ extensions:`);
       transport: "streamable-http",
       endpoint: `${origin}/mcp`,
       documentation: `${origin}/developers`,
-      capabilities: expect.arrayContaining(["search_projects", "get_project", "search_components"]),
+      capabilities: expect.arrayContaining(["search_projects", "get_project", "search_components", "validate_rpps"]),
     });
 
     const headers = { accept: "application/json, text/event-stream", "content-type": "application/json" };
@@ -1071,6 +1071,7 @@ extensions:`);
       resource: `${origin}/mcp/private`,
       authorization_servers: [`${origin}/api/auth`],
       scopes_supported: ["rpp:read", "rpp:write"],
+      resource_documentation: `${origin}/developers`,
     });
     const authMetadata = await call("/.well-known/oauth-authorization-server/api/auth");
     expect(authMetadata.status).toBe(200);
