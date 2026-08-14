@@ -12,25 +12,21 @@ export type CreatePartnerInterestInput = {
   requestId?: string | null;
 };
 
-export type PartnerInterestRecord = {
+export type PartnerInterestStatus = "received" | "reviewing" | "qualified" | "closed" | "spam";
+
+export type PartnerInterestAdminRecord = {
   id: string;
   inquiryType: PartnerInterestKind;
   organizationName: string;
   contactName: string;
   email: string;
-  status: "received";
-  createdAt: string;
-};
-
-export type PartnerInterestStatus = "received" | "reviewing" | "qualified" | "closed" | "spam";
-
-export type PartnerInterestAdminRecord = Omit<PartnerInterestRecord, "status"> & {
   websiteUrl: string | null;
   message: string;
   status: PartnerInterestStatus;
   source: string;
   requestId: string | null;
   adminNotes: string | null;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -50,6 +46,23 @@ type PartnerInterestRow = {
   updated_at: string;
 };
 
+export type SupplierPartnerInterestTriageResult =
+  | { ok: true; before: PartnerInterestAdminRecord; after: PartnerInterestAdminRecord }
+  | { ok: false; reason: "not_found" | "conflict" | "invalid_transition" };
+
+const allowedTransitions: Record<PartnerInterestStatus, ReadonlySet<PartnerInterestStatus>> = {
+  received: new Set(["received", "reviewing", "closed", "spam"]),
+  reviewing: new Set(["reviewing", "qualified", "closed", "spam"]),
+  qualified: new Set(["qualified", "closed"]),
+  closed: new Set(["closed"]),
+  spam: new Set(["spam"]),
+};
+
+function nextUpdatedAt(previous: string): string {
+  const previousTime = Date.parse(previous);
+  return new Date(Math.max(Date.now(), Number.isFinite(previousTime) ? previousTime + 1 : 0)).toISOString();
+}
+
 function mapAdminRecord(row: PartnerInterestRow): PartnerInterestAdminRecord {
   return {
     id: row.id,
@@ -68,7 +81,7 @@ function mapAdminRecord(row: PartnerInterestRow): PartnerInterestAdminRecord {
   };
 }
 
-export async function createPartnerInterest(db: D1Database, input: CreatePartnerInterestInput): Promise<PartnerInterestRecord> {
+export async function createPartnerInterest(db: D1Database, input: CreatePartnerInterestInput): Promise<void> {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -76,26 +89,13 @@ export async function createPartnerInterest(db: D1Database, input: CreatePartner
   const contactName = input.contactName.trim().replace(/\s+/g, " ");
   const recentCutoff = new Date(Date.now() - 6 * 60 * 60 * 1_000).toISOString();
 
-  const duplicate = await db.prepare(`SELECT id, inquiry_type, organization_name, contact_name, email, created_at FROM partner_interest_submissions
-    WHERE normalized_email = ?1 AND normalized_organization = ?2 AND created_at >= ?3
-    LIMIT 1`)
-    .bind(normalizedEmail, normalizedOrganization.toLowerCase(), recentCutoff)
-    .first<{ id: string; inquiry_type: PartnerInterestKind; organization_name: string; contact_name: string; email: string; created_at: string }>();
-  if (duplicate) {
-    return {
-      id: duplicate.id,
-      inquiryType: duplicate.inquiry_type,
-      organizationName: duplicate.organization_name,
-      contactName: duplicate.contact_name,
-      email: duplicate.email,
-      status: "received",
-      createdAt: duplicate.created_at,
-    };
-  }
-
   await db.prepare(`INSERT INTO partner_interest_submissions
     (id, inquiry_type, organization_name, normalized_organization, contact_name, email, normalized_email, website_url, message, status, source, ip_hash, user_agent, request_id, created_at, updated_at)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'received', 'public_partners_page', ?10, ?11, ?12, ?13, ?13)`)
+    SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'received', 'public_partners_page', ?10, ?11, ?12, ?13, ?13
+    WHERE NOT EXISTS (
+      SELECT 1 FROM partner_interest_submissions
+      WHERE normalized_email = ?7 AND normalized_organization = ?4 AND created_at >= ?14
+    )`)
     .bind(
       id,
       input.inquiryType,
@@ -110,10 +110,9 @@ export async function createPartnerInterest(db: D1Database, input: CreatePartner
       input.userAgent?.slice(0, 300) ?? null,
       input.requestId ?? null,
       now,
+      recentCutoff,
     )
     .run();
-
-  return { id, inquiryType: input.inquiryType, organizationName: normalizedOrganization, contactName, email: normalizedEmail, status: "received", createdAt: now };
 }
 
 export async function listSupplierPartnerInterests(
@@ -136,23 +135,51 @@ export async function listSupplierPartnerInterests(
 export async function triageSupplierPartnerInterest(
   db: D1Database,
   id: string,
-  input: { status: PartnerInterestStatus; adminNotes: string | null },
-): Promise<{ before: PartnerInterestAdminRecord; after: PartnerInterestAdminRecord } | null> {
+  input: {
+    status: PartnerInterestStatus;
+    adminNotes: string | null;
+    expectedUpdatedAt: string;
+    actorUserId: string;
+    requestId: string | null;
+  },
+): Promise<SupplierPartnerInterestTriageResult> {
   const beforeRow = await db.prepare(`SELECT id, inquiry_type, organization_name, contact_name, email, website_url, message,
     status, source, request_id, admin_notes, created_at, updated_at
     FROM partner_interest_submissions WHERE id = ?1 AND inquiry_type IN ('supplier', 'partner')`)
     .bind(id).first<PartnerInterestRow>();
-  if (!beforeRow) return null;
+  if (!beforeRow) return { ok: false, reason: "not_found" };
+  if (beforeRow.updated_at !== input.expectedUpdatedAt) return { ok: false, reason: "conflict" };
+  if (!allowedTransitions[beforeRow.status].has(input.status)) return { ok: false, reason: "invalid_transition" };
 
-  const now = new Date().toISOString();
-  const updated = await db.prepare(`UPDATE partner_interest_submissions SET status = ?2, admin_notes = ?3, updated_at = ?4
-    WHERE id = ?1 AND inquiry_type IN ('supplier', 'partner') AND updated_at = ?5`)
-    .bind(id, input.status, input.adminNotes, now, beforeRow.updated_at).run();
-  if (Number(updated.meta.changes ?? 0) !== 1) return null;
-
-  const afterRow = await db.prepare(`SELECT id, inquiry_type, organization_name, contact_name, email, website_url, message,
-    status, source, request_id, admin_notes, created_at, updated_at
-    FROM partner_interest_submissions WHERE id = ?1`).bind(id).first<PartnerInterestRow>();
-  if (!afterRow) return null;
-  return { before: mapAdminRecord(beforeRow), after: mapAdminRecord(afterRow) };
+  const now = nextUpdatedAt(beforeRow.updated_at);
+  const operationId = crypto.randomUUID();
+  const before = mapAdminRecord(beforeRow);
+  const after: PartnerInterestAdminRecord = { ...before, status: input.status, adminNotes: input.adminNotes, updatedAt: now };
+  const [updated, audited] = await db.batch([
+    db.prepare(`UPDATE partner_interest_submissions
+      SET status = ?2, admin_notes = ?3, updated_at = ?4, last_triage_operation_id = ?5
+      WHERE id = ?1 AND inquiry_type IN ('supplier', 'partner') AND status = ?6 AND updated_at = ?7`)
+      .bind(id, input.status, input.adminNotes, now, operationId, beforeRow.status, input.expectedUpdatedAt),
+    db.prepare(`INSERT INTO audit_events
+      (id, actor_user_id, action, entity_type, entity_id, request_id, before_json, after_json, created_at)
+      SELECT ?1, ?2, 'supplier_relationship.triage', 'partner_interest_submission', ?3, ?4, ?5, ?6, ?7
+      FROM partner_interest_submissions
+      WHERE id = ?3 AND last_triage_operation_id = ?8 AND status = ?9 AND updated_at = ?7`)
+      .bind(
+        crypto.randomUUID(),
+        input.actorUserId,
+        id,
+        input.requestId,
+        JSON.stringify({ status: before.status, adminNotes: before.adminNotes }),
+        JSON.stringify({ status: after.status, adminNotes: after.adminNotes }),
+        now,
+        operationId,
+        input.status,
+      ),
+  ]);
+  const updateChanges = Number(updated.meta.changes ?? 0);
+  const auditChanges = Number(audited.meta.changes ?? 0);
+  if (updateChanges === 0 && auditChanges === 0) return { ok: false, reason: "conflict" };
+  if (updateChanges !== 1 || auditChanges !== 1) throw new Error("Supplier relationship triage atomicity invariant failed.");
+  return { ok: true, before, after };
 }

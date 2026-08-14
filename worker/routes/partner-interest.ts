@@ -25,7 +25,7 @@ partnerInterestRoutes.post("/partner-interest", async (c) => {
 
   const address = c.req.header("cf-connecting-ip") ?? (c.env.APP_ENV === "production" ? "missing" : "local-development");
   const ipHash = await keyedHash(c.env.BETTER_AUTH_SECRET, address);
-  const item = await createPartnerInterest(c.env.DB, {
+  await createPartnerInterest(c.env.DB, {
     inquiryType: input.inquiryType,
     organizationName: input.organizationName,
     contactName: input.contactName,
@@ -37,7 +37,10 @@ partnerInterestRoutes.post("/partner-interest", async (c) => {
     requestId: c.get("requestId"),
   });
 
-  return c.json({ item, message: "Interest received. It will go through manual review before any listing, sponsorship, or supplier change goes live." }, 201);
+  return c.json({
+    item: { referenceId: c.get("requestId"), status: "received" as const, receivedAt: new Date().toISOString() },
+    message: "Interest received. It will go through manual review before any listing, sponsorship, or supplier change goes live.",
+  }, 201);
 });
 
 function looksLikeSpam(message: string): boolean {

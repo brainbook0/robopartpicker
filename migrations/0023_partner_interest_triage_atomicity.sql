@@ -1,0 +1,1 @@
+ALTER TABLE partner_interest_submissions ADD COLUMN last_triage_operation_id TEXT;

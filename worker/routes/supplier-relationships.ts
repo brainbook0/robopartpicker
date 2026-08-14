@@ -10,15 +10,15 @@ import {
   triageSupplierPartnerInterest,
   type PartnerInterestStatus,
 } from "../db/repositories/partner-interest";
-import { recordAuditEvent } from "../services/audit";
 import { supplierRelationshipPipeline, supplierRelationshipPublicSummary } from "../services/supplier-relationships";
 
 export const supplierRelationshipRoutes = new Hono<AppBindings>();
 
 const statuses = new Set<PartnerInterestStatus>(["received", "reviewing", "qualified", "closed", "spam"]);
 const triageSchema = z.object({
-  status: z.enum(["reviewing", "qualified", "closed", "spam"]),
+  status: z.enum(["received", "reviewing", "qualified", "closed", "spam"]),
   adminNotes: z.string().trim().max(2_000).nullable().optional(),
+  expectedUpdatedAt: z.string().trim().min(1).max(64),
 }).strict();
 
 supplierRelationshipRoutes.get("/supplier-relationships/policy", (c) => {
@@ -60,18 +60,15 @@ supplierRelationshipRoutes.patch("/admin/supplier-relationships/submissions/:id"
   const result = await triageSupplierPartnerInterest(c.env.DB, c.req.param("id"), {
     status: input.status,
     adminNotes: input.adminNotes?.trim() || null,
-  });
-  if (!result) throw new AppError(404, "NOT_FOUND", "Supplier or partner interest submission not found or changed during review.");
-
-  await recordAuditEvent(c.env.DB, {
+    expectedUpdatedAt: input.expectedUpdatedAt,
     actorUserId,
-    action: "supplier_relationship.triage",
-    entityType: "partner_interest_submission",
-    entityId: result.after.id,
     requestId: c.get("requestId"),
-    before: { status: result.before.status, adminNotes: result.before.adminNotes },
-    after: { status: result.after.status, adminNotes: result.after.adminNotes },
   });
+  if (!result.ok) {
+    if (result.reason === "not_found") throw new AppError(404, "NOT_FOUND", "Supplier or partner interest submission not found.");
+    if (result.reason === "invalid_transition") throw new AppError(409, "INVALID_STATE_TRANSITION", "That supplier relationship status transition is not allowed.");
+    throw new AppError(409, "CONFLICT", "This submission changed during review. Refresh the queue before retrying.");
+  }
 
   return c.json({
     item: result.after,

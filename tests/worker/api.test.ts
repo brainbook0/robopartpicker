@@ -261,7 +261,7 @@ beforeAll(async () => {
 describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
-    expect(Number(migrations?.value)).toBe(22);
+    expect(Number(migrations?.value)).toBe(23);
     const health = await call("/api/health"); expect(health.status).toBe(200); expect(await body<{ database: string; version: string }>(health)).toMatchObject({ database: "d1", version: packageJson.version });
     const search = await call("/api/v1/search?q=motor"); expect(search.status).toBe(200);
     expect((await body<{ items: Array<{ id: string }> }>(search)).items.some((item) => item.id === "c-test")).toBe(true);
@@ -1023,21 +1023,51 @@ extensions:`);
 
     const created = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody(payload) });
     expect(created.status).toBe(201);
-    const createdBody = await body<{ item: { id: string; status: string; email: string; createdAt: string }; message: string }>(created);
-    partnerInterestId = createdBody.item.id;
-    expect(createdBody.item).toMatchObject({ status: "received", email: "ada@examplesupplier.com" });
+    const createdBody = await body<{ item: { referenceId: string; status: string; receivedAt: string }; message: string }>(created);
+    expect(createdBody.item).toMatchObject({ status: "received" });
+    expect(createdBody.item.referenceId).toBeTruthy();
+    expect(Object.keys(createdBody.item).sort()).toEqual(["receivedAt", "referenceId", "status"]);
     expect(createdBody.message).toContain("manual review");
 
-    const duplicate = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody(payload) });
+    const duplicate = await call("/api/v1/partner-interest", { method: "POST", body: jsonBody({
+      ...payload,
+      inquiryType: "partner",
+      contactName: "Untrusted Probe",
+      email: "ADA@EXAMPLESUPPLIER.COM",
+    }) });
     expect(duplicate.status).toBe(201);
-    expect((await body<{ item: { id: string; createdAt: string } }>(duplicate)).item).toMatchObject({ id: partnerInterestId, createdAt: createdBody.item.createdAt });
+    const duplicateBody = await body<{ item: { referenceId: string; status: string; receivedAt: string } }>(duplicate);
+    expect(duplicateBody.item.referenceId).not.toBe(createdBody.item.referenceId);
+    expect(Object.keys(duplicateBody.item).sort()).toEqual(["receivedAt", "referenceId", "status"]);
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM partner_interest_submissions WHERE normalized_email = ?1 AND normalized_organization = ?2")
       .bind("ada@examplesupplier.com", "test robotics supply").first<{ value: number }>())?.value)).toBe(1);
 
+    const persisted = await env.DB.prepare("SELECT id, created_at FROM partner_interest_submissions WHERE normalized_email = ?1 AND normalized_organization = ?2")
+      .bind("ada@examplesupplier.com", "test robotics supply").first<{ id: string; created_at: string }>();
+    expect(persisted).toBeTruthy();
+    partnerInterestId = persisted!.id;
+    expect(JSON.stringify(duplicateBody)).not.toContain(partnerInterestId);
+    expect(JSON.stringify(duplicateBody)).not.toContain(persisted!.created_at);
+    expect(JSON.stringify(duplicateBody)).not.toContain("Ada Partner");
+    expect(JSON.stringify(duplicateBody)).not.toContain("ada@examplesupplier.com");
+
     const row = await env.DB.prepare("SELECT inquiry_type, normalized_email, status, source, request_id FROM partner_interest_submissions WHERE id = ?1")
-      .bind(createdBody.item.id).first<{ inquiry_type: string; normalized_email: string; status: string; source: string; request_id: string }>();
+      .bind(partnerInterestId).first<{ inquiry_type: string; normalized_email: string; status: string; source: string; request_id: string }>();
     expect(row).toMatchObject({ inquiry_type: "supplier", normalized_email: "ada@examplesupplier.com", status: "received", source: "public_partners_page" });
     expect(row?.request_id).toBeTruthy();
+
+    const concurrentPayload = {
+      ...payload,
+      organizationName: "Concurrent Robotics Supply",
+      email: "race@example-supplier.com",
+    };
+    const concurrent = await Promise.all(Array.from({ length: 5 }, () => call("/api/v1/partner-interest", {
+      method: "POST",
+      body: jsonBody(concurrentPayload),
+    })));
+    expect(concurrent.map((response) => response.status)).toEqual([201, 201, 201, 201, 201]);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM partner_interest_submissions WHERE normalized_email = ?1 AND normalized_organization = ?2")
+      .bind("race@example-supplier.com", "concurrent robotics supply").first<{ value: number }>())?.value)).toBe(1);
   });
 
   it("publishes redacted supplier safeguards and restricts no-send triage to platform moderators", async () => {
@@ -1059,25 +1089,34 @@ extensions:`);
 
     const queue = await call("/api/v1/admin/supplier-relationships?status=received&limit=10", {}, ownerCookie);
     expect(queue.status).toBe(200);
-    const queueBody = await body<{ research: { leads: unknown[] }; inbound: { items: Array<{ id: string; status: string }>; total: number }; safeguards: Record<string, unknown> }>(queue);
+    const queueBody = await body<{ research: { leads: unknown[] }; inbound: { items: Array<{ id: string; status: string; updatedAt: string }>; total: number }; safeguards: Record<string, unknown> }>(queue);
     expect(queueBody.research.leads).toHaveLength(7);
     expect(queueBody.inbound.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: partnerInterestId, status: "received" })]));
     expect(queueBody.safeguards).toMatchObject({ outboundMessagesSent: false, outboundMutationAvailable: false, explicitApprovalRequired: true });
+    const initial = queueBody.inbound.items.find((item) => item.id === partnerInterestId)!;
 
     const invalidFilter = await call("/api/v1/admin/supplier-relationships?status=sent", {}, ownerCookie);
     expect(invalidFilter.status).toBe(422);
     const unsafeTriage = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
       method: "PATCH",
-      body: jsonBody({ status: "approved", adminNotes: "This must never imply approval." }),
+      body: jsonBody({ status: "approved", adminNotes: "This must never imply approval.", expectedUpdatedAt: initial.updatedAt }),
     }, ownerCookie);
     expect(unsafeTriage.status).toBe(422);
 
+    const skippedReview = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+      method: "PATCH",
+      body: jsonBody({ status: "qualified", adminNotes: "Skipping review must be rejected.", expectedUpdatedAt: initial.updatedAt }),
+    }, ownerCookie);
+    expect(skippedReview.status).toBe(409);
+    expect((await body<{ error: { code: string } }>(skippedReview)).error.code).toBe("INVALID_STATE_TRANSITION");
+
     const reviewed = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
       method: "PATCH",
-      body: jsonBody({ status: "reviewing", adminNotes: "Validate public supplier evidence before any approval request." }),
+      body: jsonBody({ status: "reviewing", adminNotes: "Validate public supplier evidence before any approval request.", expectedUpdatedAt: initial.updatedAt }),
     }, ownerCookie);
     expect(reviewed.status).toBe(200);
-    expect(await body(reviewed)).toMatchObject({
+    const reviewedBody = await body<{ item: { id: string; status: string; adminNotes: string; updatedAt: string }; safeguards: Record<string, unknown> }>(reviewed);
+    expect(reviewedBody).toMatchObject({
       item: { id: partnerInterestId, status: "reviewing", adminNotes: "Validate public supplier evidence before any approval request." },
       safeguards: { outboundMessagesSent: false, approvalGranted: false },
     });
@@ -1086,9 +1125,58 @@ extensions:`);
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM audit_events WHERE action = 'supplier_relationship.triage' AND entity_id = ?1")
       .bind(partnerInterestId).first<{ value: number }>())?.value)).toBe(1);
 
+    await env.DB.prepare(`CREATE TRIGGER reject_supplier_triage_audit
+      BEFORE INSERT ON audit_events
+      WHEN NEW.action = 'supplier_relationship.triage'
+      BEGIN SELECT RAISE(ABORT, 'forced supplier triage audit failure'); END`).run();
+    const auditFailure = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+      method: "PATCH",
+      body: jsonBody({ status: "qualified", adminNotes: "This update must roll back with its failed audit.", expectedUpdatedAt: reviewedBody.item.updatedAt }),
+    }, ownerCookie);
+    await env.DB.prepare("DROP TRIGGER reject_supplier_triage_audit").run();
+    expect(auditFailure.status).toBe(500);
+    expect(await env.DB.prepare("SELECT status, admin_notes, updated_at FROM partner_interest_submissions WHERE id = ?1").bind(partnerInterestId).first())
+      .toMatchObject({ status: "reviewing", admin_notes: "Validate public supplier evidence before any approval request.", updated_at: reviewedBody.item.updatedAt });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM audit_events WHERE action = 'supplier_relationship.triage' AND entity_id = ?1")
+      .bind(partnerInterestId).first<{ value: number }>())?.value)).toBe(1);
+
+    const concurrentTriage = await Promise.all([
+      call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+        method: "PATCH",
+        body: jsonBody({ status: "qualified", adminNotes: "Qualification contender A.", expectedUpdatedAt: reviewedBody.item.updatedAt }),
+      }, ownerCookie),
+      call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+        method: "PATCH",
+        body: jsonBody({ status: "qualified", adminNotes: "Qualification contender B.", expectedUpdatedAt: reviewedBody.item.updatedAt }),
+      }, ownerCookie),
+    ]);
+    expect(concurrentTriage.map((response) => response.status).sort()).toEqual([200, 409]);
+    const qualifiedResponse = concurrentTriage.find((response) => response.status === 200)!;
+    const qualifiedBody = await body<{ item: { status: string; updatedAt: string } }>(qualifiedResponse);
+    expect(qualifiedBody.item.status).toBe("qualified");
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM audit_events WHERE action = 'supplier_relationship.triage' AND entity_id = ?1")
+      .bind(partnerInterestId).first<{ value: number }>())?.value)).toBe(2);
+
+    const closed = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+      method: "PATCH",
+      body: jsonBody({ status: "closed", adminNotes: "Research review complete with no outbound action.", expectedUpdatedAt: qualifiedBody.item.updatedAt }),
+    }, ownerCookie);
+    expect(closed.status).toBe(200);
+    const closedBody = await body<{ item: { status: string; updatedAt: string } }>(closed);
+    expect(closedBody.item.status).toBe("closed");
+
+    const reopen = await call(`/api/v1/admin/supplier-relationships/submissions/${partnerInterestId}`, {
+      method: "PATCH",
+      body: jsonBody({ status: "reviewing", adminNotes: "Terminal states cannot be reopened here.", expectedUpdatedAt: closedBody.item.updatedAt }),
+    }, ownerCookie);
+    expect(reopen.status).toBe(409);
+    expect((await body<{ error: { code: string } }>(reopen)).error.code).toBe("INVALID_STATE_TRANSITION");
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM audit_events WHERE action = 'supplier_relationship.triage' AND entity_id = ?1")
+      .bind(partnerInterestId).first<{ value: number }>())?.value)).toBe(3);
+
     const missing = await call(`/api/v1/admin/supplier-relationships/submissions/${crypto.randomUUID()}`, {
       method: "PATCH",
-      body: jsonBody({ status: "closed", adminNotes: null }),
+      body: jsonBody({ status: "closed", adminNotes: null, expectedUpdatedAt: new Date().toISOString() }),
     }, ownerCookie);
     expect(missing.status).toBe(404);
   });

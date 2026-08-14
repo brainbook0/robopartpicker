@@ -36,7 +36,7 @@ export default function Partners() {
         company: String(form.get("company") ?? ""),
       });
       event.currentTarget.reset();
-      setReferenceId(response.item.id);
+      setReferenceId(response.item.referenceId);
       setFeedback(response.message);
       setStatus("success");
     } catch (error) {

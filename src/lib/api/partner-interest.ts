@@ -14,13 +14,9 @@ export type PartnerInterestInput = {
 
 export type PartnerInterestResponse = {
   item: {
-    id: string;
-    inquiryType: PartnerInterestKind;
-    organizationName: string;
-    contactName: string;
-    email: string;
+    referenceId: string;
     status: "received";
-    createdAt: string;
+    receivedAt: string;
   };
   message: string;
 };
