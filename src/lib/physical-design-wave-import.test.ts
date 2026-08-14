@@ -46,6 +46,8 @@ describe('physical design wave importer helpers', () => {
     expect(forward).toContain("'physical_design'");
     expect(forward).toContain(sqlString(canonicalizeUpstreamIdentity(wave.repository_url)));
     expect(forward).toContain(sqlString(wave.summary));
+    expect(forward).not.toContain('BEGIN TRANSACTION');
+    expect(forward).not.toContain('COMMIT;');
 
     const rollback = buildRollbackSql([candidate]);
     expect(rollback).toContain("owner_user_id = 'robotics-catalog-import'");
@@ -53,6 +55,8 @@ describe('physical design wave importer helpers', () => {
     expect(rollback).toContain('DELETE FROM bom_items');
     expect(rollback).toContain('DELETE FROM project_versions');
     expect(rollback).toContain('remaining_wave1_projects');
+    expect(rollback).not.toContain('BEGIN TRANSACTION');
+    expect(rollback).not.toContain('COMMIT;');
   });
 
   it('rejects mutable, duplicate, or provenance-mismatched inputs', () => {

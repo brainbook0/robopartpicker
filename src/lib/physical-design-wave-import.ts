@@ -250,7 +250,9 @@ export function buildCandidate(wave: WaveRecord, manifest: unknown): ImportCandi
 }
 
 export function buildForwardSql(candidates: ImportCandidate[], now: string): string {
-  const lines = ['BEGIN TRANSACTION;'];
+  // Remote D1 rejects explicit BEGIN/COMMIT statements in Wrangler SQL files.
+  // Wrangler imports the file as an atomic batch and rolls it back on failure.
+  const lines: string[] = [];
   for (const c of candidates) {
     const w = c.wave;
     lines.push(`INSERT INTO projects (id, slug, name, summary, owner_user_id, visibility, status, current_version_id, license_spdx, repository_url, is_demo, created_at, updated_at, upstream_revision, revision, upstream_url, upstream_identity, maintainer, ingested_at, last_checked_at, publishability, github_stars, project_kind) VALUES (${sqlString(c.projectId)}, ${sqlString(w.slug)}, ${sqlString(w.name)}, ${sqlString(w.summary)}, 'robotics-catalog-import', 'public', 'published', ${sqlString(c.versionId)}, ${sqlString(w.license)}, ${sqlString(w.repository_url)}, 0, ${sqlString(now)}, ${sqlString(now)}, ${sqlString(w.revision)}, ${sqlString(w.revision)}, ${sqlString(w.repository_url)}, ${sqlString(c.canonicalUpstreamIdentity)}, ${sqlString(w.maintainer)}, ${sqlString(now)}, ${sqlString(now)}, ${sqlString(w.publishability)}, ${sqlNumber(w.stars)}, 'physical_design');`);
@@ -263,7 +265,6 @@ export function buildForwardSql(candidates: ImportCandidate[], now: string): str
       }
     }
   }
-  lines.push('COMMIT;');
   return `${lines.join('\n')}\n`;
 }
 
@@ -272,13 +273,11 @@ export function buildRollbackSql(candidates: ImportCandidate[]): string {
   const guardedProjects = `SELECT id FROM projects WHERE owner_user_id = 'robotics-catalog-import' AND id IN (${ids || 'NULL'})`;
   return [
     '-- Guarded rollback for wave1 importer. Deletes only deterministic project ids owned by robotics-catalog-import.',
-    'BEGIN TRANSACTION;',
     `DELETE FROM bom_items WHERE bom_version_id IN (SELECT bv.id FROM bom_versions bv JOIN boms b ON b.id = bv.bom_id WHERE b.project_id IN (${guardedProjects}));`,
     `DELETE FROM bom_versions WHERE bom_id IN (SELECT id FROM boms WHERE project_id IN (${guardedProjects}));`,
     `DELETE FROM boms WHERE project_id IN (${guardedProjects});`,
     `DELETE FROM project_versions WHERE project_id IN (${guardedProjects});`,
     `DELETE FROM projects WHERE owner_user_id = 'robotics-catalog-import' AND id IN (${ids || 'NULL'});`,
-    'COMMIT;',
     `SELECT COUNT(*) AS remaining_wave1_projects FROM projects WHERE id IN (${ids || 'NULL'});`,
     '',
   ].join('\n');
