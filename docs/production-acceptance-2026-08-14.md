@@ -5,7 +5,7 @@
 This report validates the deployed RoboPartPicker product against the clarified product intent: aggregate robotics projects, preserve reproducibility evidence, expose BOMs and sourcing gaps, support forks and quote workflows, distinguish closed-source showcases, publish an honest demand-test explainer, accept commercial interest, and expose public MCP access.
 
 **Production:** <https://robopartpicker-production.ludomi2502.workers.dev>  
-**Active Worker version during final acceptance:** `c26e6a84-d229-407f-af2e-6fad143a6918`
+**Active Worker version during final acceptance:** `6c4a718c-9aa7-4146-83b9-c483d381988d`
 **Production D1 migrations:** no pending migrations
 
 **Verdict:** the deployed product is materially functional and the tested integration paths pass. It is not the complete commercial end state. In particular, broad per-BOM-line pricing, automated outbound supplier contact, carrier-aware delivery planning, AI workspace execution, marketplace liquidity, and payment processing remain incomplete or deliberately labeled as coming soon. The UI now states those boundaries instead of presenting placeholders as finished capabilities.
@@ -42,6 +42,8 @@ This report validates the deployed RoboPartPicker product against the clarified 
 
 ## Fresh verification evidence
 
+- GitHub Quality workflow `31831497913`: passed on commit `8d2376b`.
+- GitHub CI workflow `31831497920`: passed on commit `8d2376b`, including all 48 Worker integration tests, clean local D1 reset, dynamic schema validation, and production build.
 - Full unit suite: **24 files, 134 tests passed**.
 - Focused offer/import/sourcing regression suite: **17 tests passed**.
 - TypeScript project build: passed.
@@ -61,6 +63,9 @@ This report validates the deployed RoboPartPicker product against the clarified 
 3. DigiKey quantity tiers used `minimumQuantity`, while the optimizer expects `quantity`. The importer and the same 14 production offers now use the canonical tier shape.
 4. Commercial showcase records could be reclassified as physical designs after an RPPS edit. Showcase kind is now sticky and regression-tested.
 5. Commercial records previously risked implying reproducibility. The detail UI now removes build/fork/quote controls and explicitly states absent rights, files, BOM, and instructions.
+6. RFQ line identifiers were derived from internal BOM UUIDs instead of stable slot keys, and route-level response validation obscured the more precise expiry error. Quote lines now preserve slot keys and expired response writes return `RFQ_EXPIRED` before mutation.
+7. GitHub import ranking placed generic configuration files ahead of human-readable project documentation. Bounded imports now prioritize documentation while keeping credible BOM, model, dependency, and manifest inputs first.
+8. CI used Node.js 20 even though the pinned Wrangler requires Node.js 22, and schema validation hardcoded 13 migrations after the repository had 22. CI/local setup now declares Node.js 22 and schema validation derives the expected count from migration files.
 
 ## Known constraints and remaining product work
 
@@ -71,7 +76,7 @@ This report validates the deployed RoboPartPicker product against the clarified 
 - Delivery grouping is available, but carrier quotes, shipping cost, tax/duties, consolidation commitments, and promised dates are not.
 - Marketplace workflows exist but there are currently zero published listings and no payment processing.
 - The AI workspace is gated and not operational without a configured provider.
-- Local Worker integration tests could not start because the installed `workerd` binary requires GLIBC 2.29–2.35 while this host provides GLIBC 2.28. Real production interfaces, official MCP SDK checks, and authenticated production workflows were exercised instead. CI on a compatible runner remains the required Worker-suite gate.
+- Local Worker integration tests cannot start on this host because its GLIBC 2.28 predates the installed `workerd` requirements. The same Worker suite ran on GitHub's compatible runner and passed all **48 tests** in CI workflow `31831497920`; production browser, API, MCP, and authenticated workflows were also exercised directly.
 - ESLint has 67 warnings but zero errors. Most warnings predate this acceptance slice and concern `any`, React hook dependencies, and Fast Refresh export shape.
 
 ## Reversibility artifacts
