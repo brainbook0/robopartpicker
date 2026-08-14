@@ -40,6 +40,8 @@ type ProjectDatabaseRow = {
   rpps_json: string | null;
   reproduction_count: number;
   successful_reproduction_count: number;
+  bom_id: string | null;
+  bom_line_count: number;
 };
 
 export type ProjectDto = {
@@ -65,6 +67,8 @@ export type ProjectDto = {
   reproducibility_score: number | null;
   reproduction_count: number;
   successful_reproduction_count: number;
+  bom_id: string | null;
+  bom_line_count: number;
   rpps_version: string;
   rpps: RppsPackage;
   is_demo: boolean;
@@ -116,7 +120,10 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
   (SELECT COUNT(*) FROM rpps_build_outcomes outcome
     JOIN rpps_releases rr ON rr.id = outcome.release_id
     JOIN builds b ON b.id = outcome.build_id AND b.deleted_at IS NULL
-    WHERE rr.project_id = p.id AND outcome.outcome = 'succeeded' AND outcome.independence = 'independent') AS successful_reproduction_count
+    WHERE rr.project_id = p.id AND outcome.outcome = 'succeeded' AND outcome.independence = 'independent') AS successful_reproduction_count,
+  (SELECT b.id FROM boms b WHERE b.project_id = p.id ORDER BY b.updated_at DESC LIMIT 1) AS bom_id,
+  (SELECT COUNT(*) FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+    WHERE b.project_id = p.id) AS bom_line_count
   FROM projects p LEFT JOIN project_versions pv ON pv.id = p.current_version_id`;
 
 export class ProjectsRepository {
@@ -459,6 +466,8 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     reproducibility_score: null,
     reproduction_count: Number(row.reproduction_count ?? 0),
     successful_reproduction_count: Number(row.successful_reproduction_count ?? 0),
+    bom_id: row.bom_id ?? null,
+    bom_line_count: Number(row.bom_line_count ?? 0),
     rpps_version: row.rpps_schema_version ?? rpps.rpps_version,
     rpps,
     is_demo: row.is_demo === 1,

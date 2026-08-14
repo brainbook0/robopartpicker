@@ -69,7 +69,8 @@ export class BomsRepository {
       this.db.prepare(`SELECT id, version_label AS label, notes, currency, created_at AS createdAt
         FROM bom_versions WHERE id = ?1`).bind(bom.current_version_id),
       this.db.prepare(`SELECT bi.id, bi.component_id AS componentId, c.slug AS componentSlug, c.name AS componentName,
-        c.category AS componentCategory, m.name AS manufacturerName, bi.slot_key AS slotKey, bi.description,
+        c.category AS componentCategory, c.manufacturer_part_number AS manufacturerPartNumber,
+        m.name AS manufacturerName, bi.slot_key AS slotKey, bi.description,
         bi.quantity, bi.unit, bi.selected_supplier_offer_id AS selectedSupplierOfferId,
         s.name AS selectedSupplierName, so.unit_price_minor AS selectedUnitPriceMinor,
         bi.target_unit_price_minor AS targetUnitPriceMinor, bi.notes, bi.sort_order AS sortOrder,

@@ -108,6 +108,7 @@ export type BomItem = {
   componentSlug: string | null;
   componentName: string | null;
   componentCategory: string | null;
+  manufacturerPartNumber: string | null;
   manufacturerName: string | null;
   slotKey: string;
   description: string;
@@ -120,6 +121,10 @@ export type BomItem = {
   lowestUnitPriceMinor: number | null;
   knownOfferCount: number;
   notes: string | null;
+  extractionMethod: string;
+  completeness: string;
+  evidenceLocator: string | null;
+  confidence: number | null;
 };
 
 export type BomDetail = BomSummary & {

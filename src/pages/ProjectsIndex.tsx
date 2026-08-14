@@ -13,7 +13,7 @@ const median = (nums: number[]) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 
-const bomLineCount = (p: ProjectRow) => p.rpps?.bom?.length ?? 0;
+const bomLineCount = (p: ProjectRow) => p.bom_line_count ?? p.rpps?.bom?.length ?? 0;
 const rosSupport = (p: ProjectRow) => p.rpps?.software?.ros_support;
 const hasRos = (p: ProjectRow) => {
   const r = rosSupport(p);

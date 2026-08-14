@@ -15,6 +15,8 @@ import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionL
 import { createReleaseBuildPassport, listPortableReleases, type PortableRppsReleaseSummary } from "@/lib/rpps/client";
 import { ReleaseCollaborationPanel } from "@/components/projects/ReleaseCollaborationPanel";
 import { rfqApi } from "@/lib/api/rfq";
+import { bomsApi } from "@/lib/api/builds";
+import type { BomDetail } from "@/shared/builds";
 
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 
@@ -33,6 +35,8 @@ export default function ProjectDetail() {
   const [estimate, setEstimate] = useState<SourcingEstimate | null>(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [estimateError, setEstimateError] = useState(false);
+  const [normalizedBom, setNormalizedBom] = useState<BomDetail | null>(null);
+  const [normalizedBomLoading, setNormalizedBomLoading] = useState(false);
   const [reproducing, setReproducing] = useState(false);
   const [forking, setForking] = useState(false);
   const [creatingRfq, setCreatingRfq] = useState(false);
@@ -61,6 +65,17 @@ export default function ProjectDetail() {
       .finally(() => { if (!cancelled) setManagedFilesLoading(false); });
     return () => { cancelled = true; };
   }, [projectId]);
+
+  useEffect(() => {
+    if (!p?.bom_id) { setNormalizedBom(null); return; }
+    const controller = new AbortController();
+    setNormalizedBomLoading(true);
+    bomsApi.get(p.bom_id, controller.signal)
+      .then((result) => setNormalizedBom(result.item))
+      .catch(() => setNormalizedBom(null))
+      .finally(() => setNormalizedBomLoading(false));
+    return () => controller.abort();
+  }, [p?.bom_id]);
 
   useEffect(() => {
     if (!projectId) { setPortableReleases([]); return; }
@@ -102,9 +117,10 @@ export default function ProjectDetail() {
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
 
-  const bomCost = bom.reduce((s, i) => s + (i.unit_cost_usd ?? 0) * i.qty, 0);
-  const bomQty = bom.reduce((s, i) => s + i.qty, 0);
-  const bomPricedCount = bom.filter(i => i.unit_cost_usd != null).length;
+  const bomLineCount = normalizedBom?.totals.lines ?? p.bom_line_count ?? bom.length;
+  const bomQty = normalizedBom?.totals.units ?? bom.reduce((s, i) => s + i.qty, 0);
+  const bomCostMinor = normalizedBom?.totals.knownCostMinor ?? Math.round(bom.reduce((s, i) => s + (i.unit_cost_usd ?? 0) * i.qty, 0) * 100);
+  const bomPricedCount = normalizedBom ? normalizedBom.totals.lines - normalizedBom.totals.unpricedLines : bom.filter(i => i.unit_cost_usd != null).length;
   const totalBuildMin = assembly.reduce((s, a) => s + (a.duration_min ?? 0), 0);
   const integrationCounts = (() => {
     const c: Record<string, number> = {};
@@ -307,7 +323,7 @@ export default function ProjectDetail() {
           <Kpi to={`/projects/${p.slug}/reproducibility`} icon={<Users className="h-3.5 w-3.5" />} label="Reproductions" value={`${p.reproduction_count} started · ${p.successful_reproduction_count} verified`} />
           <Kpi to={`/projects/${p.slug}/cost`} icon={<DollarSign className="h-3.5 w-3.5" />} label="Est. cost" value={estCost != null ? `$${estCost.toLocaleString()}` : "—"} />
           <Kpi to={`/projects/${p.slug}/schedule`} icon={<Clock className="h-3.5 w-3.5" />} label="Est. time" value={estTime != null ? `${Number(estTime).toFixed(estTime >= 10 ? 0 : 1)} h` : "—"} />
-          <Kpi to={`/projects/${p.slug}/parts`} icon={<Package className="h-3.5 w-3.5" />} label="Parts" value={bom.length > 0 ? `${bom.length} lines · ${bomQty} pcs` : "—"} />
+          <Kpi to={`/projects/${p.slug}/parts`} icon={<Package className="h-3.5 w-3.5" />} label="Parts" value={bomLineCount > 0 ? `${bomLineCount} lines · ${bomQty} pcs` : "—"} />
           <Kpi to={`/projects/${p.slug}/assembly`} icon={<ListChecks className="h-3.5 w-3.5" />} label="Assembly" value={assembly.length > 0 ? `${assembly.length} steps` : "—"} />
           <Kpi to={`/projects/${p.slug}/software`} icon={<Code2 className="h-3.5 w-3.5" />} label="Software" value={p.rpps.software?.middleware ?? p.rpps.software?.os ?? "—"} />
           <Kpi to={`/projects/${p.slug}/integrations`} icon={<Link2 className="h-3.5 w-3.5" />} label="Integrations" value={integrations.length > 0 ? `${integrations.length} · ${integrationCounts["verified"] ?? 0} verified` : "—"} />
@@ -333,15 +349,19 @@ export default function ProjectDetail() {
           )}
 
           <Section
-            title={`Bill of materials${bom.length ? ` · ${bom.length}` : ""}`}
-            right={bom.length > 0 && (
+            title={`Bill of materials${bomLineCount ? ` · ${bomLineCount}` : ""}`}
+            right={bomLineCount > 0 && (
               <span className="mono text-[11px] text-muted-foreground">
-                {bomQty} pcs · {bomPricedCount}/{bom.length} priced · total <span className="text-foreground">${bomCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                {bomQty} pcs · {bomPricedCount}/{bomLineCount} priced · known total <span className="text-foreground">{moneyMinor(bomCostMinor, normalizedBom?.version?.currency ?? "USD")}</span>
               </span>
             )}
           >
-            {bom.length === 0
+            {normalizedBomLoading
+              ? <Empty>Loading the normalized BOM…</Empty>
+              : bomLineCount === 0
               ? <Empty>No BOM items recorded. Add them by editing the RPPS package.</Empty>
+              : normalizedBom
+                ? <NormalizedBomTable bom={normalizedBom} />
               : (
                 <div className="overflow-x-auto -mx-3 px-3">
                   <table className="w-full text-[12px] min-w-[720px]">
@@ -393,7 +413,7 @@ export default function ProjectDetail() {
                         <td colSpan={4} className="py-1 pr-2 text-[11px] text-muted-foreground">Totals</td>
                         <td className="pr-2 mono text-right">{bomQty}</td>
                         <td className="pr-2" />
-                        <td className="pr-2 mono text-right font-medium">${bomCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                        <td className="pr-2 mono text-right font-medium">{moneyMinor(bomCostMinor, "USD")}</td>
                         <td />
                       </tr>
                     </tfoot>
@@ -688,6 +708,36 @@ function DeliveryPlan({ estimate }: { estimate: SourcingEstimate }) {
   const shipments = [...groups.values()].sort((a, b) => (a.leadTimeDays ?? Number.MAX_SAFE_INTEGER) - (b.leadTimeDays ?? Number.MAX_SAFE_INTEGER));
   if (!shipments.length) return <div className="rounded border border-dashed border-border p-3 text-muted-foreground">No supplier-backed shipment groups are available yet. Unpriced lines remain visible below.</div>;
   return <div><div className="mb-1.5 flex items-center gap-1.5 font-medium"><Truck className="h-3.5 w-3.5 text-primary" /> Split delivery plan · {shipments.length} shipment{shipments.length === 1 ? "" : "s"}</div><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{shipments.map((shipment, index) => <div key={`${shipment.supplier}-${index}`} className="rounded border border-border p-2"><div className="flex items-center justify-between gap-2"><span className="font-medium">{shipment.supplier}</span><span className="mono text-[10px]">{shipment.leadTimeDays == null ? "date unknown" : `about ${shipment.leadTimeDays}d`}</span></div><div className="mt-1 text-[10.5px] text-muted-foreground">{shipment.lines} BOM line{shipment.lines === 1 ? "" : "s"} · {moneyMinor(shipment.subtotalMinor, estimate.assumptions.currency)}</div></div>)}</div></div>;
+}
+
+function NormalizedBomTable({ bom }: { bom: BomDetail }) {
+  const currency = bom.version?.currency ?? "USD";
+  return <div className="overflow-x-auto -mx-3 px-3">
+    <table className="w-full min-w-[900px] text-[12px]">
+      <thead className="border-b border-border text-left text-muted-foreground"><tr>
+        <th className="py-1 pr-2 font-medium">Slot</th><th className="pr-2 font-medium">Part</th>
+        <th className="pr-2 font-medium">Maker / MPN</th><th className="pr-2 font-medium">Evidence</th>
+        <th className="pr-2 text-right font-medium">Qty</th><th className="pr-2 text-right font-medium">Known unit</th>
+        <th className="pr-2 text-right font-medium">Extended</th><th className="font-medium">Supplier evidence</th>
+      </tr></thead>
+      <tbody>{bom.items.map((item) => {
+        const unitMinor = item.targetUnitPriceMinor ?? item.selectedUnitPriceMinor ?? item.lowestUnitPriceMinor;
+        return <tr key={item.id} className="border-b border-border/60 align-top">
+          <td className="py-1 pr-2 mono text-[11px]">{item.slotKey}</td>
+          <td className="pr-2"><div className="font-medium">{item.componentSlug
+            ? <Link to={`/parts/${item.componentCategory}/${item.componentSlug}`} className="hover:text-primary">{item.componentName ?? item.description}</Link>
+            : item.description}</div>{item.notes && <div className="mt-0.5 text-[11px] text-muted-foreground">{item.notes}</div>}</td>
+          <td className="pr-2"><div>{item.manufacturerName ?? "—"}</div><div className="mono text-[11px] text-muted-foreground">{item.manufacturerPartNumber ?? "MPN unresolved"}</div></td>
+          <td className="pr-2"><div className="flex flex-wrap gap-1"><StatusPill kind={item.completeness === "verified" ? "ok" : item.completeness === "unresolved" ? "warn" : "info"} label={item.completeness} /><StatusPill kind="muted" label={item.extractionMethod} /></div>{item.confidence != null && <div className="mt-0.5 text-[10px] text-muted-foreground">confidence {Math.round(item.confidence * 100)}%</div>}</td>
+          <td className="pr-2 text-right mono">{item.quantity} {item.unit}</td>
+          <td className="pr-2 text-right mono">{moneyMinor(unitMinor, currency)}</td>
+          <td className="pr-2 text-right mono">{moneyMinor(unitMinor == null ? null : unitMinor * item.quantity, currency)}</td>
+          <td>{item.selectedSupplierName ?? (item.knownOfferCount > 0 ? `${item.knownOfferCount} observed offer${item.knownOfferCount === 1 ? "" : "s"}` : "No observed offer")}</td>
+        </tr>;
+      })}</tbody>
+      <tfoot><tr className="border-t border-border"><td colSpan={4} className="py-1 pr-2 text-[11px] text-muted-foreground">Known totals only. Unpriced lines remain visible.</td><td className="pr-2 text-right mono">{bom.totals.units}</td><td /><td className="pr-2 text-right mono font-medium">{moneyMinor(bom.totals.knownCostMinor, currency)}</td><td /></tr></tfoot>
+    </table>
+  </div>;
 }
 
 function moneyMinor(value: number | null, currency: string | null = "USD") {

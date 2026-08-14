@@ -25,6 +25,8 @@ export type ProjectRow = {
   reproducibility_score: number | null;
   reproduction_count: number;
   successful_reproduction_count: number;
+  bom_id: string | null;
+  bom_line_count: number;
   rpps_version: string;
   rpps: RppsPackage;
   is_demo: boolean;
