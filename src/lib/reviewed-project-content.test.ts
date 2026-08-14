@@ -7,6 +7,7 @@ import {
   immutableBlobUrl,
   prepareProjectSteps,
   reviewedCoverFileId,
+  reviewedFileContentUrl,
   reviewedMediaId,
   validateReviewedProjectContentWave,
   type PreparedReviewedProjectContent,
@@ -71,6 +72,9 @@ describe("reviewed project content", () => {
     expect(canonicalRepo(project.repo_url)).toBe("github.com/example/robot");
     expect(immutableBlobUrl(project, project.cover.path)).toBe(
       `https://github.com/Example/Robot/blob/${project.revision}/docs/robot%20cover.png`,
+    );
+    expect(reviewedFileContentUrl("https://example.test/", "file:with/path")).toBe(
+      "https://example.test/api/v1/files/content?id=file%3Awith%2Fpath",
     );
   });
 

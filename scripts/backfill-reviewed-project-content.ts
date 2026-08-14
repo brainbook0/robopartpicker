@@ -10,6 +10,7 @@ import {
   immutableBlobUrl,
   prepareProjectSteps,
   reviewedCoverFileId,
+  reviewedFileContentUrl,
   reviewedMediaId,
   validateReviewedProjectContentWave,
   type PreparedReviewedProjectContent,
@@ -165,7 +166,7 @@ function prepareProject(
   if (!assemblyBytes) throw new Error(`${definition.project_id}: assembly source was not loaded`);
   const steps = prepareProjectSteps(wave, definition, new TextDecoder().decode(assemblyBytes));
   const coverFileId = reviewedCoverFileId(definition);
-  const coverUrl = `${publicOrigin(env!)}/api/v1/files/${encodeURIComponent(coverFileId)}/content`;
+  const coverUrl = reviewedFileContentUrl(publicOrigin(env!), coverFileId);
   const original = JSON.parse(row.rpps_json) as RppsPackage;
   if (canonicalRepo(original.repo_url ?? "") !== canonicalRepo(definition.repo_url)) throw new Error(`${definition.project_id}: portable manifest repository mismatch ${original.repo_url}`);
   const priorEvidence = Array.isArray(original.evidence) ? original.evidence : [];

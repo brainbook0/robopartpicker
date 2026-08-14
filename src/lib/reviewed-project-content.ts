@@ -124,6 +124,10 @@ export function reviewedMediaId(projectId: string, coverFileId: string, wave: st
   return entityStableId("pmedia", `${projectId}:${coverFileId}:${wave}`);
 }
 
+export function reviewedFileContentUrl(origin: string, fileId: string): string {
+  return `${origin.replace(/\/+$/u, "")}/api/v1/files/content?id=${encodeURIComponent(fileId)}`;
+}
+
 export function extractMarkdownSection(markdown: string, heading: string): string {
   const lines = markdown.replace(/\r\n?/gu, "\n").split("\n");
   const start = lines.findIndex((line) => line.trim() === heading.trim());
