@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { canonicalBase, DEFAULT_PRODUCTION_BASE_URL, replaceBase } from "./public-seo";
+import { canonicalBase, DEFAULT_PREVIEW_BASE_URL, DEFAULT_PRODUCTION_BASE_URL, replaceBase } from "./public-seo";
 
 describe("public SEO canonical base", () => {
   it("defaults production builds to the active workers.dev origin", () => {
     expect(canonicalBase({ CLOUDFLARE_ENV: "production" })).toBe(DEFAULT_PRODUCTION_BASE_URL);
+  });
+
+  it("defaults preview builds to the preview workers.dev origin, not localhost", () => {
+    expect(canonicalBase({ CLOUDFLARE_ENV: "preview" })).toBe(DEFAULT_PREVIEW_BASE_URL);
+  });
+
+  it("defaults local development to localhost", () => {
+    expect(canonicalBase({})).toBe("http://localhost:5173");
   });
 
   it("allows a configured custom origin and strips path/query/hash", () => {
