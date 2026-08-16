@@ -119,7 +119,7 @@ export default function ProjectDetail() {
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
   const previewUrdf = files.find((file) => file.kind === "urdf" && typeof file.url === "string" && /\.urdf(?:[?#]|$)/iu.test(file.url));
-  const previewStl = managedFiles.find((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.stl(?:[?#]|$)/iu.test(file.originalName ?? ""));
+  const stlFiles = managedFiles.filter((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.stl(?:[?#]|$)/iu.test(file.originalName ?? "")).slice(0, 24);
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
@@ -351,21 +351,21 @@ export default function ProjectDetail() {
         <div className="space-y-3 min-w-0">
           {canEditRpps && <ProjectTechnicalEditor project={p} onSaved={setP} />}
 
+          {previewUrdf?.url ? (
+            <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
+              <UrdfModelViewer urdfUrl={previewUrdf.url} sourceUrl={p.repo_url ?? previewUrdf.url} title={`${p.name} · URDF preview`} />
+            </Suspense>
+          ) : stlFiles.length > 0 ? (
+            <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
+              <StlModelViewer stlUrls={stlFiles.map((file) => file.contentUrl)} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · 3D design (${stlFiles.length} parts)`} />
+            </Suspense>
+          ) : null}
+
           <Section title="Description">
             {p.description
               ? <ReadableDescription value={p.description} />
               : <Empty>No long-form description provided.</Empty>}
           </Section>
-
-          {previewUrdf?.url ? (
-            <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
-              <UrdfModelViewer urdfUrl={previewUrdf.url} sourceUrl={p.repo_url ?? previewUrdf.url} title={`${p.name} · URDF preview`} />
-            </Suspense>
-          ) : previewStl?.contentUrl ? (
-            <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
-              <StlModelViewer stlUrl={previewStl.contentUrl} sourceUrl={p.repo_url ?? previewStl.contentUrl} title={`${p.name} · STL preview`} />
-            </Suspense>
-          ) : null}
 
           <Section
             title={`Bill of materials${bomLineCount ? ` · ${bomLineCount}` : ""}`}
