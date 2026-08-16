@@ -125,7 +125,8 @@ async function resolveUrdfMeshes(urdfUrl: string, urdfPath: string | null, files
     if (!candidate.startsWith("/") && urdfDir) candidate = urdfDir ? `${urdfDir}/${candidate}` : candidate;
     const resolved = byPath.get(normalizePath(candidate).toLowerCase());
     if (!resolved) return match;
-    return `<mesh filename="${resolved}"${rest}>`;
+    const absolute = new URL(resolved, window.location.origin).toString();
+    return `<mesh filename="${absolute}"${rest}>`;
   });
 
   return rewritten;
