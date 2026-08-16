@@ -9,9 +9,15 @@ import json, os, sys, time, hashlib, subprocess, urllib.request, urllib.error, u
 import boto3
 
 DB = "10c57e79-e34f-4643-8c4e-4f0c7968a74d"  # production
+DB_PREVIEW = "af9e3aaa-4e74-4083-8317-a642bf0e07a6"
 BUCKET = "robopartpicker-files"
+BUCKET_PREVIEW = "robopartpicker-preview-files"
+ENV = "preview" if "--env" in sys.argv and sys.argv[sys.argv.index("--env") + 1] == "preview" else "production"
+if ENV == "preview":
+    DB = DB_PREVIEW
+    BUCKET = BUCKET_PREVIEW
 API = f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/d1/database/{DB}/query"
-STATE = "/root/.cloudflare/backfill-3d-state.json"
+STATE = f"/root/.cloudflare/backfill-3d-state-{ENV}.json"
 MAX_FILES_PER_PROJECT = 6
 MAX_SIZE = 12 * 1024 * 1024
 KINDS = (".stl", ".step", ".stp", ".urdf", ".iges", ".igs")

@@ -73,8 +73,11 @@ async function main(): Promise<void> {
     console.log(`DRY RUN ONLY. ${statements.length} statements would update ${updated} projects. Add --apply to execute.`);
     return;
   }
+  const { writeFileSync } = await import("node:fs");
+  const sqlPath = `/tmp/backfill-cover-images-${targetEnv}.sql`;
+  writeFileSync(sqlPath, `${statements.join("\n")}\n`);
   const { stdout, stderr } = await exec("node_modules/.bin/wrangler",
-    ["d1", "execute", "DB", "--env", targetEnv!, "--remote", "--command", statements.join("\n")],
+    ["d1", "execute", "DB", "--env", targetEnv!, "--remote", "--file", sqlPath],
     { env: process.env, maxBuffer: 64 * 1024 * 1024 });
   console.log(stdout.slice(0, 400));
   if (stderr) console.log("stderr:", stderr.slice(0, 400));
