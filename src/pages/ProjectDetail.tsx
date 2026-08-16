@@ -118,7 +118,7 @@ export default function ProjectDetail() {
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
-  const previewUrdf = files.find((file) => file.kind === "urdf" && typeof file.url === "string" && /\.urdf(?:[?#]|$)/iu.test(file.url));
+  const previewUrdf = managedFiles.find((file) => file.kind === "urdf" && typeof file.contentUrl === "string" && /\.urdf(?:[?#]|$)/iu.test(file.originalName ?? ""));
   const stlFiles = managedFiles.filter((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.stl(?:[?#]|$)/iu.test(file.originalName ?? "")).slice(0, 24);
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
@@ -351,9 +351,9 @@ export default function ProjectDetail() {
         <div className="space-y-3 min-w-0">
           {canEditRpps && <ProjectTechnicalEditor project={p} onSaved={setP} />}
 
-          {previewUrdf?.url ? (
-            <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
-              <UrdfModelViewer urdfUrl={previewUrdf.url} sourceUrl={p.repo_url ?? previewUrdf.url} title={`${p.name} · URDF preview`} />
+          {previewUrdf?.contentUrl ? (
+            <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
+              <UrdfModelViewer urdfUrl={previewUrdf.contentUrl} urdfPath={previewUrdf.relativePath} files={managedFiles} sourceUrl={p.repo_url ?? previewUrdf.contentUrl} title={`${p.name} · URDF preview`} />
             </Suspense>
           ) : stlFiles.length > 0 ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>

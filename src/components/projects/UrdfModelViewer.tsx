@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Grid, OrbitControls } from "@react-three/drei";
 import { LoadingManager, type Object3D } from "three";
@@ -7,38 +7,58 @@ import { Box, ExternalLink, Rotate3D } from "lucide-react";
 
 type Props = {
   urdfUrl: string;
+  urdfPath?: string | null;
+  files?: Array<{ relativePath: string | null; contentUrl: string; originalName: string }>;
   sourceUrl?: string;
   title?: string;
 };
 
-export default function UrdfModelViewer({ urdfUrl, sourceUrl, title = "Interactive 3D model" }: Props) {
+export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceUrl, title = "Interactive 3D model" }: Props) {
   const [robot, setRobot] = useState<Object3D | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ loaded: 0, total: 1 });
-  const packageRoot = useMemo(() => packageRootFor(urdfUrl), [urdfUrl]);
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+    resolveUrdfMeshes(urdfUrl, urdfPath ?? null, files)
+      .then((rewritten) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(new Blob([rewritten], { type: "application/xml" }));
+        setResolvedUrl(objectUrl);
+      })
+      .catch((reason) => {
+        // Fall back to loading the raw URDF so the skeleton still renders.
+        if (active) setResolvedUrl(urdfUrl);
+        if (active) setError(reason instanceof Error ? reason.message : "Mesh resolution failed; loading raw URDF.");
+      });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [urdfUrl, urdfPath, files]);
+
+  useEffect(() => {
+    if (!resolvedUrl) return;
     let active = true;
     let parsedRobot: Object3D | null = null;
     const manager = new LoadingManager();
     manager.onProgress = (_url, loaded, total) => { if (active) setProgress({ loaded, total: Math.max(total, 1) }); };
-    manager.onError = (url) => { if (active) setError(`A model asset could not be loaded: ${shortUrl(url)}`); };
     manager.onLoad = () => {
       if (!active || !parsedRobot) return;
       parsedRobot.rotation.x = -Math.PI / 2;
       setRobot(parsedRobot);
     };
     const loader = new URDFLoader(manager);
-    loader.packages = () => packageRoot;
+    loader.packages = () => "";
     loader.parseCollision = false;
-    loader.load(urdfUrl, (loaded) => { parsedRobot = loaded; }, undefined, (reason) => {
-      if (active) setError(reason instanceof Error ? reason.message : "The URDF could not be loaded.");
-    });
+    loader.load(resolvedUrl, (loaded) => { parsedRobot = loaded; }, undefined, () => { /* mesh errors surface via manager.onError */ });
     return () => {
       active = false;
       if (parsedRobot) disposeObject(parsedRobot);
     };
-  }, [packageRoot, urdfUrl]);
+  }, [resolvedUrl]);
 
   return (
     <section className="surface-card overflow-hidden">
@@ -49,13 +69,13 @@ export default function UrdfModelViewer({ urdfUrl, sourceUrl, title = "Interacti
         </div>
         {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Official model source <ExternalLink className="h-3 w-3" /></a>}
       </div>
-      <div className="relative h-[360px] bg-gradient-to-b from-muted/15 to-muted/50" data-testid="urdf-model-viewer">
+      <div className="relative h-[420px] bg-gradient-to-b from-muted/15 to-muted/50" data-testid="urdf-model-viewer">
         {!robot && !error && (
           <div className="absolute inset-0 z-10 grid place-items-center text-center text-[11px] text-muted-foreground">
             <div><Rotate3D className="mx-auto mb-2 h-6 w-6 animate-pulse text-primary" />Loading model assets…<div className="mt-1 font-mono">{progress.loaded}/{progress.total}</div></div>
           </div>
         )}
-        {error ? (
+        {error && !robot ? (
           <div className="absolute inset-0 grid place-items-center p-6 text-center text-[11px] text-muted-foreground">
             <div><Box className="mx-auto mb-2 h-6 w-6 opacity-60" /><p>3D preview unavailable.</p><p className="mt-1 max-w-md">{error}</p>{sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm mt-3 inline-flex">Open the official model</a>}</div>
           </div>
@@ -76,10 +96,39 @@ export default function UrdfModelViewer({ urdfUrl, sourceUrl, title = "Interacti
   );
 }
 
-function packageRootFor(url: string): string {
-  const marker = "/urdf/";
-  const index = url.lastIndexOf(marker);
-  return index >= 0 ? url.slice(0, index) : new URL(".", url).toString().replace(/\/$/u, "");
+function normalizePath(path: string): string {
+  const parts: string[] = [];
+  for (const part of path.replaceAll("\\", "/").split("/")) {
+    if (part === "" || part === ".") continue;
+    if (part === "..") { parts.pop(); continue; }
+    parts.push(part);
+  }
+  return parts.join("/");
+}
+
+async function resolveUrdfMeshes(urdfUrl: string, urdfPath: string | null, files: Props["files"]): Promise<string> {
+  const response = await fetch(urdfUrl, { credentials: "same-origin" });
+  if (!response.ok) throw new Error(`URDF fetch failed with ${response.status}`);
+  const text = await response.text();
+
+  const byPath = new Map<string, string>();
+  for (const file of files ?? []) {
+    if (file.relativePath) byPath.set(normalizePath(file.relativePath).toLowerCase(), file.contentUrl);
+    if (file.originalName) byPath.set(normalizePath(file.originalName).toLowerCase(), file.contentUrl);
+  }
+
+  const urdfDir = urdfPath ? normalizePath(urdfPath).split("/").slice(0, -1).join("/") : "";
+
+  const rewritten = text.replace(/<mesh\b[^>]*filename\s*=\s*"([^"]+)"([^>]*)>/giu, (match, filename, rest) => {
+    let candidate = filename;
+    if (candidate.startsWith("package://")) candidate = candidate.replace(/^package:\/\/[^/]+\//u, "");
+    if (!candidate.startsWith("/") && urdfDir) candidate = urdfDir ? `${urdfDir}/${candidate}` : candidate;
+    const resolved = byPath.get(normalizePath(candidate).toLowerCase());
+    if (!resolved) return match;
+    return `<mesh filename="${resolved}"${rest}>`;
+  });
+
+  return rewritten;
 }
 
 function shortUrl(url: string): string {
