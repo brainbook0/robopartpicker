@@ -36,25 +36,17 @@ function useStlAssembly(urls: string[]) {
       const group = new Group();
       group.name = "stl-assembly";
 
-      // Arrange parts side by side along X using each part's bounding box so the
-      // whole design is visible rather than a single overlapping part.
-      let cursor = 0;
+      // Keep each part at its native STL coordinates so parts exported from a shared
+      // CAD assembly origin line up. Then center the combined bounds on the origin.
       for (const geometry of valid) {
         geometry.computeBoundingBox();
-        const box = geometry.boundingBox;
-        const width = box ? box.max.x - box.min.x : 1;
-        const center = box ? (box.min.x + box.max.x) / 2 : 0;
-        const depth = box ? box.max.z - box.min.z : 0;
         const mesh = new Mesh(geometry, new MeshStandardMaterial({ color: new Color("#8aa6c0"), roughness: 0.6, metalness: 0.15 }));
-        mesh.position.x = cursor - center;
-        mesh.position.z = -(depth / 2);
         group.add(mesh);
-        cursor += width + Math.max(width, depth) * 0.25;
       }
-      // Center the whole assembly on the origin.
       const box = new Box3().setFromObject(group);
       const center = box.getCenter(new Vector3());
       group.position.x -= center.x;
+      group.position.y -= center.y;
       group.position.z -= center.z;
       setGroup(group);
       if (failed > 0) setError(`${failed} of ${urls.length} parts failed to load; showing the rest.`);
@@ -84,7 +76,7 @@ export default function StlModelViewer({ stlUrls, sourceUrl, title = "Interactiv
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div>
           <div className="flex items-center gap-1.5 text-[12px] font-semibold"><Box className="h-3.5 w-3.5 text-primary" /> {title}</div>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">All printable STL parts arranged side by side; drag to orbit, scroll to zoom.</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">All STL parts rendered at their native coordinates; drag to orbit, scroll to zoom.</p>
         </div>
         {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Official model source <ExternalLink className="h-3 w-3" /></a>}
       </div>
