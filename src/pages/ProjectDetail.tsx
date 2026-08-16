@@ -19,6 +19,7 @@ import { bomsApi } from "@/lib/api/builds";
 import type { BomDetail } from "@/shared/builds";
 
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
+const StlModelViewer = lazy(() => import("@/components/projects/StlModelViewer"));
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -118,6 +119,7 @@ export default function ProjectDetail() {
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
   const previewUrdf = files.find((file) => file.kind === "urdf" && typeof file.url === "string" && /\.urdf(?:[?#]|$)/iu.test(file.url));
+  const previewStl = managedFiles.find((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.(?:stl|step|stp)(?:[?#]|$)/iu.test(file.originalName ?? ""));
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
@@ -355,11 +357,15 @@ export default function ProjectDetail() {
               : <Empty>No long-form description provided.</Empty>}
           </Section>
 
-          {previewUrdf?.url && (
+          {previewUrdf?.url ? (
             <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
               <UrdfModelViewer urdfUrl={previewUrdf.url} sourceUrl={p.repo_url ?? previewUrdf.url} title={`${p.name} · URDF preview`} />
             </Suspense>
-          )}
+          ) : previewStl?.contentUrl ? (
+            <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
+              <StlModelViewer stlUrl={previewStl.contentUrl} sourceUrl={p.repo_url ?? previewStl.contentUrl} title={`${p.name} · STL preview`} />
+            </Suspense>
+          ) : null}
 
           <Section
             title={`Bill of materials${bomLineCount ? ` · ${bomLineCount}` : ""}`}
