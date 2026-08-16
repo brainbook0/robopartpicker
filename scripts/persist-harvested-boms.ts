@@ -15,10 +15,18 @@ const HARVEST = "/root/robopartpicker/.ingest/bom-harvest-2026-08-12";
 const LISTS = ["/tmp/top300.ndjson", "/tmp/top300-1500.ndjson"];
 const SQL = "/tmp/persist-boms.sql";
 const ENV = { ...process.env };
+const args = process.argv.slice(2);
+const envIndex = args.indexOf("--env");
+const targetEnv = envIndex >= 0 ? args[envIndex + 1] : undefined;
+const apply = args.includes("--apply");
+if (targetEnv !== "production" && targetEnv !== "preview") {
+  console.error("Usage: tsx scripts/persist-harvested-boms.ts --env production|preview [--apply]");
+  process.exit(2);
+}
 
 async function q(sql: string): Promise<any[]> {
   const { stdout } = await exec("node_modules/.bin/wrangler",
-    ["d1", "execute", "DB", "--env", "preview", "--remote", "--json", "--command", sql], { env: ENV, maxBuffer: 16 * 1024 * 1024 });
+    ["d1", "execute", "DB", "--env", targetEnv!, "--remote", "--json", "--command", sql], { env: ENV, maxBuffer: 16 * 1024 * 1024 });
   const parsed = JSON.parse(stdout);
   return parsed.flatMap((st: any) => st.results ?? []);
 }
@@ -83,8 +91,9 @@ async function main() {
   if (!stmts.length) { console.log("nothing to write"); return; }
   writeFileSync(SQL, stmts.join("\n"));
   console.log(`wrote ${stmts.length} statements to ${SQL}`);
+  if (!apply) { console.log("DRY RUN ONLY. Add --apply to execute against", targetEnv); return; }
   const { stdout, stderr } = await exec("node_modules/.bin/wrangler",
-    ["d1", "execute", "DB", "--env", "preview", "--remote", "--file", SQL], { env: ENV, maxBuffer: 64 * 1024 * 1024 });
+    ["d1", "execute", "DB", "--env", targetEnv!, "--remote", "--file", SQL], { env: ENV, maxBuffer: 64 * 1024 * 1024 });
   console.log(stdout.slice(0, 400));
   if (stderr) console.log("stderr:", stderr.slice(0, 400));
   console.log("done");
