@@ -77,8 +77,7 @@ def main():
         FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
         WHERE p.project_kind='physical_design' AND p.deleted_at IS NULL AND p.repository_url LIKE 'https://github.com/%'
         AND NOT EXISTS (SELECT 1 FROM project_files pf JOIN files f ON f.id=pf.file_id
-            WHERE pf.project_id=p.id AND (lower(f.original_name) LIKE '%.stl' OR lower(f.original_name) LIKE '%.step'
-              OR lower(f.original_name) LIKE '%.urdf'))""")["results"]
+            WHERE pf.project_id=p.id AND lower(f.original_name) LIKE '%.stl')""")["results"]
 
     todo = [r for r in rows if r["slug"] not in done]
     print(f"physical designs lacking 3D files: {len(rows)}, todo: {len(todo)}", flush=True)
@@ -102,6 +101,7 @@ def main():
                 paths.append(p)
         if not paths:
             print(f"skip {slug}: no 3D files in repo", flush=True); continue
+        paths.sort(key=lambda p: (0 if p.lower().endswith(".stl") else 1, p.lower()))
         paths = paths[:MAX_FILES_PER_PROJECT]
         for path in paths:
             raw = f"https://raw.githubusercontent.com/{owner}/{repo}/{default_branch}/{urllib.parse.quote(path)}"

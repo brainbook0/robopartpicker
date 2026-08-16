@@ -119,7 +119,7 @@ export default function ProjectDetail() {
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
   const previewUrdf = files.find((file) => file.kind === "urdf" && typeof file.url === "string" && /\.urdf(?:[?#]|$)/iu.test(file.url));
-  const previewStl = managedFiles.find((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.(?:stl|step|stp)(?:[?#]|$)/iu.test(file.originalName ?? ""));
+  const previewStl = managedFiles.find((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.stl(?:[?#]|$)/iu.test(file.originalName ?? ""));
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
