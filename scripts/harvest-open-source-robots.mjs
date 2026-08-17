@@ -56,6 +56,41 @@ const SEARCH_QUERIES = [
   "topic:ros robot hardware",
   "open source robot arm stl",
   "topic:spotmicroai",
+  // Humanoid robots and parts
+  "topic:inmoov",
+  "topic:robotis-op",
+  "humanoid robot arm",
+  "humanoid torso open source",
+  "dexterous hand open source",
+  "robot hand actuator",
+  "topic:dynamixel",
+  "topic:robot-actuator",
+  "robot servo controller open source",
+  "topic:torque-motor",
+  // More arms and manipulators
+  "topic:scara-robot",
+  "topic:delta-robot",
+  "open source scara",
+  "open source delta robot",
+  "cobot open source hardware",
+  // More mobile and legged
+  "topic:mobile-robot",
+  "topic:ros2-robot",
+  "open source amr",
+  "open source agv",
+  "topic:unitree",
+  "robot dog quadruped",
+  // Sensors, compute, electronics for robots
+  "open source lidar robot",
+  "robot sensor fusion hardware",
+  "topic:robotics-sensor",
+  "robotics motor driver open source",
+  "open source robot controller board",
+  // Generic OSHW robotics
+  "topic:open-hardware robot",
+  "topic:robotics-hardware",
+  "open source robotics hardware",
+  "open source robot platform",
 ];
 
 function gh(args) {
