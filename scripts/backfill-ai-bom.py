@@ -137,7 +137,8 @@ def process_project(r):
         return None
     desc = (rpps.get("description") or "")[:4000]
     tags = " ".join(rpps.get("tags") or [])
-    user = f"Project: {r['name']}\nCategory: {r['robot_category'] or 'unknown'}\nTags: {tags}\nSummary: {rpps.get('summary','')}\n\nREADME excerpt:\n{desc}"
+    files = (r.get("file_names") or "")[:1500]
+    user = f"Project: {r['name']}\nCategory: {r['robot_category'] or 'unknown'}\nTags: {tags}\nSummary: {rpps.get('summary','')}\nFiles: {files}\n\nREADME excerpt:\n{desc}"
     raw = llm(SYSTEM, user)
     items = parse_items(raw)
     if not items:
@@ -162,7 +163,8 @@ def process_project(r):
 
 def main():
     where = "AND json_array_length(json_extract(pv.rpps_json, '$.bom')) = 0"
-    sql = f"""SELECT p.id, p.slug, p.name, p.robot_category, p.repository_url, pv.id AS version_id, pv.rpps_json
+    sql = f"""SELECT p.id, p.slug, p.name, p.robot_category, p.repository_url, pv.id AS version_id, pv.rpps_json,
+        (SELECT GROUP_CONCAT(lower(f.original_name), ' ') FROM project_files pf JOIN files f ON f.id = pf.file_id WHERE pf.project_id = p.id) AS file_names
         FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
         WHERE p.project_kind = 'physical_design' AND p.deleted_at IS NULL {where}
         ORDER BY p.slug"""
