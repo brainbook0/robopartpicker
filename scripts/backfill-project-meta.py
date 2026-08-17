@@ -44,12 +44,11 @@ def d1(sql, params=None):
     return d["result"][0]
 
 def extract_cost(text):
-    # Prefer "total cost $1600", "cost: $X", "~$1600", "price $X".
+    # Only accept explicit "cost" statements; drop the loose "$N anywhere" and
+    # "around/about" patterns that surface spurious small values.
     patterns = [
         r"(?:total|estimated|approx(?:imate)?|overall)\s+cost\s*(?:is|of|:)?\s*\$?\s*([0-9][0-9,.]*(?:k|K)?)",
         r"\bcost\s*:?\s*\$?\s*([0-9][0-9,.]*(?:k|K)?)",
-        r"\b(?:around|about|~|≈)\s*\$?\s*([0-9][0-9,.]*(?:k|K)?)",
-        r"\$\s*([0-9][0-9,.]*(?:k|K)?)\b",
     ]
     for pat in patterns:
         m = re.search(pat, text)
@@ -104,7 +103,7 @@ def main():
             continue
         build = dict(rpps.get("build") or {})
         changed = False
-        if cost is not None and (r["estimated_cost_minor"] is None or abs(r["estimated_cost_minor"] - cost * 100) > 1) and 1 <= cost <= 1_000_000:
+        if cost is not None and (r["estimated_cost_minor"] is None or abs(r["estimated_cost_minor"] - cost * 100) > 1) and 50 <= cost <= 1_000_000:
             build["estimated_cost_usd"] = cost
             changed = True
         if hours is not None and 1 <= hours <= 10_000:
