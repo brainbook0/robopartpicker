@@ -8,6 +8,19 @@ It aggregates open robotics projects, preserves their source and revision histor
 
 Production: <https://robopartpicker-production.ludomi2502.workers.dev>
 
+## Vision: the information layer for robotics
+
+RoboPartPicker aims to become **the information layer and the largest marketplace for robotics components**.
+
+That goal is only reachable through the most extensive data collection in the space:
+
+- every open physical robot design cataloged and categorized (humanoid, manipulator, quadruped, mobile, and more);
+- every bill of materials derived, whether from an explicit BOM file, project documentation, or the CAD/model files themselves;
+- every component identity normalized with specifications, evidence, and provenance;
+- every supplier catalog and observed price collected, with honest freshness and uncertainty, so a builder can see the whole market rather than one distributor.
+
+The component catalog is therefore treated as a first-class data asset. Breadth and provenance of supplier data are the foundation of the marketplace — but the same data-honesty rules apply: an observed price is an observation, not a quote, and missing evidence stays visible.
+
 ## What the product is for
 
 A builder should be able to move through one coherent workflow:
@@ -21,7 +34,7 @@ A builder should be able to move through one coherent workflow:
 7. **Request firm quotes.** Prepare normalized supplier RFQs, reconcile responses against the estimate, and require explicit user approval before any purchasing handoff.
 8. **Reproduce or fork the design.** Lock a build to an immutable release, change CAD/files/descriptions/BOMs, and preserve upstream attribution and project lineage.
 
-The robotics **project** is the main product object. The component catalog is supporting infrastructure, not the product by itself.
+The robotics **project** is the primary product object; the component and supplier catalog is the data layer that the marketplace is built on.
 
 ## Product surfaces
 
