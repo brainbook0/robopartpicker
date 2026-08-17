@@ -118,8 +118,24 @@ export default function ProjectDetail() {
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
-  const previewUrdf = managedFiles.find((file) => file.kind === "urdf" && typeof file.contentUrl === "string" && /\.urdf(?:[?#]|$)/iu.test(file.originalName ?? ""));
-  const stlFiles = managedFiles.filter((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.stl(?:[?#]|$)/iu.test(file.originalName ?? "")).slice(0, 24);
+  const assemblyName = /(^|[-_\s])(assembly|full|complete|combined|whole|total|robot|all)([-_\s]|$)/iu;
+  const previewUrdf = managedFiles
+    .filter((file) => file.kind === "urdf" && typeof file.contentUrl === "string" && /\.urdf(?:[?#]|$)/iu.test(file.originalName ?? ""))
+    .sort((a, b) => {
+      const aMain = assemblyName.test(a.originalName ?? "") || assemblyName.test(a.relativePath ?? "") ? 1 : 0;
+      const bMain = assemblyName.test(b.originalName ?? "") || assemblyName.test(b.relativePath ?? "") ? 1 : 0;
+      if (aMain !== bMain) return bMain - aMain;
+      return (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0);
+    })[0];
+  const stlFiles = managedFiles
+    .filter((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.stl(?:[?#]|$)/iu.test(file.originalName ?? ""))
+    .sort((a, b) => {
+      const aMain = assemblyName.test(a.originalName ?? "") || assemblyName.test(a.relativePath ?? "") ? 1 : 0;
+      const bMain = assemblyName.test(b.originalName ?? "") || assemblyName.test(b.relativePath ?? "") ? 1 : 0;
+      if (aMain !== bMain) return bMain - aMain;
+      return (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0);
+    })
+    .slice(0, 24);
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];

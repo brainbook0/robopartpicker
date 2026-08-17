@@ -98,11 +98,18 @@ def main():
         for item in tree.get("tree", []):
             p = item.get("path", "")
             if p.lower().endswith(KINDS) and item.get("type") == "blob" and item.get("size", 0) <= MAX_SIZE:
-                paths.append(p)
+                paths.append((p, item.get("size", 0)))
         if not paths:
             print(f"skip {slug}: no 3D files in repo", flush=True); continue
-        paths.sort(key=lambda p: (0 if p.lower().endswith(".stl") else 1, p.lower()))
-        paths = paths[:MAX_FILES_PER_PROJECT]
+        import re as _re
+        assembly = _re.compile(r"(^|[-_\s])(assembly|full|complete|combined|whole|total|robot|all)([-_\s]|$)", _re.I)
+        paths.sort(key=lambda entry: (
+            0 if entry[0].lower().endswith(".stl") else 1,
+            0 if assembly.search(entry[0]) else 1,
+            -entry[1],
+            entry[0].lower(),
+        ))
+        paths = [p for p, _ in paths[:MAX_FILES_PER_PROJECT]]
         for path in paths:
             raw = f"https://raw.githubusercontent.com/{owner}/{repo}/{default_branch}/{urllib.parse.quote(path)}"
             try:
