@@ -101,15 +101,22 @@ def scrape_category(cat_id):
     for block in blocks[1:]:
         m_url = re.search(r'href="(/product-\d+\.html)"', block)
         m_name = re.search(r'class="name">\s*([^<]+)', block)
-        m_price = re.search(r'\$\s*([0-9]+(?:\.[0-9]{1,2})?)', block)
         if not m_url or not m_name:
             continue
         name = m_name.group(1).strip()
         if not name:
             continue
-        price = float(m_price.group(1)) if m_price else None
-        products.append({"name": name, "url": BASE + m_url.group(1), "price": price, "cat_id": cat_id})
+        products.append({"name": name, "url": BASE + m_url.group(1), "price": None, "cat_id": cat_id})
     return products
+
+def fetch_price(p):
+    try:
+        html = fetch(p["url"])
+        m = re.search(r'"price"\s*:\s*([0-9]+(?:\.[0-9]{1,2})?)', html)
+        p["price"] = float(m.group(1)) if m else None
+    except Exception:
+        p["price"] = None
+    return p
 
 def main():
     print(f"scraping {len(CATEGORY_IDS)} DFRobot categories", flush=True)
@@ -120,14 +127,20 @@ def main():
             prods = f.result()
             for p in prods:
                 all_products[p["url"]] = p
-    print(f"scraped {len(all_products)} unique products", flush=True)
+    print(f"scraped {len(all_products)} unique products; fetching prices", flush=True)
+    products = list(all_products.values())
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        products = list(pool.map(fetch_price, products))
+    priced = [p for p in products if p.get("price") is not None]
+    print(f"priced {len(priced)}/{len(products)}", flush=True)
 
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     statements = [
         f"INSERT OR IGNORE INTO suppliers (id, slug, name, website_url, status, freshness_at, is_demo, created_at, updated_at) VALUES ({q(SUPPLIER['id'])}, {q(SUPPLIER['slug'])}, {q(SUPPLIER['name'])}, {q(SUPPLIER['website'])}, 'active', {q(now)}, 0, {q(now)}, {q(now)});"
     ]
     count = 0
-    for url, p in all_products.items():
+    for p in products:
+        url = p["url"]
         sku = re.search(r"product-(\d+)\.html", url).group(1)
         name = p["name"][:500]
         cat = categorize(name)
