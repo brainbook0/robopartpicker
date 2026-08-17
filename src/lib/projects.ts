@@ -1,5 +1,6 @@
 import { api } from "@/lib/api/client";
 import { emptyRpps, RPPS_VERSION, slugify, validateRpps, type RppsPackage } from "@/lib/rpps/schema";
+import type { RobotCategory } from "@/shared/robotCategory";
 import type { PortableRppsManifest, RppsValidationReport } from "@/lib/rpps/portable";
 
 export type ProjectRow = {
@@ -15,6 +16,7 @@ export type ProjectRow = {
   record_version?: number;
   status: "draft" | "review" | "published" | "archived";
   project_kind: ProjectKind;
+  robot_category: RobotCategory | null;
   visibility: "public" | "organization" | "unlisted" | "private";
   repo_url: string | null;
   docs_url: string | null;
@@ -48,9 +50,10 @@ export async function listPublicProjects(): Promise<ProjectRow[]> {
   return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?limit=1000&sort=popularity")).items;
 }
 
-export async function listProjectsPage(page: number, limit = 1000, options: { kind?: ProjectKind | "" } = {}): Promise<{ items: ProjectRow[]; total: number }> {
+export async function listProjectsPage(page: number, limit = 1000, options: { kind?: ProjectKind | ""; category?: RobotCategory | "" } = {}): Promise<{ items: ProjectRow[]; total: number }> {
   const params = new URLSearchParams({ limit: String(limit), sort: "popularity", page: String(page) });
   if (options.kind) params.set("kind", options.kind);
+  if (options.category) params.set("category", options.category);
   return await api.get<{ items: ProjectRow[]; total: number }>(`/api/v1/projects?${params.toString()}`);
 }
 

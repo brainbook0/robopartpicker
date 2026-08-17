@@ -4,6 +4,7 @@ import { RppsPackage } from "../../src/lib/rpps/schema";
 import type { AppBindings } from "../env";
 import { ProjectsRepository } from "../db/repositories/projects";
 import type { ProjectKind } from "../../src/shared/projectKind";
+import { ROBOT_CATEGORIES, type RobotCategory } from "../../src/shared/robotCategory";
 import { AppError, parsePositiveInt } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
 import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId, organizationRole } from "../middleware/authorization";
@@ -50,10 +51,13 @@ projectRoutes.get("/projects", loadAuthSession, async (c) => {
     : "popularity";
   const kindParam = c.req.query("kind");
   const kind = projectKinds.includes(kindParam as ProjectKind) ? (kindParam as ProjectKind) : undefined;
+  const categoryParam = c.req.query("category");
+  const category = ROBOT_CATEGORIES.includes(categoryParam as RobotCategory) ? (categoryParam as RobotCategory) : undefined;
   const result = await new ProjectsRepository(c.env.DB).listVisible(userId, {
     q: c.req.query("q")?.trim().slice(0, 100) || undefined,
     mine: c.req.query("mine") === "true",
     kind,
+    category,
     sort,
     limit,
     offset: (page - 1) * limit,

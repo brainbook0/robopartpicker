@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Plus, Search, FileJson, GitBranch, Package, X, Cpu, Boxes, Clock, Star, ShieldCheck, AlertTriangle } from "lucide-react";
 import { listProjectsPage, type ProjectKind, type ProjectRow } from "@/lib/projects";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROBOT_CATEGORIES, ROBOT_CATEGORY_LABELS, type RobotCategory } from "@/shared/robotCategory";
 
 type SortKey = "popularity" | "updated" | "cost_asc" | "repro_desc" | "name";
 
@@ -58,6 +59,7 @@ export default function ProjectsIndex() {
   const tag = params.get("tag");
   const difficulty = params.get("difficulty") ?? "";
   const kind = (params.get("kind") as ProjectKind | null) ?? "";
+  const category = (params.get("category") as RobotCategory | null) ?? "";
   const sort = (params.get("sort") as SortKey) || "popularity";
   const quickParam = params.get("f") ?? "";
   const quick = useMemo(() => new Set(quickParam.split(",").filter(Boolean)), [quickParam]);
@@ -78,15 +80,15 @@ export default function ProjectsIndex() {
 
   useEffect(() => {
     setLoading(true);
-    listProjectsPage(1, pageSize, { kind }).then(r => {
+    listProjectsPage(1, pageSize, { kind, category }).then(r => {
       setRows(r.items); setTotal(r.total); setPage(1); setLoading(false);
     }).catch(e => { setErr(e.message); setLoading(false); });
-  }, [kind]);
+  }, [kind, category]);
 
   const loadMore = () => {
     if (loading) return;
     setLoadingMore(true);
-    listProjectsPage(page + 1, pageSize, { kind }).then(r => {
+    listProjectsPage(page + 1, pageSize, { kind, category }).then(r => {
       setRows(prev => {
         const seen = new Set(prev.map(p => p.id));
         return [...prev, ...r.items.filter(p => !seen.has(p.id))];
@@ -135,7 +137,7 @@ export default function ProjectsIndex() {
     };
   }, [rows, total]);
 
-  const hasActiveFilters = !!(q || tag || difficulty || kind || quick.size || sort !== "updated");
+  const hasActiveFilters = !!(q || tag || difficulty || kind || category || quick.size || sort !== "updated");
   const noProjectsExist = !loading && rows.length === 0;
   const noMatches = !loading && rows.length > 0 && filtered.length === 0;
   const demoOnly = rows.length > 0 && rows.every((project) => project.is_demo);
@@ -206,6 +208,14 @@ export default function ProjectsIndex() {
           <option value="commercial_showcase">Commercial showcases</option>
           <option value="unknown">Unclassified</option>
         </select>
+        <select value={category} onChange={e => setParam("category", e.target.value || null)}
+          aria-label="Filter by robot category"
+          className="h-7 rounded border border-input bg-surface px-2 text-[12px]">
+          <option value="">Any robot type</option>
+          {ROBOT_CATEGORIES.map(c => (
+            <option key={c} value={c}>{ROBOT_CATEGORY_LABELS[c]}</option>
+          ))}
+        </select>
         <select value={sort} onChange={e => setParam("sort", e.target.value === "updated" ? null : e.target.value)}
           aria-label="Sort projects"
           className="h-7 rounded border border-input bg-surface px-2 text-[12px]">
@@ -225,6 +235,10 @@ export default function ProjectsIndex() {
       {/* Quick + tag filters */}
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         <Chip active={kind === "physical_design"} onClick={() => setParam("kind", kind === "physical_design" ? null : "physical_design")}>Physical designs</Chip>
+        {(Object.keys(ROBOT_CATEGORY_LABELS) as RobotCategory[]).slice(0, 9).map(c => (
+          <Chip key={c} active={category === c} onClick={() => setParam("category", category === c ? null : c)}>{ROBOT_CATEGORY_LABELS[c]}</Chip>
+        ))}
+        <span className="mx-1 text-[11px] text-muted-foreground">·</span>
         <Chip active={quick.has("bom")} onClick={() => toggleQuick("bom")}>Has BOM</Chip>
         <Chip active={quick.has("repo")} onClick={() => toggleQuick("repo")}>Has repo</Chip>
         <Chip active={quick.has("under1k")} onClick={() => toggleQuick("under1k")}>Under $1k</Chip>
@@ -318,6 +332,7 @@ function ProjectCard({ p }: { p: ProjectRow }) {
   const ros = rosSupport(p);
   const sourceLabel = p.license ? "licensed source" : p.repo_url ? "license unclear" : "showcase";
   const kindLabel = kindLabels[p.project_kind ?? "unknown"];
+  const categoryLabel = p.robot_category ? ROBOT_CATEGORY_LABELS[p.robot_category] : null;
   return (
     <Link to={`/projects/${p.slug}`} className="surface-card overflow-hidden hover:border-primary/50 transition-colors flex flex-col group">
       <div className="relative aspect-[16/8] bg-muted border-b border-border overflow-hidden">
@@ -338,7 +353,7 @@ function ProjectCard({ p }: { p: ProjectRow }) {
           {p.license ? <ShieldCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />} {p.is_demo ? "demo fixture" : sourceLabel}
         </span>
         <span className="absolute left-1.5 bottom-1.5 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-foreground backdrop-blur">
-          {kindLabel}
+          {categoryLabel ?? kindLabel}
         </span>
       </div>
       <div className="p-3 flex flex-col flex-1 min-w-0">

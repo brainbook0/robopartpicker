@@ -1,5 +1,6 @@
 import type { RppsPackage } from "../../../src/lib/rpps/schema";
 import { classifyProjectKind, projectKindAfterRppsUpdate, type ProjectKind } from "../../../src/shared/projectKind";
+import type { RobotCategory } from "../../../src/shared/robotCategory";
 import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
 import { AppError } from "../../http";
 import { fileContentUrl } from "../../services/file-urls";
@@ -15,6 +16,7 @@ type ProjectDatabaseRow = {
   visibility: "private" | "organization" | "unlisted" | "public";
   status: "draft" | "review" | "published" | "archived";
   project_kind: ProjectKind;
+  robot_category: string | null;
   license_spdx: string | null;
   repository_url: string | null;
   difficulty: string | null;
@@ -58,6 +60,7 @@ export type ProjectDto = {
   record_version: number;
   status: ProjectDatabaseRow["status"];
   project_kind: ProjectKind;
+  robot_category: RobotCategory | null;
   visibility: ProjectDatabaseRow["visibility"];
   repo_url: string | null;
   docs_url: string | null;
@@ -109,7 +112,7 @@ export type ProjectFileDto = {
 };
 
 const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p.owner_user_id,
-  p.organization_id, p.visibility, p.status, p.project_kind, p.license_spdx, p.repository_url, p.difficulty,
+  p.organization_id, p.visibility, p.status, p.project_kind, p.robot_category, p.license_spdx, p.repository_url, p.difficulty,
   p.estimated_cost_minor, p.estimated_cost_currency, p.is_demo, p.version, p.created_at, p.updated_at,
   p.github_stars, p.upstream_url, p.upstream_identity, p.maintainer, p.revision, p.ingested_at,
   p.last_checked_at, p.publishability, p.upstream_project_id, p.upstream_revision, p.clone_created_at, p.change_summary,
@@ -130,7 +133,7 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
 export class ProjectsRepository {
   constructor(private readonly db: D1Database) {}
 
-  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number }> {
+  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; category?: RobotCategory; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
     const access = options.mine
@@ -144,6 +147,7 @@ export class ProjectsRepository {
       clauses.push(`(lower(p.name) LIKE ${term} OR lower(COALESCE(p.summary, '')) LIKE ${term})`);
     }
     if (options.kind) clauses.push(`p.project_kind = ${bind(options.kind)}`);
+    if (options.category) clauses.push(`p.robot_category = ${bind(options.category)}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
     const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM projects p ${where}`).bind(...values).first<{ total: number }>();
     const rows = await this.db.prepare(`${SELECT_PROJECT} ${where} ORDER BY ${this.orderBy(options.sort)} LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`)
@@ -457,6 +461,7 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     record_version: row.version,
     status: row.status,
     project_kind: row.project_kind ?? "unknown",
+    robot_category: (row.robot_category as RobotCategory | null) ?? null,
     visibility: row.visibility,
     repo_url: row.repository_url,
     docs_url: rpps.docs_url ?? null,
