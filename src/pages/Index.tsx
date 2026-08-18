@@ -20,10 +20,13 @@ export default function Index() {
   const components = useComponents({ limit: 8 });
   const suppliers = useSuppliers();
   const projects = useQuery({ queryKey: ["home-projects"], queryFn: () => listProjectsPage(1, 6) });
-  const humanoids = useQuery({ queryKey: ["home-humanoids"], queryFn: () => listProjectsPage(1, 8, { kind: "commercial_showcase", category: "humanoid" }) });
+  const showcases = useQuery({ queryKey: ["home-showcases"], queryFn: () => listProjectsPage(1, 8, { kind: "commercial_showcase" }) });
   const boms = useQuery({ queryKey: ["home-boms"], queryFn: ({ signal }) => bomsApi.list(signal) });
   const marketplace = useMarketplace({ type: "sell" });
   const projectRows = projects.data?.items ?? [];
+  const showcaseRows = showcases.data?.items ?? [];
+  const humanoidRows = showcaseRows.filter((project) => project.robot_category === "humanoid");
+  const featuredShowcases = humanoidRows.length > 0 ? humanoidRows : showcaseRows;
   const demoOnly = components.data?.items.every((item) => item.isDemo) ?? true;
 
   return <main>
@@ -66,8 +69,8 @@ export default function Index() {
       </section>
 
       <section>
-        <div className="mb-3 flex items-end justify-between"><div><div className="section-title">Closed-source humanoid showcase</div><h2 className="text-xl font-bold">Commercial humanoid robots</h2><p className="mt-1 text-xs text-muted-foreground">Reference showcases with vendor-published specs. Marked closed-source; no CAD, BOM, or build files are implied.</p></div><Link to="/projects?kind=commercial_showcase&category=humanoid" className="text-xs hover:text-primary">All humanoids →</Link></div>
-        {humanoids.isLoading ? <State>Loading humanoids…</State> : humanoids.error ? <State error>{humanoids.error.message}</State> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{(humanoids.data?.items ?? []).map((project) => <Link key={project.id} to={`/projects/${project.slug}`} className="surface-card surface-card-hover overflow-hidden"><div className="aspect-[16/9] bg-muted">{project.cover_image_url ? <img src={project.cover_image_url} alt="" className="h-full w-full object-cover" loading="lazy" /> : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-8 w-8 opacity-40" /></div>}</div><div className="p-3"><div className="flex items-start justify-between gap-2"><span className="font-semibold text-[13px] leading-tight">{project.name}</span><span className="pill pill-yellow shrink-0">closed-source</span></div><p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{project.summary ?? "Closed-source commercial humanoid showcase."}</p><div className="mt-2 text-[10px] text-muted-foreground">{project.maintainer ?? "Vendor"}</div></div></Link>)}</div>}
+        <div className="mb-3 flex items-end justify-between"><div><div className="section-title">Closed-source humanoid showcase</div><h2 className="text-xl font-bold">Commercial humanoid robots</h2><p className="mt-1 text-xs text-muted-foreground">Vendor-published systems are tracked separately from open designs. If no humanoids are indexed yet, the section falls back to other commercial showcases instead of disappearing.</p></div><Link to="/projects?kind=commercial_showcase&category=humanoid" className="text-xs hover:text-primary">All humanoids →</Link></div>
+        {showcases.isLoading ? <State>Loading commercial showcases…</State> : showcases.error ? <State error>{showcases.error.message}</State> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{featuredShowcases.slice(0, 8).map((project) => <Link key={project.id} to={`/projects/${project.slug}`} className="surface-card surface-card-hover overflow-hidden"><div className="aspect-[16/9] bg-muted">{project.cover_image_url ? <img src={project.cover_image_url} alt="" className="h-full w-full object-cover" loading="lazy" /> : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-8 w-8 opacity-40" /></div>}</div><div className="p-3"><div className="flex items-start justify-between gap-2"><span className="font-semibold text-[13px] leading-tight">{project.name}</span><span className="pill pill-yellow shrink-0">{project.robot_category === "humanoid" ? "closed-source" : "commercial"}</span></div><p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{project.summary ?? (project.robot_category === "humanoid" ? "Closed-source commercial humanoid showcase." : "Closed-source commercial robot showcase.")}</p><div className="mt-2 text-[10px] text-muted-foreground">{project.maintainer ?? "Vendor"}</div></div></Link>)}</div>}
       </section>
 
       <section className="grid gap-3 lg:grid-cols-3">

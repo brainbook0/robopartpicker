@@ -8,7 +8,7 @@ import { useComponents } from "@/lib/api/catalog";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import type { CatalogPart } from "@/shared/catalog";
-import type { BuildDetail, BuildItem } from "@/shared/builds";
+import type { BuildDetail, BuildItem, BuildStep } from "@/shared/builds";
 import { attachFile, uploadFile, type FileKind } from "@/lib/api/files";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { AiFormDraft } from "@/components/ai/AiFormDraft";
@@ -356,6 +356,7 @@ function BuildSettings({ build, organizations, canManageScope, onRefresh }: {
 
 function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefresh: () => Promise<void> }) {
   const [busy, setBusy] = useState<string | null>(null);
+  const [step, setStep] = useState({ title: "", body: "" });
   const [configuration, setConfiguration] = useState({ name: "", format: "yaml", contentText: "" });
   const [firmware, setFirmware] = useState({ name: "", repositoryUrl: "", revision: "", licenseSpdx: "", notes: "" });
   const [calibration, setCalibration] = useState({ name: "", procedureText: "", resultNotes: "", status: "pending" as "pending" | "passed" | "failed" | "superseded" });
@@ -384,6 +385,15 @@ function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefres
     await run(`delete-${id}`, operations[kind], `${name} deleted`);
   };
 
+  const saveStep = async () => {
+    if (!step.title.trim()) return;
+    await run("step", () => buildsApi.addStep(build.id, { title: step.title.trim(), body: step.body.trim() || null }), "Step saved", () => setStep({ title: "", body: "" }));
+  };
+
+  const updateStep = async (stepId: string, changes: { title?: string; body?: string | null; status?: BuildStep["status"] }) => {
+    await run(`step-${stepId}`, () => buildsApi.updateStep(build.id, stepId, changes), "Step updated");
+  };
+
   const applyAiDraft = (draft: Record<string, unknown>) => {
     const text = (key: string) => typeof draft[key] === "string" ? draft[key] as string : undefined;
     const kind = text("recordType");
@@ -399,6 +409,31 @@ function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefres
       <AiFormDraft form="build_record" current={{ configuration, firmware, calibration, test }} onApply={applyAiDraft} hint="Describe one configuration, firmware reference, calibration procedure, or verification test. State the record type and include only known values." />
     </div>
     <div className="grid gap-3 xl:grid-cols-2">
+      <section className="rounded border border-border p-3 xl:col-span-2">
+        <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Build steps</h3><span className="badge-neutral mono">{build.steps.length}</span></div>
+        <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void saveStep(); }}>
+          <input aria-label="Step title" required maxLength={300} value={step.title} onChange={(event) => setStep({ ...step, title: event.target.value })} placeholder="Install drivetrain" className="input-bare h-9" />
+          <textarea aria-label="Step notes" maxLength={20000} rows={3} value={step.body} onChange={(event) => setStep({ ...step, body: event.target.value })} placeholder="What needs to happen, what files or evidence are needed, and any risks." className="input-bare resize-y p-2 text-xs" />
+          <button disabled={busy !== null || !step.title.trim()} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Add step</button>
+        </form>
+        <div className="mt-3 space-y-2">{build.steps.map((item) => <div key={item.id} className="rounded border border-border bg-muted/20 p-2">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-medium">{item.title}</span><span className="badge-neutral text-[9px] uppercase">{item.status}</span><span className="badge-neutral mono text-[9px]">#{item.sortOrder + 1}</span></div>
+              {item.body ? <p className="mt-1 whitespace-pre-wrap text-[10px] text-muted-foreground">{item.body}</p> : <p className="mt-1 text-[10px] text-muted-foreground">No notes yet.</p>}
+            </div>
+            <div className="flex items-center gap-2">
+              <select aria-label={`Status for ${item.title}`} value={item.status} onChange={(event) => void updateStep(item.id, { status: event.target.value as BuildStep["status"] })} className="input-bare h-8">
+                <option value="pending">Pending</option>
+                <option value="blocked">Blocked</option>
+                <option value="in_progress">In progress</option>
+                <option value="complete">Complete</option>
+                <option value="skipped">Skipped</option>
+              </select>
+            </div>
+          </div>
+        </div>)}</div>
+      </section>
       <section className="rounded border border-border p-3">
         <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Configurations</h3><span className="badge-neutral mono">{build.configurations.length}</span></div>
         <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); void run("configuration", () => buildsApi.addConfiguration(build.id, configuration), "Configuration saved", () => setConfiguration({ name: "", format: "yaml", contentText: "" })); }}>

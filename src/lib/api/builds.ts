@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { BomDetail, BomSummary, BuildCalibration, BuildConfiguration, BuildDetail, BuildFirmware, BuildSummary, BuildTest, ResourceVisibility } from "@/shared/builds";
+import type { BomDetail, BomSummary, BuildCalibration, BuildConfiguration, BuildDetail, BuildFirmware, BuildStep, BuildSummary, BuildTest, ResourceVisibility } from "@/shared/builds";
 
 export const buildsApi = {
   list: (mine = false, signal?: AbortSignal) => api.get<{ items: BuildSummary[] }>(`/api/v1/builds?mine=${mine}`, { signal }),
@@ -16,6 +16,10 @@ export const buildsApi = {
   addConfiguration: (id: string, input: { name: string; format: string; contentText?: string | null; fileId?: string | null }) =>
     api.post<{ item: BuildConfiguration }>(`/api/v1/builds/${encodeURIComponent(id)}/configurations`, input),
   deleteConfiguration: (id: string, recordId: string) => api.delete<void>(`/api/v1/builds/${encodeURIComponent(id)}/configurations/${encodeURIComponent(recordId)}`),
+  addStep: (id: string, input: { title: string; body?: string | null; dependsOn?: string[] }) =>
+    api.post<{ item: BuildStep }>(`/api/v1/builds/${encodeURIComponent(id)}/steps`, input),
+  updateStep: (id: string, stepId: string, input: { title?: string; body?: string | null; status?: BuildStep["status"] }) =>
+    api.patch<{ item: BuildStep }>(`/api/v1/builds/${encodeURIComponent(id)}/steps/${encodeURIComponent(stepId)}`, input),
   addFirmware: (id: string, input: { name: string; repositoryUrl?: string | null; revision?: string | null; fileId?: string | null; licenseSpdx?: string | null; notes?: string | null }) =>
     api.post<{ item: BuildFirmware }>(`/api/v1/builds/${encodeURIComponent(id)}/firmware`, input),
   deleteFirmware: (id: string, recordId: string) => api.delete<void>(`/api/v1/builds/${encodeURIComponent(id)}/firmware/${encodeURIComponent(recordId)}`),
