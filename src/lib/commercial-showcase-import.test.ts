@@ -26,6 +26,8 @@ describe('commercial showcase Wave 1 importer helpers', () => {
     const candidate = buildCommercialShowcaseCandidate(commercialShowcaseWave1Records[0]);
     const sql = buildCommercialForwardSql([candidate], '2026-08-14T19:00:00.000Z');
     expect(sql).toContain("'commercial_showcase'");
+    expect(sql).toContain("'humanoid'");
+    expect(sql).toContain('robot_category');
     expect(sql).toContain('license_spdx, repository_url');
     expect(sql).toContain('NULL, NULL, NULL, NULL, NULL, 0');
     expect(sql).toContain('INSERT INTO search_index');
@@ -38,6 +40,19 @@ describe('commercial showcase Wave 1 importer helpers', () => {
     expect(sql).not.toContain('estimated_cost_minor) VALUES');
     expect(sql).not.toContain('BEGIN TRANSACTION');
     expect(sql).not.toContain('COMMIT;');
+  });
+
+  it('maps Optimus and alternate commercial labels to browse taxonomy categories', () => {
+    const optimus = buildCommercialShowcaseCandidate({
+      ...commercialShowcaseWave1Records[0],
+      slug: 'test-optimus', name: 'Test Optimus', category: 'humanoid',
+    });
+    expect(buildCommercialForwardSql([optimus], '2026-08-14T19:00:00.000Z')).toContain("'humanoid'");
+    const arm = buildCommercialShowcaseCandidate({
+      ...commercialShowcaseWave1Records[0],
+      slug: 'test-cobot', name: 'Test Cobot', category: 'collaborative industrial arm',
+    });
+    expect(buildCommercialForwardSql([arm], '2026-08-14T19:00:00.000Z')).toContain("'manipulator'");
   });
 
   it('rejects invalid record shape and detects conflicts fail-closed', () => {

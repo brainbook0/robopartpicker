@@ -1,4 +1,5 @@
 import { resolveUpstreamIdentity } from '../shared/provenance';
+import { ROBOT_CATEGORIES, type RobotCategory } from '../shared/robotCategory';
 import { stableId, sqlString } from './physical-design-wave-import';
 
 export type CommercialShowcaseRecord = {
@@ -37,6 +38,22 @@ const OWNER = 'robotics-catalog-import';
 const PROJECT_KIND = 'commercial_showcase';
 const REQUIRED_TAGS = ['commercial-showcase', 'closed-source'];
 
+const COMMERCIAL_CATEGORY_MAP: Record<string, RobotCategory> = {
+  humanoid: 'humanoid',
+  quadruped: 'quadruped',
+  drone: 'aerial',
+  'mobile rover': 'mobile',
+  'mobile manipulator': 'manipulator',
+  'collaborative industrial arm': 'manipulator',
+};
+
+function robotCategoryFor(record: CommercialShowcaseRecord): RobotCategory {
+  const category = COMMERCIAL_CATEGORY_MAP[record.category.toLowerCase()];
+  if (category) return category;
+  if (ROBOT_CATEGORIES.includes(record.category as RobotCategory)) return record.category as RobotCategory;
+  throw new Error(`Commercial showcase record ${record.slug} has unsupported robot category: ${record.category}`);
+}
+
 export function commercialProjectId(slug: string): string {
   return stableId('proj', `commercial-showcase:${slug}`);
 }
@@ -60,6 +77,7 @@ export function validateCommercialShowcaseRecords(records: CommercialShowcaseRec
     if (!record.slug || !record.name || !record.maintainer || !record.summary || !record.revision) throw new Error(`Commercial showcase record is missing required identity fields`);
     if (record.upstream_url !== record.docs_url) throw new Error(`Commercial showcase record ${record.slug} must use the official URL for docs_url and upstream_url`);
     if (!Array.isArray(record.specs) || record.specs.length === 0) throw new Error(`Commercial showcase record ${record.slug} requires source-backed specs`);
+    robotCategoryFor(record);
     for (const tag of REQUIRED_TAGS) if (!record.tags.includes(tag)) throw new Error(`Commercial showcase record ${record.slug} is missing required tag ${tag}`);
     if (record.tags.includes('open-source') || record.tags.includes('physical-design')) throw new Error(`Commercial showcase record ${record.slug} has incompatible reproducibility tags`);
     if (!/^2026-08-14T/.test(record.retrieved_at)) throw new Error(`Commercial showcase record ${record.slug} must carry report retrieval timestamp`);
@@ -129,7 +147,7 @@ export function buildCommercialForwardSql(candidates: CommercialShowcaseCandidat
     const r = c.record;
     const body = `${r.summary}\n\n${r.specs.join('\n')}`;
     const tags = r.tags.join(' ');
-    lines.push(`INSERT INTO projects (id, slug, name, summary, description, owner_user_id, visibility, status, current_version_id, license_spdx, repository_url, difficulty, estimated_cost_minor, estimated_cost_currency, is_demo, created_at, updated_at, upstream_revision, revision, upstream_url, upstream_identity, maintainer, ingested_at, last_checked_at, publishability, github_stars, project_kind) VALUES (${sqlString(c.projectId)}, ${sqlString(r.slug)}, ${sqlString(r.name)}, ${sqlString(r.summary)}, ${sqlString(r.specs.join('\n'))}, '${OWNER}', 'public', 'published', ${sqlString(c.versionId)}, NULL, NULL, NULL, NULL, NULL, 0, ${sqlString(now)}, ${sqlString(now)}, ${sqlString(r.revision)}, ${sqlString(r.revision)}, ${sqlString(r.upstream_url)}, ${sqlString(c.canonicalUpstreamIdentity)}, ${sqlString(r.maintainer)}, ${sqlString(r.retrieved_at)}, ${sqlString(r.retrieved_at)}, 'review', NULL, '${PROJECT_KIND}');`);
+    lines.push(`INSERT INTO projects (id, slug, name, summary, description, owner_user_id, visibility, status, current_version_id, license_spdx, repository_url, difficulty, estimated_cost_minor, estimated_cost_currency, is_demo, created_at, updated_at, upstream_revision, revision, upstream_url, upstream_identity, maintainer, ingested_at, last_checked_at, publishability, github_stars, project_kind, robot_category) VALUES (${sqlString(c.projectId)}, ${sqlString(r.slug)}, ${sqlString(r.name)}, ${sqlString(r.summary)}, ${sqlString(r.specs.join('\n'))}, '${OWNER}', 'public', 'published', ${sqlString(c.versionId)}, NULL, NULL, NULL, NULL, NULL, 0, ${sqlString(now)}, ${sqlString(now)}, ${sqlString(r.revision)}, ${sqlString(r.revision)}, ${sqlString(r.upstream_url)}, ${sqlString(c.canonicalUpstreamIdentity)}, ${sqlString(r.maintainer)}, ${sqlString(r.retrieved_at)}, ${sqlString(r.retrieved_at)}, 'review', NULL, '${PROJECT_KIND}', ${sqlString(robotCategoryFor(r))});`);
     lines.push(`INSERT INTO project_versions (id, project_id, version_label, rpps_schema_version, changelog, rpps_json, status, created_by_user_id, created_at, published_at) VALUES (${sqlString(c.versionId)}, ${sqlString(c.projectId)}, ${sqlString(r.revision)}, '1.0.0', 'Imported source-backed closed-source commercial showcase record. No repository, license, CAD, BOM, cover image, files, assembly, or pricing included.', ${sqlString(c.rppsJson)}, 'published', '${OWNER}', ${sqlString(now)}, ${sqlString(now)});`);
     lines.push(`DELETE FROM search_index WHERE entity_type = 'project' AND entity_id = ${sqlString(c.projectId)};`);
     lines.push(`INSERT INTO search_index (entity_type, entity_id, title, body, tags) VALUES ('project', ${sqlString(c.projectId)}, ${sqlString(r.name)}, ${sqlString(body)}, ${sqlString(tags)});`);
