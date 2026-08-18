@@ -178,6 +178,14 @@ aiRoutes.delete("/ai/conversations/:id", loadAuthSession, requireAuth, async (c)
 aiRoutes.post("/ai/form-drafts", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, formDraftRequestSchema);
+  await recordAuditEvent(c.env.DB, {
+    actorUserId: userId,
+    action: "ai.form_draft.request",
+    entityType: "ai_request",
+    entityId: body.form,
+    requestId: c.get("requestId"),
+    after: { form: body.form, prompt: body.prompt, current: body.current },
+  });
   await assertAiBudget(c.env.DB, userId, c.env.AI_DAILY_TOKEN_LIMIT);
   const { provider, model } = configuredProvider(c.env);
   const current = JSON.stringify(body.current).slice(0, 20_000);
@@ -203,6 +211,14 @@ aiRoutes.post("/ai/form-drafts", loadAuthSession, requireAuth, async (c) => {
 aiRoutes.post("/ai/quality-reviews", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, qualityReviewRequestSchema);
+  await recordAuditEvent(c.env.DB, {
+    actorUserId: userId,
+    action: "ai.quality_review.request",
+    entityType: "ai_request",
+    entityId: body.submissionType,
+    requestId: c.get("requestId"),
+    after: { submissionType: body.submissionType, narrative: body.narrative, submission: body.submission },
+  });
   await assertAiBudget(c.env.DB, userId, c.env.AI_DAILY_TOKEN_LIMIT);
   const { provider, model } = configuredProvider(c.env);
   const submission = JSON.stringify(body.submission).slice(0, 30_000);
@@ -225,10 +241,18 @@ aiRoutes.post("/ai/quality-reviews", loadAuthSession, requireAuth, async (c) => 
 
 aiRoutes.post("/ai/chat", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
-  if (!c.env.AI_PROVIDER_URL || !c.env.AI_PROVIDER_KEY || !c.env.AI_MODEL) throw new AppError(503, "AI_PROVIDER_NOT_CONFIGURED", "Configure AI_PROVIDER_URL, AI_PROVIDER_KEY, and AI_MODEL on the Worker.");
   const raw = await c.req.json().catch(() => null); const parsed = chatSchema.safeParse(raw);
   if (!parsed.success) throw new AppError(422, "VALIDATION_ERROR", "Invalid chat request.", parsed.error.issues.map((issue) => ({ path: issue.path.join("."), code: issue.code, message: issue.message })));
   const body = parsed.data; const conversation = await ownedConversation(c.env.DB, userId, body.threadId);
+  await recordAuditEvent(c.env.DB, {
+    actorUserId: userId,
+    action: "ai.chat.request",
+    entityType: "ai_conversation",
+    entityId: conversation.id,
+    requestId: c.get("requestId"),
+    after: { threadId: body.threadId, messages: body.messages },
+  });
+  if (!c.env.AI_PROVIDER_URL || !c.env.AI_PROVIDER_KEY || !c.env.AI_MODEL) throw new AppError(503, "AI_PROVIDER_NOT_CONFIGURED", "Configure AI_PROVIDER_URL, AI_PROVIDER_KEY, and AI_MODEL on the Worker.");
   const recent = await c.env.DB.prepare(`SELECT COUNT(*) AS value FROM ai_messages am JOIN ai_conversations ac ON ac.id = am.conversation_id
     WHERE ac.user_id = ?1 AND am.role = 'user' AND am.created_at >= ?2`).bind(userId, new Date(Date.now() - 60_000).toISOString()).first<{ value: number }>();
   if (Number(recent?.value ?? 0) >= 20) throw new AppError(429, "AI_RATE_LIMITED", "Too many assistant requests; retry in one minute.");
