@@ -88,7 +88,7 @@ def infer_category(name, summary):
 def main():
     # Garbage category = not one of the clean vocab, i.e. it carries a part-number-ish string.
     rows = d1("""SELECT id, name, summary, category FROM components
-        WHERE deleted_at IS NULL AND (category = 'uncategorized' OR category LIKE '% %' OR length(category) > 24)""")["results"]
+        WHERE deleted_at IS NULL AND (lower(category) IN ('uncategorized', 'electronics') OR category LIKE '% %' OR length(category) > 24)""")["results"]
     print(f"components to re-categorize: {len(rows)}", flush=True)
 
     updates = []

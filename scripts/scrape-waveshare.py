@@ -115,12 +115,13 @@ def scrape_listing(path):
 def fetch_price(p):
     try:
         html = fetch(p["url"])
-        m = re.search(r'"price"\s*:\s*([0-9]+(?:\.[0-9]{1,2})?)', html)
+        m = re.search(r'\"?price\"?\s*:\s*\"?([0-9]+(?:\.[0-9]{1,2})?)', html)
         if m:
-            p["price"] = float(m.group(1))
+            price = float(m.group(1))
+            p["price"] = price if price > 0 else None
         else:
             m = re.search(r'class="price"[^>]*>\$?([0-9]+(?:\.[0-9]{1,2})?)', html)
-            p["price"] = float(m.group(1)) if m else None
+            p["price"] = (float(m.group(1)) if m and float(m.group(1)) > 0 else None)
     except Exception:
         p["price"] = None
     return p
