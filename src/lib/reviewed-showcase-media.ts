@@ -118,11 +118,15 @@ export function sourceDocumentReferencesReviewedImage(
 
   try {
     const imageUrl = new URL(definition.source_image_url);
-    if (imageUrl.hostname !== "raw.githubusercontent.com") return false;
-    const [owner, repo, revision, ...pathParts] = imageUrl.pathname
+    if (imageUrl.hostname !== "raw.githubusercontent.com" && imageUrl.hostname !== "media.githubusercontent.com") return false;
+    const decodedPath = imageUrl.pathname
       .split("/")
       .filter(Boolean)
       .map(decodeURIComponent);
+    const repositoryPathParts = imageUrl.hostname === "media.githubusercontent.com"
+      ? decodedPath[0] === "media" ? decodedPath.slice(1) : []
+      : decodedPath;
+    const [owner, repo, revision, ...pathParts] = repositoryPathParts;
     const repository = definition.repository_url
       .replace(/\.git$/iu, "")
       .replace(/\/+$/u, "")

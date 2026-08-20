@@ -154,6 +154,16 @@ describe("reviewed showcase media", () => {
       },
       '<img src="../img/flix1.1.jpg" alt="Flix quadcopter">',
     )).toBe(true);
+    expect(sourceDocumentReferencesReviewedImage(
+      {
+        ...physical,
+        source_page_url: `https://github.com/okalachev/flix/blob/${revision}/docs/timeline.md`,
+        source_document: { path: "docs/timeline.md", sha256: "b".repeat(64), size_bytes: 1200 },
+        source_image_url: `https://media.githubusercontent.com/media/okalachev/flix/${revision}/docs/img/flix1.1.jpg`,
+        final_source_image_url: `https://media.githubusercontent.com/media/okalachev/flix/${revision}/docs/img/flix1.1.jpg`,
+      },
+      '<img src="img/flix1.1.jpg" alt="Flix quadcopter from Git LFS">',
+    )).toBe(true);
   });
 
   it("accepts an exact pinned repository image as its own physical-design source document", () => {
