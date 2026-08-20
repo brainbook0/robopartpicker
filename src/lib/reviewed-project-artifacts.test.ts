@@ -46,7 +46,7 @@ function prepared(): PreparedReviewedProjectArtifact {
       visibility: "public",
       status: "published",
       project_kind: "physical_design",
-      repository_url: definition.repository_url,
+      repository_url: "https://github.com/juliarobotics/caesar.jl",
       revision: definition.revision,
       updated_at: "2026-08-20T00:00:00.000Z",
       current_version_id: "version-1",
@@ -93,6 +93,7 @@ describe("reviewed project artifact waves", () => {
     expect(forward).toContain("INSERT INTO evidence_claims");
     expect(forward).toContain("artifact.source");
     expect(forward).toContain(definition.revision);
+    expect(forward).toContain("p.repository_url = 'https://github.com/juliarobotics/caesar.jl'");
     expect(rollback).toContain("DELETE FROM evidence_claims");
     expect(rollback).toContain("DELETE FROM files");
     expect(rollback).toContain(project.row.rpps_json);

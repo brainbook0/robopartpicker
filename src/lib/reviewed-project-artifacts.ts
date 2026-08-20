@@ -149,7 +149,7 @@ export function serializeReviewedProjectArtifactRpps(input: Record<string, unkno
 
 function originalGuard(project: PreparedReviewedProjectArtifact): string {
   const { row, definition } = project;
-  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = 'physical_design' AND p.visibility = 'public' AND p.status = 'published' AND p.repository_url = ${sqlString(definition.repository_url)} AND p.revision = ${sqlString(definition.revision)} AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(row.rpps_json)}`;
+  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = 'physical_design' AND p.visibility = 'public' AND p.status = 'published' AND p.repository_url = ${sqlString(row.repository_url)} AND p.revision = ${sqlString(row.revision)} AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(row.rpps_json)}`;
 }
 
 export function buildReviewedProjectArtifactForwardSql(

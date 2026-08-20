@@ -21,6 +21,7 @@ import {
   type ReviewedRepositoryMetadataWave,
 } from "../src/lib/reviewed-repository-metadata";
 import { sqlString } from "../src/lib/physical-design-wave-import";
+import { normalizeRppsForWrite } from "../src/lib/rpps/schema";
 
 type EnvName = "production" | "preview";
 type GitHubResult = { ok: boolean; status: number; data: unknown };
@@ -95,6 +96,12 @@ function credentialsEnvironment(): NodeJS.ProcessEnv {
 const childEnv = credentialsEnvironment();
 const githubToken = childEnv.GITHUB_TOKEN
   ?? execFileSync("gh", ["auth", "token"], { encoding: "utf8", env: childEnv }).trim();
+
+function publicOrigin(environment: EnvName): string {
+  return environment === "production"
+    ? "https://robopartpicker-production.ludomi2502.workers.dev"
+    : "https://robopartpicker-preview.ludomi2502.workers.dev";
+}
 
 function retryDelayMs(attempt: number, response?: Response): number {
   const retryAfterSeconds = Number(response?.headers.get("retry-after"));
@@ -224,7 +231,10 @@ function prepareProject(
   if (row.visibility !== "public" || row.status !== "published") throw new Error(`${definition.slug}: project must remain public and published`);
   if (!row.current_version_id || !row.rpps_json) throw new Error(`${definition.slug}: current project version is missing`);
 
-  const current = JSON.parse(row.rpps_json) as Record<string, unknown>;
+  const current = normalizeRppsForWrite(
+    JSON.parse(row.rpps_json),
+    publicOrigin(env!),
+  ) as Record<string, unknown>;
   const evidence = prepareRepositoryMetadataEvidence(wave.wave, definition);
   for (const item of evidence) {
     if (item.source.derivation === "commercial-catalog-status" && current.docs_url !== item.source.source_url) {

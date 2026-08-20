@@ -20,7 +20,7 @@ import {
   type ReviewedProjectArtifactWave,
 } from "../src/lib/reviewed-project-artifacts";
 import { sqlString } from "../src/lib/physical-design-wave-import";
-import type { RppsPackage } from "../src/lib/rpps/schema";
+import { normalizeRppsForWrite, type RppsPackage } from "../src/lib/rpps/schema";
 
 type EnvName = "production" | "preview";
 type ExactState = {
@@ -125,17 +125,6 @@ function artifactKey(definition: ReviewedProjectArtifactDefinition): string {
   return `${definition.slug}\0${definition.path}`;
 }
 
-function normalizeLegacyRpps(current: RppsPackage & Record<string, unknown>, origin: string): RppsPackage & Record<string, unknown> {
-  const normalized = { ...current };
-  if (typeof normalized.cover_image_url === "string" && normalized.cover_image_url.startsWith("/")) {
-    normalized.cover_image_url = new URL(normalized.cover_image_url, origin).toString();
-  }
-  if (normalized.hardware && typeof normalized.hardware === "object" && !Array.isArray(normalized.hardware)) {
-    normalized.hardware = Object.fromEntries(Object.entries(normalized.hardware).filter(([, value]) => value !== null));
-  }
-  return normalized;
-}
-
 function loadCatalogRows(): ReviewedProjectArtifactRow[] {
   const slugs = [...new Set(wave.artifacts.map((artifact) => artifact.slug))];
   const rows = wranglerRows(`SELECT p.id, p.slug, p.owner_user_id, p.organization_id, p.visibility, p.status, p.project_kind, p.repository_url, p.revision, p.updated_at, p.current_version_id, pv.rpps_json
@@ -184,10 +173,10 @@ function prepareArtifact(
   const exactApplied = [state.file_count, state.project_file_count, state.evidence_count, state.claim_count].every((count) => Number(count) === 1)
     && Number(state.path_conflict_count) === 0;
   const pristine = [state.file_count, state.project_file_count, state.evidence_count, state.claim_count, state.path_conflict_count].every((count) => Number(count) === 0);
-  const current = normalizeLegacyRpps(
-    JSON.parse(row.rpps_json) as RppsPackage & Record<string, unknown>,
+  const current = normalizeRppsForWrite(
+    JSON.parse(row.rpps_json),
     publicOrigin(env!),
-  );
+  ) as RppsPackage & Record<string, unknown>;
   const currentFiles = Array.isArray(current.files) ? current.files : [];
   const matchingFile = currentFiles.find((file) => file.path.toLowerCase() === definition.path.toLowerCase());
 

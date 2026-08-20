@@ -150,3 +150,37 @@ export function validateRpps(input: unknown):
     errors: parsed.error.issues.map(i => `${i.path.join(".") || "(root)"}: ${i.message}`),
   };
 }
+
+export function normalizeRppsForWrite(input: unknown, origin: string): unknown {
+  const isUrlField = (key?: string): boolean => key === "url" || Boolean(key?.endsWith("_url"));
+  const normalizeUrl = (value: string): string | undefined => {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    if (trimmed.startsWith("/")) return new URL(trimmed, origin).toString();
+    try {
+      return new URL(trimmed).toString();
+    } catch {
+      if (/^(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}(?:[/:?#]|$)/iu.test(trimmed)) return new URL(`https://${trimmed}`).toString();
+      return undefined;
+    }
+  };
+  const visit = (value: unknown, key?: string): unknown => {
+    if (Array.isArray(value)) {
+      return value
+        .filter((item) => item !== null)
+        .map((item) => visit(item))
+        .filter((item) => item !== undefined);
+    }
+    if (value && typeof value === "object") {
+      return Object.fromEntries(
+        Object.entries(value)
+          .filter(([, child]) => child !== null)
+          .map(([childKey, child]) => [childKey, visit(child, childKey)] as const)
+          .filter(([, child]) => child !== undefined),
+      );
+    }
+    if (typeof value === "string" && isUrlField(key)) return normalizeUrl(value);
+    return value;
+  };
+  return visit(input);
+}
