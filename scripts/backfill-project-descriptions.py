@@ -20,7 +20,6 @@ DB_PREVIEW = "af9e3aaa-4e74-4083-8317-a642bf0e07a6"
 ENV = "preview" if "--env" in sys.argv and sys.argv[sys.argv.index("--env") + 1] == "preview" else "production"
 if ENV == "preview":
     DB = DB_PREVIEW
-API = f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/d1/database/{DB}/query"
 DRY = "--apply" not in sys.argv
 OWNER = "robotics-catalog-import"
 MAX_DESC = 8000
@@ -38,6 +37,7 @@ def load_creds():
 CREDS = load_creds()
 os.environ.setdefault("CF_ACCOUNT_ID", CREDS["CF_ACCOUNT_ID"])
 os.environ.setdefault("CF_API_TOKEN", CREDS["CF_API_TOKEN"])
+API = f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/d1/database/{DB}/query"
 
 def d1(sql, params=None):
     body = json.dumps({"sql": sql, "params": params or []}).encode()

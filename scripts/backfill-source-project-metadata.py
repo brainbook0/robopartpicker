@@ -13,7 +13,6 @@ ENV = "preview" if "--env" in sys.argv and sys.argv[sys.argv.index("--env") + 1]
 if ENV == "preview":
     DB = DB_PREVIEW
 DRY = "--apply" not in sys.argv
-API = f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/d1/database/{DB}/query"
 
 def load_creds():
     out = subprocess.run(["bash", "-c", "source /root/.cloudflare/credentials && env"], stdout=subprocess.PIPE, check=True).stdout.decode()
@@ -27,6 +26,7 @@ def load_creds():
 CREDS = load_creds()
 os.environ.setdefault("CF_ACCOUNT_ID", CREDS["CF_ACCOUNT_ID"])
 os.environ.setdefault("CF_API_TOKEN", CREDS["CF_API_TOKEN"])
+API = f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/d1/database/{DB}/query"
 
 def d1(sql, params=None):
     body = json.dumps({"sql": sql, "params": params or []}).encode()
