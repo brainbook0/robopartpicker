@@ -14,6 +14,7 @@ import {
   reviewedShowcaseOriginalName,
   reviewedFinalSourceUrlMatches,
   serializeReviewedShowcaseRpps,
+  splitReviewedShowcaseSql,
   sourceDocumentReferencesReviewedImage,
   validateReviewedShowcaseMediaWave,
   type PreparedReviewedShowcaseMedia,
@@ -105,14 +106,20 @@ function wranglerRows(command: string): Array<Record<string, unknown>> {
 }
 
 function executeSqlFile(path: string): void {
-  execFileSync("node_modules/.bin/wrangler", [
-    "d1", "execute", "DB", "--env", env!, "--remote", "--file", path, "--yes",
-  ], {
-    cwd: process.cwd(),
-    env: childEnv,
-    maxBuffer: 64 * 1024 * 1024,
-    stdio: "inherit",
-  });
+  const chunks = splitReviewedShowcaseSql(readFileSync(path, "utf8"), 700_000);
+  for (const [index, sql] of chunks.entries()) {
+    const partPath = chunks.length === 1 ? path : `${path}.part-${String(index + 1).padStart(2, "0")}-of-${String(chunks.length).padStart(2, "0")}.sql`;
+    if (chunks.length > 1) writeFileSync(partPath, sql);
+    console.log(`JCODE_PROGRESS ${JSON.stringify({ current: index + 1, total: chunks.length, unit: "D1 SQL parts", message: `${partPath}: applying bounded SQL import` })}`);
+    execFileSync("node_modules/.bin/wrangler", [
+      "d1", "execute", "DB", "--env", env!, "--remote", "--file", partPath, "--yes",
+    ], {
+      cwd: process.cwd(),
+      env: childEnv,
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: "inherit",
+    });
+  }
 }
 
 function publicOrigin(environment: EnvName): string {

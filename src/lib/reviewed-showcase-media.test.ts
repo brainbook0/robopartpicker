@@ -11,6 +11,7 @@ import {
   reviewedShowcaseOriginalName,
   reviewedFinalSourceUrlMatches,
   serializeReviewedShowcaseRpps,
+  splitReviewedShowcaseSql,
   sourceDocumentReferencesReviewedImage,
   validateReviewedShowcaseMediaWave,
   type PreparedReviewedShowcaseMedia,
@@ -228,6 +229,15 @@ describe("reviewed showcase media", () => {
     expect(first.objectKey).toBe(`reviewed-showcase-media/${wave.wave}/example-robot/${definition.sha256}.webp`);
     expect(first.originalName).toBe("example-robot-official-cover.webp");
     expect(first.coverUrl).toContain(`/api/v1/files/content?id=${encodeURIComponent(first.fileId)}`);
+  });
+
+  it("splits generated D1 imports at statement boundaries without changing their SQL", () => {
+    const sql = `${Array.from({ length: 12 }, (_, index) => `INSERT INTO test VALUES (${index}, '${"x".repeat(80)}');`).join("\n")}\n`;
+    const chunks = splitReviewedShowcaseSql(sql, 300);
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.join("")).toBe(sql);
+    expect(chunks.every((chunk) => new TextEncoder().encode(chunk).byteLength <= 300)).toBe(true);
+    expect(() => splitReviewedShowcaseSql(`SELECT '${"x".repeat(400)}';\n`, 300)).toThrow("Generated SQL statement exceeds");
   });
 
   it("validates portable fields without deleting reviewed showcase extensions", () => {

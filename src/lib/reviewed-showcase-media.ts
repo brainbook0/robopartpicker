@@ -277,6 +277,30 @@ export function serializeReviewedShowcaseRpps(input: Record<string, unknown>): s
   return JSON.stringify(input);
 }
 
+export function splitReviewedShowcaseSql(sql: string, maxBytes: number): string[] {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new Error("maxBytes must be a positive safe integer");
+  const size = (value: string) => new TextEncoder().encode(value).byteLength;
+  if (size(sql) <= maxBytes) return [sql];
+
+  const statements = sql
+    .split(";\n")
+    .filter((statement, index, all) => statement.length > 0 || index < all.length - 1)
+    .map((statement) => `${statement};\n`);
+  const chunks: string[] = [];
+  let current = "";
+  for (const statement of statements) {
+    if (size(statement) > maxBytes) throw new Error(`Generated SQL statement exceeds the ${maxBytes}-byte D1 import limit`);
+    if (current && size(current + statement) > maxBytes) {
+      chunks.push(current);
+      current = statement;
+    } else {
+      current += statement;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 function originalGuard(project: PreparedReviewedShowcaseMedia): string {
   const { definition, row } = project;
   const repositoryGuard = definition.repository_url
