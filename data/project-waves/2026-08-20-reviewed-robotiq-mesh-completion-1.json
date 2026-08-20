@@ -1,0 +1,19 @@
+{
+  "wave": "reviewed-robotiq-mesh-completion-1-2026-08-20",
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "slug": "a-price-robotiq-arg85-description",
+      "repository_url": "https://github.com/a-price/robotiq_arg85_description",
+      "revision": "a65190bdbb0666609fe7e8c3bb17341e09e81625",
+      "path": "meshes/robotiq_85_base_link_fine.STL",
+      "sha256": "4f36af0284cacdbd1e10dd9d92719e1282331bda73ab797e5e9da6dcfa226ee9",
+      "size_bytes": 2005684,
+      "media_type": "application/octet-stream",
+      "file_kind": "cad",
+      "purpose": "cad",
+      "rpps_kind": "cad",
+      "description": "Complete fine-resolution Robotiq 85 base-link mesh referenced by the pinned project URDF."
+    }
+  ]
+}
