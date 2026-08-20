@@ -9,6 +9,8 @@ import {
   immutableGithubBlobUrl,
   normalizeGithubRepositoryDescription,
   prepareRepositoryMetadataEvidence,
+  repositoryDescriptionNeedsCleanup,
+  repositoryDescriptionQualityIssues,
   serializeReviewedRepositoryMetadataRpps,
   summarizeRepositoryText,
   validateReviewedRepositoryMetadataQuality,
@@ -120,7 +122,17 @@ function prepared(): PreparedReviewedRepositoryMetadata {
 describe("reviewed repository metadata", () => {
   it("normalizes GitHub description whitespace identically for generation and verification", () => {
     expect(normalizeGithubRepositoryDescription("  Robot  platform\nfor\tresearch.  ")).toBe("Robot platform for research.");
+    expect(normalizeGithubRepositoryDescription("A wrapper for [Robot](https://example.test/robot) motion planning.")).toBe(
+      "A wrapper for Robot motion planning.",
+    );
     expect(normalizeGithubRepositoryDescription(null)).toBe("");
+  });
+
+  it("detects raw imported descriptions while preserving concise source prose", () => {
+    expect(repositoryDescriptionNeedsCleanup("Flix is an open-source ESP32-based quadcopter made from scratch.")).toBe(false);
+    expect(repositoryDescriptionQualityIssues("# Install\n\n[Docs](https://example.test)\n\n- one\n- two\n- three\n- four"))
+      .toEqual(expect.arrayContaining(["markup", "list-or-table"]));
+    expect(repositoryDescriptionQualityIssues("x".repeat(1_201))).toContain("too-long");
   });
 
   it("does not misclassify GitHub quota failures as newly detected licenses", () => {

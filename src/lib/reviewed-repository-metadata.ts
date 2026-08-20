@@ -113,7 +113,25 @@ export function githubRevisionTreeUrl(repositoryUrl: string, revision: string): 
 }
 
 export function normalizeGithubRepositoryDescription(value: string | null | undefined): string {
-  return value?.replace(/\s+/gu, " ").trim() ?? "";
+  return cleanInlineMarkdown(value ?? "");
+}
+
+export function repositoryDescriptionQualityIssues(value: string | null | undefined): string[] {
+  const description = value?.trim() ?? "";
+  const issues: string[] = [];
+  const cjkLength = description.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
+  if (!description) return ["missing"];
+  if (description.length < 15 && cjkLength < 6) issues.push("too-short");
+  if (description.length > 1_200) issues.push("too-long");
+  if (/^(?:source code|code|robotics|ros package|my project|test project|project files?)\.?$/iu.test(description)) issues.push("generic");
+  if (/(?:<!--|```|~~~|!\[[^\]]*\]\(|\[[^\]]+\]\([^)]*\)|<\/?(?:img|a|table|thead|tbody|tr|td|p|div|br|h[1-6]|details|summary)\b|(?:^|\n)#{1,6}\s|shields\.io|build status|table of contents)/iu.test(description)) issues.push("markup");
+  const structuredLines = description.split(/\r?\n/gu).filter((line) => /^\s*(?:[-+*]|\d+[.)]|\|)/u.test(line)).length;
+  if (structuredLines >= 4) issues.push("list-or-table");
+  return issues;
+}
+
+export function repositoryDescriptionNeedsCleanup(value: string | null | undefined): boolean {
+  return repositoryDescriptionQualityIssues(value).length > 0;
 }
 
 export function githubLicenseVerificationState(status: number, ok: boolean): "absent" | "detected" | "unavailable" {
@@ -225,6 +243,11 @@ export function validateReviewedRepositoryMetadataQuality(wave: ReviewedReposito
       if (field === "summary" && (setupNoise.test(value) || /https?:\/\//iu.test(value))) errors.push(`${project.slug}: summary contains setup instructions or a raw URL`);
       if (field === "description" && source?.derivation === "readme-description" && setupNoise.test(value)) {
         errors.push(`${project.slug}: README description contains setup instructions`);
+      }
+      if (field === "description") {
+        for (const issue of repositoryDescriptionQualityIssues(value)) {
+          errors.push(`${project.slug}: description quality issue ${issue}`);
+        }
       }
     }
   }
@@ -341,7 +364,7 @@ export function extractRepositoryDescription(markdown: string): string {
     }
   });
   if (bestScore < 0) return "";
-  return clampProse(blocks[bestIndex], 1_800);
+  return clampProse(blocks[bestIndex], 1_200);
 }
 
 export function summarizeRepositoryText(value: string): string {

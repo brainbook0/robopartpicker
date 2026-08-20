@@ -8,6 +8,7 @@ import {
   githubRevisionTreeUrl,
   immutableGithubBlobUrl,
   normalizeGithubRepositoryDescription,
+  repositoryDescriptionNeedsCleanup,
   summarizeRepositoryText,
   validateReviewedRepositoryMetadataQuality,
   validateReviewedRepositoryMetadataWave,
@@ -33,14 +34,17 @@ type GitHubBytesResult = { ok: boolean; status: number; data: Uint8Array | null 
 const args = process.argv.slice(2);
 const envIndex = args.indexOf("--env");
 const outputIndex = args.indexOf("--output");
+const descriptionQuality = args.includes("--description-quality");
 const env = (envIndex >= 0 ? args[envIndex + 1] : undefined) as EnvName | undefined;
 const outputPath = resolve(outputIndex >= 0 && args[outputIndex + 1]
   ? args[outputIndex + 1]
-  : "data/project-waves/2026-08-20-reviewed-repository-metadata.json");
+  : descriptionQuality
+    ? "data/project-waves/2026-08-20-reviewed-description-quality.json"
+    : "data/project-waves/2026-08-20-reviewed-repository-metadata.json");
 const write = args.includes("--write");
 
 if (env !== "production" && env !== "preview") {
-  console.error("Usage: tsx scripts/prepare-reviewed-repository-metadata-wave.ts --env production|preview [--output path] [--write]");
+  console.error("Usage: tsx scripts/prepare-reviewed-repository-metadata-wave.ts --env production|preview [--description-quality] [--output path] [--write]");
   process.exit(2);
 }
 
@@ -93,11 +97,14 @@ function wranglerRows(command: string): Array<Record<string, unknown>> {
 }
 
 function loadGapRows(): GapRow[] {
-  return wranglerRows(`SELECT p.slug, p.name, p.project_kind, p.repository_url, p.revision, p.summary, p.description, p.license_spdx,
+  const rows = wranglerRows(`SELECT p.slug, p.name, p.project_kind, p.repository_url, p.revision, p.summary, p.description, p.license_spdx,
     json_extract(pv.rpps_json, '$.docs_url') AS docs_url
     FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
-    WHERE p.deleted_at IS NULL AND ((p.summary IS NULL OR trim(p.summary) = '') OR (p.description IS NULL OR trim(p.description) = '') OR (p.license_spdx IS NULL OR trim(p.license_spdx) = ''))
+    WHERE p.deleted_at IS NULL${descriptionQuality ? "" : " AND ((p.summary IS NULL OR trim(p.summary) = '') OR (p.description IS NULL OR trim(p.description) = '') OR (p.license_spdx IS NULL OR trim(p.license_spdx) = ''))"}
     ORDER BY p.slug`) as unknown as GapRow[];
+  return descriptionQuality
+    ? rows.filter((row) => Boolean(row.repository_url && row.revision) && repositoryDescriptionNeedsCleanup(row.description))
+    : rows;
 }
 
 async function github(path: string): Promise<GitHubResult> {
@@ -187,29 +194,12 @@ function isEmpty(value: string | null): boolean {
 }
 
 async function prepareDefinition(row: GapRow): Promise<ReviewedRepositoryMetadataDefinition> {
-  const missingSummary = isEmpty(row.summary);
-  const missingDescription = isEmpty(row.description);
-  const missingLicense = isEmpty(row.license_spdx);
+  const missingSummary = !descriptionQuality && isEmpty(row.summary);
+  const missingDescription = descriptionQuality ? repositoryDescriptionNeedsCleanup(row.description) : isEmpty(row.description);
+  const missingLicense = !descriptionQuality && isEmpty(row.license_spdx);
   const updates: ReviewedRepositoryMetadataDefinition["updates"] = {};
   const sources: ReviewedRepositoryMetadataDefinition["sources"] = {};
   const parts = row.repository_url ? githubRepositoryParts(row.repository_url) : null;
-
-  let readmeBytes: Uint8Array | null = null;
-  let readmePath: string | null = null;
-  let readmeDescription = "";
-  if ((missingSummary || missingDescription) && parts && row.revision) {
-    const result = await github(`repos/${encodeURIComponent(parts.owner)}/${encodeURIComponent(parts.repo)}/readme?ref=${encodeURIComponent(row.revision)}`);
-    if (result.ok) {
-      const data = result.data as { content?: string; path?: string };
-      if (data.path) {
-        readmeBytes = await githubFileBytes(data, parts.owner, parts.repo, row.revision);
-        readmePath = data.path;
-        readmeDescription = extractRepositoryDescription(Buffer.from(readmeBytes).toString("utf8"));
-      }
-    } else if (result.status !== 404) {
-      throw new Error(`${row.slug}: README request returned ${githubFailure(result)}`);
-    }
-  }
 
   let repositoryDescription: string | null = null;
   if (missingDescription && parts) {
@@ -219,9 +209,27 @@ async function prepareDefinition(row: GapRow): Promise<ReviewedRepositoryMetadat
     const normalized = normalizeGithubRepositoryDescription(data.description);
     const candidate = normalized || null;
     const cjkLength = candidate?.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
-    repositoryDescription = candidate && (candidate.length >= 15 || cjkLength >= 6) && !/^(?:n\/?a|none|no description|todo|test(?:ing)?)\.?$/iu.test(candidate)
+    repositoryDescription = candidate && (candidate.length >= 15 || cjkLength >= 6) && !/^(?:n\/?a|none|no description|todo|test(?:ing)?)\.?$/iu.test(candidate) && !repositoryDescriptionNeedsCleanup(candidate)
       ? candidate
       : null;
+  }
+
+  let readmeBytes: Uint8Array | null = null;
+  let readmePath: string | null = null;
+  let readmeDescription = "";
+  if ((missingSummary || (missingDescription && !repositoryDescription)) && parts && row.revision) {
+    const result = await github(`repos/${encodeURIComponent(parts.owner)}/${encodeURIComponent(parts.repo)}/readme?ref=${encodeURIComponent(row.revision)}`);
+    if (result.ok) {
+      const data = result.data as { content?: string; path?: string };
+      if (data.path) {
+        readmeBytes = await githubFileBytes(data, parts.owner, parts.repo, row.revision);
+        readmePath = data.path;
+        const candidate = extractRepositoryDescription(Buffer.from(readmeBytes).toString("utf8"));
+        readmeDescription = repositoryDescriptionNeedsCleanup(candidate) ? "" : candidate;
+      }
+    } else if (result.status !== 404) {
+      throw new Error(`${row.slug}: README request returned ${githubFailure(result)}`);
+    }
   }
 
   if (missingDescription) {
@@ -340,7 +348,7 @@ await Promise.all(Array.from({ length: 10 }, () => worker()));
 if (errors.length) throw new Error(`Repository metadata wave preparation failed:\n${errors.join("\n")}`);
 
 const wave: ReviewedRepositoryMetadataWave = {
-  wave: "reviewed-repository-metadata-2026-08-20",
+  wave: descriptionQuality ? "reviewed-description-quality-2026-08-20" : "reviewed-repository-metadata-2026-08-20",
   schema_version: 1,
   reviewed_at: new Date().toISOString(),
   projects: projects.sort((left, right) => left.slug.localeCompare(right.slug)),

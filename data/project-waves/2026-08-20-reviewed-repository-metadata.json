@@ -2128,15 +2128,15 @@
       "repository_url": "https://github.com/jtydhr88/comfyui-kimodo",
       "revision": "9e758bce7f37eb1c4e5d2886463810c98c02b889",
       "updates": {
-        "description": "A ComfyUI plugin that wraps [Kimodo](https://github.com/nv-tlabs/kimodo) — NVIDIA's kinematic motion diffusion model for generating high-quality 3D human and humanoid robot motions from text prompts with optional kinematic constraints.",
+        "description": "A ComfyUI plugin that wraps Kimodo — NVIDIA's kinematic motion diffusion model for generating high-quality 3D human and humanoid robot motions from text prompts with optional kinematic constraints.",
         "license_spdx": "NOASSERTION"
       },
       "sources": {
         "description": {
           "derivation": "github-repository-description",
           "source_url": "https://github.com/jtydhr88/comfyui-kimodo",
-          "sha256": "805e431f76a603a03045ec6452caea3e97b9feabf431e7e31640b12b0fca0bb2",
-          "size_bytes": 237
+          "sha256": "c05312e00066b855eead759b9c0703f615c37b3eca4669d6b13785f60e9ee0fc",
+          "size_bytes": 199
         },
         "license_spdx": {
           "derivation": "github-license-absence",
