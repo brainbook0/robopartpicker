@@ -20,7 +20,7 @@ import {
   type ReviewedShowcaseProjectRow,
 } from "../src/lib/reviewed-showcase-media";
 import { sqlString } from "../src/lib/physical-design-wave-import";
-import type { RppsPackage } from "../src/lib/rpps/schema";
+import { normalizeRppsForWrite } from "../src/lib/rpps/schema";
 
 type EnvName = "production" | "preview";
 type ExactState = {
@@ -120,10 +120,12 @@ function publicOrigin(environment: EnvName): string {
 }
 
 function loadCatalogRows(): ReviewedShowcaseProjectRow[] {
+  const slugs = wave.projects.map((project) => sqlString(project.slug)).join(", ");
   const rows = wranglerRows(`SELECT p.id, p.slug, p.name, p.owner_user_id, p.organization_id, p.visibility, p.status, p.project_kind, p.updated_at, p.current_version_id, pv.rpps_json,
+    p.repository_url, p.revision,
     (SELECT COUNT(*) FROM project_media pm WHERE pm.project_id = p.id) AS media_count
     FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
-    WHERE p.deleted_at IS NULL AND p.project_kind = 'commercial_showcase'
+    WHERE p.deleted_at IS NULL AND p.slug IN (${slugs})
     ORDER BY p.slug`);
   return rows as unknown as ReviewedShowcaseProjectRow[];
 }
@@ -153,10 +155,14 @@ function prepareProject(
   retrievedAt: string,
 ): { project: PreparedReviewedShowcaseMedia | null; alreadyApplied: boolean } {
   if (row.slug !== definition.slug) throw new Error(`${definition.slug}: slug mismatch`);
-  if (row.project_kind !== "commercial_showcase") throw new Error(`${definition.slug}: expected commercial_showcase, found ${row.project_kind}`);
-  if (row.visibility !== "public" || row.status !== "published") throw new Error(`${definition.slug}: showcase must be public and published`);
+  const projectKind = definition.project_kind ?? "commercial_showcase";
+  if (row.project_kind !== projectKind) throw new Error(`${definition.slug}: expected ${projectKind}, found ${row.project_kind}`);
+  if (row.visibility !== "public" || row.status !== "published") throw new Error(`${definition.slug}: project must be public and published`);
   if (!row.current_version_id || !row.rpps_json) throw new Error(`${definition.slug}: missing current project version`);
   if (!row.owner_user_id && !row.organization_id) throw new Error(`${definition.slug}: project has no owner or organization for managed file ownership`);
+  if (definition.repository_url && (row.repository_url?.toLowerCase() !== definition.repository_url.toLowerCase() || row.revision !== definition.revision)) {
+    throw new Error(`${definition.slug}: repository identity or pinned revision changed`);
+  }
 
   const fileId = reviewedShowcaseFileId(wave.wave, definition);
   const mediaId = reviewedShowcaseMediaId(wave.wave, row.id, fileId);
@@ -170,13 +176,17 @@ function prepareProject(
   const stateCounts = Object.values(state).map(Number);
   const exactApplied = stateCounts.every((count) => count === 1);
   const pristine = stateCounts.every((count) => count === 0) && Number(row.media_count) === 0;
-  const current = JSON.parse(row.rpps_json) as RppsPackage;
+  const current = normalizeRppsForWrite(JSON.parse(row.rpps_json), publicOrigin(env!)) as Record<string, unknown>;
 
-  if (exactApplied && Number(row.media_count) === 1 && current.cover_image_url === coverUrl && current.docs_url === definition.source_page_url) {
+  const exactDocs = projectKind === "commercial_showcase" ? current.docs_url === definition.source_page_url : true;
+  if (exactApplied && Number(row.media_count) === 1 && current.cover_image_url === coverUrl && exactDocs) {
     return { project: null, alreadyApplied: true };
   }
   if (!pristine) {
     throw new Error(`${definition.slug}: existing media state is neither pristine nor the exact reviewed wave (${JSON.stringify({ totalMedia: Number(row.media_count), ...state })})`);
+  }
+  if (definition.expected_cover_url && current.cover_image_url !== definition.expected_cover_url) {
+    throw new Error(`${definition.slug}: current cover changed from the reviewed broken URL`);
   }
 
   const priorFiles = Array.isArray(current.files) ? current.files : [];
@@ -187,7 +197,7 @@ function prepareProject(
   ));
   const nextRpps = {
     ...current,
-    docs_url: definition.source_page_url,
+    ...(projectKind === "commercial_showcase" ? { docs_url: definition.source_page_url } : {}),
     cover_image_url: coverUrl,
     files: [
       ...priorFiles,
@@ -196,7 +206,7 @@ function prepareProject(
     evidence: [
       ...priorEvidence,
       {
-        claim: `The showcase cover is an official ${definition.name} product image from ${definition.source_publisher}, verified by SHA-256 ${definition.sha256}.`,
+        claim: `The project cover is an upstream ${definition.name} image from ${definition.source_publisher}, verified by SHA-256 ${definition.sha256}.`,
         source_type: "docs" as const,
         source_url: definition.source_page_url,
         retrieved_at: retrievedAt,
@@ -221,6 +231,9 @@ function prepareProject(
     width: definition.width,
     height: definition.height,
     sha256: definition.sha256,
+    sourceDocument: definition.source_document ?? null,
+    repositoryUrl: definition.repository_url ?? null,
+    revision: definition.revision ?? null,
   });
   return {
     alreadyApplied: false,
@@ -246,6 +259,23 @@ async function verifySources(tempRoot: string): Promise<Map<string, VerifiedSour
   const errors: string[] = [];
   for (const [index, definition] of wave.projects.entries()) {
     try {
+      if (definition.source_document && definition.repository_url && definition.revision) {
+        const base = definition.repository_url.replace(/\.git$/iu, "").replace(/\/+$/u, "");
+        const repository = base.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/iu);
+        if (!repository) throw new Error("source document repository is not canonical GitHub");
+        const path = definition.source_document.path.split("/").map(encodeURIComponent).join("/");
+        const rawUrl = `https://raw.githubusercontent.com/${repository[1]}/${repository[2]}/${definition.revision}/${path}`;
+        const documentResponse = await fetch(rawUrl, { headers: { "user-agent": "RoboPartPicker reviewed project media" }, redirect: "follow" });
+        if (!documentResponse.ok) throw new Error(`source document returned HTTP ${documentResponse.status}`);
+        const documentBytes = new Uint8Array(await documentResponse.arrayBuffer());
+        const documentDigest = createHash("sha256").update(documentBytes).digest("hex");
+        if (documentBytes.byteLength !== definition.source_document.size_bytes || documentDigest !== definition.source_document.sha256) {
+          throw new Error("source document failed size/hash verification");
+        }
+        if (!Buffer.from(documentBytes).toString("utf8").includes(definition.source_image_url)) {
+          throw new Error("source document no longer references the reviewed image URL");
+        }
+      }
       const response = await fetch(definition.source_image_url, {
         headers: {
           "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",

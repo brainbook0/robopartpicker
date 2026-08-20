@@ -46,6 +46,8 @@ const row: ReviewedShowcaseProjectRow = {
   visibility: "public",
   status: "published",
   project_kind: "commercial_showcase",
+  repository_url: null,
+  revision: null,
   updated_at: "2026-08-20T00:00:00.000Z",
   current_version_id: "version-id",
   rpps_json: '{"rpps_version":"1.0.0","name":"Example Robot"}',
@@ -85,6 +87,28 @@ describe("reviewed showcase media", () => {
     expect(errors).toContain("example-robot: sha256 is invalid");
     expect(errors).toContain("example-robot: width must be at least 600");
     expect(errors).toContain("example-robot: duplicate slug");
+  });
+
+  it("validates pinned physical-design source documents and broken-cover guards", () => {
+    const physical: ReviewedShowcaseMediaDefinition = {
+      ...definition,
+      slug: "venom",
+      name: "venom",
+      project_kind: "physical_design",
+      repository_url: "https://github.com/chinmaynehate/venom",
+      revision: "a".repeat(40),
+      expected_cover_url: "https://robopartpicker.example/missing.jpg",
+      source_page_url: `https://github.com/chinmaynehate/venom/blob/${"a".repeat(40)}/README.md`,
+      source_image_url: "https://i.imgur.com/example.jpg",
+      final_source_image_url: "https://i.imgur.com/example.jpg",
+      source_document: { path: "README.md", sha256: "b".repeat(64), size_bytes: 1200 },
+      sha256: "c".repeat(64),
+    };
+    expect(validateReviewedShowcaseMediaWave({ ...wave, projects: [physical] })).toEqual([]);
+    expect(validateReviewedShowcaseMediaWave({
+      ...wave,
+      projects: [{ ...physical, revision: "main", source_page_url: "https://github.com/chinmaynehate/venom/blob/main/README.md" }],
+    })).toContain("venom: physical design revision must be a lowercase 40-character git hash");
   });
 
   it("creates deterministic managed file identities and URLs", () => {

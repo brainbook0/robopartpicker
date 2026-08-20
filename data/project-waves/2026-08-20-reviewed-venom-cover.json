@@ -1,0 +1,31 @@
+{
+  "wave": "reviewed-venom-cover-2026-08-20",
+  "schema_version": 1,
+  "projects": [
+    {
+      "slug": "venom",
+      "name": "venom",
+      "project_kind": "physical_design",
+      "repository_url": "https://github.com/chinmaynehate/venom",
+      "revision": "5244581c43876584d0c2aeea0d8da2cd3192ff20",
+      "expected_cover_url": "https://robopartpicker-production.ludomi2502.workers.dev/api/v1/files/content?id=cover%3Avenom%3A95806de881d3366bcf416a27f7a110d67670a1a1355103e7887ee9038ad40988.jpg",
+      "source_document": {
+        "path": "README.md",
+        "sha256": "8be6c6444696e29f67ccfb13545ca421eaa95ebfb1911ddcc3f1a907e3337a62",
+        "size_bytes": 6577
+      },
+      "source_publisher": "Venom source repository",
+      "source_page_url": "https://github.com/chinmaynehate/venom/blob/5244581c43876584d0c2aeea0d8da2cd3192ff20/README.md",
+      "source_image_url": "https://i.imgur.com/ZmYRAiz.jpg",
+      "final_source_image_url": "https://i.imgur.com/ZmYRAiz.jpg",
+      "request_accept": "image/jpeg",
+      "sha256": "95806de881d3366bcf416a27f7a110d67670a1a1355103e7887ee9038ad40988",
+      "size_bytes": 89324,
+      "media_type": "image/jpeg",
+      "width": 1152,
+      "height": 864,
+      "alt_text": "Venom sprawling-type quadruped robot photographed from above with its four articulated legs visible",
+      "caption": "Venom sprawling-type quadruped photographed by the upstream project."
+    }
+  ]
+}
