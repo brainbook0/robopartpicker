@@ -1,7 +1,7 @@
 import type { RppsPackage } from "../../../src/lib/rpps/schema";
 import { classifyProjectKind, projectKindAfterRppsUpdate, type ProjectKind } from "../../../src/shared/projectKind";
 import type { RobotCategory } from "../../../src/shared/robotCategory";
-import { buildProjectCatalogStatsQuery, buildProjectListQuery, type ProjectListSort } from "../../../src/shared/projectListQuery";
+import { buildProjectCatalogStatsQuery, buildProjectFilesQuery, buildProjectListQuery, type ProjectListSort } from "../../../src/shared/projectListQuery";
 import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
 import { AppError } from "../../http";
 import { fileContentUrl } from "../../services/file-urls";
@@ -215,15 +215,7 @@ export class ProjectsRepository {
   }
 
   async listFiles(projectId: string, publicOnly: boolean): Promise<ProjectFileDto[]> {
-    const result = await this.db.prepare(`SELECT f.id, pf.project_version_id, f.original_name, f.media_type,
-      f.size_bytes, f.checksum_sha256, f.visibility, f.status, f.kind, pf.purpose, pf.relative_path,
-      pm.caption, pm.alt_text, f.created_at, f.updated_at
-      FROM project_files pf
-      JOIN files f ON f.id = pf.file_id
-      LEFT JOIN project_media pm ON pm.project_id = pf.project_id AND pm.file_id = pf.file_id
-      WHERE pf.project_id = ?1 AND f.deleted_at IS NULL
-        AND (?2 = 0 OR (f.visibility = 'public' AND f.status = 'ready'))
-      ORDER BY COALESCE(pm.sort_order, 2147483647), pf.relative_path, f.original_name`)
+    const result = await this.db.prepare(buildProjectFilesQuery())
       .bind(projectId, publicOnly ? 1 : 0).all<{
         id: string; project_version_id: string | null; original_name: string; media_type: string;
         size_bytes: number; checksum_sha256: string | null; visibility: ProjectFileDto["visibility"];

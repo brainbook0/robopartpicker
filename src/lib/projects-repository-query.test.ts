@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProjectCatalogStatsQuery, buildProjectListQuery, projectOrderBy } from "@/shared/projectListQuery";
+import { buildProjectCatalogStatsQuery, buildProjectFilesQuery, buildProjectListQuery, projectOrderBy } from "@/shared/projectListQuery";
 
 describe("project catalog list query", () => {
   it("paginates project IDs before loading RPPS JSON and aggregate tables", () => {
@@ -35,5 +35,12 @@ describe("project catalog list query", () => {
     expect(query).toContain("bom_counts AS");
     expect(query).toContain("GROUP BY b.project_id");
     expect(query).not.toContain("SELECT COUNT(*) FROM boms b JOIN bom_items");
+  });
+
+  it("serves only current-release or legacy unversioned project files", () => {
+    const query = buildProjectFilesQuery();
+    expect(query).toContain("JOIN projects p ON p.id = pf.project_id");
+    expect(query).toContain("pf.project_version_id IS NULL OR pf.project_version_id = p.current_version_id");
+    expect(query).toContain("f.visibility = 'public' AND f.status = 'ready'");
   });
 });

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu, FileUp,
@@ -17,6 +17,8 @@ import { ReleaseCollaborationPanel } from "@/components/projects/ReleaseCollabor
 import { rfqApi } from "@/lib/api/rfq";
 import { bomsApi } from "@/lib/api/builds";
 import type { BomDetail } from "@/shared/builds";
+import { ExpandableImage } from "@/components/common/ExpandableImage";
+import { selectProjectPreviewFiles } from "@/lib/projectPreview";
 
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 const StlModelViewer = lazy(() => import("@/components/projects/StlModelViewer"));
@@ -41,6 +43,8 @@ export default function ProjectDetail() {
   const [reproducing, setReproducing] = useState(false);
   const [forking, setForking] = useState(false);
   const [creatingRfq, setCreatingRfq] = useState(false);
+  const [urdfUnavailable, setUrdfUnavailable] = useState(false);
+  const handleUrdfUnavailable = useCallback(() => setUrdfUnavailable(true), []);
   const projectId = p?.id;
 
   useEffect(() => {
@@ -59,6 +63,7 @@ export default function ProjectDetail() {
   useEffect(() => {
     if (!projectId) { setManagedFiles([]); return; }
     let cancelled = false;
+    setUrdfUnavailable(false);
     setManagedFilesLoading(true);
     listProjectFiles(projectId)
       .then((items) => { if (!cancelled) setManagedFiles(items); })
@@ -118,24 +123,7 @@ export default function ProjectDetail() {
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
-  const assemblyName = /(^|[-_\s])(assembly|full|complete|combined|whole|total|robot|all)([-_\s]|$)/iu;
-  const previewUrdf = managedFiles
-    .filter((file) => file.kind === "urdf" && typeof file.contentUrl === "string" && /\.urdf(?:[?#]|$)/iu.test(file.originalName ?? ""))
-    .sort((a, b) => {
-      const aMain = assemblyName.test(a.originalName ?? "") || assemblyName.test(a.relativePath ?? "") ? 1 : 0;
-      const bMain = assemblyName.test(b.originalName ?? "") || assemblyName.test(b.relativePath ?? "") ? 1 : 0;
-      if (aMain !== bMain) return bMain - aMain;
-      return (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0);
-    })[0];
-  const stlFiles = managedFiles
-    .filter((file) => (file.kind === "cad" || file.kind === "urdf") && typeof file.contentUrl === "string" && /\.stl(?:[?#]|$)/iu.test(file.originalName ?? ""))
-    .sort((a, b) => {
-      const aMain = assemblyName.test(a.originalName ?? "") || assemblyName.test(a.relativePath ?? "") ? 1 : 0;
-      const bMain = assemblyName.test(b.originalName ?? "") || assemblyName.test(b.relativePath ?? "") ? 1 : 0;
-      if (aMain !== bMain) return bMain - aMain;
-      return (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0);
-    })
-    .slice(0, 24);
+  const { readyFiles, imageFiles, urdfFile: previewUrdf, stlFiles, stepFiles } = selectProjectPreviewFiles(managedFiles);
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
@@ -367,15 +355,37 @@ export default function ProjectDetail() {
         <div className="space-y-3 min-w-0">
           {canEditRpps && <ProjectTechnicalEditor project={p} onSaved={setP} />}
 
-          {previewUrdf?.contentUrl ? (
+          {previewUrdf?.contentUrl && !urdfUnavailable ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
-              <UrdfModelViewer urdfUrl={previewUrdf.contentUrl} urdfPath={previewUrdf.relativePath} files={managedFiles} sourceUrl={p.repo_url ?? previewUrdf.contentUrl} title={`${p.name} · URDF preview`} />
+              <UrdfModelViewer urdfUrl={previewUrdf.contentUrl} urdfPath={previewUrdf.relativePath} files={readyFiles} sourceUrl={p.repo_url ?? previewUrdf.contentUrl} title={`${p.name} · URDF preview`} onUnavailable={handleUrdfUnavailable} />
             </Suspense>
           ) : stlFiles.length > 0 ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
-              <StlModelViewer stlUrls={stlFiles.map((file) => file.contentUrl)} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · 3D design (${stlFiles.length} parts)`} />
+              <StlModelViewer stlUrls={stlFiles.map((file) => file.contentUrl)} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · 3D design (${stlFiles.length} part${stlFiles.length === 1 ? "" : "s"})`} />
             </Suspense>
-          ) : null}
+          ) : stepFiles.length > 0
+            ? <CadSourceFallback projectName={p.name} files={stepFiles} sourceUrl={p.repo_url ?? undefined} format="STEP/IGES" />
+            : urdfUnavailable && previewUrdf
+              ? <CadSourceFallback projectName={p.name} files={[previewUrdf]} sourceUrl={p.repo_url ?? undefined} format="URDF" />
+              : null}
+
+          {imageFiles.length > 0 && (
+            <Section title={`Project media · ${imageFiles.length}`}>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+                {imageFiles.slice(0, 8).map((file, index) => (
+                  <ExpandableImage
+                    key={file.id}
+                    src={file.contentUrl}
+                    alt={file.altText ?? file.caption ?? `${p.name} source image ${index + 1}`}
+                    caption={file.caption ?? file.relativePath ?? file.originalName}
+                    thumbs={imageFiles.filter((candidate) => candidate.id !== file.id).map((candidate) => candidate.contentUrl)}
+                    className="aspect-[4/3] w-full"
+                  />
+                ))}
+              </div>
+              {imageFiles.length > 8 && <p className="mt-2 text-[10.5px] text-muted-foreground">Showing 8 source images. All {imageFiles.length} remain available in Managed artifacts.</p>}
+            </Section>
+          )}
 
           <Section title="Description">
             {p.description
@@ -729,6 +739,29 @@ export default function ProjectDetail() {
         </aside>
       </div>
     </div>
+  );
+}
+
+function CadSourceFallback({ projectName, files, sourceUrl, format }: { projectName: string; files: ProjectFile[]; sourceUrl?: string; format: string }) {
+  return (
+    <section className="surface-card overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <div>
+          <div className="flex items-center gap-1.5 text-[12px] font-semibold"><Cpu className="h-3.5 w-3.5 text-primary" /> {projectName} · {format} design files</div>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">The complete native design is available below, but this format could not be rendered faithfully in the browser.</p>
+        </div>
+        {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Official model source <ExternalLink className="h-3 w-3" /></a>}
+      </div>
+      <div className="grid gap-2 p-3 sm:grid-cols-2">
+        {files.map((file) => (
+          <a key={file.id} href={file.contentUrl} className="rounded border border-border p-3 hover:border-primary/60 hover:bg-muted/30">
+            <div className="truncate text-[12px] font-medium">{file.relativePath ?? file.originalName}</div>
+            <div className="mt-1 text-[10.5px] text-muted-foreground">{format} · {formatProjectFileBytes(file.sizeBytes)} · source artifact</div>
+          </a>
+        ))}
+      </div>
+      <div className="border-t border-warning/30 bg-warning/5 px-3 py-2 text-[10px] text-muted-foreground">No mesh substitute is shown because it could misrepresent the actual design. Open the native file in a compatible CAD tool for authoritative geometry.</div>
+    </section>
   );
 }
 

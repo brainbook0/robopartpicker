@@ -9,9 +9,10 @@ type Props = {
   stlUrls: string[];
   sourceUrl?: string;
   title?: string;
+  onUnavailable?: (reason: string) => void;
 };
 
-function useStlAssembly(urls: string[]) {
+function useStlAssembly(urls: string[], onUnavailable?: (reason: string) => void) {
   const [group, setGroup] = useState<Group | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ loaded: 0, total: 1 });
@@ -30,7 +31,9 @@ function useStlAssembly(urls: string[]) {
       if (!active) return;
       const valid = results.filter((geometry): geometry is BufferGeometry => geometry != null);
       if (valid.length === 0) {
-        setError("No STL parts could be loaded.");
+        const reason = "No STL parts could be loaded.";
+        setError(reason);
+        onUnavailable?.(reason);
         return;
       }
       const group = new Group();
@@ -63,13 +66,13 @@ function useStlAssembly(urls: string[]) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urls.join("\n")]);
+  }, [urls.join("\n"), onUnavailable]);
 
   return { group, error, progress };
 }
 
-export default function StlModelViewer({ stlUrls, sourceUrl, title = "Interactive 3D model" }: Props) {
-  const { group, error, progress } = useStlAssembly(stlUrls);
+export default function StlModelViewer({ stlUrls, sourceUrl, title = "Interactive 3D model", onUnavailable }: Props) {
+  const { group, error, progress } = useStlAssembly(stlUrls, onUnavailable);
 
   return (
     <section className="surface-card overflow-hidden">

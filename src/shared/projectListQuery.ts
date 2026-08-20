@@ -93,3 +93,17 @@ export function buildProjectCatalogStatsQuery(where: string): string {
     FROM visible_projects vp
     LEFT JOIN bom_counts ON bom_counts.project_id = vp.id`;
 }
+
+export function buildProjectFilesQuery(): string {
+  return `SELECT f.id, pf.project_version_id, f.original_name, f.media_type,
+      f.size_bytes, f.checksum_sha256, f.visibility, f.status, f.kind, pf.purpose, pf.relative_path,
+      pm.caption, pm.alt_text, f.created_at, f.updated_at
+    FROM project_files pf
+    JOIN projects p ON p.id = pf.project_id
+    JOIN files f ON f.id = pf.file_id
+    LEFT JOIN project_media pm ON pm.project_id = pf.project_id AND pm.file_id = pf.file_id
+    WHERE pf.project_id = ?1 AND f.deleted_at IS NULL
+      AND (pf.project_version_id IS NULL OR pf.project_version_id = p.current_version_id)
+      AND (?2 = 0 OR (f.visibility = 'public' AND f.status = 'ready'))
+    ORDER BY COALESCE(pm.sort_order, 2147483647), pf.relative_path, f.original_name`;
+}

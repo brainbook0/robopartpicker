@@ -11,9 +11,10 @@ type Props = {
   files?: Array<{ relativePath: string | null; contentUrl: string; originalName: string }>;
   sourceUrl?: string;
   title?: string;
+  onUnavailable?: (reason: string) => void;
 };
 
-export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceUrl, title = "Interactive 3D model" }: Props) {
+export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceUrl, title = "Interactive 3D model", onUnavailable }: Props) {
   const [robot, setRobot] = useState<Object3D | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ loaded: 0, total: 1 });
@@ -22,6 +23,10 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
   useEffect(() => {
     let active = true;
     let objectUrl: string | null = null;
+    setRobot(null);
+    setError(null);
+    setProgress({ loaded: 0, total: 1 });
+    setResolvedUrl(null);
     resolveUrdfMeshes(urdfUrl, urdfPath ?? null, files)
       .then((rewritten) => {
         if (!active) return;
@@ -43,8 +48,16 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
     if (!resolvedUrl) return;
     let active = true;
     let parsedRobot: Object3D | null = null;
+    let reportedFailure = false;
+    const reportFailure = (reason: string) => {
+      if (!active || reportedFailure) return;
+      reportedFailure = true;
+      setError(reason);
+      onUnavailable?.(reason);
+    };
     const manager = new LoadingManager();
     manager.onProgress = (_url, loaded, total) => { if (active) setProgress({ loaded, total: Math.max(total, 1) }); };
+    manager.onError = (url) => reportFailure(`URDF asset failed to load: ${shortUrl(url)}`);
     manager.onLoad = () => {
       if (!active || !parsedRobot) return;
       parsedRobot.rotation.x = -Math.PI / 2;
@@ -53,12 +66,12 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
     const loader = new URDFLoader(manager);
     loader.packages = () => "";
     loader.parseCollision = false;
-    loader.load(resolvedUrl, (loaded) => { parsedRobot = loaded; }, undefined, () => { /* mesh errors surface via manager.onError */ });
+    loader.load(resolvedUrl, (loaded) => { parsedRobot = loaded; }, undefined, () => reportFailure("The URDF could not be parsed or loaded."));
     return () => {
       active = false;
       if (parsedRobot) disposeObject(parsedRobot);
     };
-  }, [resolvedUrl]);
+  }, [resolvedUrl, onUnavailable]);
 
   return (
     <section className="surface-card overflow-hidden">
@@ -92,6 +105,7 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
         )}
       </div>
       <div className="border-t border-border px-3 py-2 text-[9.5px] text-muted-foreground">Preview is visual only. Dimensions, interfaces, collision geometry, and compatibility must be checked against the source artifacts.</div>
+      {error && robot && <div className="border-t border-warning/30 bg-warning/5 px-3 py-1.5 text-[10px] text-muted-foreground">{error}</div>}
     </section>
   );
 }
