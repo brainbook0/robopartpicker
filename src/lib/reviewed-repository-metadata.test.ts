@@ -283,6 +283,59 @@ describe("reviewed repository metadata", () => {
     expect(rollback).toContain("license_spdx = NULL");
   });
 
+  it("keeps statements below D1 limits when an untouched description is large", () => {
+    const largeDescription = "Source-backed project documentation for a mature robotics package.";
+    const largeLegacyPayload = "legacy-extension-data".repeat(3_200);
+    const licenseDefinition: ReviewedRepositoryMetadataDefinition = {
+      ...definition,
+      updates: { license_spdx: "NOASSERTION" },
+      sources: { license_spdx: definition.sources.license_spdx },
+    };
+    const largeRow: ReviewedRepositoryMetadataRow = {
+      ...row,
+      summary: "Existing summary",
+      description: largeDescription,
+      rpps_json: JSON.stringify({
+        rpps_version: "1.0.0",
+        name: definition.name,
+        slug: definition.slug,
+        version: "1.0.0",
+        bom: [],
+        summary: "Existing summary",
+        description: largeDescription,
+        legacy_payload: largeLegacyPayload,
+      }),
+    };
+    const evidence = prepareRepositoryMetadataEvidence(wave.wave, licenseDefinition);
+    const nextRppsJson = serializeReviewedRepositoryMetadataRpps({
+      ...JSON.parse(largeRow.rpps_json),
+      license: "NOASSERTION",
+      evidence: evidence.map((item) => ({
+        claim: item.excerpt,
+        source_type: item.sourceType,
+        source_url: item.source.source_url,
+        retrieved_at: wave.reviewed_at,
+        confidence: item.confidence,
+      })),
+    });
+    const project: PreparedReviewedRepositoryMetadata = {
+      definition: licenseDefinition,
+      row: largeRow,
+      nextSummary: largeRow.summary,
+      nextDescription: largeRow.description,
+      nextLicenseSpdx: "NOASSERTION",
+      nextRppsJson,
+      evidence,
+    };
+    const statementSizes = (sql: string) => sql.split(";").map((statement) => new TextEncoder().encode(statement).byteLength).filter(Boolean);
+    const forward = buildReviewedRepositoryMetadataForwardSql([project], wave, "2026-08-20T19:00:00.000Z");
+    const rollback = buildReviewedRepositoryMetadataRollbackSql([project], wave, "2026-08-20T19:00:00.000Z");
+    expect(Math.max(...statementSizes(forward))).toBeLessThan(100_000);
+    expect(Math.max(...statementSizes(rollback))).toBeLessThan(100_000);
+    expect(forward.split(largeLegacyPayload)).toHaveLength(2);
+    expect(rollback.split(largeLegacyPayload)).toHaveLength(2);
+  });
+
   it("locks the checked-in 843-project wave to a zero-empty, reviewed prose checklist", () => {
     const checkedInWave = checkedInWaveJson as unknown as ReviewedRepositoryMetadataWave;
     expect(validateReviewedRepositoryMetadataWave(checkedInWave)).toEqual([]);

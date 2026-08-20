@@ -444,7 +444,50 @@ export function prepareRepositoryMetadataEvidence(
 
 function originalGuard(project: PreparedReviewedRepositoryMetadata): string {
   const { row } = project;
-  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.name = ${sqlString(row.name)} AND p.project_kind = ${sqlString(row.project_kind)} AND p.repository_url IS ${sqlString(row.repository_url)} AND p.revision IS ${sqlString(row.revision)} AND p.summary IS ${sqlString(row.summary)} AND p.description IS ${sqlString(row.description)} AND p.license_spdx IS ${sqlString(row.license_spdx)} AND p.visibility = 'public' AND p.status = 'published' AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(row.rpps_json)}`;
+  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.name = ${sqlString(row.name)} AND p.project_kind = ${sqlString(row.project_kind)} AND p.repository_url IS ${sqlString(row.repository_url)} AND p.revision IS ${sqlString(row.revision)} AND ${targetColumnConditions(project, "original", "p")} AND p.visibility = 'public' AND p.status = 'published' AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id`;
+}
+
+function targetFields(project: PreparedReviewedRepositoryMetadata): ReviewedMetadataField[] {
+  return FIELDS.filter((field) => Object.hasOwn(project.definition.updates, field));
+}
+
+function columnName(field: ReviewedMetadataField): string {
+  return field === "license_spdx" ? "license_spdx" : field;
+}
+
+function rppsJsonPath(field: ReviewedMetadataField): string {
+  return field === "license_spdx" ? "$.license" : `$.${field}`;
+}
+
+function originalValue(project: PreparedReviewedRepositoryMetadata, field: ReviewedMetadataField): string | null {
+  return field === "license_spdx" ? project.row.license_spdx : project.row[field];
+}
+
+function nextValue(project: PreparedReviewedRepositoryMetadata, field: ReviewedMetadataField): string | null {
+  if (field === "summary") return project.nextSummary;
+  if (field === "description") return project.nextDescription;
+  return project.nextLicenseSpdx;
+}
+
+function targetColumnConditions(
+  project: PreparedReviewedRepositoryMetadata,
+  state: "original" | "next" | "original-or-next",
+  alias = "p",
+): string {
+  return targetFields(project).map((field) => {
+    const column = `${alias}.${columnName(field)}`;
+    const original = originalValue(project, field);
+    const next = nextValue(project, field);
+    return state === "original-or-next" ? originalOrNext(column, original, next) : `${column} IS ${sqlString(state === "original" ? original : next)}`;
+  }).join(" AND ");
+}
+
+function targetRppsConditions(project: PreparedReviewedRepositoryMetadata, state: "original" | "next", alias = "pv"): string {
+  return targetFields(project).map((field) => `json_extract(${alias}.rpps_json, ${sqlString(rppsJsonPath(field))}) IS ${sqlString(state === "original" ? originalValue(project, field) : nextValue(project, field))}`).join(" AND ");
+}
+
+function targetSetClauses(project: PreparedReviewedRepositoryMetadata, state: "original" | "next"): string {
+  return targetFields(project).map((field) => `${columnName(field)} = ${sqlString(state === "original" ? originalValue(project, field) : nextValue(project, field))}`).join(", ");
 }
 
 function evidenceExists(project: PreparedReviewedRepositoryMetadata, evidence: PreparedRepositoryMetadataEvidence): string {
@@ -472,10 +515,11 @@ WHERE ${guard} AND EXISTS (SELECT 1 FROM evidence e WHERE e.id = ${sqlString(evi
     }
     const allEvidence = project.evidence.map((evidence) => evidenceExists(project, evidence)).join(" AND ");
     lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.nextRppsJson)}
-WHERE id = ${sqlString(project.row.current_version_id)} AND project_id = ${sqlString(project.row.id)} AND rpps_json = ${sqlString(project.row.rpps_json)} AND ${allEvidence};`);
-    lines.push(`UPDATE projects SET summary = ${sqlString(project.nextSummary)}, description = ${sqlString(project.nextDescription)}, license_spdx = ${sqlString(project.nextLicenseSpdx)}, updated_at = ${sqlString(now)}
-WHERE id = ${sqlString(project.row.id)} AND slug = ${sqlString(project.row.slug)} AND name = ${sqlString(project.row.name)} AND project_kind = ${sqlString(project.row.project_kind)} AND repository_url IS ${sqlString(project.row.repository_url)} AND revision IS ${sqlString(project.row.revision)} AND summary IS ${sqlString(project.row.summary)} AND description IS ${sqlString(project.row.description)} AND license_spdx IS ${sqlString(project.row.license_spdx)} AND visibility = 'public' AND status = 'published' AND current_version_id = ${sqlString(project.row.current_version_id)} AND updated_at = ${sqlString(project.row.updated_at)}
-  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(project.row.current_version_id)} AND pv.project_id = ${sqlString(project.row.id)} AND pv.rpps_json = ${sqlString(project.nextRppsJson)});`);
+  WHERE id = ${sqlString(project.row.current_version_id)} AND project_id = ${sqlString(project.row.id)} AND ${allEvidence}
+    AND EXISTS (SELECT 1 FROM projects p WHERE p.id = ${sqlString(project.row.id)} AND p.current_version_id = ${sqlString(project.row.current_version_id)} AND p.updated_at = ${sqlString(project.row.updated_at)} AND ${targetColumnConditions(project, "original", "p")});`);
+    lines.push(`UPDATE projects SET ${targetSetClauses(project, "next")}, updated_at = ${sqlString(now)}
+  WHERE id = ${sqlString(project.row.id)} AND slug = ${sqlString(project.row.slug)} AND name = ${sqlString(project.row.name)} AND project_kind = ${sqlString(project.row.project_kind)} AND repository_url IS ${sqlString(project.row.repository_url)} AND revision IS ${sqlString(project.row.revision)} AND ${targetColumnConditions(project, "original")} AND visibility = 'public' AND status = 'published' AND current_version_id = ${sqlString(project.row.current_version_id)} AND updated_at = ${sqlString(project.row.updated_at)}
+    AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(project.row.current_version_id)} AND pv.project_id = ${sqlString(project.row.id)} AND ${targetRppsConditions(project, "next", "pv")});`);
   }
   return `${lines.join("\n")}\n`;
 }
@@ -492,13 +536,13 @@ export function buildReviewedRepositoryMetadataRollbackSql(
   const lines = [`-- Guarded rollback for source-backed repository metadata wave ${wave.wave}.`];
   for (const project of [...projects].reverse()) {
     const { row } = project;
-    const currentGuard = `EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND ${originalOrNext("p.summary", row.summary, project.nextSummary)} AND ${originalOrNext("p.description", row.description, project.nextDescription)} AND ${originalOrNext("p.license_spdx", row.license_spdx, project.nextLicenseSpdx)} AND (p.updated_at = ${sqlString(row.updated_at)} OR p.updated_at = ${sqlString(now)}) AND (pv.rpps_json = ${sqlString(row.rpps_json)} OR pv.rpps_json = ${sqlString(project.nextRppsJson)}))`;
+    const currentGuard = `EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND ${targetColumnConditions(project, "original-or-next", "p")} AND (p.updated_at = ${sqlString(row.updated_at)} OR p.updated_at = ${sqlString(now)}))`;
     for (const evidence of [...project.evidence].reverse()) {
       lines.push(`DELETE FROM evidence_claims WHERE id = ${sqlString(evidence.claimId)} AND evidence_id = ${sqlString(evidence.evidenceId)} AND entity_type = 'project' AND entity_id = ${sqlString(row.id)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
       lines.push(`DELETE FROM evidence WHERE id = ${sqlString(evidence.evidenceId)} AND source_url = ${sqlString(evidence.source.source_url)} AND content_hash IS ${sqlString(evidence.contentHash)} AND created_at = ${sqlString(now)} AND NOT EXISTS (SELECT 1 FROM evidence_claims ec WHERE ec.evidence_id = ${sqlString(evidence.evidenceId)}) AND ${currentGuard};`);
     }
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND rpps_json = ${sqlString(project.nextRppsJson)} AND ${currentGuard};`);
-    lines.push(`UPDATE projects SET summary = ${sqlString(row.summary)}, description = ${sqlString(row.description)}, license_spdx = ${sqlString(row.license_spdx)}, updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND summary IS ${sqlString(project.nextSummary)} AND description IS ${sqlString(project.nextDescription)} AND license_spdx IS ${sqlString(project.nextLicenseSpdx)} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND pv.rpps_json = ${sqlString(row.rpps_json)});`);
+    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND ${targetRppsConditions(project, "next")} AND ${currentGuard};`);
+    lines.push(`UPDATE projects SET ${targetSetClauses(project, "original")}, updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND ${targetColumnConditions(project, "next")} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND ${targetRppsConditions(project, "original", "pv")});`);
   }
   return `${lines.join("\n")}\n`;
 }
