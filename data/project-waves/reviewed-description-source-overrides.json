@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "descriptions": [
+    {
+      "slug": "cyber",
+      "description": "In contrast, CYBER approaches world modeling from a \"first principles\" perspective, drawing inspiration from how humans naturally acquire skills through experience and interaction with their environment. CYBER is the first general Robotic Operational System designed to adapt to both teleoperated manipulation and human operation data, enabling robots to learn and predict across a wide range of tasks and environments.",
+      "source": {
+        "derivation": "verified-document-description",
+        "source_url": "https://web.archive.org/web/20241113175038id_/https://github.com/CyberOrigin2077/Cyber",
+        "document_format": "html",
+        "description_extraction": "exact-excerpt",
+        "sha256": "ea84fb1af4723a292fcaf476bedee37a32524e0b55a620ceb3dd8131f30e5f73",
+        "size_bytes": 395176
+      }
+    },
+    {
+      "slug": "flashsac",
+      "description": "This repository (FlashSAC) provides the full training framework, agent implementations, and environment integrations used in the paper, supporting over 100 tasks across diverse simulators: IsaacLab, MuJoCo Playground, ManiSkill, Genesis, HumanoidBench, MyoSuite, MuJoCo, Meta-World, and DeepMind Control Suite.",
+      "source": {
+        "derivation": "verified-document-description",
+        "source_url": "https://github.com/yinzhoux/FlashSAC/blob/87edc9061150ae9e962dd84e6544e27a1554b3ab/README.md",
+        "content_url": "https://raw.githubusercontent.com/yinzhoux/FlashSAC/87edc9061150ae9e962dd84e6544e27a1554b3ab/README.md",
+        "document_format": "markdown",
+        "description_extraction": "repository-description",
+        "sha256": "19f19f72039eb18fbd316c6f7217f07f5a28e0d685b0c57dd4a25f8efea6d8d3",
+        "size_bytes": 9861
+      }
+    },
+    {
+      "slug": "turtlebot-turtlebot4-hardware",
+      "description": "TurtleBot 4 is the next-generation of the world’s most popular open source robotics platform for education and research, offering better computing power, better sensors and a world class user experience at an affordable price point.",
+      "source": {
+        "derivation": "verified-document-description",
+        "source_url": "https://web.archive.org/web/20260801193352id_/https://clearpathrobotics.com/turtlebot-4/",
+        "document_format": "html",
+        "description_extraction": "exact-excerpt",
+        "sha256": "45e269dfd36209831ce0edcc1cb49342153aa1e709fa2dc23259914b8c4020c2",
+        "size_bytes": 155333
+      }
+    }
+  ]
+}

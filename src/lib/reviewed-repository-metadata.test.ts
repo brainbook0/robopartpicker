@@ -8,13 +8,20 @@ import {
   githubRevisionTreeUrl,
   immutableGithubBlobUrl,
   normalizeGithubRepositoryDescription,
+  normalizeVerifiedDocumentText,
   prepareRepositoryMetadataEvidence,
   repositoryDescriptionNeedsCleanup,
   repositoryDescriptionQualityIssues,
+  reviewedMetadataOriginalStateAllowed,
+  reviewedRepositoryMetadataSourceVerificationKey,
+  reviewedRepositoryMetadataSourceVerificationKeys,
   serializeReviewedRepositoryMetadataRpps,
+  serializeReviewedRepositoryMetadataRppsPreservingLegacy,
   summarizeRepositoryText,
+  validateReviewedRepositoryMetadataSourceVerificationCheckpoint,
   validateReviewedRepositoryMetadataQuality,
   validateReviewedRepositoryMetadataWave,
+  verifiedDocumentDescriptionMatches,
   type PreparedReviewedRepositoryMetadata,
   type ReviewedMetadataField,
   type ReviewedRepositoryMetadataDefinition,
@@ -135,11 +142,103 @@ describe("reviewed repository metadata", () => {
     expect(repositoryDescriptionQualityIssues("x".repeat(1_201))).toContain("too-long");
   });
 
+  it("allows guarded replacement only for matching noisy descriptions", () => {
+    const noisy = "# Install\n\n- one\n- two\n- three\n- four";
+    expect(reviewedMetadataOriginalStateAllowed("description", noisy, noisy)).toBe(true);
+    expect(reviewedMetadataOriginalStateAllowed("description", noisy, "different")).toBe(false);
+    expect(reviewedMetadataOriginalStateAllowed("description", "Concise source prose for a robot.", "Concise source prose for a robot.")).toBe(false);
+    expect(reviewedMetadataOriginalStateAllowed("summary", "Existing summary", "Existing summary")).toBe(false);
+    expect(reviewedMetadataOriginalStateAllowed("license_spdx", null, undefined)).toBe(true);
+  });
+
+  it("preserves existing unrelated legacy validation issues without allowing new ones", () => {
+    const legacy = { ...JSON.parse(row.rpps_json), tags: ["x".repeat(41)] } as Record<string, unknown>;
+    const next = { ...legacy, description: "Concise source-backed robot description." };
+    expect(JSON.parse(serializeReviewedRepositoryMetadataRppsPreservingLegacy(legacy, next))).toMatchObject({
+      description: "Concise source-backed robot description.",
+      tags: ["x".repeat(41)],
+    });
+    expect(() => serializeReviewedRepositoryMetadataRppsPreservingLegacy(
+      JSON.parse(row.rpps_json) as Record<string, unknown>,
+      { ...JSON.parse(row.rpps_json), tags: ["x".repeat(41)] },
+    )).toThrow("failed validation");
+  });
+
+  it("verifies exact prose and deterministic README descriptions from immutable documents", () => {
+    const html = "<html><style>hidden</style><p>TurtleBot 4 is the world&#8217;s open source robotics platform.</p></html>";
+    expect(normalizeVerifiedDocumentText(html, "html")).toBe("TurtleBot 4 is the world’s open source robotics platform.");
+    expect(verifiedDocumentDescriptionMatches(
+      html,
+      "html",
+      "exact-excerpt",
+      "TurtleBot 4 is the world’s open source robotics platform.",
+    )).toBe(true);
+    expect(verifiedDocumentDescriptionMatches(
+      "# Robot\n\nRobot is an open source mobile robot for research.",
+      "markdown",
+      "repository-description",
+      "Robot is an open source mobile robot for research.",
+    )).toBe(true);
+  });
+
+  it("accepts only immutable verified document description sources", () => {
+    const sourceDefinition: ReviewedRepositoryMetadataDefinition = {
+      ...definition,
+      updates: { description: "Robot is an open source mobile robot for research." },
+      sources: {
+        description: {
+          derivation: "verified-document-description",
+          source_url: `https://github.com/example/robot-archive/blob/${revision}/README.md`,
+          content_url: `https://raw.githubusercontent.com/example/robot-archive/${revision}/README.md`,
+          document_format: "markdown",
+          description_extraction: "repository-description",
+          sha256: readmeSha,
+          size_bytes: 1234,
+        },
+      },
+    };
+    expect(validateReviewedRepositoryMetadataWave({ ...wave, projects: [sourceDefinition] })).toEqual([]);
+    const mutable = structuredClone(sourceDefinition);
+    mutable.sources.description!.source_url = "https://example.test/README.md";
+    expect(validateReviewedRepositoryMetadataWave({ ...wave, projects: [mutable] })).toContain(
+      "example-robot: verified document source_url must be an immutable Wayback capture or GitHub blob URL",
+    );
+  });
+
   it("does not misclassify GitHub quota failures as newly detected licenses", () => {
     expect(githubLicenseVerificationState(404, false)).toBe("absent");
     expect(githubLicenseVerificationState(200, true)).toBe("detected");
     expect(githubLicenseVerificationState(403, false)).toBe("unavailable");
     expect(githubLicenseVerificationState(429, false)).toBe("unavailable");
+  });
+
+  it("uses stable source keys and rejects checkpoint evidence outside the current wave", () => {
+    const reorderedSource = {
+      size_bytes: 1234,
+      sha256: readmeSha,
+      path: readmePath,
+      source_url: immutableGithubBlobUrl(repositoryUrl, revision, readmePath),
+      derivation: "readme-description" as const,
+    };
+    const sourceKey = reviewedRepositoryMetadataSourceVerificationKey(definition, definition.sources.description!);
+    expect(reviewedRepositoryMetadataSourceVerificationKey(definition, reorderedSource)).toBe(sourceKey);
+    const expectedKeys = reviewedRepositoryMetadataSourceVerificationKeys(wave);
+    const checkpoint = {
+      schema_version: 1 as const,
+      env: "production",
+      wave: wave.wave,
+      reviewed_at: wave.reviewed_at,
+      wave_projects: wave.projects.length,
+      source_total: expectedKeys.length,
+      verified_keys: expectedKeys,
+      started_at: "2026-08-20T21:00:00.000Z",
+      updated_at: "2026-08-20T21:01:00.000Z",
+    };
+    expect(validateReviewedRepositoryMetadataSourceVerificationCheckpoint(checkpoint, wave, "production")).toEqual([]);
+    expect(validateReviewedRepositoryMetadataSourceVerificationCheckpoint({
+      ...checkpoint,
+      verified_keys: [...expectedKeys, "not-in-this-wave"],
+    }, wave, "production")).toContain("checkpoint contains a source key outside the current wave");
   });
 
   it("extracts concise project prose while skipping badges, navigation, and setup sections", () => {

@@ -16,6 +16,15 @@ import {
   type ReviewedRepositoryMetadataWave,
 } from "../src/lib/reviewed-repository-metadata";
 
+type ReviewedDescriptionOverrides = {
+  schema_version: number;
+  descriptions: Array<{
+    slug: string;
+    description: string;
+    source: ReviewedRepositoryMetadataDefinition["sources"]["description"];
+  }>;
+};
+
 type EnvName = "production" | "preview";
 type GapRow = {
   slug: string;
@@ -42,6 +51,17 @@ const outputPath = resolve(outputIndex >= 0 && args[outputIndex + 1]
     ? "data/project-waves/2026-08-20-reviewed-description-quality.json"
     : "data/project-waves/2026-08-20-reviewed-repository-metadata.json");
 const write = args.includes("--write");
+const descriptionOverrides = (() => {
+  const path = resolve("data/project-waves/reviewed-description-source-overrides.json");
+  const parsed = JSON.parse(readFileSync(path, "utf8")) as ReviewedDescriptionOverrides;
+  if (parsed.schema_version !== 1) throw new Error("Reviewed description overrides schema_version must be 1");
+  const entries = new Map<string, ReviewedDescriptionOverrides["descriptions"][number]>();
+  for (const item of parsed.descriptions) {
+    if (entries.has(item.slug)) throw new Error(`Duplicate reviewed description override: ${item.slug}`);
+    entries.set(item.slug, item);
+  }
+  return entries;
+})();
 
 if (env !== "production" && env !== "preview") {
   console.error("Usage: tsx scripts/prepare-reviewed-repository-metadata-wave.ts --env production|preview [--description-quality] [--output path] [--write]");
@@ -200,9 +220,15 @@ async function prepareDefinition(row: GapRow): Promise<ReviewedRepositoryMetadat
   const updates: ReviewedRepositoryMetadataDefinition["updates"] = {};
   const sources: ReviewedRepositoryMetadataDefinition["sources"] = {};
   const parts = row.repository_url ? githubRepositoryParts(row.repository_url) : null;
+  const descriptionOverride = missingDescription ? descriptionOverrides.get(row.slug) : undefined;
+
+  if (descriptionOverride) {
+    updates.description = descriptionOverride.description;
+    sources.description = descriptionOverride.source;
+  }
 
   let repositoryDescription: string | null = null;
-  if (missingDescription && parts) {
+  if (missingDescription && !descriptionOverride && parts) {
     const result = await github(`repos/${encodeURIComponent(parts.owner)}/${encodeURIComponent(parts.repo)}`);
     if (!result.ok) throw new Error(`${row.slug}: repository metadata returned ${githubFailure(result)}`);
     const data = result.data as { description?: string | null };
@@ -217,7 +243,7 @@ async function prepareDefinition(row: GapRow): Promise<ReviewedRepositoryMetadat
   let readmeBytes: Uint8Array | null = null;
   let readmePath: string | null = null;
   let readmeDescription = "";
-  if ((missingSummary || (missingDescription && !repositoryDescription)) && parts && row.revision) {
+  if ((missingSummary || (missingDescription && !descriptionOverride && !repositoryDescription)) && parts && row.revision) {
     const result = await github(`repos/${encodeURIComponent(parts.owner)}/${encodeURIComponent(parts.repo)}/readme?ref=${encodeURIComponent(row.revision)}`);
     if (result.ok) {
       const data = result.data as { content?: string; path?: string };
@@ -232,7 +258,7 @@ async function prepareDefinition(row: GapRow): Promise<ReviewedRepositoryMetadat
     }
   }
 
-  if (missingDescription) {
+  if (missingDescription && !descriptionOverride) {
     if (repositoryDescription && row.repository_url) {
       const bytes = Buffer.from(repositoryDescription, "utf8");
       updates.description = repositoryDescription;

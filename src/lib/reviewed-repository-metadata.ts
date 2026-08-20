@@ -7,13 +7,20 @@ export type ReviewedMetadataSourceDerivation =
   | "readme-summary"
   | "readme-description"
   | "github-repository-description"
+  | "verified-document-description"
   | "github-license-file"
   | "github-license-absence"
   | "commercial-catalog-status";
 
+export type ReviewedDocumentFormat = "markdown" | "html";
+export type ReviewedDocumentDescriptionExtraction = "repository-description" | "exact-excerpt";
+
 export type ReviewedRepositoryMetadataSource = {
   derivation: ReviewedMetadataSourceDerivation;
   source_url: string;
+  content_url?: string;
+  document_format?: ReviewedDocumentFormat;
+  description_extraction?: ReviewedDocumentDescriptionExtraction;
   path?: string;
   sha256?: string;
   size_bytes?: number;
@@ -35,6 +42,18 @@ export type ReviewedRepositoryMetadataWave = {
   schema_version: number;
   reviewed_at: string;
   projects: ReviewedRepositoryMetadataDefinition[];
+};
+
+export type ReviewedRepositoryMetadataSourceVerificationCheckpoint = {
+  schema_version: 1;
+  env: string;
+  wave: string;
+  reviewed_at: string;
+  wave_projects: number;
+  source_total: number;
+  verified_keys: string[];
+  started_at: string;
+  updated_at: string;
 };
 
 export type ReviewedRepositoryMetadataRow = {
@@ -90,6 +109,69 @@ const LICENSE_DERIVATIONS = new Set<ReviewedMetadataSourceDerivation>([
   "commercial-catalog-status",
 ]);
 
+export function reviewedRepositoryMetadataSourceVerificationKey(
+  definition: ReviewedRepositoryMetadataDefinition,
+  source: ReviewedRepositoryMetadataSource,
+): string {
+  return JSON.stringify([
+    definition.repository_url,
+    definition.revision,
+    source.derivation,
+    source.source_url,
+    source.content_url ?? null,
+    source.document_format ?? null,
+    source.description_extraction ?? null,
+    source.path ?? null,
+    source.sha256 ?? null,
+    source.size_bytes ?? null,
+    source.spdx_id ?? null,
+  ]);
+}
+
+export function reviewedRepositoryMetadataSourceVerificationKeys(
+  wave: ReviewedRepositoryMetadataWave,
+): string[] {
+  const keys = new Set<string>();
+  for (const definition of wave.projects) {
+    for (const source of Object.values(definition.sources)) {
+      if (source) keys.add(reviewedRepositoryMetadataSourceVerificationKey(definition, source));
+    }
+  }
+  return [...keys].sort();
+}
+
+export function validateReviewedRepositoryMetadataSourceVerificationCheckpoint(
+  value: unknown,
+  wave: ReviewedRepositoryMetadataWave,
+  env: string,
+): string[] {
+  const errors: string[] = [];
+  if (!value || typeof value !== "object" || Array.isArray(value)) return ["checkpoint must be an object"];
+  const checkpoint = value as Partial<ReviewedRepositoryMetadataSourceVerificationCheckpoint>;
+  const expectedKeys = new Set(reviewedRepositoryMetadataSourceVerificationKeys(wave));
+  if (checkpoint.schema_version !== 1) errors.push("checkpoint schema_version must be 1");
+  if (checkpoint.env !== env) errors.push(`checkpoint env must be ${env}`);
+  if (checkpoint.wave !== wave.wave) errors.push("checkpoint wave does not match");
+  if (checkpoint.reviewed_at !== wave.reviewed_at) errors.push("checkpoint reviewed_at does not match");
+  if (checkpoint.wave_projects !== wave.projects.length) errors.push("checkpoint project count does not match");
+  if (checkpoint.source_total !== expectedKeys.size) errors.push("checkpoint source count does not match");
+  if (!Array.isArray(checkpoint.verified_keys)) {
+    errors.push("checkpoint verified_keys must be an array");
+  } else {
+    const uniqueKeys = new Set(checkpoint.verified_keys);
+    if (uniqueKeys.size !== checkpoint.verified_keys.length) errors.push("checkpoint verified_keys must be unique");
+    for (const key of uniqueKeys) {
+      if (typeof key !== "string" || !expectedKeys.has(key)) {
+        errors.push("checkpoint contains a source key outside the current wave");
+        break;
+      }
+    }
+  }
+  if (!checkpoint.started_at || !Number.isFinite(Date.parse(checkpoint.started_at))) errors.push("checkpoint started_at must be an ISO timestamp");
+  if (!checkpoint.updated_at || !Number.isFinite(Date.parse(checkpoint.updated_at))) errors.push("checkpoint updated_at must be an ISO timestamp");
+  return errors;
+}
+
 function isHttpsUrl(value: string): boolean {
   try {
     return new URL(value).protocol === "https:";
@@ -134,6 +216,20 @@ export function repositoryDescriptionNeedsCleanup(value: string | null | undefin
   return repositoryDescriptionQualityIssues(value).length > 0;
 }
 
+export function reviewedMetadataOriginalStateAllowed(
+  field: ReviewedMetadataField,
+  columnValue: unknown,
+  rppsValue: unknown,
+): boolean {
+  const columnEmpty = typeof columnValue !== "string" || columnValue.trim() === "";
+  const rppsEmpty = typeof rppsValue !== "string" || rppsValue.trim() === "";
+  if (columnEmpty && rppsEmpty) return true;
+  return field === "description"
+    && typeof columnValue === "string"
+    && columnValue === rppsValue
+    && repositoryDescriptionNeedsCleanup(columnValue);
+}
+
 export function githubLicenseVerificationState(status: number, ok: boolean): "absent" | "detected" | "unavailable" {
   if (status === 404) return "absent";
   return ok ? "detected" : "unavailable";
@@ -141,8 +237,32 @@ export function githubLicenseVerificationState(status: number, ok: boolean): "ab
 
 function expectedDerivations(field: ReviewedMetadataField): Set<ReviewedMetadataSourceDerivation> {
   if (field === "summary") return new Set(["readme-summary"]);
-  if (field === "description") return new Set(["readme-description", "github-repository-description"]);
+  if (field === "description") return new Set(["readme-description", "github-repository-description", "verified-document-description"]);
   return LICENSE_DERIVATIONS;
+}
+
+type ImmutableReviewedDocument =
+  | { kind: "wayback" }
+  | { kind: "github-blob"; owner: string; repo: string; revision: string; path: string };
+
+function immutableReviewedDocument(url: string): ImmutableReviewedDocument | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "web.archive.org" && /^\/web\/\d{14}id_\/https?:\/\//u.test(parsed.pathname)) {
+      return { kind: "wayback" };
+    }
+    if (parsed.hostname === "github.com") {
+      const match = parsed.pathname.match(/^\/([^/]+)\/([^/]+)\/blob\/([a-f0-9]{40})\/(.+)$/u);
+      if (match) return { kind: "github-blob", owner: match[1], repo: match[2], revision: match[3], path: match[4] };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function immutableGithubRawUrl(document: Extract<ImmutableReviewedDocument, { kind: "github-blob" }>): string {
+  return `https://raw.githubusercontent.com/${document.owner}/${document.repo}/${document.revision}/${document.path}`;
 }
 
 export function validateReviewedRepositoryMetadataWave(wave: ReviewedRepositoryMetadataWave): string[] {
@@ -194,6 +314,26 @@ export function validateReviewedRepositoryMetadataWave(wave: ReviewedRepositoryM
         if (!SHA256_RE.test(source.sha256 ?? "")) errors.push(`${project.slug}: repository description sha256 is invalid`);
         if (!Number.isInteger(source.size_bytes) || (source.size_bytes ?? 0) <= 0) errors.push(`${project.slug}: repository description size_bytes must be positive`);
         if (source.source_url !== project.repository_url) errors.push(`${project.slug}: repository description source_url must equal repository_url`);
+      }
+      if (source.derivation === "verified-document-description") {
+        const immutableDocument = immutableReviewedDocument(source.source_url);
+        if (!immutableDocument) errors.push(`${project.slug}: verified document source_url must be an immutable Wayback capture or GitHub blob URL`);
+        if (!SHA256_RE.test(source.sha256 ?? "")) errors.push(`${project.slug}: verified document sha256 is invalid`);
+        if (!Number.isInteger(source.size_bytes) || (source.size_bytes ?? 0) <= 0) errors.push(`${project.slug}: verified document size_bytes must be positive`);
+        if (source.document_format !== "markdown" && source.document_format !== "html") errors.push(`${project.slug}: verified document format is invalid`);
+        if (source.description_extraction !== "repository-description" && source.description_extraction !== "exact-excerpt") {
+          errors.push(`${project.slug}: verified document description_extraction is invalid`);
+        }
+        if (source.description_extraction === "repository-description" && source.document_format !== "markdown") {
+          errors.push(`${project.slug}: repository-description extraction requires markdown`);
+        }
+        if (source.content_url && !isHttpsUrl(source.content_url)) errors.push(`${project.slug}: verified document content_url must be HTTPS`);
+        if (immutableDocument?.kind === "github-blob") {
+          if (project.revision && immutableDocument.revision !== project.revision) errors.push(`${project.slug}: verified GitHub document revision must equal the project revision`);
+          if (source.content_url !== immutableGithubRawUrl(immutableDocument)) errors.push(`${project.slug}: verified GitHub document content_url must be the matching immutable raw URL`);
+        } else if (immutableDocument?.kind === "wayback" && source.content_url && source.content_url !== source.source_url) {
+          errors.push(`${project.slug}: verified Wayback document content_url must equal source_url when provided`);
+        }
       }
       if (source.derivation === "github-license-file") {
         if (!project.repository_url || !project.revision) errors.push(`${project.slug}: license file source requires a pinned repository`);
@@ -367,6 +507,40 @@ export function extractRepositoryDescription(markdown: string): string {
   return clampProse(blocks[bestIndex], 1_200);
 }
 
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&#x([0-9a-f]+);/giu, (_match, digits: string) => String.fromCodePoint(Number.parseInt(digits, 16)))
+    .replace(/&#(\d+);/gu, (_match, digits: string) => String.fromCodePoint(Number.parseInt(digits, 10)))
+    .replace(/&nbsp;/giu, " ")
+    .replace(/&amp;/giu, "&")
+    .replace(/&quot;/giu, '"')
+    .replace(/&(?:apos|#39);/giu, "'")
+    .replace(/&lt;/giu, "<")
+    .replace(/&gt;/giu, ">");
+}
+
+export function normalizeVerifiedDocumentText(value: string, format: ReviewedDocumentFormat): string {
+  const text = format === "html"
+    ? value
+      .replace(/<script\b[\s\S]*?<\/script>/giu, " ")
+      .replace(/<style\b[\s\S]*?<\/style>/giu, " ")
+      .replace(/<[^>]+>/gu, " ")
+    : value;
+  return decodeHtmlEntities(text).replace(/\s+/gu, " ").trim();
+}
+
+export function verifiedDocumentDescriptionMatches(
+  sourceText: string,
+  format: ReviewedDocumentFormat,
+  extraction: ReviewedDocumentDescriptionExtraction,
+  description: string,
+): boolean {
+  if (extraction === "repository-description") return extractRepositoryDescription(sourceText) === description;
+  const normalizedSource = normalizeVerifiedDocumentText(sourceText, format);
+  const normalizedDescription = description.replace(/\s+/gu, " ").trim();
+  return normalizedDescription.length > 0 && normalizedSource.includes(normalizedDescription);
+}
+
 export function summarizeRepositoryText(value: string): string {
   const clean = cleanInlineMarkdown(value);
   const candidates = clean.split(/(?<=[.!?。！？])\s*/u).map((sentence) => sentence.trim()).filter(Boolean);
@@ -395,6 +569,22 @@ export function serializeReviewedRepositoryMetadataRpps(input: Record<string, un
   return JSON.stringify(input);
 }
 
+export function serializeReviewedRepositoryMetadataRppsPreservingLegacy(
+  original: Record<string, unknown>,
+  next: Record<string, unknown>,
+): string {
+  const nextValidation = validateRpps(next);
+  if (!("errors" in nextValidation)) return JSON.stringify(next);
+  const originalValidation = validateRpps(original);
+  if (!("errors" in originalValidation)) {
+    throw new Error(`Generated repository metadata RPPS failed validation: ${nextValidation.errors.join("; ")}`);
+  }
+  const originalErrors = new Set(originalValidation.errors);
+  const newErrors = nextValidation.errors.filter((error) => !originalErrors.has(error));
+  if (newErrors.length) throw new Error(`Generated repository metadata RPPS introduced validation errors: ${newErrors.join("; ")}`);
+  return JSON.stringify(next);
+}
+
 function sourcePresentation(
   definition: ReviewedRepositoryMetadataDefinition,
   field: ReviewedMetadataField,
@@ -421,6 +611,17 @@ function sourcePresentation(
         confidence: 0.96,
         contentHash,
         excerpt: "Reviewed description matches the GitHub repository description and pinned project identity.",
+      };
+    case "verified-document-description":
+      return {
+        sourceType: source.document_format === "markdown" ? "repo" : "docs",
+        title: `${definition.name} immutable reviewed description source`,
+        publisher: new URL(source.source_url).hostname,
+        confidence: 0.98,
+        contentHash,
+        excerpt: source.description_extraction === "repository-description"
+          ? "Reviewed description was deterministically extracted from an immutable source document."
+          : "Reviewed description is an exact prose excerpt from an immutable source document.",
       };
     case "github-license-file":
       return {

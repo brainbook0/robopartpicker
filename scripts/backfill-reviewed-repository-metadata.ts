@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import {
   buildReviewedRepositoryMetadataForwardSql,
@@ -10,20 +10,25 @@ import {
   githubRepositoryParts,
   normalizeGithubRepositoryDescription,
   prepareRepositoryMetadataEvidence,
-  serializeReviewedRepositoryMetadataRpps,
+  reviewedRepositoryMetadataSourceVerificationKey,
+  reviewedRepositoryMetadataSourceVerificationKeys,
+  reviewedMetadataOriginalStateAllowed,
+  serializeReviewedRepositoryMetadataRppsPreservingLegacy,
   summarizeRepositoryText,
   validateReviewedRepositoryMetadataQuality,
+  validateReviewedRepositoryMetadataSourceVerificationCheckpoint,
   validateReviewedRepositoryMetadataWave,
+  verifiedDocumentDescriptionMatches,
   type PreparedRepositoryMetadataEvidence,
   type PreparedReviewedRepositoryMetadata,
   type ReviewedMetadataField,
   type ReviewedRepositoryMetadataDefinition,
   type ReviewedRepositoryMetadataRow,
   type ReviewedRepositoryMetadataSource,
+  type ReviewedRepositoryMetadataSourceVerificationCheckpoint,
   type ReviewedRepositoryMetadataWave,
 } from "../src/lib/reviewed-repository-metadata";
 import { sqlString } from "../src/lib/physical-design-wave-import";
-import { normalizeRppsForWrite } from "../src/lib/rpps/schema";
 
 type EnvName = "production" | "preview";
 type GitHubResult = { ok: boolean; status: number; data: unknown };
@@ -50,6 +55,7 @@ const args = process.argv.slice(2);
 const envIndex = args.indexOf("--env");
 const waveIndex = args.indexOf("--wave");
 const verificationReceiptIndex = args.indexOf("--source-verification-receipt");
+const verificationCheckpointIndex = args.indexOf("--source-verification-checkpoint");
 const env = (envIndex >= 0 ? args[envIndex + 1] : undefined) as EnvName | undefined;
 const wavePath = resolve(waveIndex >= 0 && args[waveIndex + 1]
   ? args[waveIndex + 1]
@@ -58,11 +64,14 @@ const apply = args.includes("--apply");
 const verificationReceiptPath = verificationReceiptIndex >= 0 && args[verificationReceiptIndex + 1]
   ? resolve(args[verificationReceiptIndex + 1])
   : null;
+const requestedVerificationCheckpointPath = verificationCheckpointIndex >= 0 && args[verificationCheckpointIndex + 1]
+  ? resolve(args[verificationCheckpointIndex + 1])
+  : null;
 const scratch = process.env.JCODE_SCRATCH_DIR;
 const batchSize = 25;
 
 if (env !== "production" && env !== "preview") {
-  console.error("Usage: tsx scripts/backfill-reviewed-repository-metadata.ts --env production|preview [--wave path] [--source-verification-receipt path] [--apply]");
+  console.error("Usage: tsx scripts/backfill-reviewed-repository-metadata.ts --env production|preview [--wave path] [--source-verification-receipt path] [--source-verification-checkpoint path] [--apply]");
   process.exit(2);
 }
 if (!scratch) {
@@ -78,6 +87,9 @@ const wave = JSON.parse(readFileSync(wavePath, "utf8")) as ReviewedRepositoryMet
 const definitionErrors = validateReviewedRepositoryMetadataWave(wave);
 definitionErrors.push(...validateReviewedRepositoryMetadataQuality(wave));
 if (definitionErrors.length) throw new Error(`Invalid reviewed repository metadata wave:\n${definitionErrors.join("\n")}`);
+const verificationCheckpointPath = requestedVerificationCheckpointPath
+  ?? join(scratch!, `reviewed-repository-metadata-${env}-${wave.wave}-source-checkpoint.json`);
+const sourceVerificationCheckpointMaxAgeMs = 60 * 60_000;
 
 function credentialsEnvironment(): NodeJS.ProcessEnv {
   const childEnv = { ...process.env };
@@ -102,12 +114,6 @@ function credentialsEnvironment(): NodeJS.ProcessEnv {
 const childEnv = credentialsEnvironment();
 const githubToken = childEnv.GITHUB_TOKEN
   ?? execFileSync("gh", ["auth", "token"], { encoding: "utf8", env: childEnv }).trim();
-
-function publicOrigin(environment: EnvName): string {
-  return environment === "production"
-    ? "https://robopartpicker-production.ludomi2502.workers.dev"
-    : "https://robopartpicker-preview.ludomi2502.workers.dev";
-}
 
 function retryDelayMs(attempt: number, response?: Response): number {
   const retryAfterSeconds = Number(response?.headers.get("retry-after"));
@@ -237,10 +243,7 @@ function prepareProject(
   if (row.visibility !== "public" || row.status !== "published") throw new Error(`${definition.slug}: project must remain public and published`);
   if (!row.current_version_id || !row.rpps_json) throw new Error(`${definition.slug}: current project version is missing`);
 
-  const current = normalizeRppsForWrite(
-    JSON.parse(row.rpps_json),
-    publicOrigin(env!),
-  ) as Record<string, unknown>;
+  const current = JSON.parse(row.rpps_json) as Record<string, unknown>;
   const evidence = prepareRepositoryMetadataEvidence(wave.wave, definition);
   for (const item of evidence) {
     if (item.source.derivation === "commercial-catalog-status" && current.docs_url !== item.source.source_url) {
@@ -258,14 +261,13 @@ function prepareProject(
   const exactDbEvidence = evidence.every((item) => exactEvidenceState(evidenceState, row.id, item));
   if (exactColumns && exactRpps && exactDbEvidence) return { project: null, alreadyApplied: true };
 
-  const pristineColumns = targetFields.every((field) => {
+  const reviewedOriginalState = targetFields.every((field) => {
     const column = field === "license_spdx" ? row.license_spdx : row[field];
-    return empty(column);
+    return reviewedMetadataOriginalStateAllowed(field, column, rppsField(current, field));
   });
-  const pristineRpps = targetFields.every((field) => empty(rppsField(current, field)));
   const pristineEvidence = evidence.every((item) => noEvidenceState(evidenceState, item));
-  if (!pristineColumns || !pristineRpps || !pristineEvidence) {
-    throw new Error(`${definition.slug}: metadata state is neither pristine nor the exact reviewed wave`);
+  if (!reviewedOriginalState || !pristineEvidence) {
+    throw new Error(`${definition.slug}: metadata state is neither eligible for reviewed replacement nor the exact reviewed wave`);
   }
 
   const nextSummary = definition.updates.summary ?? row.summary;
@@ -290,7 +292,10 @@ function prepareProject(
   };
   let nextRppsJson: string;
   try {
-    nextRppsJson = serializeReviewedRepositoryMetadataRpps(nextRpps as unknown as Record<string, unknown>);
+    nextRppsJson = serializeReviewedRepositoryMetadataRppsPreservingLegacy(
+      current,
+      nextRpps as unknown as Record<string, unknown>,
+    );
   } catch (error) {
     throw new Error(`${definition.slug}: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -397,6 +402,25 @@ async function verifySource(
   source: ReviewedRepositoryMetadataSource,
 ): Promise<void> {
   if (source.derivation === "commercial-catalog-status") return;
+
+  if (source.derivation === "verified-document-description") {
+    const response = await fetch(source.content_url ?? source.source_url, {
+      headers: { "user-agent": "RoboPartPicker reviewed metadata wave" },
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!response.ok) throw new Error(`${definition.slug}/${field}: verified document returned HTTP ${response.status}`);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength !== source.size_bytes || digest(bytes) !== source.sha256) {
+      throw new Error(`${definition.slug}/${field}: verified document bytes failed size/hash verification`);
+    }
+    const description = definition.updates.description ?? "";
+    if (!source.document_format || !source.description_extraction
+      || !verifiedDocumentDescriptionMatches(Buffer.from(bytes).toString("utf8"), source.document_format, source.description_extraction, description)) {
+      throw new Error(`${definition.slug}/${field}: reviewed description no longer matches the verified document`);
+    }
+    return;
+  }
+
   if (!definition.repository_url || !definition.revision) throw new Error(`${definition.slug}/${field}: pinned repository identity is missing`);
   const parts = githubRepositoryParts(definition.repository_url);
   if (!parts) throw new Error(`${definition.slug}/${field}: repository URL is not GitHub`);
@@ -445,38 +469,99 @@ async function verifySource(
   }
 }
 
-async function verifySources(): Promise<number> {
-  const jobs = new Map<string, { definition: ReviewedRepositoryMetadataDefinition; field: ReviewedMetadataField; source: ReviewedRepositoryMetadataSource }>();
+type SourceVerificationJob = {
+  definition: ReviewedRepositoryMetadataDefinition;
+  field: ReviewedMetadataField;
+  source: ReviewedRepositoryMetadataSource;
+};
+
+function sourceVerificationJobs(): Map<string, SourceVerificationJob> {
+  const jobs = new Map<string, SourceVerificationJob>();
   for (const definition of wave.projects) {
     for (const item of prepareRepositoryMetadataEvidence(wave.wave, definition)) {
-      const key = JSON.stringify([definition.repository_url, definition.revision, item.source]);
+      const key = reviewedRepositoryMetadataSourceVerificationKey(definition, item.source);
       jobs.set(key, { definition, field: item.field, source: item.source });
     }
   }
-  const entries = [...jobs.values()];
+  return jobs;
+}
+
+function loadSourceVerificationCheckpoint(expectedKeys: Set<string>): {
+  verifiedKeys: Set<string>;
+  startedAt: string;
+} {
+  const startedAt = new Date().toISOString();
+  if (!existsSync(verificationCheckpointPath)) return { verifiedKeys: new Set(), startedAt };
+  const checkpoint = JSON.parse(readFileSync(verificationCheckpointPath, "utf8")) as ReviewedRepositoryMetadataSourceVerificationCheckpoint;
+  const errors = validateReviewedRepositoryMetadataSourceVerificationCheckpoint(checkpoint, wave, env!);
+  if (errors.length) throw new Error(`Source-verification checkpoint is invalid: ${errors.join("; ")}`);
+  const updatedAt = Date.parse(checkpoint.updated_at);
+  const ageMs = Date.now() - updatedAt;
+  if (ageMs < -5 * 60_000 || ageMs > sourceVerificationCheckpointMaxAgeMs) {
+    console.log(`JCODE_PROGRESS ${JSON.stringify({ current: 0, total: expectedKeys.size, unit: "sources", message: "stale source-verification checkpoint ignored" })}`);
+    return { verifiedKeys: new Set(), startedAt };
+  }
+  return { verifiedKeys: new Set(checkpoint.verified_keys), startedAt: checkpoint.started_at };
+}
+
+function writeSourceVerificationCheckpoint(verifiedKeys: Set<string>, total: number, startedAt: string): void {
+  const checkpoint: ReviewedRepositoryMetadataSourceVerificationCheckpoint = {
+    schema_version: 1,
+    env: env!,
+    wave: wave.wave,
+    reviewed_at: wave.reviewed_at,
+    wave_projects: wave.projects.length,
+    source_total: total,
+    verified_keys: [...verifiedKeys].sort(),
+    started_at: startedAt,
+    updated_at: new Date().toISOString(),
+  };
+  const temporaryPath = `${verificationCheckpointPath}.${process.pid}.tmp`;
+  writeFileSync(temporaryPath, `${JSON.stringify(checkpoint, null, 2)}\n`);
+  renameSync(temporaryPath, verificationCheckpointPath);
+}
+
+async function verifySources(): Promise<{ sourceVerified: number; checkpoint: string; reused: number }> {
+  const jobs = sourceVerificationJobs();
+  const expectedKeys = new Set(jobs.keys());
+  const checkpoint = loadSourceVerificationCheckpoint(expectedKeys);
+  const verifiedKeys = checkpoint.verifiedKeys;
+  const reused = verifiedKeys.size;
+  const entries = [...jobs.entries()].filter(([key]) => !verifiedKeys.has(key));
   const errors: string[] = [];
   let cursor = 0;
   let completed = 0;
+  let successfulSinceCheckpoint = 0;
   async function worker(): Promise<void> {
     while (true) {
       const index = cursor;
       cursor += 1;
       if (index >= entries.length) return;
-      const job = entries[index];
+      const [key, job] = entries[index];
       try {
         await verifySource(job.definition, job.field, job.source);
+        verifiedKeys.add(key);
+        successfulSinceCheckpoint += 1;
+        if (successfulSinceCheckpoint >= 10) {
+          writeSourceVerificationCheckpoint(verifiedKeys, jobs.size, checkpoint.startedAt);
+          successfulSinceCheckpoint = 0;
+        }
       } catch (error) {
         errors.push(error instanceof Error ? error.message : String(error));
       }
       completed += 1;
       if (completed % 10 === 0 || completed === entries.length) {
-        console.log(`JCODE_PROGRESS ${JSON.stringify({ current: completed, total: entries.length, unit: "sources", message: `immutable metadata sources verified; ${errors.length} errors` })}`);
+        console.log(`JCODE_PROGRESS ${JSON.stringify({ current: verifiedKeys.size, total: jobs.size, unit: "sources", message: `immutable metadata sources verified; ${errors.length} errors; ${reused} resumed` })}`);
       }
     }
   }
   await Promise.all(Array.from({ length: 10 }, () => worker()));
-  if (errors.length) throw new Error(`Reviewed metadata source verification failed:\n${errors.join("\n")}`);
-  return entries.length;
+  writeSourceVerificationCheckpoint(verifiedKeys, jobs.size, checkpoint.startedAt);
+  if (errors.length) {
+    throw new Error(`Reviewed metadata source verification failed; ${verifiedKeys.size}/${jobs.size} successes checkpointed at ${verificationCheckpointPath}:\n${errors.join("\n")}`);
+  }
+  if (verifiedKeys.size !== jobs.size) throw new Error(`Source verification ended with ${verifiedKeys.size}/${jobs.size} verified keys`);
+  return { sourceVerified: jobs.size, checkpoint: verificationCheckpointPath, reused };
 }
 
 type SourceVerificationReceipt = {
@@ -489,13 +574,7 @@ type SourceVerificationReceipt = {
 };
 
 function expectedSourceVerificationCount(): number {
-  const keys = new Set<string>();
-  for (const definition of wave.projects) {
-    for (const item of prepareRepositoryMetadataEvidence(wave.wave, definition)) {
-      keys.add(JSON.stringify([definition.repository_url, definition.revision, item.source]));
-    }
-  }
-  return keys.size;
+  return reviewedRepositoryMetadataSourceVerificationKeys(wave).length;
 }
 
 function reuseSourceVerificationReceipt(path: string): number {
@@ -605,9 +684,10 @@ for (const definition of wave.projects) {
   if (result.alreadyApplied) alreadyApplied.push(definition.slug);
 }
 
+const liveSourceVerification = verificationReceiptPath ? null : await verifySources();
 const sourceVerified = verificationReceiptPath
   ? reuseSourceVerificationReceipt(verificationReceiptPath)
-  : await verifySources();
+  : liveSourceVerification!.sourceVerified;
 const artifacts = writeSqlArtifacts(prepared, now);
 const report = {
   mode: apply ? "apply" : "dry-run",
@@ -616,7 +696,9 @@ const report = {
   reviewedAt: wave.reviewed_at,
   waveProjects: wave.projects.length,
   sourceVerified,
-  sourceVerification: verificationReceiptPath ? { mode: "receipt", receipt: verificationReceiptPath } : { mode: "live" },
+  sourceVerification: verificationReceiptPath
+    ? { mode: "receipt", receipt: verificationReceiptPath }
+    : { mode: "live", checkpoint: liveSourceVerification!.checkpoint, reused: liveSourceVerification!.reused },
   prepared: prepared.length,
   alreadyApplied: alreadyApplied.length,
   updates: {
