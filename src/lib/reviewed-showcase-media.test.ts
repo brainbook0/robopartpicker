@@ -137,6 +137,22 @@ describe("reviewed showcase media", () => {
       { ...physical, revision: "d".repeat(40) },
       '<img src="docs/img/flix1.1.jpg" alt="Flix quadcopter">',
     )).toBe(false);
+    expect(sourceDocumentReferencesReviewedImage(
+      {
+        ...physical,
+        source_page_url: `https://github.com/okalachev/flix/blob/${revision}/docs/README.md`,
+        source_document: { path: "docs/README.md", sha256: "b".repeat(64), size_bytes: 1200 },
+      },
+      '<img src="img/flix1.1.jpg" alt="Flix quadcopter">',
+    )).toBe(true);
+    expect(sourceDocumentReferencesReviewedImage(
+      {
+        ...physical,
+        source_page_url: `https://github.com/okalachev/flix/blob/${revision}/docs/guides/build.md`,
+        source_document: { path: "docs/guides/build.md", sha256: "b".repeat(64), size_bytes: 1200 },
+      },
+      '<img src="../img/flix1.1.jpg" alt="Flix quadcopter">',
+    )).toBe(true);
   });
 
   it("creates deterministic managed file identities and URLs", () => {

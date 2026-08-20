@@ -100,6 +100,14 @@ function immutableSourceDocumentUrl(definition: ReviewedShowcaseMediaDefinition)
   return `${base}/blob/${definition.revision}/${path}`;
 }
 
+function relativeRepositoryPath(fromFile: string, toFile: string): string {
+  const from = fromFile.split("/").filter(Boolean).slice(0, -1);
+  const to = toFile.split("/").filter(Boolean);
+  let common = 0;
+  while (common < from.length && common < to.length && from[common] === to[common]) common += 1;
+  return [...Array.from({ length: from.length - common }, () => ".."), ...to.slice(common)].join("/");
+}
+
 export function sourceDocumentReferencesReviewedImage(
   definition: ReviewedShowcaseMediaDefinition,
   sourceDocument: string,
@@ -124,8 +132,19 @@ export function sourceDocumentReferencesReviewedImage(
     if (definition.revision !== revision) return false;
 
     const repositoryPath = pathParts.join("/");
-    return sourceDocument.includes(repositoryPath)
-      || sourceDocument.includes(`./${repositoryPath}`);
+    const relativePath = relativeRepositoryPath(definition.source_document?.path ?? "", repositoryPath);
+    const references = new Set([
+      repositoryPath,
+      `./${repositoryPath}`,
+      relativePath,
+      relativePath.startsWith("..") ? relativePath : `./${relativePath}`,
+    ]);
+    for (const reference of references) {
+      if (!reference) continue;
+      const encoded = reference.split("/").map((part) => encodeURIComponent(part)).join("/");
+      if (sourceDocument.includes(reference) || sourceDocument.includes(encoded)) return true;
+    }
+    return false;
   } catch {
     return false;
   }
