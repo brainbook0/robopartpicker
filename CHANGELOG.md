@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Made the unit/worker test scripts environment-robust by pinning `NODE_ENV=test` internally, so a globally exported `NODE_ENV=production` can no longer silently load React's production JSX runtime and break UI component rendering in the test suite.
+- Hardened the project catalog listing boundary so `GET /api/v1/projects?mine=true` without a session returns `401 AUTHENTICATION_REQUIRED` instead of a `200` with an empty list. The anonymous call no longer masks the signed-in requirement from API consumers, and the one failing post-deploy acceptance gate now closes safely.
+- Corrected the source-backed GitHub metadata backfill tool's completion-floor thresholds. It previously gated on `summary<20 / description<80`, so its dry run reported `0` projects even though the catalog audit counts 230 holes (177 short summaries under 80 chars, 44 short descriptions under 500, 121 missing licenses). The deterministic gate now matches the documented floor (`summary≥80`, `description≥500`) and honestly skips repos that 404 or report no concrete license/readme text.
+
 - Hardened BOM ingestion for real-world spreadsheets and documentation by preserving XLSX column alignment across self-closing empty cells, recognizing multilingual headers, and parsing credible Markdown BOM tables without relaxing partition-table safeguards.
 
 - Made RFQ line keys stable against BOM storage IDs, preserved `RFQ_EXPIRED` errors for late supplier responses, and isolated offer-history regression fixtures so quote and sourcing behavior is deterministic across requests and tests.

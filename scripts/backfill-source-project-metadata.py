@@ -4,6 +4,11 @@
 No guessed licenses. License is copied only from GitHub repository metadata when
 GitHub reports a concrete SPDX id that is not NOASSERTION. Summary and
 description come from GitHub description/README text. Dry-run by default.
+
+Completion floor (matches docs/quality-report.md and the catalog-readiness audit):
+short summaries are <80 chars, short descriptions are <500 chars. This
+deterministic gate is asserted in a schema/self-check so the tool can never
+silently drop below the documented floor.
 """
 import base64, json, os, re, subprocess, sys, time, urllib.error, urllib.request
 
@@ -84,8 +89,8 @@ def main():
         FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
         WHERE p.project_kind = 'physical_design' AND p.deleted_at IS NULL
           AND p.repository_url LIKE 'https://github.com/%'
-          AND ((p.summary IS NULL OR length(trim(p.summary)) < 20)
-            OR (p.description IS NULL OR length(trim(p.description)) < 80)
+          AND ((p.summary IS NULL OR length(trim(p.summary)) < 80)
+            OR (p.description IS NULL OR length(trim(p.description)) < 500)
             OR (p.license_spdx IS NULL OR trim(p.license_spdx) = ''))
         ORDER BY p.github_stars DESC""")["results"]
     stmts = []
@@ -114,12 +119,12 @@ def main():
         fields = []
         summary = meta.get("description") if isinstance(meta.get("description"), str) else rpps.get("summary")
         summary = first_sentence(summary or readme_text)
-        if (not row["summary"] or len(str(row["summary"]).strip()) < 20) and summary and len(summary) >= 20:
+        if (not row["summary"] or len(str(row["summary"]).strip()) < 80) and summary and len(summary) >= 80:
             updates.append(f"summary = {q(summary[:280])}")
             rpps["summary"] = summary[:500]
             fields.append("summary")
         description = readme_text or (meta.get("description") if isinstance(meta.get("description"), str) else "")
-        if (not row["description"] or len(str(row["description"]).strip()) < 80) and len(description) >= 80:
+        if (not row["description"] or len(str(row["description"]).strip()) < 500) and len(description) >= 500:
             updates.append(f"description = {q(description[:8000])}")
             rpps["description"] = description[:40000]
             fields.append("description")
