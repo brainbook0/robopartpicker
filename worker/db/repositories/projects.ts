@@ -179,14 +179,25 @@ export class ProjectsRepository {
     if (category) clauses.push(`p.robot_category = ${bind(category)}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
     const result = await this.db.prepare(`
+      WITH visible_projects AS (
+        SELECT p.id, p.status, p.project_kind
+        FROM projects p ${where}
+      ), bom_counts AS (
+        SELECT b.project_id, COUNT(*) AS parts
+        FROM boms b
+        JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+        JOIN visible_projects vp ON vp.id = b.project_id
+        GROUP BY b.project_id
+      )
       SELECT
         COUNT(*) AS totalProjects,
-        COALESCE(SUM(CASE WHEN p.project_kind = 'physical_design' THEN 1 ELSE 0 END), 0) AS physicalDesignProjects,
-        COALESCE(SUM(CASE WHEN p.project_kind = 'robotics_software' THEN 1 ELSE 0 END), 0) AS roboticsSoftwareProjects,
-        COALESCE(SUM(CASE WHEN p.project_kind = 'commercial_showcase' THEN 1 ELSE 0 END), 0) AS commercialShowcaseProjects,
-        COALESCE(SUM(CASE WHEN p.status = 'published' THEN 1 ELSE 0 END), 0) AS publishedProjects,
-        COALESCE(SUM(COALESCE((SELECT COUNT(*) FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id WHERE b.project_id = p.id), 0)), 0) AS totalParts
-      FROM projects p ${where}
+        COALESCE(SUM(CASE WHEN vp.project_kind = 'physical_design' THEN 1 ELSE 0 END), 0) AS physicalDesignProjects,
+        COALESCE(SUM(CASE WHEN vp.project_kind = 'robotics_software' THEN 1 ELSE 0 END), 0) AS roboticsSoftwareProjects,
+        COALESCE(SUM(CASE WHEN vp.project_kind = 'commercial_showcase' THEN 1 ELSE 0 END), 0) AS commercialShowcaseProjects,
+        COALESCE(SUM(CASE WHEN vp.status = 'published' THEN 1 ELSE 0 END), 0) AS publishedProjects,
+        COALESCE(SUM(COALESCE(bom_counts.parts, 0)), 0) AS totalParts
+      FROM visible_projects vp
+      LEFT JOIN bom_counts ON bom_counts.project_id = vp.id
     `).bind(...values).first<{
       totalProjects: number;
       physicalDesignProjects: number;
