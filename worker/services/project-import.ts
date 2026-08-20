@@ -3,6 +3,7 @@ import { parse as parseYaml } from "yaml";
 import { buildBomLine, withCompleteness } from "../../src/lib/rpps/bom";
 import { normalizeBomHeader, parseCsvObjects, parseXlsxObjects } from "../../src/lib/bom-format-parser";
 import { RppsPackage } from "../../src/lib/rpps/schema";
+import { extractProcedureCandidates } from "../../src/lib/project-procedures";
 import {
   PortableRppsManifest,
   convertLegacyRpps,
@@ -679,30 +680,6 @@ function extractRepositorySignals(files: InputFile[]): ExtractedProjectIntellige
   };
 }
 
-function extractProcedureCandidates(files: Map<string, string>, slug: string): ExtractedProjectIntelligence["procedureCandidates"] {
-  const output: ExtractedProjectIntelligence["procedureCandidates"] = [];
-  for (const [path, text] of files) {
-    if (!/\.md$/iu.test(path)) continue;
-    const lines = text.split(/\r?\n/u);
-    for (let index = 0; index < lines.length; index += 1) {
-      const heading = lines[index].match(/^#{1,6}\s+(.+?)\s*#*$/u)?.[1]?.trim();
-      if (!heading) continue;
-      const kind = procedureKind(heading);
-      if (!kind) continue;
-      const steps: string[] = [];
-      for (let cursor = index + 1; cursor < lines.length && !/^#{1,6}\s+/u.test(lines[cursor]); cursor += 1) {
-        const step = lines[cursor].match(/^\s*(?:\d+[.)]|[-*+])\s+(.+)$/u)?.[1];
-        if (step) steps.push(cleanMarkdownStep(step));
-        if (steps.length >= 200) break;
-      }
-      if (steps.length === 0) continue;
-      output.push({ id: `procedure:${slug}:${slugify(`${path}-${heading}`).slice(0, 100)}`, kind, title: heading.slice(0, 500), steps, sourcePath: path, confidence: 0.65, heuristic: true });
-      if (output.length >= 100) return output;
-    }
-  }
-  return output;
-}
-
 function selectPreviewArtifacts(artifacts: Array<ImportedArtifact & { id: string }>): ExtractedProjectIntelligence["previews"] {
   const images = artifacts.filter((artifact) => artifact.kind === "image").sort((left, right) => previewImageScore(right.path) - previewImageScore(left.path));
   const modelPriority: Record<string, number> = { urdf: 7, glb: 6, gltf: 5, stl: 4, obj: 3, step: 2, stp: 2 };
@@ -717,17 +694,6 @@ function selectPreviewArtifacts(artifacts: Array<ImportedArtifact & { id: string
 function xmlValue(text: string, tag: string): string | undefined { return text.match(new RegExp(`<${tag}[^>]*>\\s*([^<]+?)\\s*</${tag}>`, "iu"))?.[1]?.trim(); }
 function xmlAttribute(attributes: string, name: string): string | undefined { return attributes.match(new RegExp(`(?:^|\\s)${name}=["']([^"']+)["']`, "iu"))?.[1]?.trim(); }
 function finiteNumber(value: string | undefined): number | undefined { const parsed = Number(value); return value !== undefined && Number.isFinite(parsed) ? parsed : undefined; }
-function procedureKind(heading: string): ExtractedProjectIntelligence["procedureCandidates"][number]["kind"] | null {
-  const lower = heading.toLowerCase();
-  if (/assembl|mechanical build|putting .* together/u.test(lower)) return "assembly";
-  if (/calibrat|tuning|zeroing/u.test(lower)) return "calibration";
-  if (/\btest|verification|validation/u.test(lower)) return "test";
-  if (/configur|setup|installation|install/u.test(lower)) return "configuration";
-  if (/maintenan|service|repair/u.test(lower)) return "maintenance";
-  if (/operation|usage|running|start(?:ing)?/u.test(lower)) return "operation";
-  return null;
-}
-function cleanMarkdownStep(value: string): string { return value.replace(/\[([^\u005d]+)\]\([^)]+\)/gu, "$1").replace(/[*_`]/gu, "").trim().slice(0, 20_000); }
 function previewImageScore(path: string): number { const lower = path.toLowerCase(); return /(?:^|\/)(?:cover|hero|render|preview|overview|robot)[-_.]/u.test(lower) ? 10 : /cover|hero|render|preview/u.test(lower) ? 5 : 0; }
 
 const BOM_FILENAME_RE = /^(?:bom|parts(?:[-_ ]list)?|bill[-_ ]of[-_ ]materials)$/iu;

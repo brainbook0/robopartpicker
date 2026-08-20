@@ -645,7 +645,8 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
 
   it("stores project ZIPs privately in R2 and bounds archive analysis to the owner", async () => {
     const archive = zipSync({
-      "README.md": strToU8("# Bench robot\nA small robot used for repeatable integration tests.\n\n## Assembly\n1. Bolt the drive motors to the chassis.\n2. Route and strain-relieve the motor cables.\n\n## Calibration\n1. Zero the wheel encoders on a level surface."),
+      "README.md": strToU8("# Bench robot\nA small robot used for repeatable integration tests.\n\n## Quick Start\n1. Read the project overview.\n2. Review the supported interfaces.\n\n## Calibration\n1. Zero the wheel encoders on a level surface."),
+      "docs/assembly_guide.md": strToU8("# Assembly Guide\n\n## Assembly\n1. Bolt the drive motors to the chassis.\n2. Route and strain-relieve the motor cables.\n3. Verify every chassis fastener is secure."),
       "bom/parts.csv": strToU8("Name,Manufacturer,MPN,Quantity\nDrive motor,Test Motors,TM-42,2\n"),
       "description/robot.urdf": strToU8('<robot name="benchbot"><link name="base_link"><visual><geometry><mesh filename="../cad/chassis.stl"/></geometry></visual></link><link name="wheel_link"/><joint name="wheel_joint" type="continuous"><parent link="base_link"/><child link="wheel_link"/></joint></robot>'),
       "software/package.xml": strToU8('<package format="3"><name>benchbot_driver</name><version>1.2.0</version><depend>rclcpp</depend><exec_depend>sensor_msgs</exec_depend></package>'),
@@ -679,7 +680,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(result).toMatchObject({ schemaVersion: "project-import-analysis/3", sourceType: "archive", deterministic: true, aiUsed: false });
     expect(result.retrieval).toMatchObject({ mode: "uploaded", provider: "r2", mirroredFiles: 1 });
     expect(result.retrieval.fetchedFiles).toBeGreaterThan(0);
-    expect(result.inventory).toMatchObject({ totalFiles: 8, relevantFiles: 8 });
+    expect(result.inventory).toMatchObject({ totalFiles: 9, relevantFiles: 9 });
     expect(result.inventory.detected).toEqual(expect.arrayContaining(["bom", "cad", "documentation", "image", "urdf"]));
     expect(result.manifest.components).toEqual(expect.arrayContaining([expect.objectContaining({ mpn: "TM-42" })]));
     expect(result.manifest.interfaces).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "coordinate-frame" })]));
@@ -697,14 +698,15 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
   it("analyzes an authorized set of individually uploaded project files", async () => {
     const bomId = await uploadTestFile("parts.csv", "Name,Manufacturer,MPN,Quantity\nHip actuator,Motion Labs,ML-24,12\n", ownerCookie, "bom");
     const urdfId = await uploadTestFile("robot.urdf", '<robot name="uploadbot"><link name="base"><visual><geometry><mesh filename="chassis.step"/></geometry></visual></link><link name="leg"/><joint name="hip" type="revolute"><parent link="base"/><child link="leg"/></joint></robot>', ownerCookie, "urdf");
-    const readmeId = await uploadTestFile("README.md", "# Uploadbot\n\n## Assembly\n1. Attach each hip actuator to the chassis.\n2. Route the power harness.\n", ownerCookie);
+    const readmeId = await uploadTestFile("README.md", "# Uploadbot\n\n## Quick Start\n1. Read the project overview.\n2. Review the supported interfaces.\n", ownerCookie);
+    const assemblyId = await uploadTestFile("docs/assembly_guide.md", "# Assembly Guide\n\n## Assembly\n1. Attach each hip actuator to the chassis.\n2. Route the power harness.\n3. Verify the actuator fasteners.\n", ownerCookie);
     const denied = await call("/api/v1/projects/import/files", { method: "POST", body: jsonBody({ fileIds: [bomId, urdfId, readmeId] }) }, otherCookie);
     expect(denied.status).toBe(403);
-    const analyzed = await call("/api/v1/projects/import/files", { method: "POST", body: jsonBody({ fileIds: [bomId, urdfId, readmeId] }) }, ownerCookie);
+    const analyzed = await call("/api/v1/projects/import/files", { method: "POST", body: jsonBody({ fileIds: [bomId, urdfId, readmeId, assemblyId] }) }, ownerCookie);
     expect(analyzed.status).toBe(200);
     const result = (await body<{ analysis: { sourceType: string; inventory: { totalFiles: number; detected: string[] }; extracted: { model: { robotName: string; movableJointCount: number }; parts: { candidates: Array<{ mpn?: string }> }; procedureCandidates: Array<{ kind: string }> } } }>(analyzed)).analysis;
     expect(result.sourceType).toBe("files");
-    expect(result.inventory).toMatchObject({ totalFiles: 3 });
+    expect(result.inventory).toMatchObject({ totalFiles: 4 });
     expect(result.inventory.detected).toEqual(expect.arrayContaining(["bom", "documentation", "urdf"]));
     expect(result.extracted.model).toMatchObject({ robotName: "uploadbot", movableJointCount: 1 });
     expect(result.extracted.parts.candidates).toEqual(expect.arrayContaining([expect.objectContaining({ mpn: "ML-24" })]));
