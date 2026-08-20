@@ -51,3 +51,16 @@ export function resolveManagedUrdfMeshUrl(
   }
   return null;
 }
+
+export function rewriteManagedUrdfMeshUrls(
+  urdf: string,
+  urdfPath: string | null,
+  files: UrdfManagedFile[],
+  baseUrl: string,
+): string {
+  return urdf.replace(/<mesh\b[^>]*filename\s*=\s*"([^"]+)"([^>]*)>/giu, (match, filename, rest) => {
+    const resolved = resolveManagedUrdfMeshUrl(filename, urdfPath, files);
+    if (!resolved) return match;
+    return `<mesh filename="${new URL(resolved, baseUrl).toString()}"${rest}>`;
+  });
+}

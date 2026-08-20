@@ -4,7 +4,7 @@ import { Bounds, Grid, OrbitControls } from "@react-three/drei";
 import { LoadingManager, type Object3D } from "three";
 import URDFLoader from "urdf-loader";
 import { Box, ExternalLink, Rotate3D } from "lucide-react";
-import { resolveManagedUrdfMeshUrl } from "@/lib/urdfMeshResolution";
+import { rewriteManagedUrdfMeshUrls } from "@/lib/urdfMeshResolution";
 
 type Props = {
   urdfUrl: string;
@@ -19,34 +19,29 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
   const [robot, setRobot] = useState<Object3D | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ loaded: 0, total: 1 });
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+  const [resolvedUrdf, setResolvedUrdf] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    let objectUrl: string | null = null;
     setRobot(null);
     setError(null);
     setProgress({ loaded: 0, total: 1 });
-    setResolvedUrl(null);
+    setResolvedUrdf(null);
     resolveUrdfMeshes(urdfUrl, urdfPath ?? null, files)
       .then((rewritten) => {
         if (!active) return;
-        objectUrl = URL.createObjectURL(new Blob([rewritten], { type: "application/xml" }));
-        setResolvedUrl(objectUrl);
+        setResolvedUrdf(rewritten);
       })
       .catch((reason) => {
-        // Fall back to loading the raw URDF so the skeleton still renders.
-        if (active) setResolvedUrl(urdfUrl);
-        if (active) setError(reason instanceof Error ? reason.message : "Mesh resolution failed; loading raw URDF.");
+        if (active) setError(reason instanceof Error ? reason.message : "The URDF could not be resolved.");
       });
     return () => {
       active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [urdfUrl, urdfPath, files]);
 
   useEffect(() => {
-    if (!resolvedUrl) return;
+    if (!resolvedUrdf) return;
     let active = true;
     let parsedRobot: Object3D | null = null;
     let reportedFailure = false;
@@ -67,12 +62,23 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
     const loader = new URDFLoader(manager);
     loader.packages = () => "";
     loader.parseCollision = false;
-    loader.load(resolvedUrl, (loaded) => { parsedRobot = loaded; }, undefined, () => reportFailure("The URDF could not be parsed or loaded."));
+    const managedUrdfItem = `managed-urdf:${urdfUrl}`;
+    manager.itemStart(managedUrdfItem);
+    try {
+      // Parsing with an explicitly empty working path preserves the absolute
+      // managed file URLs injected above. Loading a rewritten Blob URL would
+      // make URDFLoader prefix every mesh URL with the Blob URL itself.
+      parsedRobot = loader.parse(resolvedUrdf);
+    } catch {
+      reportFailure("The URDF could not be parsed or loaded.");
+    } finally {
+      manager.itemEnd(managedUrdfItem);
+    }
     return () => {
       active = false;
       if (parsedRobot) disposeObject(parsedRobot);
     };
-  }, [resolvedUrl, onUnavailable]);
+  }, [resolvedUrdf, urdfUrl, onUnavailable]);
 
   return (
     <section className="surface-card overflow-hidden">
@@ -116,14 +122,7 @@ async function resolveUrdfMeshes(urdfUrl: string, urdfPath: string | null, files
   if (!response.ok) throw new Error(`URDF fetch failed with ${response.status}`);
   const text = await response.text();
 
-  const rewritten = text.replace(/<mesh\b[^>]*filename\s*=\s*"([^"]+)"([^>]*)>/giu, (match, filename, rest) => {
-    const resolved = resolveManagedUrdfMeshUrl(filename, urdfPath, files ?? []);
-    if (!resolved) return match;
-    const absolute = new URL(resolved, window.location.origin).toString();
-    return `<mesh filename="${absolute}"${rest}>`;
-  });
-
-  return rewritten;
+  return rewriteManagedUrdfMeshUrls(text, urdfPath, files ?? [], window.location.origin);
 }
 
 function shortUrl(url: string): string {

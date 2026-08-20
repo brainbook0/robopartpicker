@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeUrdfAssetPath, resolveManagedUrdfMeshUrl } from "./urdfMeshResolution";
+import { normalizeUrdfAssetPath, resolveManagedUrdfMeshUrl, rewriteManagedUrdfMeshUrls } from "./urdfMeshResolution";
 
 const files = [
   {
@@ -39,5 +39,15 @@ describe("resolveManagedUrdfMeshUrl", () => {
 
   it("leaves an unresolved mesh untouched", () => {
     expect(resolveManagedUrdfMeshUrl("package://robot/meshes/missing.STL", "robots/model.urdf", files)).toBeNull();
+  });
+});
+
+describe("rewriteManagedUrdfMeshUrls", () => {
+  it("rewrites managed mesh references to absolute URLs", () => {
+    const urdf = '<robot><mesh filename="package://robotiq/meshes/robotiq_85_base_link_fine.STL" scale="1 1 1" /></robot>';
+
+    expect(rewriteManagedUrdfMeshUrls(urdf, "robots/robot.urdf", files, "https://example.com/projects/robot")).toBe(
+      '<robot><mesh filename="https://example.com/api/v1/files/content?id=fine" scale="1 1 1" /></robot>',
+    );
   });
 });
