@@ -92,7 +92,7 @@ export default function ProjectDetail() {
   }, [projectId, user?.id]);
 
   useEffect(() => {
-    if (!projectId || p?.project_kind === "commercial_showcase") {
+    if (!projectId || !p?.bom_id || p.project_kind === "commercial_showcase") {
       setEstimate(null);
       setEstimateError(false);
       setEstimateLoading(false);
@@ -106,7 +106,7 @@ export default function ProjectDetail() {
       .catch(() => { if (!cancelled) setEstimateError(true); })
       .finally(() => { if (!cancelled) setEstimateLoading(false); });
     return () => { cancelled = true; };
-  }, [projectId, p?.project_kind]);
+  }, [projectId, p?.bom_id, p?.project_kind]);
 
   if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
   if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
