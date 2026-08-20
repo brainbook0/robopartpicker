@@ -13,6 +13,7 @@ import {
   reviewedShowcaseObjectKey,
   reviewedShowcaseOriginalName,
   serializeReviewedShowcaseRpps,
+  sourceDocumentReferencesReviewedImage,
   validateReviewedShowcaseMediaWave,
   type PreparedReviewedShowcaseMedia,
   type ReviewedShowcaseMediaDefinition,
@@ -272,7 +273,7 @@ async function verifySources(tempRoot: string): Promise<Map<string, VerifiedSour
         if (documentBytes.byteLength !== definition.source_document.size_bytes || documentDigest !== definition.source_document.sha256) {
           throw new Error("source document failed size/hash verification");
         }
-        if (!Buffer.from(documentBytes).toString("utf8").includes(definition.source_image_url)) {
+        if (!sourceDocumentReferencesReviewedImage(definition, Buffer.from(documentBytes).toString("utf8"))) {
           throw new Error("source document no longer references the reviewed image URL");
         }
       }

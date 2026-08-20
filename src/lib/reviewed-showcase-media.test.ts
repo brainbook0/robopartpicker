@@ -10,6 +10,7 @@ import {
   reviewedShowcaseObjectKey,
   reviewedShowcaseOriginalName,
   serializeReviewedShowcaseRpps,
+  sourceDocumentReferencesReviewedImage,
   validateReviewedShowcaseMediaWave,
   type PreparedReviewedShowcaseMedia,
   type ReviewedShowcaseMediaDefinition,
@@ -109,6 +110,33 @@ describe("reviewed showcase media", () => {
       ...wave,
       projects: [{ ...physical, revision: "main", source_page_url: "https://github.com/chinmaynehate/venom/blob/main/README.md" }],
     })).toContain("venom: physical design revision must be a lowercase 40-character git hash");
+  });
+
+  it("accepts immutable raw GitHub images referenced by repository-relative paths", () => {
+    const revision = "a".repeat(40);
+    const physical: ReviewedShowcaseMediaDefinition = {
+      ...definition,
+      slug: "flix",
+      name: "flix",
+      project_kind: "physical_design",
+      repository_url: "https://github.com/okalachev/flix",
+      revision,
+      expected_cover_url: "https://robopartpicker.example/missing.jpg",
+      source_page_url: `https://github.com/okalachev/flix/blob/${revision}/README.md`,
+      source_image_url: `https://raw.githubusercontent.com/okalachev/flix/${revision}/docs/img/flix1.1.jpg`,
+      final_source_image_url: `https://raw.githubusercontent.com/okalachev/flix/${revision}/docs/img/flix1.1.jpg`,
+      source_document: { path: "README.md", sha256: "b".repeat(64), size_bytes: 1200 },
+      sha256: "c".repeat(64),
+    };
+
+    expect(sourceDocumentReferencesReviewedImage(
+      physical,
+      '<img src="docs/img/flix1.1.jpg" alt="Flix quadcopter">',
+    )).toBe(true);
+    expect(sourceDocumentReferencesReviewedImage(
+      { ...physical, revision: "d".repeat(40) },
+      '<img src="docs/img/flix1.1.jpg" alt="Flix quadcopter">',
+    )).toBe(false);
   });
 
   it("creates deterministic managed file identities and URLs", () => {

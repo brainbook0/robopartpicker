@@ -1,0 +1,31 @@
+{
+  "wave": "reviewed-flix-cover-2026-08-20",
+  "schema_version": 1,
+  "projects": [
+    {
+      "slug": "flix",
+      "name": "flix",
+      "project_kind": "physical_design",
+      "repository_url": "https://github.com/okalachev/flix",
+      "revision": "37f267ecc9e045b98fdbeb637896d0a9c0ef124b",
+      "expected_cover_url": "https://robopartpicker-production.ludomi2502.workers.dev/api/v1/files/content?id=cover%3Aflix%3A1b3222652da8c61b02b3e6c75457650aa4ff4e0a2e5f9226c6a8f68617a86b3c.jpg",
+      "source_document": {
+        "path": "README.md",
+        "sha256": "321d5bfae88b8ca42dee7e57b8410392077650575abb8606da90a035c440d7d8",
+        "size_bytes": 9148
+      },
+      "source_publisher": "Flix source repository",
+      "source_page_url": "https://github.com/okalachev/flix/blob/37f267ecc9e045b98fdbeb637896d0a9c0ef124b/README.md",
+      "source_image_url": "https://raw.githubusercontent.com/okalachev/flix/37f267ecc9e045b98fdbeb637896d0a9c0ef124b/docs/img/flix1.1.jpg",
+      "final_source_image_url": "https://raw.githubusercontent.com/okalachev/flix/37f267ecc9e045b98fdbeb637896d0a9c0ef124b/docs/img/flix1.1.jpg",
+      "request_accept": "image/jpeg",
+      "sha256": "b30a515d0bcba96dd2188e8451b086fbf0118915bd407527a2ca66a9401b5af7",
+      "size_bytes": 125611,
+      "media_type": "image/jpeg",
+      "width": 2531,
+      "height": 1726,
+      "alt_text": "Flix quadcopter photographed on a white background with its ESP32 control board, wiring, motors, and propellers visible",
+      "caption": "Flix quadcopter photographed by the upstream project with its assembled electronics and airframe visible."
+    }
+  ]
+}

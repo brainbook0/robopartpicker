@@ -100,6 +100,37 @@ function immutableSourceDocumentUrl(definition: ReviewedShowcaseMediaDefinition)
   return `${base}/blob/${definition.revision}/${path}`;
 }
 
+export function sourceDocumentReferencesReviewedImage(
+  definition: ReviewedShowcaseMediaDefinition,
+  sourceDocument: string,
+): boolean {
+  if (sourceDocument.includes(definition.source_image_url)) return true;
+  if (!definition.repository_url || !definition.revision) return false;
+
+  try {
+    const imageUrl = new URL(definition.source_image_url);
+    if (imageUrl.hostname !== "raw.githubusercontent.com") return false;
+    const [owner, repo, revision, ...pathParts] = imageUrl.pathname
+      .split("/")
+      .filter(Boolean)
+      .map(decodeURIComponent);
+    const repository = definition.repository_url
+      .replace(/\.git$/iu, "")
+      .replace(/\/+$/u, "")
+      .match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/iu);
+    if (!repository || !owner || !repo || !revision || pathParts.length === 0) return false;
+    if (repository[1].toLowerCase() !== owner.toLowerCase()) return false;
+    if (repository[2].toLowerCase() !== repo.toLowerCase()) return false;
+    if (definition.revision !== revision) return false;
+
+    const repositoryPath = pathParts.join("/");
+    return sourceDocument.includes(repositoryPath)
+      || sourceDocument.includes(`./${repositoryPath}`);
+  } catch {
+    return false;
+  }
+}
+
 export function validateReviewedShowcaseMediaWave(wave: ReviewedShowcaseMediaWave): string[] {
   const errors: string[] = [];
   if (!WAVE_RE.test(wave.wave ?? "")) errors.push("wave must be a lowercase kebab-case identifier");
