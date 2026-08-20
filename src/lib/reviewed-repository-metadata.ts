@@ -112,6 +112,10 @@ export function githubRevisionTreeUrl(repositoryUrl: string, revision: string): 
   return `${repositoryUrl.replace(/\.git$/iu, "").replace(/\/+$/u, "")}/tree/${revision}`;
 }
 
+export function normalizeGithubRepositoryDescription(value: string | null | undefined): string {
+  return value?.replace(/\s+/gu, " ").trim() ?? "";
+}
+
 function expectedDerivations(field: ReviewedMetadataField): Set<ReviewedMetadataSourceDerivation> {
   if (field === "summary") return new Set(["readme-summary"]);
   if (field === "description") return new Set(["readme-description", "github-repository-description"]);

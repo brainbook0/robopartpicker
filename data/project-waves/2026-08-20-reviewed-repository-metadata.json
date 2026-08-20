@@ -1,7 +1,7 @@
 {
   "wave": "reviewed-repository-metadata-2026-08-20",
   "schema_version": 1,
-  "reviewed_at": "2026-08-20T18:12:26.314Z",
+  "reviewed_at": "2026-08-20T19:01:10.219Z",
   "projects": [
     {
       "slug": "100-days-of-ros",
@@ -1893,15 +1893,14 @@
       "repository_url": "https://github.com/guaik-org/cawfoc",
       "revision": "0d00ac3060da0db74d9cf6cb6fbb1bc52eec1eb9",
       "updates": {
-        "description": "CAW FOC 项目由 3 部分组成，在 CAW-PACKAGES/ControlSystem/FOC 目录下存放相关的代码。"
+        "description": "基于STM32 HAL库的FOC封装"
       },
       "sources": {
         "description": {
-          "derivation": "readme-description",
-          "source_url": "https://github.com/guaik-org/cawfoc/blob/0d00ac3060da0db74d9cf6cb6fbb1bc52eec1eb9/README.md",
-          "path": "README.md",
-          "sha256": "4196e34aa9e3e14eb5b5d81def5512d8dcbf138a8f521bb99773128662731e27",
-          "size_bytes": 2178
+          "derivation": "github-repository-description",
+          "source_url": "https://github.com/guaik-org/cawfoc",
+          "sha256": "49a676d3b66cd4696154fb52a017a0fd3c9fb460d559d31f4762f79f80ecc597",
+          "size_bytes": 30
         }
       }
     },
@@ -8199,16 +8198,15 @@
       "repository_url": "https://github.com/lord-microstrain/ntrip_client",
       "revision": "ca4de0dad0fae12fa6d8e9856a993eec5007ce89",
       "updates": {
-        "description": "ROS node that will communicate with an NTRIP caster to receive RTCM connections and publish them on a ROS topic. Also works with network/VRS mountpoints by subscribing to NMEA messages and sending them to the NTRIP server",
+        "description": "ROS NTRIP client",
         "license_spdx": "NOASSERTION"
       },
       "sources": {
         "description": {
-          "derivation": "readme-description",
-          "source_url": "https://github.com/lord-microstrain/ntrip_client/blob/ca4de0dad0fae12fa6d8e9856a993eec5007ce89/README.md",
-          "path": "README.md",
-          "sha256": "dd0e013dfb491f1c64f35bfeae8a58ddfc92766521fbbdd7cf94f455a2ce2464",
-          "size_bytes": 5652
+          "derivation": "github-repository-description",
+          "source_url": "https://github.com/lord-microstrain/ntrip_client",
+          "sha256": "9de615fa83c69578838a205a06047ee4be0ede0d7d69bfc6c177e8a9a4be7cf0",
+          "size_bytes": 16
         },
         "license_spdx": {
           "derivation": "github-license-file",
@@ -9336,16 +9334,15 @@
       "repository_url": "https://github.com/hipnuc/products",
       "revision": "5a4380272cd70402e7f8928b05a6af4bfa659807",
       "updates": {
-        "description": "examples/: Example programs and source code for various platforms and languages, including STM32, ROS, Linux, MATLAB, etc.",
+        "description": "超核电子产品资料",
         "license_spdx": "NOASSERTION"
       },
       "sources": {
         "description": {
-          "derivation": "readme-description",
-          "source_url": "https://github.com/hipnuc/products/blob/5a4380272cd70402e7f8928b05a6af4bfa659807/README.md",
-          "path": "README.md",
-          "sha256": "ad751121c771c2141ed127308a217d787465462e97e5ef60bc3335cb15f964fb",
-          "size_bytes": 2379
+          "derivation": "github-repository-description",
+          "source_url": "https://github.com/hipnuc/products",
+          "sha256": "fd9f7cae44c9095f78f34d59c59050619f71e49c1f8cbb8230932462ab87e328",
+          "size_bytes": 24
         },
         "license_spdx": {
           "derivation": "github-license-absence",
@@ -14880,16 +14877,15 @@
       "repository_url": "https://github.com/cyberbotics/webots_ros",
       "revision": "5472724111d782c9668e9db851d194e8db8315f4",
       "updates": {
-        "description": "The webotsros package contains examples for interfacing ROS nodes with the standard ROS controller of Webots.",
+        "description": "Webots ROS package",
         "license_spdx": "NOASSERTION"
       },
       "sources": {
         "description": {
-          "derivation": "readme-description",
-          "source_url": "https://github.com/cyberbotics/webots_ros/blob/5472724111d782c9668e9db851d194e8db8315f4/README.md",
-          "path": "README.md",
-          "sha256": "cab309879538882092bdb554dd7cb5eb8835a0ca2d48cae880c895f15f5b59f1",
-          "size_bytes": 1117
+          "derivation": "github-repository-description",
+          "source_url": "https://github.com/cyberbotics/webots_ros",
+          "sha256": "78df9566ec0bce1f9b02e0205da6e507d80056843d2d72ef5073f991bc4317f3",
+          "size_bytes": 18
         },
         "license_spdx": {
           "derivation": "github-license-absence",

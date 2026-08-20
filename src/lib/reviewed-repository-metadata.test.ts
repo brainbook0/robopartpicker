@@ -6,6 +6,7 @@ import {
   extractRepositoryDescription,
   githubRevisionTreeUrl,
   immutableGithubBlobUrl,
+  normalizeGithubRepositoryDescription,
   prepareRepositoryMetadataEvidence,
   serializeReviewedRepositoryMetadataRpps,
   summarizeRepositoryText,
@@ -116,6 +117,11 @@ function prepared(): PreparedReviewedRepositoryMetadata {
 }
 
 describe("reviewed repository metadata", () => {
+  it("normalizes GitHub description whitespace identically for generation and verification", () => {
+    expect(normalizeGithubRepositoryDescription("  Robot  platform\nfor\tresearch.  ")).toBe("Robot platform for research.");
+    expect(normalizeGithubRepositoryDescription(null)).toBe("");
+  });
+
   it("extracts concise project prose while skipping badges, navigation, and setup sections", () => {
     const markdown = [
       "# Robot Project",
@@ -298,8 +304,8 @@ describe("reviewed repository metadata", () => {
       ["ibarbech-hexapod-robot", "This repository contains the components, to control the robot phantom-x."],
       ["pikastech-hexapod-robot-stm32", "基于实时反馈和遗传算法的六足机器人全面步态优化系统设计。"],
     ]);
-    expect(descriptions.filter((item) => item.source?.derivation === "github-repository-description")).toHaveLength(236);
-    expect(descriptions.filter((item) => item.source?.derivation === "readme-description")).toHaveLength(4);
+    expect(descriptions.filter((item) => item.source?.derivation === "github-repository-description")).toHaveLength(240);
+    expect(descriptions.filter((item) => item.source?.derivation === "readme-description")).toHaveLength(0);
 
     const licenses = updates.filter((item) => item.field === "license_spdx");
     expect(licenses.filter((item) => item.value === "NOASSERTION")).toHaveLength(687);

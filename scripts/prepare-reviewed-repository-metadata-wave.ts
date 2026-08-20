@@ -7,6 +7,7 @@ import {
   githubRepositoryParts,
   githubRevisionTreeUrl,
   immutableGithubBlobUrl,
+  normalizeGithubRepositoryDescription,
   summarizeRepositoryText,
   validateReviewedRepositoryMetadataQuality,
   validateReviewedRepositoryMetadataWave,
@@ -215,7 +216,8 @@ async function prepareDefinition(row: GapRow): Promise<ReviewedRepositoryMetadat
     const result = await github(`repos/${encodeURIComponent(parts.owner)}/${encodeURIComponent(parts.repo)}`);
     if (!result.ok) throw new Error(`${row.slug}: repository metadata returned ${githubFailure(result)}`);
     const data = result.data as { description?: string | null };
-    const candidate = data.description?.replace(/\s+/gu, " ").trim() || null;
+    const normalized = normalizeGithubRepositoryDescription(data.description);
+    const candidate = normalized || null;
     const cjkLength = candidate?.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
     repositoryDescription = candidate && (candidate.length >= 15 || cjkLength >= 6) && !/^(?:n\/?a|none|no description|todo|test(?:ing)?)\.?$/iu.test(candidate)
       ? candidate

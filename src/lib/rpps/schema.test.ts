@@ -9,6 +9,7 @@ describe("normalizeRppsForWrite", () => {
       slug: "robot",
       version: "1.0.0",
       bom: [],
+      summary: `${"Source-backed summary text ".repeat(20)}end`,
       cover_image_url: "/api/v1/files/content?id=cover",
       docs_url: "www.ros.org/wiki/robot",
       hardware: { dof: 6, payload_kg: null },
@@ -30,5 +31,7 @@ describe("normalizeRppsForWrite", () => {
       extension: { retained: true },
     });
     expect(validateRpps(normalized)).toMatchObject({ ok: true });
+    expect(String(normalized.summary).length).toBeLessThanOrEqual(280);
+    expect(String(normalized.summary).endsWith("…")).toBe(true);
   });
 });

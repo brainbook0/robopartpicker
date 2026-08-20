@@ -164,6 +164,12 @@ export function normalizeRppsForWrite(input: unknown, origin: string): unknown {
       return undefined;
     }
   };
+  const truncateSummary = (value: string): string => {
+    if (value.length <= 280) return value;
+    const prefix = value.slice(0, 279);
+    const boundary = prefix.lastIndexOf(" ");
+    return `${prefix.slice(0, boundary >= 220 ? boundary : 279).trimEnd()}…`;
+  };
   const visit = (value: unknown, key?: string): unknown => {
     if (Array.isArray(value)) {
       return value
@@ -180,6 +186,7 @@ export function normalizeRppsForWrite(input: unknown, origin: string): unknown {
       );
     }
     if (typeof value === "string" && isUrlField(key)) return normalizeUrl(value);
+    if (typeof value === "string" && key === "summary") return truncateSummary(value);
     return value;
   };
   return visit(input);

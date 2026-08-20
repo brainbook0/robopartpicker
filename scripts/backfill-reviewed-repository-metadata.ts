@@ -7,6 +7,7 @@ import {
   buildReviewedRepositoryMetadataRollbackSql,
   extractRepositoryDescription,
   githubRepositoryParts,
+  normalizeGithubRepositoryDescription,
   prepareRepositoryMetadataEvidence,
   serializeReviewedRepositoryMetadataRpps,
   summarizeRepositoryText,
@@ -268,9 +269,9 @@ function prepareProject(
   const priorEvidence = Array.isArray(current.evidence) ? current.evidence : [];
   const nextRpps = {
     ...current,
-    summary: nextSummary ?? undefined,
-    description: nextDescription ?? undefined,
-    license: nextLicenseSpdx ?? undefined,
+    summary: definition.updates.summary ?? current.summary ?? nextSummary ?? undefined,
+    description: definition.updates.description ?? current.description ?? nextDescription ?? undefined,
+    license: definition.updates.license_spdx ?? current.license ?? nextLicenseSpdx ?? undefined,
     evidence: [
       ...priorEvidence,
       ...evidence.map((item) => ({
@@ -413,7 +414,7 @@ async function verifySource(
     const result = await github(`repos/${encodeURIComponent(parts.owner)}/${encodeURIComponent(parts.repo)}`);
     if (!result.ok) throw new Error(`${definition.slug}/${field}: repository metadata returned ${githubFailure(result)}`);
     const data = result.data as { description?: string | null };
-    const description = data.description?.trim() || "";
+    const description = normalizeGithubRepositoryDescription(data.description);
     const bytes = Buffer.from(description, "utf8");
     if (description !== definition.updates.description || bytes.byteLength !== source.size_bytes || digest(bytes) !== source.sha256) {
       throw new Error(`${definition.slug}/${field}: repository description changed after review`);
