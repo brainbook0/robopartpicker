@@ -1,0 +1,19 @@
+{
+  "wave": "reviewed-project-artifacts-2026-08-20",
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "slug": "caesar-jl",
+      "repository_url": "https://github.com/JuliaRobotics/Caesar.jl",
+      "revision": "1f6967359dc4e631bb09e53330267ece953ad50f",
+      "path": "data/models/rov2.obj",
+      "sha256": "ea5aabbac3e4a96d88a1f3396aa834fd0779fb3cf9c0ae0e54e70bb16d3d5af6",
+      "size_bytes": 5619901,
+      "media_type": "model/obj",
+      "file_kind": "cad",
+      "purpose": "cad",
+      "rpps_kind": "cad",
+      "description": "Complete detailed ROV geometry exported by the pinned Caesar.jl source repository."
+    }
+  ]
+}
