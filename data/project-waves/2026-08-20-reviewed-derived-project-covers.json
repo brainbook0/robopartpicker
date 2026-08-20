@@ -1,0 +1,34 @@
+{
+  "wave": "reviewed-derived-project-covers-2026-08-20",
+  "schema_version": 1,
+  "projects": [
+    {
+      "slug": "caesar-jl",
+      "name": "caesar.jl",
+      "repository_url": "https://github.com/juliarobotics/caesar.jl",
+      "revision": "1f6967359dc4e631bb09e53330267ece953ad50f",
+      "expected_cover_url": "https://robopartpicker-production.ludomi2502.workers.dev/api/v1/files/content?id=cover%3Acaesar-jl%3Ae59ede41b74b630dadfb832ca13266a0bbaf815f1275567ecd56f8f152cb8970.png",
+      "source_artifact": {
+        "path": "data/models/rov2.obj",
+        "sha256": "ea5aabbac3e4a96d88a1f3396aa834fd0779fb3cf9c0ae0e54e70bb16d3d5af6",
+        "size_bytes": 5619901
+      },
+      "rendered_asset": {
+        "local_path": "data/project-waves/assets/caesar-jl-rov2-model-cover.png",
+        "sha256": "3d42e9b06cdf152344c61a7adaecca4c9c7a6a60c7cf99ba41b2718074c012ef",
+        "size_bytes": 589894,
+        "media_type": "image/png",
+        "width": 1748,
+        "height": 842
+      },
+      "renderer": {
+        "commit": "1c55a54b8655ec7b651f4b25518ade0a242502cf",
+        "path": "src/components/projects/ObjModelViewer.tsx",
+        "sha256": "e8abe216358cd8d3674669397e8059fab5e3e66f1c9f30d9b641af57bbbd6ba3",
+        "name": "RoboPartPicker OBJ viewer"
+      },
+      "alt_text": "Rendered complete Caesar.jl ROV2 robot model from the pinned source OBJ",
+      "caption": "Complete ROV2 robot geometry rendered from the pinned Caesar.jl source OBJ."
+    }
+  ]
+}
