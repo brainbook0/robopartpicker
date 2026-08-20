@@ -12,6 +12,7 @@ import {
   reviewedShowcaseMediaId,
   reviewedShowcaseObjectKey,
   reviewedShowcaseOriginalName,
+  reviewedFinalSourceUrlMatches,
   serializeReviewedShowcaseRpps,
   sourceDocumentReferencesReviewedImage,
   validateReviewedShowcaseMediaWave,
@@ -286,7 +287,7 @@ async function verifySources(tempRoot: string): Promise<Map<string, VerifiedSour
         redirect: "follow",
       });
       if (!response.ok) throw new Error(`source returned HTTP ${response.status}`);
-      if (new URL(response.url).toString() !== new URL(definition.final_source_image_url).toString()) {
+      if (!reviewedFinalSourceUrlMatches(definition, response.url)) {
         throw new Error(`final source URL changed from ${definition.final_source_image_url} to ${response.url}`);
       }
       const mediaType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();

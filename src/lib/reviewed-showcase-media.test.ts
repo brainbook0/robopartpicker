@@ -9,6 +9,7 @@ import {
   reviewedShowcaseMediaId,
   reviewedShowcaseObjectKey,
   reviewedShowcaseOriginalName,
+  reviewedFinalSourceUrlMatches,
   serializeReviewedShowcaseRpps,
   sourceDocumentReferencesReviewedImage,
   validateReviewedShowcaseMediaWave,
@@ -188,6 +189,25 @@ describe("reviewed showcase media", () => {
       source_document: { ...physical.source_document!, path: "Renders/other.png" },
       source_page_url: `https://github.com/BryceCronin/AnansiHexapodRobot/blob/${revision}/Renders/other.png`,
     }, "")).toBe(false);
+  });
+
+  it("verifies rotating GitHub attachment redirects by stable host and path", () => {
+    const attachment: ReviewedShowcaseMediaDefinition = {
+      ...definition,
+      source_image_url: "https://github.com/user-attachments/assets/2c9d6595-7d86-4f13-b2b6-8305163c7b81",
+      final_source_image_url: "https://github-production-user-asset-6210df.s3.amazonaws.com/213326183/604054749-2c9d6595-7d86-4f13-b2b6-8305163c7b81.png",
+      final_source_url_policy: "github-signed-asset",
+      media_type: "image/png",
+    };
+    const currentSignedUrl = `${attachment.final_source_image_url}?X-Amz-Date=20260820T225825Z&X-Amz-Signature=new-signature`;
+
+    expect(validateReviewedShowcaseMediaWave({ ...wave, projects: [attachment] })).toEqual([]);
+    expect(reviewedFinalSourceUrlMatches(attachment, currentSignedUrl)).toBe(true);
+    expect(reviewedFinalSourceUrlMatches(attachment, currentSignedUrl.replace("604054749", "604054750"))).toBe(false);
+    expect(reviewedFinalSourceUrlMatches({
+      ...attachment,
+      source_image_url: "https://example.test/unpinned.png",
+    }, currentSignedUrl)).toBe(false);
   });
 
   it("creates deterministic managed file identities and URLs", () => {

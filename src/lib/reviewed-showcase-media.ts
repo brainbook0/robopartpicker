@@ -17,6 +17,7 @@ export type ReviewedShowcaseMediaDefinition = {
   source_page_url: string;
   source_image_url: string;
   final_source_image_url: string;
+  final_source_url_policy?: "exact" | "github-signed-asset";
   request_accept?: string;
   sha256: string;
   size_bytes: number;
@@ -159,6 +160,34 @@ export function sourceDocumentReferencesReviewedImage(
   }
 }
 
+export function reviewedFinalSourceUrlMatches(
+  definition: ReviewedShowcaseMediaDefinition,
+  actualUrl: string,
+): boolean {
+  try {
+    const expected = new URL(definition.final_source_image_url);
+    const actual = new URL(actualUrl);
+    if ((definition.final_source_url_policy ?? "exact") === "exact") {
+      return actual.toString() === expected.toString();
+    }
+
+    const source = new URL(definition.source_image_url);
+    const stableGitHubAsset = source.hostname === "github.com" && (
+      /^\/user-attachments\/assets\/[a-f0-9-]+$/iu.test(source.pathname)
+      || /^\/[^/]+\/[^/]+\/assets\/\d+\/[a-f0-9-]+$/iu.test(source.pathname)
+    );
+    return stableGitHubAsset
+      && expected.protocol === "https:"
+      && expected.hostname === "github-production-user-asset-6210df.s3.amazonaws.com"
+      && expected.search === ""
+      && expected.hash === ""
+      && actual.origin === expected.origin
+      && actual.pathname === expected.pathname;
+  } catch {
+    return false;
+  }
+}
+
 export function validateReviewedShowcaseMediaWave(wave: ReviewedShowcaseMediaWave): string[] {
   const errors: string[] = [];
   if (!WAVE_RE.test(wave.wave ?? "")) errors.push("wave must be a lowercase kebab-case identifier");
@@ -190,6 +219,8 @@ export function validateReviewedShowcaseMediaWave(wave: ReviewedShowcaseMediaWav
     ] as const) {
       if (!isHttpsUrl(value ?? "")) errors.push(`${project.slug}: ${field} must be an HTTPS URL`);
     }
+    if (project.final_source_url_policy && !["exact", "github-signed-asset"].includes(project.final_source_url_policy)) errors.push(`${project.slug}: final_source_url_policy is unsupported`);
+    if (project.final_source_url_policy === "github-signed-asset" && !reviewedFinalSourceUrlMatches(project, project.final_source_image_url)) errors.push(`${project.slug}: github-signed-asset final source identity is invalid`);
     if (!SHA256_RE.test(project.sha256 ?? "")) errors.push(`${project.slug}: sha256 is invalid`);
     else if (hashes.has(project.sha256)) errors.push(`${project.slug}: duplicate sha256`);
     else hashes.add(project.sha256);
