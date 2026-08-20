@@ -6,18 +6,20 @@ export type ProjectPreviewSelection = {
   urdfFile: ProjectFile | null;
   stlFiles: ProjectFile[];
   stepFiles: ProjectFile[];
+  other3dFiles: ProjectFile[];
 };
 
-const completeDesignName = /(^|[-_\s])(assembly|assembled|full|complete|combined|whole|total)([-_\s.]|$)/iu;
-const exactRobotName = /(^|\/)robot\.stl$/iu;
+const completeDesignName = /(^|[-_\s])(full|complete|combined|whole|total)([-_\s.]|$)/iu;
+const exactCompleteStlName = /(^|\/)(assembly|assembled|robot)([-_\s](model|design))?\.stl$/iu;
 
 export function selectProjectPreviewFiles(files: ProjectFile[]): ProjectPreviewSelection {
-  const readyFiles = dedupeByContentUrl(files.filter((file) => file.status === "ready" && Boolean(file.contentUrl)));
+  const readyFiles = dedupeFiles(files.filter((file) => file.status === "ready" && Boolean(file.contentUrl)));
   const imageFiles = readyFiles.filter((file) => file.kind === "image" || file.mediaType.startsWith("image/"));
   const urdfCandidates = sortCompleteDesignFirst(readyFiles.filter((file) => extension(file) === "urdf"));
   const stlCandidates = sortCompleteDesignFirst(readyFiles.filter((file) => extension(file) === "stl"));
   const completeStl = stlCandidates.find(isCompleteDesignFile);
   const stepFiles = sortCompleteDesignFirst(readyFiles.filter((file) => ["step", "stp", "iges", "igs"].includes(extension(file))));
+  const other3dFiles = readyFiles.filter((file) => ["3mf", "obj", "dae", "glb", "gltf", "fcstd", "f3d", "sldprt", "scad"].includes(extension(file)));
 
   return {
     readyFiles,
@@ -27,6 +29,7 @@ export function selectProjectPreviewFiles(files: ProjectFile[]): ProjectPreviewS
     // current-release STL part is required to preserve its shared CAD coordinates.
     stlFiles: completeStl ? [completeStl] : stlCandidates,
     stepFiles,
+    other3dFiles,
   };
 }
 
@@ -39,7 +42,7 @@ function extension(file: ProjectFile): string {
 function isCompleteDesignFile(file: ProjectFile): boolean {
   const path = (file.relativePath ?? file.originalName).replaceAll("\\", "/");
   const basename = path.split("/").at(-1) ?? path;
-  return completeDesignName.test(basename) || exactRobotName.test(path);
+  return completeDesignName.test(basename) || exactCompleteStlName.test(path);
 }
 
 function sortCompleteDesignFirst(files: ProjectFile[]): ProjectFile[] {
@@ -52,11 +55,17 @@ function sortCompleteDesignFirst(files: ProjectFile[]): ProjectFile[] {
   });
 }
 
-function dedupeByContentUrl(files: ProjectFile[]): ProjectFile[] {
+function dedupeFiles(files: ProjectFile[]): ProjectFile[] {
   const seen = new Set<string>();
   return files.filter((file) => {
-    if (seen.has(file.contentUrl)) return false;
-    seen.add(file.contentUrl);
+    const path = file.relativePath?.replaceAll("\\", "/").toLowerCase();
+    const key = file.checksumSha256
+      ? `sha256:${file.checksumSha256.toLowerCase()}`
+      : path
+        ? `path:${path}:${file.sizeBytes}`
+        : `url:${file.contentUrl}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 }

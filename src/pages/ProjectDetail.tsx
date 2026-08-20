@@ -22,6 +22,7 @@ import { selectProjectPreviewFiles } from "@/lib/projectPreview";
 
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 const StlModelViewer = lazy(() => import("@/components/projects/StlModelViewer"));
+const StepModelViewer = lazy(() => import("@/components/projects/StepModelViewer"));
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -123,7 +124,7 @@ export default function ProjectDetail() {
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
-  const { readyFiles, imageFiles, urdfFile: previewUrdf, stlFiles, stepFiles } = selectProjectPreviewFiles(managedFiles);
+  const { readyFiles, imageFiles, urdfFile: previewUrdf, stlFiles, stepFiles, other3dFiles } = selectProjectPreviewFiles(managedFiles);
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
@@ -363,8 +364,12 @@ export default function ProjectDetail() {
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
               <StlModelViewer stlUrls={stlFiles.map((file) => file.contentUrl)} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · 3D design (${stlFiles.length} part${stlFiles.length === 1 ? "" : "s"})`} />
             </Suspense>
-          ) : stepFiles.length > 0
-            ? <CadSourceFallback projectName={p.name} files={stepFiles} sourceUrl={p.repo_url ?? undefined} format="STEP/IGES" />
+          ) : stepFiles.length > 0 ? (
+            <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading native CAD converter…</div>}>
+              <StepModelViewer files={stepFiles.map((file) => ({ contentUrl: file.contentUrl, name: file.relativePath ?? file.originalName }))} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · STEP/IGES design (${stepFiles.length} source file${stepFiles.length === 1 ? "" : "s"})`} />
+            </Suspense>
+          ) : other3dFiles.length > 0
+            ? <CadSourceFallback projectName={p.name} files={other3dFiles} sourceUrl={p.repo_url ?? undefined} format="Native CAD" />
             : urdfUnavailable && previewUrdf
               ? <CadSourceFallback projectName={p.name} files={[previewUrdf]} sourceUrl={p.repo_url ?? undefined} format="URDF" />
               : null}

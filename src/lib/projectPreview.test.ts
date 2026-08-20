@@ -48,5 +48,16 @@ describe("selectProjectPreviewFiles", () => {
     expect(result.imageFiles).toEqual([image]);
     expect(result.stepFiles).toEqual([step]);
     expect(result.stlFiles).toEqual([]);
+    expect(result.other3dFiles).toEqual([]);
+  });
+
+  it("deduplicates identical source artifacts and does not mistake an assembly jig for a complete design", () => {
+    const duplicateA = file({ originalName: "wheel.stl", relativePath: "cad/wheel.stl", checksumSha256: "a".repeat(64) });
+    const duplicateB = file({ originalName: "wheel-copy.stl", relativePath: "archive/wheel-copy.stl", checksumSha256: "a".repeat(64) });
+    const jig = file({ originalName: "assembly-jig.stl", relativePath: "tools/assembly-jig.stl", checksumSha256: "b".repeat(64) });
+
+    const result = selectProjectPreviewFiles([duplicateA, duplicateB, jig]);
+    expect(result.readyFiles).toHaveLength(2);
+    expect(result.stlFiles).toHaveLength(2);
   });
 });
