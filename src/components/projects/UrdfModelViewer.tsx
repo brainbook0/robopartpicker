@@ -4,6 +4,7 @@ import { Bounds, Grid, OrbitControls } from "@react-three/drei";
 import { LoadingManager, type Object3D } from "three";
 import URDFLoader from "urdf-loader";
 import { Box, ExternalLink, Rotate3D } from "lucide-react";
+import { resolveManagedUrdfMeshUrl } from "@/lib/urdfMeshResolution";
 
 type Props = {
   urdfUrl: string;
@@ -110,34 +111,13 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
   );
 }
 
-function normalizePath(path: string): string {
-  const parts: string[] = [];
-  for (const part of path.replaceAll("\\", "/").split("/")) {
-    if (part === "" || part === ".") continue;
-    if (part === "..") { parts.pop(); continue; }
-    parts.push(part);
-  }
-  return parts.join("/");
-}
-
 async function resolveUrdfMeshes(urdfUrl: string, urdfPath: string | null, files: Props["files"]): Promise<string> {
   const response = await fetch(urdfUrl, { credentials: "same-origin" });
   if (!response.ok) throw new Error(`URDF fetch failed with ${response.status}`);
   const text = await response.text();
 
-  const byPath = new Map<string, string>();
-  for (const file of files ?? []) {
-    if (file.relativePath) byPath.set(normalizePath(file.relativePath).toLowerCase(), file.contentUrl);
-    if (file.originalName) byPath.set(normalizePath(file.originalName).toLowerCase(), file.contentUrl);
-  }
-
-  const urdfDir = urdfPath ? normalizePath(urdfPath).split("/").slice(0, -1).join("/") : "";
-
   const rewritten = text.replace(/<mesh\b[^>]*filename\s*=\s*"([^"]+)"([^>]*)>/giu, (match, filename, rest) => {
-    let candidate = filename;
-    if (candidate.startsWith("package://")) candidate = candidate.replace(/^package:\/\/[^/]+\//u, "");
-    if (!candidate.startsWith("/") && urdfDir) candidate = urdfDir ? `${urdfDir}/${candidate}` : candidate;
-    const resolved = byPath.get(normalizePath(candidate).toLowerCase());
+    const resolved = resolveManagedUrdfMeshUrl(filename, urdfPath, files ?? []);
     if (!resolved) return match;
     const absolute = new URL(resolved, window.location.origin).toString();
     return `<mesh filename="${absolute}"${rest}>`;
