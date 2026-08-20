@@ -122,9 +122,9 @@ export function cleanInferredProjectContent(input: unknown, origin: string): Inf
   }
   if (aiBomCount !== null) {
     const bom = Array.isArray(rpps.bom) ? rpps.bom : [];
-    if (bom.length !== aiBomCount) throw new Error(`AI BOM claim says ${aiBomCount} lines but RPPS contains ${bom.length}`);
-    removedAiBomLines = bom.length;
-    rpps.bom = [];
+    if (bom.length < aiBomCount) throw new Error(`AI BOM claim says ${aiBomCount} lines but RPPS contains only ${bom.length}`);
+    removedAiBomLines = aiBomCount;
+    rpps.bom = bom.slice(aiBomCount);
   }
 
   const assembly = Array.isArray(rpps.assembly) ? rpps.assembly : [];

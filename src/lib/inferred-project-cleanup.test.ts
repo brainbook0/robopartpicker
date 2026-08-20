@@ -9,7 +9,10 @@ function fixture() {
     version: "1.0.0",
     summary: "A source project",
     description: "Build files and controller software.",
-    bom: [{ name: "Invented motor", qty: 4 }, { name: "Invented frame", qty: 1, fabricated: true }],
+    bom: [
+      { name: "Invented motor", qty: 4, fabricated: false, notes: undefined as string | undefined },
+      { name: "Invented frame", qty: 1, fabricated: true, notes: undefined as string | undefined },
+    ],
     hardware: { dof: 12, compute: "Embedded microcontroller" },
     software: { ros_support: "none", languages: ["Python"] },
     build: {
@@ -71,6 +74,15 @@ describe("inferred project cleanup", () => {
     expect(result.stats.removedCostUsd).toBeNull();
   });
 
+  it("removes only the original AI BOM prefix when later source-derived lines were appended", () => {
+    const input = fixture();
+    input.bom.push({ name: "Pinned source part", qty: 2, fabricated: true, notes: "Derived from model file chassis.stl" });
+    const result = cleanInferredProjectContent(input, "https://example.test");
+    expect(result.rpps.bom).toEqual([{ name: "Pinned source part", qty: 2, fabricated: true, notes: "Derived from model file chassis.stl" }]);
+    expect(result.stats.removedAiBomLines).toBe(2);
+    expect(result.rpps).toMatchObject({ reproducibility: { bom: true } });
+  });
+
   it("retains explicit difficulty and negative ROS statements present in source text", () => {
     const input = fixture();
     input.description = "An intermediate build that explicitly does not use ROS.";
@@ -84,6 +96,6 @@ describe("inferred project cleanup", () => {
     expect(() => cleanInferredProjectContent(unknown, "https://example.test")).toThrow("Unsupported inference claim");
     const mismatch = fixture();
     mismatch.bom.pop();
-    expect(() => cleanInferredProjectContent(mismatch, "https://example.test")).toThrow("AI BOM claim says 2 lines but RPPS contains 1");
+    expect(() => cleanInferredProjectContent(mismatch, "https://example.test")).toThrow("AI BOM claim says 2 lines but RPPS contains only 1");
   });
 });
