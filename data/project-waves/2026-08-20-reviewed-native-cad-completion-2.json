@@ -1,0 +1,19 @@
+{
+  "wave": "reviewed-native-cad-completion-2-2026-08-20",
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "slug": "venom",
+      "repository_url": "https://github.com/chinmaynehate/venom",
+      "revision": "5244581c43876584d0c2aeea0d8da2cd3192ff20",
+      "path": "CAD Files/frame additional floor.f3d",
+      "sha256": "1503929ec220c0743cd4fc65122dce03b8897ad4b7763e39b2e6fb71c8e9b615",
+      "size_bytes": 312529,
+      "media_type": "application/octet-stream",
+      "file_kind": "cad",
+      "purpose": "cad",
+      "rpps_kind": "cad",
+      "description": "Complete Fusion 360 additional floor design from the pinned Venom source repository."
+    }
+  ]
+}

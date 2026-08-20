@@ -90,9 +90,12 @@ export function validateReviewedProjectArtifactWave(wave: ReviewedProjectArtifac
   if (wave.schema_version !== 1) errors.push("schema_version must be 1");
   if (!Array.isArray(wave.artifacts) || wave.artifacts.length === 0) errors.push("artifacts must not be empty");
   const identities = new Set<string>();
+  const projectSlugs = new Set<string>();
   for (const artifact of wave.artifacts ?? []) {
     const label = artifact.slug || "(missing slug)";
     if (!SLUG_RE.test(artifact.slug ?? "")) errors.push(`${label}: slug is invalid`);
+    else if (projectSlugs.has(artifact.slug)) errors.push(`${label}: only one artifact per project is allowed in a wave; use sequential waves so optimistic guards remain exact`);
+    else projectSlugs.add(artifact.slug);
     if (!isHttpsUrl(artifact.repository_url ?? "") || !githubRepositoryParts(artifact.repository_url)) {
       errors.push(`${label}: repository_url must be an HTTPS GitHub repository URL`);
     }

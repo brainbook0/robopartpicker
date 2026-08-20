@@ -1,0 +1,32 @@
+{
+  "wave": "reviewed-native-cad-completion-1-2026-08-20",
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "slug": "egohumanoid",
+      "repository_url": "https://github.com/opendrivelab/egohumanoid",
+      "revision": "f32696d7aeb58be86a1352f316789e3759f7aba4",
+      "path": "data_collection/3d_print_file/Pico_Mount.SLDPRT",
+      "sha256": "9d384adb3114466c302c2f91f83bc2e217a770d69cce39d465022229fc67bba4",
+      "size_bytes": 292488,
+      "media_type": "application/octet-stream",
+      "file_kind": "cad",
+      "purpose": "cad",
+      "rpps_kind": "cad",
+      "description": "Complete Pico camera mount SolidWorks part from the pinned EgoHumanoid source repository."
+    },
+    {
+      "slug": "venom",
+      "repository_url": "https://github.com/chinmaynehate/venom",
+      "revision": "5244581c43876584d0c2aeea0d8da2cd3192ff20",
+      "path": "CAD Files/frame base.f3d",
+      "sha256": "27dd97de0a17884468c0e7ac3d4c6097c7bde60344b75c37b230a71a7cadff5b",
+      "size_bytes": 361807,
+      "media_type": "application/octet-stream",
+      "file_kind": "cad",
+      "purpose": "cad",
+      "rpps_kind": "cad",
+      "description": "Complete Fusion 360 frame base design from the pinned Venom source repository."
+    }
+  ]
+}

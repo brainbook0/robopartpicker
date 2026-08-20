@@ -72,6 +72,10 @@ describe("reviewed project artifact waves", () => {
       "caesar-jl: revision must be a lowercase 40-character git hash",
       "caesar-jl: sha256 is invalid",
     ]));
+    expect(validateReviewedProjectArtifactWave({
+      ...wave,
+      artifacts: [definition, { ...definition, path: "data/models/rov3.obj", sha256: "b".repeat(64) }],
+    })).toContain("caesar-jl: only one artifact per project is allowed in a wave; use sequential waves so optimistic guards remain exact");
   });
 
   it("derives immutable GitHub source URLs", () => {
