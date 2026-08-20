@@ -132,6 +132,15 @@ export function sourceDocumentReferencesReviewedImage(
     if (definition.revision !== revision) return false;
 
     const repositoryPath = pathParts.join("/");
+    const sourceArtifact = definition.source_document;
+    if (
+      sourceArtifact?.path === repositoryPath
+      && sourceArtifact.sha256 === definition.sha256
+      && sourceArtifact.size_bytes === definition.size_bytes
+    ) {
+      return true;
+    }
+
     const relativePath = relativeRepositoryPath(definition.source_document?.path ?? "", repositoryPath);
     const references = new Set([
       repositoryPath,

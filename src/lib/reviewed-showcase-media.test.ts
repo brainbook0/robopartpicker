@@ -155,6 +155,41 @@ describe("reviewed showcase media", () => {
     )).toBe(true);
   });
 
+  it("accepts an exact pinned repository image as its own physical-design source document", () => {
+    const revision = "a".repeat(40);
+    const imagePath = "Renders/Assembled Hexapod/AnansiHexapodRobot_1.png";
+    const imageSha256 = "c".repeat(64);
+    const imageSize = 1_407_306;
+    const physical: ReviewedShowcaseMediaDefinition = {
+      ...definition,
+      slug: "anansi-hexapod",
+      name: "Anansi Hexapod Robot",
+      project_kind: "physical_design",
+      repository_url: "https://github.com/BryceCronin/AnansiHexapodRobot",
+      revision,
+      expected_cover_url: "https://robopartpicker.example/missing.jpg",
+      source_page_url: `https://github.com/BryceCronin/AnansiHexapodRobot/blob/${revision}/Renders/Assembled%20Hexapod/AnansiHexapodRobot_1.png`,
+      source_image_url: `https://raw.githubusercontent.com/BryceCronin/AnansiHexapodRobot/${revision}/Renders/Assembled%20Hexapod/AnansiHexapodRobot_1.png`,
+      final_source_image_url: `https://raw.githubusercontent.com/BryceCronin/AnansiHexapodRobot/${revision}/Renders/Assembled%20Hexapod/AnansiHexapodRobot_1.png`,
+      source_document: { path: imagePath, sha256: imageSha256, size_bytes: imageSize },
+      sha256: imageSha256,
+      size_bytes: imageSize,
+      media_type: "image/png",
+    };
+
+    expect(validateReviewedShowcaseMediaWave({ ...wave, projects: [physical] })).toEqual([]);
+    expect(sourceDocumentReferencesReviewedImage(physical, "")).toBe(true);
+    expect(sourceDocumentReferencesReviewedImage({
+      ...physical,
+      source_document: { ...physical.source_document!, sha256: "d".repeat(64) },
+    }, "")).toBe(false);
+    expect(sourceDocumentReferencesReviewedImage({
+      ...physical,
+      source_document: { ...physical.source_document!, path: "Renders/other.png" },
+      source_page_url: `https://github.com/BryceCronin/AnansiHexapodRobot/blob/${revision}/Renders/other.png`,
+    }, "")).toBe(false);
+  });
+
   it("creates deterministic managed file identities and URLs", () => {
     const first = prepared();
     const second = prepared();
