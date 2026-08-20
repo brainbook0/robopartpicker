@@ -1,6 +1,7 @@
 import type { RppsPackage } from "../../../src/lib/rpps/schema";
 import { classifyProjectKind, projectKindAfterRppsUpdate, type ProjectKind } from "../../../src/shared/projectKind";
 import type { RobotCategory } from "../../../src/shared/robotCategory";
+import { buildProjectCatalogStatsQuery, buildProjectListQuery, type ProjectListSort } from "../../../src/shared/projectListQuery";
 import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
 import { AppError } from "../../http";
 import { fileContentUrl } from "../../services/file-urls";
@@ -143,7 +144,7 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
 export class ProjectsRepository {
   constructor(private readonly db: D1Database) {}
 
-  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; category?: RobotCategory; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number; stats: ProjectCatalogStats }> {
+  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; category?: RobotCategory; limit: number; offset: number; sort?: ProjectListSort }): Promise<{ items: ProjectDto[]; total: number; stats: ProjectCatalogStats }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
     const access = options.mine
@@ -160,7 +161,10 @@ export class ProjectsRepository {
     if (options.category) clauses.push(`p.robot_category = ${bind(options.category)}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
     const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM projects p ${where}`).bind(...values).first<{ total: number }>();
-    const rows = await this.db.prepare(`${SELECT_PROJECT} ${where} ORDER BY ${this.orderBy(options.sort)} LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`)
+    const pageLimitPlaceholder = `?${values.length + 1}`;
+    const pageOffsetPlaceholder = `?${values.length + 2}`;
+    const listQuery = buildProjectListQuery({ where, limitPlaceholder: pageLimitPlaceholder, offsetPlaceholder: pageOffsetPlaceholder, sort: options.sort });
+    const rows = await this.db.prepare(listQuery)
       .bind(...values, options.limit, options.offset).all<ProjectDatabaseRow>();
     const stats = await this.catalogStats(userId, options.mine ?? false, options.kind, options.category);
     return { items: rows.results.map(toProjectDto), total: Number(count?.total ?? 0), stats };
@@ -178,27 +182,7 @@ export class ProjectsRepository {
     if (kind) clauses.push(`p.project_kind = ${bind(kind)}`);
     if (category) clauses.push(`p.robot_category = ${bind(category)}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
-    const result = await this.db.prepare(`
-      WITH visible_projects AS (
-        SELECT p.id, p.status, p.project_kind
-        FROM projects p ${where}
-      ), bom_counts AS (
-        SELECT b.project_id, COUNT(*) AS parts
-        FROM boms b
-        JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
-        JOIN visible_projects vp ON vp.id = b.project_id
-        GROUP BY b.project_id
-      )
-      SELECT
-        COUNT(*) AS totalProjects,
-        COALESCE(SUM(CASE WHEN vp.project_kind = 'physical_design' THEN 1 ELSE 0 END), 0) AS physicalDesignProjects,
-        COALESCE(SUM(CASE WHEN vp.project_kind = 'robotics_software' THEN 1 ELSE 0 END), 0) AS roboticsSoftwareProjects,
-        COALESCE(SUM(CASE WHEN vp.project_kind = 'commercial_showcase' THEN 1 ELSE 0 END), 0) AS commercialShowcaseProjects,
-        COALESCE(SUM(CASE WHEN vp.status = 'published' THEN 1 ELSE 0 END), 0) AS publishedProjects,
-        COALESCE(SUM(COALESCE(bom_counts.parts, 0)), 0) AS totalParts
-      FROM visible_projects vp
-      LEFT JOIN bom_counts ON bom_counts.project_id = vp.id
-    `).bind(...values).first<{
+    const result = await this.db.prepare(buildProjectCatalogStatsQuery(where)).bind(...values).first<{
       totalProjects: number;
       physicalDesignProjects: number;
       roboticsSoftwareProjects: number;
@@ -222,15 +206,6 @@ export class ProjectsRepository {
       commercialShowcaseProjects: Number(result?.commercialShowcaseProjects ?? 0),
       publishedProjects: Number(result?.publishedProjects ?? 0),
     };
-  }
-
-  private orderBy(sort: "popularity" | "updated" | "name" | undefined): string {
-    switch (sort) {
-      case "name": return "p.name COLLATE NOCASE ASC, p.github_stars DESC";
-      case "updated": return "p.updated_at DESC";
-      case "popularity":
-      default: return "CASE p.project_kind WHEN 'physical_design' THEN 0 WHEN 'robotics_software' THEN 1 WHEN 'commercial_showcase' THEN 2 ELSE 3 END ASC, COALESCE(p.github_stars, -1) DESC, p.updated_at DESC";
-    }
   }
 
   async find(idOrSlug: string): Promise<{ row: ProjectDatabaseRow; item: ProjectDto } | null> {
