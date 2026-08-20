@@ -43,6 +43,10 @@ export function resolveManagedUrdfMeshUrl(
     const normalized = normalizeUrdfAssetPath(candidate).toLowerCase();
     const resolved = byPath.get(normalized);
     if (resolved) return resolved;
+
+    const suffixMatches = [...byPath.entries()].filter(([path]) => path.endsWith(`/${normalized}`));
+    if (suffixMatches.length === 1) return suffixMatches[0][1];
+
     const basename = normalized.split("/").at(-1);
     if (basename) {
       const byName = byPath.get(basename);

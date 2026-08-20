@@ -37,6 +37,20 @@ describe("resolveManagedUrdfMeshUrl", () => {
     expect(resolveManagedUrdfMeshUrl("unlisted/folder/robotiq_85_base_link_fine.STL", null, files)).toBe("/api/v1/files/content?id=fine");
   });
 
+  it("matches a package-relative path against a unique repository-path suffix", () => {
+    const repositoryFiles = [{
+      relativePath: "AlohaMini2/urdf/alohamini2pro/alohamini2pro_meshes/base_link.STL",
+      originalName: "base_link.STL",
+      contentUrl: "/api/v1/files/content?id=aloha-base",
+    }];
+
+    expect(resolveManagedUrdfMeshUrl(
+      "package://alohamini2pro_urdf/alohamini2pro_meshes/base_link.STL",
+      "AlohaMini2/urdf/alohamini2pro/urdf/alohamini2pro.urdf",
+      repositoryFiles,
+    )).toBe("/api/v1/files/content?id=aloha-base");
+  });
+
   it("leaves an unresolved mesh untouched", () => {
     expect(resolveManagedUrdfMeshUrl("package://robot/meshes/missing.STL", "robots/model.urdf", files)).toBeNull();
   });
