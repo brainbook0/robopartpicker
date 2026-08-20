@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
 import { basename, join, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import {
   buildReviewedProjectArtifactForwardSql,
@@ -177,6 +178,9 @@ function prepareArtifact(
     JSON.parse(row.rpps_json),
     publicOrigin(env!),
   ) as RppsPackage & Record<string, unknown>;
+  if (!isDeepStrictEqual(JSON.parse(row.rpps_json), current)) {
+    throw new Error(`${definition.slug}: RPPS must be normalized before compact reviewed artifact updates`);
+  }
   const currentFiles = Array.isArray(current.files) ? current.files : [];
   const matchingFile = currentFiles.find((file) => file.path.toLowerCase() === definition.path.toLowerCase());
 
@@ -314,7 +318,9 @@ async function verifyApplied(projects: PreparedReviewedProjectArtifact[], now: s
       FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(project.row.id)}`);
     if (result.length !== 1) throw new Error(`${project.row.slug}: postflight project row missing`);
     const row = result[0];
-    if (row.updated_at !== now || row.rpps_json !== project.nextRppsJson) throw new Error(`${project.row.slug}: postflight project state mismatch`);
+    if (row.updated_at !== now || !isDeepStrictEqual(JSON.parse(String(row.rpps_json)), JSON.parse(project.nextRppsJson))) {
+      throw new Error(`${project.row.slug}: postflight project state mismatch`);
+    }
     for (const key of ["file_count", "project_file_count", "evidence_count", "claim_count"] as const) {
       if (Number(row[key]) !== 1) throw new Error(`${project.row.slug}: postflight ${key} was ${String(row[key])}`);
     }
@@ -340,7 +346,9 @@ function verifyRolledBack(projects: PreparedReviewedProjectArtifact[]): void {
       FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(project.row.id)}`);
     if (result.length !== 1) throw new Error(`${project.row.slug}: rollback verification project missing`);
     const row = result[0];
-    if (row.updated_at !== project.row.updated_at || row.rpps_json !== project.row.rpps_json) throw new Error(`${project.row.slug}: rollback did not restore project state`);
+    if (row.updated_at !== project.row.updated_at || !isDeepStrictEqual(JSON.parse(String(row.rpps_json)), JSON.parse(project.row.rpps_json))) {
+      throw new Error(`${project.row.slug}: rollback did not restore project state`);
+    }
     for (const key of ["file_count", "project_file_count", "evidence_count", "claim_count"] as const) {
       if (Number(row[key]) !== 0) throw new Error(`${project.row.slug}: rollback left ${key}=${String(row[key])}`);
     }

@@ -152,7 +152,50 @@ export function serializeReviewedProjectArtifactRpps(input: Record<string, unkno
 
 function originalGuard(project: PreparedReviewedProjectArtifact): string {
   const { row, definition } = project;
-  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = 'physical_design' AND p.visibility = 'public' AND p.status = 'published' AND p.repository_url = ${sqlString(row.repository_url)} AND p.revision = ${sqlString(row.revision)} AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(row.rpps_json)}`;
+  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = 'physical_design' AND p.visibility = 'public' AND p.status = 'published' AND p.repository_url = ${sqlString(row.repository_url)} AND p.revision = ${sqlString(row.revision)} AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND json_valid(pv.rpps_json) AND NOT EXISTS (SELECT 1 FROM json_each(CASE WHEN json_type(pv.rpps_json, '$.files') = 'array' THEN json_extract(pv.rpps_json, '$.files') ELSE json('[]') END) existing_rpps_file WHERE lower(json_extract(existing_rpps_file.value, '$.path')) = lower(${sqlString(definition.path)}))`;
+}
+
+function rppsFileEntry(project: PreparedReviewedProjectArtifact): Record<string, unknown> {
+  return {
+    path: project.definition.path,
+    kind: project.definition.rpps_kind,
+    url: project.contentUrl,
+    description: project.definition.description,
+  };
+}
+
+function rppsEvidenceEntry(project: PreparedReviewedProjectArtifact, retrievedAt: string): Record<string, unknown> {
+  return {
+    claim: `${project.definition.description} The artifact is pinned to revision ${project.definition.revision} and verified by SHA-256 ${project.definition.sha256}.`,
+    source_type: "repo",
+    source_url: project.sourcePageUrl,
+    retrieved_at: retrievedAt,
+    confidence: 1,
+  };
+}
+
+function appendReviewedRppsEntriesSql(project: PreparedReviewedProjectArtifact, retrievedAt: string): string {
+  const file = sqlString(JSON.stringify(rppsFileEntry(project)));
+  const evidence = sqlString(JSON.stringify(rppsEvidenceEntry(project, retrievedAt)));
+  return `json_set(json_set(rpps_json, '$.files', json_insert(CASE WHEN json_type(rpps_json, '$.files') = 'array' THEN json_extract(rpps_json, '$.files') ELSE json('[]') END, '$[#]', json(${file}))), '$.evidence', json_insert(CASE WHEN json_type(rpps_json, '$.evidence') = 'array' THEN json_extract(rpps_json, '$.evidence') ELSE json('[]') END, '$[#]', json(${evidence})))`;
+}
+
+function exactReviewedRppsEntriesGuard(project: PreparedReviewedProjectArtifact, retrievedAt: string, rppsExpression = "pv.rpps_json"): string {
+  const file = rppsFileEntry(project);
+  const evidence = rppsEvidenceEntry(project, retrievedAt);
+  return `EXISTS (SELECT 1 FROM json_each(CASE WHEN json_type(${rppsExpression}, '$.files') = 'array' THEN json_extract(${rppsExpression}, '$.files') ELSE json('[]') END) reviewed_file WHERE json_extract(reviewed_file.value, '$.path') = ${sqlString(String(file.path))} AND json_extract(reviewed_file.value, '$.kind') = ${sqlString(String(file.kind))} AND json_extract(reviewed_file.value, '$.url') = ${sqlString(String(file.url))} AND json_extract(reviewed_file.value, '$.description') = ${sqlString(String(file.description))}) AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_type(${rppsExpression}, '$.evidence') = 'array' THEN json_extract(${rppsExpression}, '$.evidence') ELSE json('[]') END) reviewed_evidence WHERE json_extract(reviewed_evidence.value, '$.claim') = ${sqlString(String(evidence.claim))} AND json_extract(reviewed_evidence.value, '$.source_type') = 'repo' AND json_extract(reviewed_evidence.value, '$.source_url') = ${sqlString(String(evidence.source_url))} AND json_extract(reviewed_evidence.value, '$.retrieved_at') = ${sqlString(retrievedAt)} AND CAST(json_extract(reviewed_evidence.value, '$.confidence') AS REAL) = 1.0)`;
+}
+
+function removeReviewedRppsEntriesSql(project: PreparedReviewedProjectArtifact, retrievedAt: string): string {
+  const file = rppsFileEntry(project);
+  const evidence = rppsEvidenceEntry(project, retrievedAt);
+  const files = `(SELECT COALESCE(json_group_array(json(value)), json('[]')) FROM json_each(CASE WHEN json_type(rpps_json, '$.files') = 'array' THEN json_extract(rpps_json, '$.files') ELSE json('[]') END) WHERE NOT (json_extract(value, '$.path') = ${sqlString(String(file.path))} AND json_extract(value, '$.kind') = ${sqlString(String(file.kind))} AND json_extract(value, '$.url') = ${sqlString(String(file.url))} AND json_extract(value, '$.description') = ${sqlString(String(file.description))}))`;
+  const evidenceItems = `(SELECT COALESCE(json_group_array(json(value)), json('[]')) FROM json_each(CASE WHEN json_type(rpps_json, '$.evidence') = 'array' THEN json_extract(rpps_json, '$.evidence') ELSE json('[]') END) WHERE NOT (json_extract(value, '$.claim') = ${sqlString(String(evidence.claim))} AND json_extract(value, '$.source_type') = 'repo' AND json_extract(value, '$.source_url') = ${sqlString(String(evidence.source_url))} AND json_extract(value, '$.retrieved_at') = ${sqlString(retrievedAt)} AND CAST(json_extract(value, '$.confidence') AS REAL) = 1.0))`;
+  let expression = `json_set(json_set(rpps_json, '$.files', json(${files})), '$.evidence', json(${evidenceItems}))`;
+  const original = JSON.parse(project.row.rpps_json) as Record<string, unknown>;
+  if (!Object.hasOwn(original, "files")) expression = `json_remove(${expression}, '$.files')`;
+  if (!Object.hasOwn(original, "evidence")) expression = `json_remove(${expression}, '$.evidence')`;
+  return expression;
 }
 
 export function buildReviewedProjectArtifactForwardSql(
@@ -185,12 +228,14 @@ SELECT ${sqlString(project.evidenceClaimId)}, ${sqlString(project.evidenceId)}, 
 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
 WHERE ${guard} AND EXISTS (SELECT 1 FROM evidence e WHERE e.id = ${sqlString(project.evidenceId)} AND e.file_id = ${sqlString(project.fileId)})
   AND NOT EXISTS (SELECT 1 FROM evidence_claims existing_claim WHERE existing_claim.id = ${sqlString(project.evidenceClaimId)});`);
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.nextRppsJson)}
-WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND rpps_json = ${sqlString(row.rpps_json)}
+    lines.push(`UPDATE project_versions SET rpps_json = ${appendReviewedRppsEntriesSql(project, now)}
+WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND json_valid(rpps_json)
+  AND EXISTS (SELECT 1 FROM projects p WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = 'physical_design' AND p.visibility = 'public' AND p.status = 'published' AND p.repository_url = ${sqlString(row.repository_url)} AND p.revision = ${sqlString(row.revision)} AND p.updated_at = ${sqlString(row.updated_at)})
+  AND NOT EXISTS (SELECT 1 FROM json_each(CASE WHEN json_type(rpps_json, '$.files') = 'array' THEN json_extract(rpps_json, '$.files') ELSE json('[]') END) existing_rpps_file WHERE lower(json_extract(existing_rpps_file.value, '$.path')) = lower(${sqlString(definition.path)}))
   AND EXISTS (SELECT 1 FROM evidence_claims ec WHERE ec.id = ${sqlString(project.evidenceClaimId)} AND ec.evidence_id = ${sqlString(project.evidenceId)});`);
     lines.push(`UPDATE projects SET updated_at = ${sqlString(now)}
 WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND updated_at = ${sqlString(row.updated_at)}
-  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND pv.rpps_json = ${sqlString(project.nextRppsJson)});`);
+  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND ${exactReviewedRppsEntriesGuard(project, now)});`);
   }
   return `${lines.join("\n")}\n`;
 }
@@ -203,13 +248,13 @@ export function buildReviewedProjectArtifactRollbackSql(
   const lines = [`-- Guarded rollback for source-backed project artifact wave ${wave}.`];
   for (const project of [...projects].reverse()) {
     const { definition, row } = project;
-    const currentGuard = `EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = 'physical_design' AND p.updated_at IN (${sqlString(row.updated_at)}, ${sqlString(now)}) AND pv.rpps_json IN (${sqlString(row.rpps_json)}, ${sqlString(project.nextRppsJson)}))`;
+    const currentGuard = `EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = 'physical_design' AND p.repository_url = ${sqlString(row.repository_url)} AND p.revision = ${sqlString(row.revision)} AND p.updated_at IN (${sqlString(row.updated_at)}, ${sqlString(now)}) AND pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)})`;
     lines.push(`DELETE FROM evidence_claims WHERE id = ${sqlString(project.evidenceClaimId)} AND evidence_id = ${sqlString(project.evidenceId)} AND entity_type = 'project' AND entity_id = ${sqlString(row.id)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
     lines.push(`DELETE FROM evidence WHERE id = ${sqlString(project.evidenceId)} AND file_id = ${sqlString(project.fileId)} AND content_hash = ${sqlString(`sha256:${definition.sha256}`)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
     lines.push(`DELETE FROM project_files WHERE project_id = ${sqlString(row.id)} AND project_version_id = ${sqlString(row.current_version_id)} AND file_id = ${sqlString(project.fileId)} AND purpose = ${sqlString(definition.purpose)} AND relative_path = ${sqlString(definition.path)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
     lines.push(`DELETE FROM files WHERE id = ${sqlString(project.fileId)} AND object_key = ${sqlString(project.objectKey)} AND checksum_sha256 = ${sqlString(definition.sha256)} AND created_at = ${sqlString(now)} AND updated_at = ${sqlString(now)} AND NOT EXISTS (SELECT 1 FROM project_files pf WHERE pf.file_id = ${sqlString(project.fileId)}) AND NOT EXISTS (SELECT 1 FROM evidence e WHERE e.file_id = ${sqlString(project.fileId)}) AND ${currentGuard};`);
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND rpps_json = ${sqlString(project.nextRppsJson)} AND ${currentGuard};`);
-    lines.push(`UPDATE projects SET updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND pv.rpps_json = ${sqlString(row.rpps_json)});`);
+    lines.push(`UPDATE project_versions SET rpps_json = ${removeReviewedRppsEntriesSql(project, now)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND json_valid(rpps_json) AND ${currentGuard} AND ${exactReviewedRppsEntriesGuard(project, now, "rpps_json")};`);
+    lines.push(`UPDATE projects SET updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND updated_at = ${sqlString(now)} AND NOT EXISTS (SELECT 1 FROM project_files pf WHERE pf.project_id = ${sqlString(row.id)} AND pf.file_id = ${sqlString(project.fileId)}) AND NOT EXISTS (SELECT 1 FROM evidence e WHERE e.id = ${sqlString(project.evidenceId)}) AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND NOT (${exactReviewedRppsEntriesGuard(project, now)}));`);
   }
   return `${lines.join("\n")}\n`;
 }

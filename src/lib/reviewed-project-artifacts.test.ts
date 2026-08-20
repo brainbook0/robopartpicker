@@ -90,6 +90,8 @@ describe("reviewed project artifact waves", () => {
 
   it("emits guarded forward and exact rollback SQL", () => {
     const project = prepared();
+    project.row.rpps_json = JSON.stringify({ rpps_version: "1.0.0", description: "x".repeat(200_000) });
+    project.nextRppsJson = JSON.stringify({ rpps_version: "1.0.0", description: "x".repeat(200_000), files: [] });
     const forward = buildReviewedProjectArtifactForwardSql([project], wave.wave, "2026-08-20T01:00:00.000Z");
     const rollback = buildReviewedProjectArtifactRollbackSql([project], wave.wave, "2026-08-20T01:00:00.000Z");
     expect(forward).toContain("INSERT INTO files");
@@ -98,9 +100,14 @@ describe("reviewed project artifact waves", () => {
     expect(forward).toContain("artifact.source");
     expect(forward).toContain(definition.revision);
     expect(forward).toContain("p.repository_url = 'https://github.com/juliarobotics/caesar.jl'");
+    expect(forward).toContain("json_insert");
+    expect(forward.length).toBeLessThan(50_000);
     expect(rollback).toContain("DELETE FROM evidence_claims");
     expect(rollback).toContain("DELETE FROM files");
-    expect(rollback).toContain(project.row.rpps_json);
+    expect(rollback).toContain("json_group_array");
+    expect(rollback.length).toBeLessThan(50_000);
+    expect(forward).not.toContain(project.row.rpps_json);
+    expect(rollback).not.toContain(project.row.rpps_json);
   });
 
   it("validates RPPS while preserving reviewed extension fields", () => {
