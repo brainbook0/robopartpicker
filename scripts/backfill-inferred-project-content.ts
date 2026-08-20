@@ -70,6 +70,7 @@ type PreparedProject = {
   row: ProjectRow;
   originalRppsJson: string;
   cleanedRppsJson: string;
+  stagedRpps: boolean;
   originalBomRows: BomItemRow[];
   removedBomRows: BomItemRow[];
 };
@@ -127,6 +128,9 @@ function executeSqlFile(path: string): void {
     cwd: process.cwd(), env: childEnv, maxBuffer: 256 * 1024 * 1024, stdio: "inherit",
   });
 }
+function dropRppsStageTable(): void {
+  wranglerRows(`DROP TABLE IF EXISTS ${RPPS_STAGE_TABLE}`);
+}
 function digest(value: string): string { return createHash("sha256").update(value).digest("hex"); }
 function publicOrigin(environment: EnvName): string {
   return environment === "production"
@@ -152,6 +156,8 @@ const BOM_COLUMNS: Array<keyof Omit<BomItemRow, "slug">> = [
   "selected_supplier_offer_id", "target_unit_price_minor", "notes", "sort_order", "extraction_method",
   "completeness", "evidence_locator", "confidence",
 ];
+const RPPS_STAGE_TABLE = "jcode_inferred_project_content_cleanup_stage";
+const MAX_INLINE_RPPS_BYTES = 70_000;
 function canonicalBomRows(rows: BomItemRow[]): string {
   return JSON.stringify([...rows]
     .sort((left, right) => left.id.localeCompare(right.id))
@@ -251,7 +257,15 @@ for (const target of wave.targets) {
   if (digest(cleanup.rppsJson) !== target.cleaned_rpps_sha256 || JSON.stringify(cleanup.stats) !== JSON.stringify(target.cleanup)) throw new Error(`${target.slug}: cleanup transformation changed after review`);
   const orderedBom = [...currentBom].sort((left, right) => left.sort_order - right.sort_order || left.id.localeCompare(right.id));
   orderedBom.forEach((item, index) => { if (item.sort_order !== index) throw new Error(`${target.slug}: normalized BOM order drifted at ${item.id}`); });
-  prepared.push({ target, row, originalRppsJson: row.rpps_json, cleanedRppsJson: cleanup.rppsJson, originalBomRows: orderedBom, removedBomRows: orderedBom.slice(0, target.normalized_bom_removed_count) });
+  prepared.push({
+    target,
+    row,
+    originalRppsJson: row.rpps_json,
+    cleanedRppsJson: cleanup.rppsJson,
+    stagedRpps: Buffer.byteLength(row.rpps_json) + Buffer.byteLength(cleanup.rppsJson) > MAX_INLINE_RPPS_BYTES,
+    originalBomRows: orderedBom,
+    removedBomRows: orderedBom.slice(0, target.normalized_bom_removed_count),
+  });
 }
 
 if (prepared.some((project) => project.target.normalized_bom_removed_count > 0)) {
@@ -272,15 +286,26 @@ if (prepared.some((project) => project.target.normalized_bom_removed_count > 0))
   if (["alternative_links", "build_item_links", "rfq_item_links"].some((key) => Number(dependencies[key]) !== 0)) throw new Error(`AI BOM dependencies appeared after review: ${JSON.stringify(dependencies)}`);
 }
 
-function stateGuard(project: PreparedProject, rppsJson: string, difficulty: string | null, costMinor: number | null, costCurrency: string | null, updatedAt?: string): string {
+function rppsSql(project: PreparedProject, state: "original" | "cleaned"): string {
+  if (!project.stagedRpps) return sqlString(state === "original" ? project.originalRppsJson : project.cleanedRppsJson);
+  const column = state === "original" ? "original_rpps_json" : "cleaned_rpps_json";
+  return `(SELECT ${column} FROM ${RPPS_STAGE_TABLE} WHERE version_id = ${sqlString(project.target.version_id)} AND project_id = ${sqlString(project.target.project_id)})`;
+}
+function stateGuard(project: PreparedProject, state: "original" | "cleaned", difficulty: string | null, costMinor: number | null, costCurrency: string | null, updatedAt?: string): string {
   const { target } = project;
-  return `p.id = ${sqlString(target.project_id)} AND p.slug = ${sqlString(target.slug)} AND p.project_kind = ${sqlString(target.project_kind)} AND p.current_version_id = ${sqlString(target.version_id)} AND p.deleted_at IS NULL${updatedAt ? ` AND p.updated_at = ${sqlString(updatedAt)}` : ""} AND p.difficulty IS ${sqlValue(difficulty)} AND p.estimated_cost_minor IS ${sqlValue(costMinor)} AND p.estimated_cost_currency IS ${sqlValue(costCurrency)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(rppsJson)}`;
+  return `p.id = ${sqlString(target.project_id)} AND p.slug = ${sqlString(target.slug)} AND p.project_kind = ${sqlString(target.project_kind)} AND p.current_version_id = ${sqlString(target.version_id)} AND p.deleted_at IS NULL${updatedAt ? ` AND p.updated_at = ${sqlString(updatedAt)}` : ""} AND p.difficulty IS ${sqlValue(difficulty)} AND p.estimated_cost_minor IS ${sqlValue(costMinor)} AND p.estimated_cost_currency IS ${sqlValue(costCurrency)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${rppsSql(project, state)}`;
 }
 function buildForwardSql(projects: PreparedProject[], now: string): string {
   const lines = ["-- Guarded removal of exact legacy inferred project content."];
   for (const project of projects) {
     const { target } = project;
-    const originalGuard = stateGuard(project, project.originalRppsJson, target.original_difficulty, target.original_estimated_cost_minor, target.original_estimated_cost_currency, target.original_updated_at);
+    if (project.stagedRpps) {
+      lines.push(`CREATE TABLE IF NOT EXISTS ${RPPS_STAGE_TABLE} (version_id TEXT PRIMARY KEY, project_id TEXT NOT NULL, original_rpps_json TEXT NOT NULL, cleaned_rpps_json TEXT);`);
+      lines.push(`DELETE FROM ${RPPS_STAGE_TABLE} WHERE version_id = ${sqlString(target.version_id)};`);
+      lines.push(`INSERT INTO ${RPPS_STAGE_TABLE} (version_id, project_id, original_rpps_json) VALUES (${sqlString(target.version_id)}, ${sqlString(target.project_id)}, ${sqlString(project.originalRppsJson)});`);
+      lines.push(`UPDATE ${RPPS_STAGE_TABLE} SET cleaned_rpps_json = ${sqlString(project.cleanedRppsJson)} WHERE version_id = ${sqlString(target.version_id)} AND project_id = ${sqlString(target.project_id)} AND cleaned_rpps_json IS NULL;`);
+    }
+    const originalGuard = stateGuard(project, "original", target.original_difficulty, target.original_estimated_cost_minor, target.original_estimated_cost_currency, target.original_updated_at);
     if (target.normalized_bom_removed_count > 0) {
       lines.push(`DELETE FROM bom_items
 WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)} AND sort_order < ${target.normalized_bom_removed_count}
@@ -291,11 +316,11 @@ WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)} AND sort_o
   AND EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE ${originalGuard})
   AND (SELECT COUNT(*) FROM bom_items WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)}) = ${target.normalized_bom_cleaned_count};`);
     }
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.cleanedRppsJson)}
-WHERE id = ${sqlString(target.version_id)} AND project_id = ${sqlString(target.project_id)} AND rpps_json = ${sqlString(project.originalRppsJson)}${target.normalized_bom_removed_count > 0 ? ` AND (SELECT COUNT(*) FROM bom_items WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)}) = ${target.normalized_bom_cleaned_count}` : ""};`);
+    lines.push(`UPDATE project_versions SET rpps_json = ${rppsSql(project, "cleaned")}
+WHERE id = ${sqlString(target.version_id)} AND project_id = ${sqlString(target.project_id)} AND rpps_json = ${rppsSql(project, "original")}${target.normalized_bom_removed_count > 0 ? ` AND (SELECT COUNT(*) FROM bom_items WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)}) = ${target.normalized_bom_cleaned_count}` : ""};`);
     lines.push(`UPDATE projects SET difficulty = ${sqlValue(target.cleaned_difficulty)}, estimated_cost_minor = ${sqlValue(target.cleaned_estimated_cost_minor)}, estimated_cost_currency = ${sqlValue(target.cleaned_estimated_cost_currency)}, updated_at = ${sqlString(now)}
 WHERE id = ${sqlString(target.project_id)} AND slug = ${sqlString(target.slug)} AND project_kind = ${sqlString(target.project_kind)} AND current_version_id = ${sqlString(target.version_id)} AND deleted_at IS NULL AND updated_at = ${sqlString(target.original_updated_at)} AND difficulty IS ${sqlValue(target.original_difficulty)} AND estimated_cost_minor IS ${sqlValue(target.original_estimated_cost_minor)} AND estimated_cost_currency IS ${sqlValue(target.original_estimated_cost_currency)}
-  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(target.version_id)} AND pv.project_id = ${sqlString(target.project_id)} AND pv.rpps_json = ${sqlString(project.cleanedRppsJson)});`);
+  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(target.version_id)} AND pv.project_id = ${sqlString(target.project_id)} AND pv.rpps_json = ${rppsSql(project, "cleaned")});`);
   }
   return `${lines.join("\n")}\n`;
 }
@@ -303,15 +328,15 @@ function buildRollbackSql(projects: PreparedProject[], now: string): string {
   const lines = ["-- Guarded rollback for exact legacy inferred project content cleanup."];
   for (const project of [...projects].reverse()) {
     const { target } = project;
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.originalRppsJson)}
-WHERE id = ${sqlString(target.version_id)} AND project_id = ${sqlString(target.project_id)} AND rpps_json = ${sqlString(project.cleanedRppsJson)};`);
+    lines.push(`UPDATE project_versions SET rpps_json = ${rppsSql(project, "original")}
+WHERE id = ${sqlString(target.version_id)} AND project_id = ${sqlString(target.project_id)} AND rpps_json = ${rppsSql(project, "cleaned")};`);
     lines.push(`UPDATE projects SET difficulty = ${sqlValue(target.original_difficulty)}, estimated_cost_minor = ${sqlValue(target.original_estimated_cost_minor)}, estimated_cost_currency = ${sqlValue(target.original_estimated_cost_currency)}, updated_at = ${sqlString(target.original_updated_at)}
 WHERE id = ${sqlString(target.project_id)} AND slug = ${sqlString(target.slug)} AND project_kind = ${sqlString(target.project_kind)} AND current_version_id = ${sqlString(target.version_id)} AND deleted_at IS NULL AND updated_at = ${sqlString(now)} AND difficulty IS ${sqlValue(target.cleaned_difficulty)} AND estimated_cost_minor IS ${sqlValue(target.cleaned_estimated_cost_minor)} AND estimated_cost_currency IS ${sqlValue(target.cleaned_estimated_cost_currency)}
-  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(target.version_id)} AND pv.project_id = ${sqlString(target.project_id)} AND pv.rpps_json = ${sqlString(project.originalRppsJson)});`);
+  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(target.version_id)} AND pv.project_id = ${sqlString(target.project_id)} AND pv.rpps_json = ${rppsSql(project, "original")});`);
     if (target.normalized_bom_removed_count > 0) {
       if (target.normalized_bom_cleaned_count > 0) lines.push(`UPDATE bom_items SET sort_order = sort_order + ${target.normalized_bom_removed_count}
 WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)}
-  AND EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE ${stateGuard(project, project.originalRppsJson, target.original_difficulty, target.original_estimated_cost_minor, target.original_estimated_cost_currency)})
+  AND EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE ${stateGuard(project, "original", target.original_difficulty, target.original_estimated_cost_minor, target.original_estimated_cost_currency)})
   AND (SELECT COUNT(*) FROM bom_items WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)}) = ${target.normalized_bom_cleaned_count};`);
       const restoredValues = project.removedBomRows.map((item) => `(${BOM_COLUMNS.map((column) => sqlValue(item[column] as string | number | null)).join(", ")})`).join(",\n  ");
       lines.push(`WITH restored (${BOM_COLUMNS.join(", ")}) AS (VALUES
@@ -319,7 +344,7 @@ WHERE bom_version_id = ${sqlString(target.normalized_bom_version_id)}
 )
 INSERT INTO bom_items (${BOM_COLUMNS.join(", ")})
 SELECT ${BOM_COLUMNS.map((column) => `restored.${column}`).join(", ")} FROM restored
-WHERE EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE ${stateGuard(project, project.originalRppsJson, target.original_difficulty, target.original_estimated_cost_minor, target.original_estimated_cost_currency)})
+WHERE EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE ${stateGuard(project, "original", target.original_difficulty, target.original_estimated_cost_minor, target.original_estimated_cost_currency)})
   AND NOT EXISTS (SELECT 1 FROM bom_items existing WHERE existing.id = restored.id);`);
     }
   }
@@ -350,6 +375,7 @@ const report = {
   waveProjects: wave.targets.length,
   prepared: prepared.length,
   alreadyApplied: alreadyApplied.length,
+  stagedProjects: prepared.filter((project) => project.stagedRpps).length,
   expected: wave.expected,
   forwardSql: forwardPaths,
   rollbackSql: rollbackPaths,
@@ -361,6 +387,7 @@ if (!apply) {
   process.exit(0);
 }
 if (prepared.length === 0) {
+  dropRppsStageTable();
   console.log("The exact inferred-content cleanup wave is already applied. No writes were needed.");
   process.exit(0);
 }
@@ -396,12 +423,14 @@ try {
   verifyState(prepared, "cleaned");
   const remaining = remainingPollution();
   if (Object.values(remaining).some((value) => value !== 0)) throw new Error(`Postflight inferred-content signatures remain: ${JSON.stringify(remaining)}`);
+  dropRppsStageTable();
   console.log(JSON.stringify({ applied: prepared.length, alreadyApplied: alreadyApplied.length, batches: forwardPaths.length, remaining, report: reportPath, rollback: rollbackPaths }, null, 2));
 } catch (error) {
   let rollbackError: unknown = null;
   try {
     for (const index of [...executed].reverse()) executeSqlFile(rollbackPaths[index]);
     verifyState(executed.flatMap((index) => batches[index]), "original");
+    dropRppsStageTable();
   } catch (caught) {
     rollbackError = caught;
   }
