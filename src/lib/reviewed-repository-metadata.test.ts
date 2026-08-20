@@ -4,6 +4,7 @@ import {
   buildReviewedRepositoryMetadataForwardSql,
   buildReviewedRepositoryMetadataRollbackSql,
   extractRepositoryDescription,
+  githubLicenseVerificationState,
   githubRevisionTreeUrl,
   immutableGithubBlobUrl,
   normalizeGithubRepositoryDescription,
@@ -120,6 +121,13 @@ describe("reviewed repository metadata", () => {
   it("normalizes GitHub description whitespace identically for generation and verification", () => {
     expect(normalizeGithubRepositoryDescription("  Robot  platform\nfor\tresearch.  ")).toBe("Robot platform for research.");
     expect(normalizeGithubRepositoryDescription(null)).toBe("");
+  });
+
+  it("does not misclassify GitHub quota failures as newly detected licenses", () => {
+    expect(githubLicenseVerificationState(404, false)).toBe("absent");
+    expect(githubLicenseVerificationState(200, true)).toBe("detected");
+    expect(githubLicenseVerificationState(403, false)).toBe("unavailable");
+    expect(githubLicenseVerificationState(429, false)).toBe("unavailable");
   });
 
   it("extracts concise project prose while skipping badges, navigation, and setup sections", () => {

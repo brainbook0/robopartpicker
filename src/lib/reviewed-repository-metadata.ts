@@ -116,6 +116,11 @@ export function normalizeGithubRepositoryDescription(value: string | null | unde
   return value?.replace(/\s+/gu, " ").trim() ?? "";
 }
 
+export function githubLicenseVerificationState(status: number, ok: boolean): "absent" | "detected" | "unavailable" {
+  if (status === 404) return "absent";
+  return ok ? "detected" : "unavailable";
+}
+
 function expectedDerivations(field: ReviewedMetadataField): Set<ReviewedMetadataSourceDerivation> {
   if (field === "summary") return new Set(["readme-summary"]);
   if (field === "description") return new Set(["readme-description", "github-repository-description"]);

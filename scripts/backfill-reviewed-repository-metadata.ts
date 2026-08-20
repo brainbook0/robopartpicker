@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import {
   buildReviewedRepositoryMetadataForwardSql,
   buildReviewedRepositoryMetadataRollbackSql,
   extractRepositoryDescription,
+  githubLicenseVerificationState,
   githubRepositoryParts,
   normalizeGithubRepositoryDescription,
   prepareRepositoryMetadataEvidence,
@@ -48,16 +49,20 @@ type EvidenceStateRow = {
 const args = process.argv.slice(2);
 const envIndex = args.indexOf("--env");
 const waveIndex = args.indexOf("--wave");
+const verificationReceiptIndex = args.indexOf("--source-verification-receipt");
 const env = (envIndex >= 0 ? args[envIndex + 1] : undefined) as EnvName | undefined;
 const wavePath = resolve(waveIndex >= 0 && args[waveIndex + 1]
   ? args[waveIndex + 1]
   : "data/project-waves/2026-08-20-reviewed-repository-metadata.json");
 const apply = args.includes("--apply");
+const verificationReceiptPath = verificationReceiptIndex >= 0 && args[verificationReceiptIndex + 1]
+  ? resolve(args[verificationReceiptIndex + 1])
+  : null;
 const scratch = process.env.JCODE_SCRATCH_DIR;
 const batchSize = 25;
 
 if (env !== "production" && env !== "preview") {
-  console.error("Usage: tsx scripts/backfill-reviewed-repository-metadata.ts --env production|preview [--wave path] [--apply]");
+  console.error("Usage: tsx scripts/backfill-reviewed-repository-metadata.ts --env production|preview [--wave path] [--source-verification-receipt path] [--apply]");
   process.exit(2);
 }
 if (!scratch) {
@@ -424,8 +429,10 @@ async function verifySource(
 
   const result = await github(`repos/${encodeURIComponent(parts.owner)}/${encodeURIComponent(parts.repo)}/license?ref=${encodeURIComponent(definition.revision)}`);
   if (source.derivation === "github-license-absence") {
-    if (result.status !== 404) throw new Error(`${definition.slug}/${field}: a license is now detectable at the pinned revision`);
-    return;
+    const state = githubLicenseVerificationState(result.status, result.ok);
+    if (state === "absent") return;
+    if (state === "unavailable") throw new Error(`${definition.slug}/${field}: license absence verification returned ${githubFailure(result)}`);
+    throw new Error(`${definition.slug}/${field}: a license is now detectable at the pinned revision`);
   }
   if (!result.ok) throw new Error(`${definition.slug}/${field}: license source returned ${githubFailure(result)}`);
   const data = result.data as { content?: string; path?: string; license?: { spdx_id?: string | null } };
@@ -470,6 +477,52 @@ async function verifySources(): Promise<number> {
   await Promise.all(Array.from({ length: 10 }, () => worker()));
   if (errors.length) throw new Error(`Reviewed metadata source verification failed:\n${errors.join("\n")}`);
   return entries.length;
+}
+
+type SourceVerificationReceipt = {
+  mode?: unknown;
+  env?: unknown;
+  wave?: unknown;
+  reviewedAt?: unknown;
+  waveProjects?: unknown;
+  sourceVerified?: unknown;
+};
+
+function expectedSourceVerificationCount(): number {
+  const keys = new Set<string>();
+  for (const definition of wave.projects) {
+    for (const item of prepareRepositoryMetadataEvidence(wave.wave, definition)) {
+      keys.add(JSON.stringify([definition.repository_url, definition.revision, item.source]));
+    }
+  }
+  return keys.size;
+}
+
+function reuseSourceVerificationReceipt(path: string): number {
+  const receipt = JSON.parse(readFileSync(path, "utf8")) as SourceVerificationReceipt;
+  const expectedCount = expectedSourceVerificationCount();
+  const errors: string[] = [];
+  if (receipt.mode !== "dry-run") errors.push("receipt mode must be dry-run");
+  if (receipt.env !== env) errors.push(`receipt env must be ${env}`);
+  if (receipt.wave !== wave.wave) errors.push("receipt wave does not match");
+  if (receipt.reviewedAt !== wave.reviewed_at) errors.push("receipt reviewedAt does not match");
+  if (Number(receipt.waveProjects) !== wave.projects.length) errors.push("receipt project count does not match");
+  if (Number(receipt.sourceVerified) !== expectedCount) errors.push("receipt source count does not match");
+
+  const receiptStat = statSync(path);
+  const receiptAgeMs = Date.now() - receiptStat.mtimeMs;
+  if (receiptStat.mtimeMs < Date.parse(wave.reviewed_at)) errors.push("receipt predates the reviewed wave");
+  if (receiptAgeMs < -5 * 60_000 || receiptAgeMs > 60 * 60_000) errors.push("receipt must be no more than one hour old");
+
+  const relativeWavePath = relative(process.cwd(), wavePath).replace(/\\/gu, "/");
+  if (!relativeWavePath || relativeWavePath.startsWith("../")) errors.push("wave must be inside the repository");
+  else {
+    const trackedWave = execFileSync("git", ["show", `HEAD:${relativeWavePath}`], { cwd: process.cwd(), maxBuffer: 64 * 1024 * 1024 });
+    const currentWave = readFileSync(wavePath);
+    if (digest(trackedWave) !== digest(currentWave)) errors.push("current wave is not the exact checked-in HEAD version");
+  }
+  if (errors.length) throw new Error(`Source-verification receipt is invalid: ${errors.join("; ")}`);
+  return expectedCount;
 }
 
 function gapRows(rows: ReviewedRepositoryMetadataRow[]): ReviewedRepositoryMetadataRow[] {
@@ -552,7 +605,9 @@ for (const definition of wave.projects) {
   if (result.alreadyApplied) alreadyApplied.push(definition.slug);
 }
 
-const sourceVerified = await verifySources();
+const sourceVerified = verificationReceiptPath
+  ? reuseSourceVerificationReceipt(verificationReceiptPath)
+  : await verifySources();
 const artifacts = writeSqlArtifacts(prepared, now);
 const report = {
   mode: apply ? "apply" : "dry-run",
@@ -561,6 +616,7 @@ const report = {
   reviewedAt: wave.reviewed_at,
   waveProjects: wave.projects.length,
   sourceVerified,
+  sourceVerification: verificationReceiptPath ? { mode: "receipt", receipt: verificationReceiptPath } : { mode: "live" },
   prepared: prepared.length,
   alreadyApplied: alreadyApplied.length,
   updates: {
@@ -575,7 +631,9 @@ writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify({ ...report, report: reportPath }, null, 2));
 
 if (!apply) {
-  console.log("Dry run complete. Every external source was revalidated. No production writes were performed.");
+  console.log(verificationReceiptPath
+    ? "Dry run complete. The fresh checked-in source-verification receipt was validated. No production writes were performed."
+    : "Dry run complete. Every external source was revalidated. No production writes were performed.");
   process.exit(0);
 }
 if (prepared.length === 0) {
