@@ -1,0 +1,500 @@
+import { stableId, sqlString } from "./physical-design-wave-import";
+import { validateRpps } from "./rpps/schema";
+
+export type ReviewedMetadataField = "summary" | "description" | "license_spdx";
+
+export type ReviewedMetadataSourceDerivation =
+  | "readme-summary"
+  | "readme-description"
+  | "github-repository-description"
+  | "github-license-file"
+  | "github-license-absence"
+  | "commercial-catalog-status";
+
+export type ReviewedRepositoryMetadataSource = {
+  derivation: ReviewedMetadataSourceDerivation;
+  source_url: string;
+  path?: string;
+  sha256?: string;
+  size_bytes?: number;
+  spdx_id?: string;
+};
+
+export type ReviewedRepositoryMetadataDefinition = {
+  slug: string;
+  name: string;
+  project_kind: string;
+  repository_url: string | null;
+  revision: string | null;
+  updates: Partial<Record<ReviewedMetadataField, string>>;
+  sources: Partial<Record<ReviewedMetadataField, ReviewedRepositoryMetadataSource>>;
+};
+
+export type ReviewedRepositoryMetadataWave = {
+  wave: string;
+  schema_version: number;
+  reviewed_at: string;
+  projects: ReviewedRepositoryMetadataDefinition[];
+};
+
+export type ReviewedRepositoryMetadataRow = {
+  id: string;
+  slug: string;
+  name: string;
+  project_kind: string;
+  repository_url: string | null;
+  revision: string | null;
+  summary: string | null;
+  description: string | null;
+  license_spdx: string | null;
+  visibility: string;
+  status: string;
+  updated_at: string;
+  current_version_id: string;
+  rpps_json: string;
+};
+
+export type PreparedRepositoryMetadataEvidence = {
+  field: ReviewedMetadataField;
+  value: string;
+  source: ReviewedRepositoryMetadataSource;
+  evidenceId: string;
+  claimId: string;
+  sourceType: "repo" | "docs";
+  title: string;
+  publisher: string;
+  confidence: number;
+  contentHash: string | null;
+  excerpt: string;
+};
+
+export type PreparedReviewedRepositoryMetadata = {
+  definition: ReviewedRepositoryMetadataDefinition;
+  row: ReviewedRepositoryMetadataRow;
+  nextSummary: string | null;
+  nextDescription: string | null;
+  nextLicenseSpdx: string | null;
+  nextRppsJson: string;
+  evidence: PreparedRepositoryMetadataEvidence[];
+};
+
+const SHA256_RE = /^[a-f0-9]{64}$/u;
+const GIT_REV_RE = /^[a-f0-9]{40}$/u;
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const WAVE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const FIELDS: ReviewedMetadataField[] = ["summary", "description", "license_spdx"];
+const README_DERIVATIONS = new Set<ReviewedMetadataSourceDerivation>(["readme-summary", "readme-description"]);
+const LICENSE_DERIVATIONS = new Set<ReviewedMetadataSourceDerivation>([
+  "github-license-file",
+  "github-license-absence",
+  "commercial-catalog-status",
+]);
+
+function isHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+export function githubRepositoryParts(repositoryUrl: string): { owner: string; repo: string } | null {
+  const match = repositoryUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/iu);
+  return match ? { owner: match[1], repo: match[2] } : null;
+}
+
+export function immutableGithubBlobUrl(repositoryUrl: string, revision: string, path: string): string {
+  const base = repositoryUrl.replace(/\.git$/iu, "").replace(/\/+$/u, "");
+  return `${base}/blob/${revision}/${path.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+export function githubRevisionTreeUrl(repositoryUrl: string, revision: string): string {
+  return `${repositoryUrl.replace(/\.git$/iu, "").replace(/\/+$/u, "")}/tree/${revision}`;
+}
+
+function expectedDerivations(field: ReviewedMetadataField): Set<ReviewedMetadataSourceDerivation> {
+  if (field === "summary") return new Set(["readme-summary"]);
+  if (field === "description") return new Set(["readme-description", "github-repository-description"]);
+  return LICENSE_DERIVATIONS;
+}
+
+export function validateReviewedRepositoryMetadataWave(wave: ReviewedRepositoryMetadataWave): string[] {
+  const errors: string[] = [];
+  if (!WAVE_RE.test(wave.wave ?? "")) errors.push("wave must be a lowercase kebab-case identifier");
+  if (wave.schema_version !== 1) errors.push("schema_version must be 1");
+  if (!wave.reviewed_at || Number.isNaN(Date.parse(wave.reviewed_at))) errors.push("reviewed_at must be an ISO timestamp");
+  if (!Array.isArray(wave.projects) || wave.projects.length === 0) errors.push("projects must not be empty");
+
+  const slugs = new Set<string>();
+  for (const project of wave.projects ?? []) {
+    if (!SLUG_RE.test(project.slug ?? "")) errors.push(`${project.slug || "(missing slug)"}: slug is invalid`);
+    else if (slugs.has(project.slug)) errors.push(`${project.slug}: duplicate slug`);
+    else slugs.add(project.slug);
+    if (!project.name?.trim()) errors.push(`${project.slug}: name is required`);
+    const parts = project.repository_url ? githubRepositoryParts(project.repository_url) : null;
+    if (project.repository_url && !parts) errors.push(`${project.slug}: repository_url must be a canonical GitHub repository URL`);
+    if (project.repository_url && !GIT_REV_RE.test(project.revision ?? "")) errors.push(`${project.slug}: revision must be a lowercase 40-character git hash`);
+
+    const fields = FIELDS.filter((field) => Object.hasOwn(project.updates ?? {}, field));
+    if (fields.length === 0) errors.push(`${project.slug}: updates must contain at least one field`);
+    for (const field of fields) {
+      const value = project.updates[field];
+      const source = project.sources?.[field];
+      if (!value?.trim()) errors.push(`${project.slug}: ${field} update must not be empty`);
+      if (field === "summary" && (value?.length ?? 0) > 280) errors.push(`${project.slug}: summary exceeds 280 characters`);
+      if (field === "description" && (value?.length ?? 0) > 20_000) errors.push(`${project.slug}: description exceeds 20000 characters`);
+      if (field === "license_spdx" && (value?.length ?? 0) > 80) errors.push(`${project.slug}: license_spdx exceeds 80 characters`);
+      if (!source) {
+        errors.push(`${project.slug}: ${field} source is required`);
+        continue;
+      }
+      if (!expectedDerivations(field).has(source.derivation)) {
+        errors.push(`${project.slug}: ${field} cannot use ${source.derivation}`);
+      }
+      if (!isHttpsUrl(source.source_url ?? "")) errors.push(`${project.slug}: ${field} source_url must be HTTPS`);
+
+      if (README_DERIVATIONS.has(source.derivation)) {
+        if (!project.repository_url || !project.revision) errors.push(`${project.slug}: ${field} README source requires a pinned repository`);
+        if (!source.path?.trim()) errors.push(`${project.slug}: ${field} README path is required`);
+        if (!SHA256_RE.test(source.sha256 ?? "")) errors.push(`${project.slug}: ${field} README sha256 is invalid`);
+        if (!Number.isInteger(source.size_bytes) || (source.size_bytes ?? 0) <= 0) errors.push(`${project.slug}: ${field} README size_bytes must be positive`);
+        if (project.repository_url && project.revision && source.path && source.source_url !== immutableGithubBlobUrl(project.repository_url, project.revision, source.path)) {
+          errors.push(`${project.slug}: ${field} README source_url is not the immutable blob URL`);
+        }
+      }
+      if (source.derivation === "github-repository-description") {
+        if (!project.repository_url || !project.revision) errors.push(`${project.slug}: repository description source requires a pinned project identity`);
+        if (!SHA256_RE.test(source.sha256 ?? "")) errors.push(`${project.slug}: repository description sha256 is invalid`);
+        if (!Number.isInteger(source.size_bytes) || (source.size_bytes ?? 0) <= 0) errors.push(`${project.slug}: repository description size_bytes must be positive`);
+        if (source.source_url !== project.repository_url) errors.push(`${project.slug}: repository description source_url must equal repository_url`);
+      }
+      if (source.derivation === "github-license-file") {
+        if (!project.repository_url || !project.revision) errors.push(`${project.slug}: license file source requires a pinned repository`);
+        if (!source.path?.trim()) errors.push(`${project.slug}: license file path is required`);
+        if (!SHA256_RE.test(source.sha256 ?? "")) errors.push(`${project.slug}: license file sha256 is invalid`);
+        if (!Number.isInteger(source.size_bytes) || (source.size_bytes ?? -1) < 0) errors.push(`${project.slug}: license file size_bytes must be non-negative`);
+        if (!source.spdx_id || source.spdx_id !== value) errors.push(`${project.slug}: license file spdx_id must equal the update`);
+        if (project.repository_url && project.revision && source.path && source.source_url !== immutableGithubBlobUrl(project.repository_url, project.revision, source.path)) {
+          errors.push(`${project.slug}: license file source_url is not the immutable blob URL`);
+        }
+      }
+      if (source.derivation === "github-license-absence") {
+        if (value !== "NOASSERTION") errors.push(`${project.slug}: absent license must use NOASSERTION`);
+        if (!project.repository_url || !project.revision) errors.push(`${project.slug}: absent license source requires a pinned repository`);
+        if (project.repository_url && project.revision && source.source_url !== githubRevisionTreeUrl(project.repository_url, project.revision)) {
+          errors.push(`${project.slug}: absent license source_url must equal the immutable revision tree URL`);
+        }
+      }
+      if (source.derivation === "commercial-catalog-status") {
+        if (value !== "NOASSERTION") errors.push(`${project.slug}: commercial license status must use NOASSERTION`);
+        if (project.project_kind !== "commercial_showcase") errors.push(`${project.slug}: commercial status requires commercial_showcase kind`);
+        if (project.repository_url) errors.push(`${project.slug}: commercial status requires no repository URL`);
+      }
+    }
+    for (const field of FIELDS) {
+      if (!Object.hasOwn(project.updates ?? {}, field) && project.sources?.[field]) errors.push(`${project.slug}: ${field} has a source without an update`);
+    }
+  }
+  return errors;
+}
+
+export function validateReviewedRepositoryMetadataQuality(wave: ReviewedRepositoryMetadataWave): string[] {
+  const errors: string[] = [];
+  const markupNoise = /(?:shields\.io|build status|table of contents|^#{1,6}\s)/iu;
+  const setupNoise = /\b(?:git clone|pip install|npm install|navigate to|please install|run the following)\b/iu;
+  const genericProse = /^(?:source code|code|robotics|ros package|my project|test project|project files?)\.?$/iu;
+  for (const project of wave.projects ?? []) {
+    for (const field of ["summary", "description"] as const) {
+      const value = project.updates?.[field]?.trim();
+      const source = project.sources?.[field];
+      if (!value) continue;
+      const cjkLength = value.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
+      if (field === "summary" && value.length < 20 && cjkLength < 10) errors.push(`${project.slug}: summary is too short to identify the project`);
+      if (field === "description" && value.length < 15 && cjkLength < 6) errors.push(`${project.slug}: description is too short to identify the project`);
+      if (markupNoise.test(value)) errors.push(`${project.slug}: ${field} contains markup or navigation noise`);
+      if (genericProse.test(value)) errors.push(`${project.slug}: ${field} is generic placeholder prose`);
+      if (field === "summary" && (setupNoise.test(value) || /https?:\/\//iu.test(value))) errors.push(`${project.slug}: summary contains setup instructions or a raw URL`);
+      if (field === "description" && source?.derivation === "readme-description" && setupNoise.test(value)) {
+        errors.push(`${project.slug}: README description contains setup instructions`);
+      }
+    }
+  }
+  return errors;
+}
+
+function cleanInlineMarkdown(value: string): string {
+  return value
+    .replace(/!\[[^\]]*\]\([^)]*\)/gu, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/gu, "$1")
+    .replace(/<https?:\/\/[^>]+>/gu, " ")
+    .replace(/<[^>]+>/gu, " ")
+    .replace(/&(?:[a-z]+|#\d+);/giu, " ")
+    .replace(/[*_`~]/gu, "")
+    .replace(/^#{1,6}\s*/u, "")
+    .replace(/^\s*(?:[-+*]|\d+[.)])\s+/u, "")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function markdownBlocks(markdown: string): string[] {
+  let normalized = markdown.replace(/\r\n?/gu, "\n").replace(/<!--[\s\S]*?-->/gu, "");
+  if (/^---\s*\n/u.test(normalized)) normalized = normalized.replace(/^---\s*\n[\s\S]*?\n---\s*\n/u, "");
+  const blocks: string[] = [];
+  let current: string[] = [];
+  let fenced = false;
+  const flush = (): void => {
+    const text = cleanInlineMarkdown(current.join(" "));
+    if (text) blocks.push(text);
+    current = [];
+  };
+
+  for (const rawLine of normalized.split("\n")) {
+    const trimmed = rawLine.trim();
+    if (/^(```|~~~)/u.test(trimmed)) {
+      fenced = !fenced;
+      flush();
+      continue;
+    }
+    if (fenced) continue;
+    if (!trimmed) {
+      flush();
+      continue;
+    }
+    if (/^#{1,6}(?:\s+|(?=[\p{L}\p{N}]))/u.test(trimmed) || /^[-=]{3,}$/u.test(trimmed)) {
+      flush();
+      continue;
+    }
+    if (/^(?:\.\.\s+)?(?:image|figure|contents)::/iu.test(trimmed)
+      || /^:\w[\w-]*:/u.test(trimmed)
+      || /^\[[^\]]+\]:\s*https?:\/\//iu.test(trimmed)
+      || /^<img\b/iu.test(trimmed)
+      || /(?:shields\.io|badge\.svg|badge\?)/iu.test(trimmed)
+      || /^\|?\s*:?-{3,}:?/u.test(trimmed)) {
+      flush();
+      continue;
+    }
+    const withoutQuote = trimmed.replace(/^>\s*/u, "").replace(/^\[!(?:NOTE|IMPORTANT|WARNING|TIP|CAUTION)\]\s*/iu, "").trim();
+    if (!withoutQuote) continue;
+    if (withoutQuote.length < 100 && /^(?:table of contents|contents|english|简体中文|中文|website|documentation|docs|discord|community|homepage|changelog|releases?|download|installation|requirements?|quick start|getting started|usage)$/iu.test(withoutQuote.replace(/[:：]$/u, ""))) {
+      flush();
+      continue;
+    }
+    current.push(withoutQuote);
+  }
+  flush();
+  return blocks;
+}
+
+function descriptionBlockScore(block: string, index: number): number {
+  const lower = block.toLowerCase();
+  const cjkLength = block.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
+  const urls = block.match(/https?:\/\//gu)?.length ?? 0;
+  const tableMarks = block.match(/\|/gu)?.length ?? 0;
+  const listMarks = block.match(/(?:^|\s)(?:[-+*]|\d+[.)])\s+/gu)?.length ?? 0;
+  let score = -index * 0.45;
+  if (block.length >= 35 || cjkLength >= 18) score += 3;
+  if (block.length >= 60 && block.length <= 700) score += 2;
+  if (/\b(?:this (?:repository|project|package)|(?:ros )?node that|is an?|provides?|contains?|implements?|aims? to)\b/u.test(lower)) score += 8;
+  if (/\b(?:framework|library|platform|robot|simulator|driver|tool)\b/u.test(lower)) score += 2;
+  if (/(?:机器人|機器人|项目|專案|系统|系統|平台|框架|库|設計|设计|实现|實現|用于|用於|基于|基於)/u.test(block)) score += 7;
+  if (/^(?:copyright|spdx-|licensed under|the license|apache license|mit license)/iu.test(block)) score -= 20;
+  if (/\b(?:table of contents|installation|requirements?|getting started|quick start|usage|contributing|build status)\b/u.test(lower)) score -= 10;
+  if (/\b(?:please install|should clone|clone the .{0,30}repository|sudo\s+(?:apt|pip)|pip install|npm install|git clone|navigate to|select the|run the following|execute (?:this|the)|tested on ubuntu|add package)\b/u.test(lower)) score -= 14;
+  if (/^(?:optional )?(?:launch )?parameters?:|^(?:\/|\.\/)?[\w.-]+\s+-\s+contains\b/iu.test(block)) score -= 12;
+  if (/^(?:note|important|warning|news|update)\b/iu.test(block)) score -= 5;
+  if (tableMarks >= 4 || /^\+[-+]{8,}/u.test(block)) score -= 20;
+  if (listMarks >= 4) score -= 10;
+  score -= urls * 4;
+  if (block.length > 1_000) score -= 8;
+  if (block.length < 35 && cjkLength < 18) score -= 8;
+  return score;
+}
+
+function clampProse(value: string, maxLength: number): string {
+  const clean = value.replace(/\s+/gu, " ").trim();
+  if (clean.length <= maxLength) return clean;
+  const slice = clean.slice(0, maxLength + 1);
+  const punctuation = Math.max(slice.lastIndexOf(". "), slice.lastIndexOf("。"), slice.lastIndexOf("! "), slice.lastIndexOf("? "));
+  const cut = punctuation >= Math.floor(maxLength * 0.55) ? punctuation + 1 : slice.lastIndexOf(" ");
+  return `${slice.slice(0, cut > 0 ? cut : maxLength).trim()}…`;
+}
+
+export function extractRepositoryDescription(markdown: string): string {
+  const blocks = markdownBlocks(markdown).slice(0, 24);
+  if (blocks.length === 0) return "";
+  let bestIndex = 0;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  blocks.forEach((block, index) => {
+    const score = descriptionBlockScore(block, index);
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  });
+  if (bestScore < 0) return "";
+  return clampProse(blocks[bestIndex], 1_800);
+}
+
+export function summarizeRepositoryText(value: string): string {
+  const clean = cleanInlineMarkdown(value);
+  const candidates = clean.split(/(?<=[.!?。！？])\s*/u).map((sentence) => sentence.trim()).filter(Boolean);
+  for (const sentence of candidates) {
+    const cjkLength = sentence.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
+    if (sentence.length < 30 && cjkLength < 18) continue;
+    if (/(?:star\s*求|求求|click here|table of contents|badge|build status)/iu.test(sentence)) continue;
+    return clampProse(sentence, 280);
+  }
+  return clampProse(clean, 280);
+}
+
+export function reviewedRepositoryMetadataEvidenceId(wave: string, slug: string, field: ReviewedMetadataField): string {
+  return stableId("evidence", `${wave}:${slug}:${field}`);
+}
+
+export function reviewedRepositoryMetadataClaimId(wave: string, slug: string, field: ReviewedMetadataField): string {
+  return stableId("eclaim", `${wave}:${slug}:${field}`);
+}
+
+export function serializeReviewedRepositoryMetadataRpps(input: Record<string, unknown>): string {
+  const validation = validateRpps(input);
+  if ("errors" in validation) throw new Error(`Generated repository metadata RPPS failed validation: ${validation.errors.join("; ")}`);
+  // RPPS packages in production carry reviewed extension fields. Validation must
+  // not strip them when serializing the source-backed update.
+  return JSON.stringify(input);
+}
+
+function sourcePresentation(
+  definition: ReviewedRepositoryMetadataDefinition,
+  field: ReviewedMetadataField,
+  source: ReviewedRepositoryMetadataSource,
+): Omit<PreparedRepositoryMetadataEvidence, "field" | "value" | "source" | "evidenceId" | "claimId"> {
+  const label = field === "license_spdx" ? "license status" : field;
+  const contentHash = source.sha256 ? `sha256:${source.sha256}` : null;
+  switch (source.derivation) {
+    case "readme-summary":
+    case "readme-description":
+      return {
+        sourceType: "repo",
+        title: `${definition.name} pinned README ${label}`,
+        publisher: "github.com",
+        confidence: 0.98,
+        contentHash,
+        excerpt: `Reviewed ${label} derived from ${source.path} at pinned revision ${definition.revision}.`,
+      };
+    case "github-repository-description":
+      return {
+        sourceType: "repo",
+        title: `${definition.name} GitHub repository description`,
+        publisher: "github.com",
+        confidence: 0.96,
+        contentHash,
+        excerpt: "Reviewed description matches the GitHub repository description and pinned project identity.",
+      };
+    case "github-license-file":
+      return {
+        sourceType: "repo",
+        title: `${definition.name} pinned license detection`,
+        publisher: "github.com",
+        confidence: 0.99,
+        contentHash,
+        excerpt: `GitHub license detection for ${source.path} at pinned revision ${definition.revision} returned ${source.spdx_id}.`,
+      };
+    case "github-license-absence":
+      return {
+        sourceType: "repo",
+        title: `${definition.name} pinned license absence`,
+        publisher: "github.com",
+        confidence: 0.97,
+        contentHash: null,
+        excerpt: `GitHub exposed no detectable license file at pinned revision ${definition.revision}; status recorded as NOASSERTION.`,
+      };
+    case "commercial-catalog-status":
+      return {
+        sourceType: "docs",
+        title: `${definition.name} commercial license status`,
+        publisher: new URL(source.source_url).hostname,
+        confidence: 0.99,
+        contentHash: null,
+        excerpt: "Commercial showcase has no public repository or open-source license artifact; status recorded as NOASSERTION.",
+      };
+  }
+}
+
+export function prepareRepositoryMetadataEvidence(
+  wave: string,
+  definition: ReviewedRepositoryMetadataDefinition,
+): PreparedRepositoryMetadataEvidence[] {
+  return FIELDS.filter((field) => Object.hasOwn(definition.updates, field)).map((field) => {
+    const value = definition.updates[field]!;
+    const source = definition.sources[field]!;
+    return {
+      field,
+      value,
+      source,
+      evidenceId: reviewedRepositoryMetadataEvidenceId(wave, definition.slug, field),
+      claimId: reviewedRepositoryMetadataClaimId(wave, definition.slug, field),
+      ...sourcePresentation(definition, field, source),
+    };
+  });
+}
+
+function originalGuard(project: PreparedReviewedRepositoryMetadata): string {
+  const { row } = project;
+  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.name = ${sqlString(row.name)} AND p.project_kind = ${sqlString(row.project_kind)} AND p.repository_url IS ${sqlString(row.repository_url)} AND p.revision IS ${sqlString(row.revision)} AND p.summary IS ${sqlString(row.summary)} AND p.description IS ${sqlString(row.description)} AND p.license_spdx IS ${sqlString(row.license_spdx)} AND p.visibility = 'public' AND p.status = 'published' AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(row.rpps_json)}`;
+}
+
+function evidenceExists(project: PreparedReviewedRepositoryMetadata, evidence: PreparedRepositoryMetadataEvidence): string {
+  return `EXISTS (SELECT 1 FROM evidence e JOIN evidence_claims ec ON ec.evidence_id = e.id WHERE e.id = ${sqlString(evidence.evidenceId)} AND e.source_url = ${sqlString(evidence.source.source_url)} AND e.content_hash IS ${sqlString(evidence.contentHash)} AND ec.id = ${sqlString(evidence.claimId)} AND ec.entity_type = 'project' AND ec.entity_id = ${sqlString(project.row.id)} AND ec.claim_key = ${sqlString(`${evidence.field}.source`)} AND ec.claim_value = ${sqlString(evidence.value)})`;
+}
+
+export function buildReviewedRepositoryMetadataForwardSql(
+  projects: PreparedReviewedRepositoryMetadata[],
+  wave: ReviewedRepositoryMetadataWave,
+  now: string,
+): string {
+  const lines = [`-- Guarded source-backed repository metadata wave ${wave.wave}.`];
+  for (const project of projects) {
+    const guard = originalGuard(project);
+    for (const evidence of project.evidence) {
+      lines.push(`INSERT INTO evidence (id, source_type, source_url, title, publisher, retrieved_at, confidence, content_hash, excerpt, is_demo, created_at)
+SELECT ${sqlString(evidence.evidenceId)}, ${sqlString(evidence.sourceType)}, ${sqlString(evidence.source.source_url)}, ${sqlString(evidence.title)}, ${sqlString(evidence.publisher)}, ${sqlString(wave.reviewed_at)}, ${evidence.confidence}, ${sqlString(evidence.contentHash)}, ${sqlString(evidence.excerpt)}, 0, ${sqlString(now)}
+FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
+WHERE ${guard} AND NOT EXISTS (SELECT 1 FROM evidence existing WHERE existing.id = ${sqlString(evidence.evidenceId)});`);
+      lines.push(`INSERT INTO evidence_claims (id, evidence_id, entity_type, entity_id, claim_key, claim_value, confidence, created_at)
+SELECT ${sqlString(evidence.claimId)}, ${sqlString(evidence.evidenceId)}, 'project', p.id, ${sqlString(`${evidence.field}.source`)}, ${sqlString(evidence.value)}, ${evidence.confidence}, ${sqlString(now)}
+FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
+WHERE ${guard} AND EXISTS (SELECT 1 FROM evidence e WHERE e.id = ${sqlString(evidence.evidenceId)} AND e.source_url = ${sqlString(evidence.source.source_url)} AND e.content_hash IS ${sqlString(evidence.contentHash)})
+  AND NOT EXISTS (SELECT 1 FROM evidence_claims existing WHERE existing.id = ${sqlString(evidence.claimId)});`);
+    }
+    const allEvidence = project.evidence.map((evidence) => evidenceExists(project, evidence)).join(" AND ");
+    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.nextRppsJson)}
+WHERE id = ${sqlString(project.row.current_version_id)} AND project_id = ${sqlString(project.row.id)} AND rpps_json = ${sqlString(project.row.rpps_json)} AND ${allEvidence};`);
+    lines.push(`UPDATE projects SET summary = ${sqlString(project.nextSummary)}, description = ${sqlString(project.nextDescription)}, license_spdx = ${sqlString(project.nextLicenseSpdx)}, updated_at = ${sqlString(now)}
+WHERE id = ${sqlString(project.row.id)} AND slug = ${sqlString(project.row.slug)} AND name = ${sqlString(project.row.name)} AND project_kind = ${sqlString(project.row.project_kind)} AND repository_url IS ${sqlString(project.row.repository_url)} AND revision IS ${sqlString(project.row.revision)} AND summary IS ${sqlString(project.row.summary)} AND description IS ${sqlString(project.row.description)} AND license_spdx IS ${sqlString(project.row.license_spdx)} AND visibility = 'public' AND status = 'published' AND current_version_id = ${sqlString(project.row.current_version_id)} AND updated_at = ${sqlString(project.row.updated_at)}
+  AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(project.row.current_version_id)} AND pv.project_id = ${sqlString(project.row.id)} AND pv.rpps_json = ${sqlString(project.nextRppsJson)});`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function originalOrNext(column: string, original: string | null, next: string | null): string {
+  return `(${column} IS ${sqlString(original)} OR ${column} IS ${sqlString(next)})`;
+}
+
+export function buildReviewedRepositoryMetadataRollbackSql(
+  projects: PreparedReviewedRepositoryMetadata[],
+  wave: ReviewedRepositoryMetadataWave,
+  now: string,
+): string {
+  const lines = [`-- Guarded rollback for source-backed repository metadata wave ${wave.wave}.`];
+  for (const project of [...projects].reverse()) {
+    const { row } = project;
+    const currentGuard = `EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND ${originalOrNext("p.summary", row.summary, project.nextSummary)} AND ${originalOrNext("p.description", row.description, project.nextDescription)} AND ${originalOrNext("p.license_spdx", row.license_spdx, project.nextLicenseSpdx)} AND (p.updated_at = ${sqlString(row.updated_at)} OR p.updated_at = ${sqlString(now)}) AND (pv.rpps_json = ${sqlString(row.rpps_json)} OR pv.rpps_json = ${sqlString(project.nextRppsJson)}))`;
+    for (const evidence of [...project.evidence].reverse()) {
+      lines.push(`DELETE FROM evidence_claims WHERE id = ${sqlString(evidence.claimId)} AND evidence_id = ${sqlString(evidence.evidenceId)} AND entity_type = 'project' AND entity_id = ${sqlString(row.id)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
+      lines.push(`DELETE FROM evidence WHERE id = ${sqlString(evidence.evidenceId)} AND source_url = ${sqlString(evidence.source.source_url)} AND content_hash IS ${sqlString(evidence.contentHash)} AND created_at = ${sqlString(now)} AND NOT EXISTS (SELECT 1 FROM evidence_claims ec WHERE ec.evidence_id = ${sqlString(evidence.evidenceId)}) AND ${currentGuard};`);
+    }
+    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND rpps_json = ${sqlString(project.nextRppsJson)} AND ${currentGuard};`);
+    lines.push(`UPDATE projects SET summary = ${sqlString(row.summary)}, description = ${sqlString(row.description)}, license_spdx = ${sqlString(row.license_spdx)}, updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND summary IS ${sqlString(project.nextSummary)} AND description IS ${sqlString(project.nextDescription)} AND license_spdx IS ${sqlString(project.nextLicenseSpdx)} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND pv.rpps_json = ${sqlString(row.rpps_json)});`);
+  }
+  return `${lines.join("\n")}\n`;
+}
