@@ -1,0 +1,78 @@
+{
+  "wave": "reviewed-physical-covers-wave-4-2026-08-20",
+  "schema_version": 1,
+  "projects": [
+    {
+      "slug": "nikivanov-watney",
+      "name": "nikivanov/watney",
+      "project_kind": "physical_design",
+      "repository_url": "https://github.com/nikivanov/watney",
+      "revision": "95ab8e06561f399162afc346da46b413c59f2ad5",
+      "expected_cover_url": "https://opengraph.githubassets.com/1/nikivanov/watney",
+      "source_document": {
+        "path": "README.md",
+        "sha256": "7b926cfb118194154a77c565e8a22ddb24b4fab9d566c605f74b3082ff0337e8",
+        "size_bytes": 7229
+      },
+      "source_publisher": "nikivanov/watney source repository",
+      "source_page_url": "https://github.com/nikivanov/watney/blob/95ab8e06561f399162afc346da46b413c59f2ad5/README.md",
+      "source_image_url": "https://raw.githubusercontent.com/nikivanov/watney/95ab8e06561f399162afc346da46b413c59f2ad5/images/watneys.jpg",
+      "final_source_image_url": "https://raw.githubusercontent.com/nikivanov/watney/95ab8e06561f399162afc346da46b413c59f2ad5/images/watneys.jpg",
+      "sha256": "f604b7eb2f1427faaf7caa05e779ca88f48db5663b75109ec2c1bc29ff56b319",
+      "size_bytes": 366694,
+      "media_type": "image/jpeg",
+      "width": 2668,
+      "height": 2001,
+      "alt_text": "Several generations of the Watney open-source telepresence rover shown together.",
+      "caption": "Upstream project photograph showing Watney rover hardware iterations."
+    },
+    {
+      "slug": "em0sh-ondroid",
+      "name": "em0sh/ondroid",
+      "project_kind": "physical_design",
+      "repository_url": "https://github.com/em0sh/ondroid",
+      "revision": "21e5da55d4cab90ebaf8097b30d139eb8b7d34a0",
+      "expected_cover_url": "https://opengraph.githubassets.com/1/em0sh/ondroid",
+      "source_document": {
+        "path": "README.md",
+        "sha256": "705dbdfbf588c42f23a86df83d7c1f4c047b1a554ffe6fbda439f8d0de63a719",
+        "size_bytes": 404
+      },
+      "source_publisher": "em0sh/ondroid source repository",
+      "source_page_url": "https://github.com/em0sh/ondroid/blob/21e5da55d4cab90ebaf8097b30d139eb8b7d34a0/README.md",
+      "source_image_url": "https://raw.githubusercontent.com/em0sh/ondroid/21e5da55d4cab90ebaf8097b30d139eb8b7d34a0/currentRelease.PNG",
+      "final_source_image_url": "https://raw.githubusercontent.com/em0sh/ondroid/21e5da55d4cab90ebaf8097b30d139eb8b7d34a0/currentRelease.PNG",
+      "sha256": "596763391a1784e6331ead361c6eda6fa00cd5cfb80d0bb4c7feeaf9da9d2fb0",
+      "size_bytes": 2093243,
+      "media_type": "image/png",
+      "width": 2428,
+      "height": 1786,
+      "alt_text": "Isometric CAD rendering of the Ondroid open-source humanoid robot.",
+      "caption": "Upstream project CAD rendering of the Ondroid humanoid robot."
+    },
+    {
+      "slug": "but0n-avem",
+      "name": "but0n/Avem",
+      "project_kind": "physical_design",
+      "repository_url": "https://github.com/but0n/Avem",
+      "revision": "9d3f6a4158cebba2aad9ef369662ca81835ac52b",
+      "expected_cover_url": "https://opengraph.githubassets.com/1/but0n/Avem",
+      "source_document": {
+        "path": "README.md",
+        "sha256": "3bb93dc4e0b91c95ff667ae2d40fc1f89080b957f0889ee9f3b53ca61214d988",
+        "size_bytes": 1802
+      },
+      "source_publisher": "but0n/Avem source repository",
+      "source_page_url": "https://github.com/but0n/Avem/blob/9d3f6a4158cebba2aad9ef369662ca81835ac52b/README.md",
+      "source_image_url": "https://raw.githubusercontent.com/but0n/Avem/9d3f6a4158cebba2aad9ef369662ca81835ac52b/docs/images/header.jpg",
+      "final_source_image_url": "https://raw.githubusercontent.com/but0n/Avem/9d3f6a4158cebba2aad9ef369662ca81835ac52b/docs/images/header.jpg",
+      "sha256": "c84a6800ed0430593eda65140f61425da8d7e25ca8a1cbe6826dc6fbf52cbea0",
+      "size_bytes": 469812,
+      "media_type": "image/jpeg",
+      "width": 2447,
+      "height": 1376,
+      "alt_text": "Avem UAV shown in the upstream project header image.",
+      "caption": "Upstream project header for the Avem STM32 UAV."
+    }
+  ]
+}
