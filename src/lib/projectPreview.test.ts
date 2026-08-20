@@ -47,8 +47,18 @@ describe("selectProjectPreviewFiles", () => {
     expect(result.readyFiles).toHaveLength(2);
     expect(result.imageFiles).toEqual([image]);
     expect(result.stepFiles).toEqual([step]);
+    expect(result.objFile).toBeNull();
     expect(result.stlFiles).toEqual([]);
     expect(result.other3dFiles).toEqual([]);
+  });
+
+  it("selects the explicit complete OBJ or the largest detailed export", () => {
+    const compact = file({ originalName: "robot-v3.obj", sizeBytes: 800 });
+    const detailed = file({ originalName: "robot-v2.obj", sizeBytes: 5_000 });
+    const complete = file({ originalName: "complete-robot.obj", sizeBytes: 1_000 });
+
+    expect(selectProjectPreviewFiles([compact, detailed]).objFile).toBe(detailed);
+    expect(selectProjectPreviewFiles([compact, detailed, complete]).objFile).toBe(complete);
   });
 
   it("deduplicates identical source artifacts and does not mistake an assembly jig for a complete design", () => {

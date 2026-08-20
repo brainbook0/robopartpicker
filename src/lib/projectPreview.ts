@@ -6,6 +6,7 @@ export type ProjectPreviewSelection = {
   urdfFile: ProjectFile | null;
   stlFiles: ProjectFile[];
   stepFiles: ProjectFile[];
+  objFile: ProjectFile | null;
   other3dFiles: ProjectFile[];
 };
 
@@ -19,7 +20,8 @@ export function selectProjectPreviewFiles(files: ProjectFile[]): ProjectPreviewS
   const stlCandidates = sortCompleteDesignFirst(readyFiles.filter((file) => extension(file) === "stl"));
   const completeStl = stlCandidates.find(isCompleteDesignFile);
   const stepFiles = sortCompleteDesignFirst(readyFiles.filter((file) => ["step", "stp", "iges", "igs"].includes(extension(file))));
-  const other3dFiles = readyFiles.filter((file) => ["3mf", "obj", "dae", "glb", "gltf", "fcstd", "f3d", "sldprt", "scad"].includes(extension(file)));
+  const objFiles = sortCompleteDesignFirst(readyFiles.filter((file) => extension(file) === "obj"));
+  const other3dFiles = readyFiles.filter((file) => ["3mf", "dae", "glb", "gltf", "fcstd", "f3d", "sldprt", "scad"].includes(extension(file)));
 
   return {
     readyFiles,
@@ -29,6 +31,9 @@ export function selectProjectPreviewFiles(files: ProjectFile[]): ProjectPreviewS
     // current-release STL part is required to preserve its shared CAD coordinates.
     stlFiles: completeStl ? [completeStl] : stlCandidates,
     stepFiles,
+    // OBJ repositories commonly retain multiple full-design revisions. Prefer an
+    // explicitly named complete model, otherwise the most detailed (largest) mesh.
+    objFile: objFiles[0] ?? null,
     other3dFiles,
   };
 }

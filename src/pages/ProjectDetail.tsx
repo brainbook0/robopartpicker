@@ -23,6 +23,7 @@ import { selectProjectPreviewFiles } from "@/lib/projectPreview";
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 const StlModelViewer = lazy(() => import("@/components/projects/StlModelViewer"));
 const StepModelViewer = lazy(() => import("@/components/projects/StepModelViewer"));
+const ObjModelViewer = lazy(() => import("@/components/projects/ObjModelViewer"));
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -124,7 +125,7 @@ export default function ProjectDetail() {
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
-  const { readyFiles, imageFiles, urdfFile: previewUrdf, stlFiles, stepFiles, other3dFiles } = selectProjectPreviewFiles(managedFiles);
+  const { readyFiles, imageFiles, urdfFile: previewUrdf, stlFiles, stepFiles, objFile, other3dFiles } = selectProjectPreviewFiles(managedFiles);
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
@@ -367,6 +368,10 @@ export default function ProjectDetail() {
           ) : stepFiles.length > 0 ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading native CAD converter…</div>}>
               <StepModelViewer files={stepFiles.map((file) => ({ contentUrl: file.contentUrl, name: file.relativePath ?? file.originalName }))} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · STEP/IGES design (${stepFiles.length} source file${stepFiles.length === 1 ? "" : "s"})`} />
+            </Suspense>
+          ) : objFile ? (
+            <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading OBJ design…</div>}>
+              <ObjModelViewer file={{ contentUrl: objFile.contentUrl, name: objFile.relativePath ?? objFile.originalName }} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · OBJ design`} />
             </Suspense>
           ) : other3dFiles.length > 0
             ? <CadSourceFallback projectName={p.name} files={other3dFiles} sourceUrl={p.repo_url ?? undefined} format="Native CAD" />
