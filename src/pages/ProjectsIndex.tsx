@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Plus, Search, FileJson, GitBranch, Package, X, Cpu, Boxes, Clock, Star, ShieldCheck, AlertTriangle } from "lucide-react";
-import { listProjectsPage, type ProjectKind, type ProjectRow } from "@/lib/projects";
+import { listProjectsPage, type ProjectCatalogStats, type ProjectKind, type ProjectRow } from "@/lib/projects";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROBOT_CATEGORIES, ROBOT_CATEGORY_LABELS, type RobotCategory } from "@/shared/robotCategory";
 
@@ -53,6 +53,7 @@ export default function ProjectsIndex() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [catalogStats, setCatalogStats] = useState<ProjectCatalogStats | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const q = params.get("q") ?? "";
@@ -81,7 +82,7 @@ export default function ProjectsIndex() {
   useEffect(() => {
     setLoading(true);
     listProjectsPage(1, pageSize, { kind, category }).then(r => {
-      setRows(r.items); setTotal(r.total); setPage(1); setLoading(false);
+      setRows(r.items); setTotal(r.total); setCatalogStats(r.stats ?? null); setPage(1); setLoading(false);
     }).catch(e => { setErr(e.message); setLoading(false); });
   }, [kind, category]);
 
@@ -93,7 +94,7 @@ export default function ProjectsIndex() {
         const seen = new Set(prev.map(p => p.id));
         return [...prev, ...r.items.filter(p => !seen.has(p.id))];
       });
-      setTotal(r.total); setPage(pg => pg + 1); setLoadingMore(false);
+      setTotal(r.total); setCatalogStats(r.stats ?? catalogStats); setPage(pg => pg + 1); setLoadingMore(false);
     }).catch(() => setLoadingMore(false));
   };
 
@@ -127,15 +128,16 @@ export default function ProjectsIndex() {
     const costs = rows.map(r => r.estimated_cost_usd).filter((n): n is number => n != null);
     const weekAgo = Date.now() - 7 * 86400_000;
     return {
-      total,
+      total: catalogStats?.totalProjects ?? total,
       loaded: rows.length,
-      medianCost: median(costs),
+      medianCost: catalogStats?.medianCostMinor != null ? catalogStats.medianCostMinor / 100 : median(costs),
       reproductions: rows.reduce((sum, project) => sum + project.reproduction_count, 0),
       successes: rows.reduce((sum, project) => sum + project.successful_reproduction_count, 0),
+      totalParts: catalogStats?.totalParts ?? null,
       withBom: rows.filter(r => bomLineCount(r) > 0).length,
       recent: rows.filter(r => new Date(r.updated_at).getTime() > weekAgo).length,
     };
-  }, [rows, total]);
+  }, [catalogStats, rows, total]);
 
   const hasActiveFilters = !!(q || tag || difficulty || kind || category || quick.size || sort !== "updated");
   const noProjectsExist = !loading && rows.length === 0;
@@ -166,10 +168,10 @@ export default function ProjectsIndex() {
       {/* Overview strip */}
       <div className="surface-card mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border">
         <StatCell label="Projects" value={stats.total.toLocaleString()} />
+        <StatCell label="Parts" value={stats.totalParts != null ? stats.totalParts.toLocaleString() : "—"} />
         <StatCell label="Median cost" value={stats.medianCost != null ? `$${Math.round(stats.medianCost).toLocaleString()}` : "—"} />
         <StatCell label="Reproductions" value={`${stats.reproductions} · ${stats.successes} succeeded`} />
         <StatCell label="Loaded now" value={stats.loaded.toLocaleString()} />
-        <StatCell label="With BOM (loaded)" value={`${stats.withBom}/${stats.loaded || 0}`} />
       </div>
       {demoOnly && <div className="mb-3 border border-warning/30 bg-warning/5 p-2 text-[11px] text-muted-foreground">All projects shown are derived from downloaded demo BOM fixtures. They are example RPPS records, not validated build instructions or live community publications.</div>}
 

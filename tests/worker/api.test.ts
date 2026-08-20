@@ -436,6 +436,31 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM build_configurations WHERE id = ?1").bind(configurationId).first<{ value: number }>())?.value)).toBe(0);
   });
 
+  it("preserves completed step attribution when editing a completed build step", async () => {
+    const created = await call("/api/v1/builds", { method: "POST", body: jsonBody({ name: "Step edit regression", description: "Validates build step editing does not erase completion metadata." }) }, ownerCookie);
+    expect(created.status).toBe(201);
+    const build = (await body<{ item: { id: string } }>(created)).item;
+
+    const added = await call(`/api/v1/builds/${build.id}/steps`, { method: "POST", body: jsonBody({ title: "Assemble frame", body: "Install the chassis and verify fasteners." }) }, ownerCookie);
+    expect(added.status).toBe(201);
+    const step = (await body<{ item: { id: string; status: string; completedByUserId: string | null; completedAt: string | null } }>(added)).item;
+
+    const completed = await call(`/api/v1/builds/${build.id}/steps/${step.id}`, { method: "PATCH", body: jsonBody({ status: "complete" }) }, ownerCookie);
+    expect(completed.status).toBe(200);
+    const completedStep = (await body<{ item: { status: string; completedByUserId: string | null; completedAt: string | null } }>(completed)).item;
+    expect(completedStep).toMatchObject({ status: "complete", completedByUserId: ownerId, completedAt: expect.any(String) });
+
+    const edited = await call(`/api/v1/builds/${build.id}/steps/${step.id}`, { method: "PATCH", body: jsonBody({ title: "Assemble frame v2", body: "Install the chassis, verify fasteners, and check square." }) }, ownerCookie);
+    expect(edited.status).toBe(200);
+    const editedStep = (await body<{ item: { title: string; body: string | null; status: string; completedByUserId: string | null; completedAt: string | null } }>(edited)).item;
+    expect(editedStep).toMatchObject({
+      title: "Assemble frame v2",
+      status: "complete",
+      completedByUserId: ownerId,
+      completedAt: expect.any(String),
+    });
+  });
+
   it("enforces accepted-answer ownership and reopens a question after reply deletion", async () => {
     const threadResponse = await call("/api/v1/community/threads", { method: "POST", body: jsonBody({ categoryId: "cat-general", title: "How should this test actuator be calibrated?", slug: "test-actuator-calibration", body: "I need a repeatable calibration method for this actuator before integration.", tags: ["calibration"], threadType: "question", structuredData: {} }) }, ownerCookie);
     expect(threadResponse.status).toBe(201); const threadId = (await body<{ item: { id: string } }>(threadResponse)).item.id;

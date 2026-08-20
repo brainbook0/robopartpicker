@@ -298,12 +298,17 @@ export class BuildsRepository {
     const current = await this.db.prepare("SELECT * FROM build_steps WHERE id = ?1 AND build_id = ?2").bind(stepId, buildId).first<Record<string, unknown>>();
     if (!current) throw new AppError(404, "BUILD_STEP_NOT_FOUND", "Build step not found.");
     const now = new Date().toISOString();
-    const completed = input.status === "complete";
+    const nextStatus = input.status ?? String(current.status);
+    const completedByUserId = nextStatus === "complete"
+      ? (current.status === "complete" ? current.completed_by_user_id ?? userId : userId)
+      : null;
+    const completedAt = nextStatus === "complete"
+      ? (current.status === "complete" ? current.completed_at ?? now : now)
+      : null;
     await this.db.batch([
       this.db.prepare(`UPDATE build_steps SET title = ?1, body = ?2, status = ?3,
-        completed_by_user_id = CASE WHEN ?3 = 'complete' THEN ?4 ELSE NULL END,
-        completed_at = CASE WHEN ?3 = 'complete' THEN ?5 ELSE NULL END, updated_at = ?5 WHERE id = ?6 AND build_id = ?7`)
-        .bind(input.title ?? current.title, input.body === undefined ? current.body : input.body, input.status ?? current.status, completed ? userId : null, now, stepId, buildId),
+        completed_by_user_id = ?4, completed_at = ?5, updated_at = ?6 WHERE id = ?7 AND build_id = ?8`)
+        .bind(input.title ?? current.title, input.body === undefined ? current.body : input.body, nextStatus, completedByUserId, completedAt, now, stepId, buildId),
       activityStatement(this.db, buildId, userId, "build.step.updated", "build_step", stepId, "Updated build step", input, now),
     ]);
     return (await this.detail(buildId))!.steps.find((step) => step.id === stepId)!;

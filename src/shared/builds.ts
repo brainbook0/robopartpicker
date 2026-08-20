@@ -48,7 +48,17 @@ export type BuildItem = {
   availableOffers: BuildOffer[];
 };
 
-export type BuildStep = { id: string; title: string; body: string | null; status: string; sortOrder: number };
+export type BuildStep = {
+  id: string;
+  title: string;
+  body: string | null;
+  status: "pending" | "blocked" | "in_progress" | "complete" | "skipped";
+  sortOrder: number;
+  completedByUserId: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type BuildConfiguration = {
   id: string; name: string; format: string; contentText: string | null; fileId: string | null;

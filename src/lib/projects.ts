@@ -44,17 +44,27 @@ export type ProjectRow = {
   publishability: "ready" | "review" | "incomplete" | "blocked";
 };
 
+export type ProjectCatalogStats = {
+  totalProjects: number;
+  totalParts: number;
+  medianCostMinor: number | null;
+  physicalDesignProjects: number;
+  roboticsSoftwareProjects: number;
+  commercialShowcaseProjects: number;
+  publishedProjects: number;
+};
+
 export type ProjectKind = "physical_design" | "robotics_software" | "commercial_showcase" | "unknown";
 
 export async function listPublicProjects(): Promise<ProjectRow[]> {
   return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?limit=1000&sort=popularity")).items;
 }
 
-export async function listProjectsPage(page: number, limit = 1000, options: { kind?: ProjectKind | ""; category?: RobotCategory | "" } = {}): Promise<{ items: ProjectRow[]; total: number }> {
+export async function listProjectsPage(page: number, limit = 1000, options: { kind?: ProjectKind | ""; category?: RobotCategory | "" } = {}): Promise<{ items: ProjectRow[]; total: number; stats?: ProjectCatalogStats }> {
   const params = new URLSearchParams({ limit: String(limit), sort: "popularity", page: String(page) });
   if (options.kind) params.set("kind", options.kind);
   if (options.category) params.set("category", options.category);
-  return await api.get<{ items: ProjectRow[]; total: number }>(`/api/v1/projects?${params.toString()}`);
+  return await api.get<{ items: ProjectRow[]; total: number; stats?: ProjectCatalogStats }>(`/api/v1/projects?${params.toString()}`);
 }
 
 export async function listMyProjects(userId: string): Promise<ProjectRow[]> {

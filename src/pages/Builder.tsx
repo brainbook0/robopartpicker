@@ -416,23 +416,7 @@ function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefres
           <textarea aria-label="Step notes" maxLength={20000} rows={3} value={step.body} onChange={(event) => setStep({ ...step, body: event.target.value })} placeholder="What needs to happen, what files or evidence are needed, and any risks." className="input-bare resize-y p-2 text-xs" />
           <button disabled={busy !== null || !step.title.trim()} className="btn-primary btn-sm justify-self-start disabled:opacity-50">Add step</button>
         </form>
-        <div className="mt-3 space-y-2">{build.steps.map((item) => <div key={item.id} className="rounded border border-border bg-muted/20 p-2">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-medium">{item.title}</span><span className="badge-neutral text-[9px] uppercase">{item.status}</span><span className="badge-neutral mono text-[9px]">#{item.sortOrder + 1}</span></div>
-              {item.body ? <p className="mt-1 whitespace-pre-wrap text-[10px] text-muted-foreground">{item.body}</p> : <p className="mt-1 text-[10px] text-muted-foreground">No notes yet.</p>}
-            </div>
-            <div className="flex items-center gap-2">
-              <select aria-label={`Status for ${item.title}`} value={item.status} onChange={(event) => void updateStep(item.id, { status: event.target.value as BuildStep["status"] })} className="input-bare h-8">
-                <option value="pending">Pending</option>
-                <option value="blocked">Blocked</option>
-                <option value="in_progress">In progress</option>
-                <option value="complete">Complete</option>
-                <option value="skipped">Skipped</option>
-              </select>
-            </div>
-          </div>
-        </div>)}</div>
+        <div className="mt-3 space-y-2">{build.steps.map((item) => <EditableStepRow key={item.id} item={item} updateStep={updateStep} />)}</div>
       </section>
       <section className="rounded border border-border p-3">
         <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-semibold">Configurations</h3><span className="badge-neutral mono">{build.configurations.length}</span></div>
@@ -478,6 +462,52 @@ function EngineeringRecords({ build, onRefresh }: { build: BuildDetail; onRefres
         </form>
         <div className="mt-3 space-y-2">{build.tests.map((item) => <RecordRow key={item.id} title={item.name} meta={item.result} detail={item.observedText ?? item.methodText} busy={busy === `delete-${item.id}`} onDelete={() => void remove("test", item.id, item.name)} />)}</div>
       </section>
+    </div>
+  </div>;
+}
+
+function EditableStepRow({ item, updateStep }: { item: BuildStep; updateStep: (stepId: string, changes: { title?: string; body?: string | null; status?: BuildStep["status"] }) => Promise<void> }) {
+  const [title, setTitle] = useState(item.title);
+  const [body, setBody] = useState(item.body ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setTitle(item.title);
+    setBody(item.body ?? "");
+  }, [item.id, item.title, item.body]);
+
+  const dirty = title !== item.title || body !== (item.body ?? "");
+
+  const save = async () => {
+    if (!dirty) return;
+    setSaving(true);
+    try {
+      await updateStep(item.id, { title: title.trim(), body: body.trim() || null });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return <div className="rounded border border-border bg-muted/20 p-2">
+    <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2"><span className="badge-neutral mono text-[9px]">#{item.sortOrder + 1}</span><span className="badge-neutral text-[9px] uppercase">{item.status}</span>{item.status === "complete" && <span className="badge-neutral text-[9px] uppercase">Completed</span>}</div>
+        <div className="mt-2 grid gap-2">
+          <input aria-label={`Title for ${item.title}`} value={title} onChange={(event) => setTitle(event.target.value)} onBlur={() => void save()} className="input-bare h-8" />
+          <textarea aria-label={`Notes for ${item.title}`} value={body} onChange={(event) => setBody(event.target.value)} onBlur={() => void save()} rows={2} className="input-bare resize-y p-2 text-xs" placeholder="Notes, evidence, parts, or risks." />
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground">{item.completedByUserId ? `Completed by ${item.completedByUserId}` : "Not completed yet."}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <select aria-label={`Status for ${item.title}`} value={item.status} onChange={(event) => void updateStep(item.id, { status: event.target.value as BuildStep["status"] })} className="input-bare h-8">
+          <option value="pending">Pending</option>
+          <option value="blocked">Blocked</option>
+          <option value="in_progress">In progress</option>
+          <option value="complete">Complete</option>
+          <option value="skipped">Skipped</option>
+        </select>
+        <button type="button" onClick={() => void save()} disabled={!dirty || saving} className="btn-ghost btn-sm disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
+      </div>
     </div>
   </div>;
 }

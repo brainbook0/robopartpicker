@@ -92,6 +92,16 @@ export type ProjectDto = {
   change_summary: string | null;
 };
 
+export type ProjectCatalogStats = {
+  totalProjects: number;
+  totalParts: number;
+  medianCostMinor: number | null;
+  physicalDesignProjects: number;
+  roboticsSoftwareProjects: number;
+  commercialShowcaseProjects: number;
+  publishedProjects: number;
+};
+
 export type ProjectFileDto = {
   id: string;
   projectVersionId: string | null;
@@ -133,7 +143,7 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
 export class ProjectsRepository {
   constructor(private readonly db: D1Database) {}
 
-  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; category?: RobotCategory; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number }> {
+  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; category?: RobotCategory; limit: number; offset: number; sort?: "popularity" | "updated" | "name" }): Promise<{ items: ProjectDto[]; total: number; stats: ProjectCatalogStats }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
     const access = options.mine
@@ -152,7 +162,55 @@ export class ProjectsRepository {
     const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM projects p ${where}`).bind(...values).first<{ total: number }>();
     const rows = await this.db.prepare(`${SELECT_PROJECT} ${where} ORDER BY ${this.orderBy(options.sort)} LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`)
       .bind(...values, options.limit, options.offset).all<ProjectDatabaseRow>();
-    return { items: rows.results.map(toProjectDto), total: Number(count?.total ?? 0) };
+    const stats = await this.catalogStats(userId, options.mine ?? false, options.kind, options.category);
+    return { items: rows.results.map(toProjectDto), total: Number(count?.total ?? 0), stats };
+  }
+
+  private async catalogStats(userId: string | null, mine: boolean, kind?: ProjectKind, category?: RobotCategory): Promise<ProjectCatalogStats> {
+    const values: unknown[] = [];
+    const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
+    const access = mine
+      ? userId ? `(p.owner_user_id = ${bind(userId)} OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id AND om.user_id = ${bind(userId)} AND om.status = 'active'))` : "0"
+      : userId
+        ? `(p.status = 'published' AND p.visibility = 'public') OR p.owner_user_id = ${bind(userId)} OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id AND om.user_id = ${bind(userId)} AND om.status = 'active')`
+        : "p.status = 'published' AND p.visibility = 'public'";
+    const clauses = ["p.deleted_at IS NULL", `(${access})`];
+    if (kind) clauses.push(`p.project_kind = ${bind(kind)}`);
+    if (category) clauses.push(`p.robot_category = ${bind(category)}`);
+    const where = `WHERE ${clauses.join(" AND ")}`;
+    const result = await this.db.prepare(`
+      SELECT
+        COUNT(*) AS totalProjects,
+        COALESCE(SUM(CASE WHEN p.project_kind = 'physical_design' THEN 1 ELSE 0 END), 0) AS physicalDesignProjects,
+        COALESCE(SUM(CASE WHEN p.project_kind = 'robotics_software' THEN 1 ELSE 0 END), 0) AS roboticsSoftwareProjects,
+        COALESCE(SUM(CASE WHEN p.project_kind = 'commercial_showcase' THEN 1 ELSE 0 END), 0) AS commercialShowcaseProjects,
+        COALESCE(SUM(CASE WHEN p.status = 'published' THEN 1 ELSE 0 END), 0) AS publishedProjects,
+        COALESCE(SUM(COALESCE((SELECT COUNT(*) FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id WHERE b.project_id = p.id), 0)), 0) AS totalParts
+      FROM projects p ${where}
+    `).bind(...values).first<{
+      totalProjects: number;
+      physicalDesignProjects: number;
+      roboticsSoftwareProjects: number;
+      commercialShowcaseProjects: number;
+      publishedProjects: number;
+      totalParts: number;
+    }>();
+    const costs = await this.db.prepare(`SELECT p.estimated_cost_minor AS cost FROM projects p ${where} AND p.estimated_cost_minor IS NOT NULL ORDER BY p.estimated_cost_minor`)
+      .bind(...values).all<{ cost: number }>();
+    const sortedCosts = costs.results.map((row) => Number(row.cost)).filter(Number.isFinite);
+    const middle = Math.floor(sortedCosts.length / 2);
+    const medianCostMinor = sortedCosts.length === 0 ? null : sortedCosts.length % 2 === 1
+      ? sortedCosts[middle]
+      : (sortedCosts[middle - 1] + sortedCosts[middle]) / 2;
+    return {
+      totalProjects: Number(result?.totalProjects ?? 0),
+      totalParts: Number(result?.totalParts ?? 0),
+      medianCostMinor,
+      physicalDesignProjects: Number(result?.physicalDesignProjects ?? 0),
+      roboticsSoftwareProjects: Number(result?.roboticsSoftwareProjects ?? 0),
+      commercialShowcaseProjects: Number(result?.commercialShowcaseProjects ?? 0),
+      publishedProjects: Number(result?.publishedProjects ?? 0),
+    };
   }
 
   private orderBy(sort: "popularity" | "updated" | "name" | undefined): string {
