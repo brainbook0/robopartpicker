@@ -283,12 +283,16 @@ describe("reviewed repository metadata", () => {
     expect(forward).toContain("INSERT INTO evidence_claims");
     expect(forward).toContain("UPDATE project_versions SET rpps_json");
     expect(forward).toContain("license_spdx = 'NOASSERTION'");
+    expect(forward).toContain("json_extract(rpps_json, '$.license') IS NULL");
+    expect(forward).toContain("AND summary IS NULL AND description IS NULL AND license_spdx IS NULL AND visibility");
 
     const rollback = buildReviewedRepositoryMetadataRollbackSql([project], wave, now);
     expect(rollback).toContain("DELETE FROM evidence_claims");
     expect(rollback).toContain("UPDATE project_versions SET rpps_json");
     expect(rollback).toContain("summary = NULL");
     expect(rollback).toContain("license_spdx = NULL");
+    expect(rollback).toContain("json_extract(rpps_json, '$.license') IS 'NOASSERTION'");
+    expect(rollback).toContain("AND summary IS 'Example Robot is an open hardware mobile robot.'");
   });
 
   it("keeps statements below D1 limits when an untouched description is large", () => {

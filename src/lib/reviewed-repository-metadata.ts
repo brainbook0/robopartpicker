@@ -480,7 +480,7 @@ function targetColumnConditions(
   alias = "p",
 ): string {
   return targetFields(project).map((field) => {
-    const column = `${alias}.${columnName(field)}`;
+    const column = alias ? `${alias}.${columnName(field)}` : columnName(field);
     const original = originalValue(project, field);
     const next = nextValue(project, field);
     return state === "original-or-next" ? originalOrNext(column, original, next) : `${column} IS ${sqlString(state === "original" ? original : next)}`;
@@ -488,7 +488,8 @@ function targetColumnConditions(
 }
 
 function targetRppsConditions(project: PreparedReviewedRepositoryMetadata, state: "original" | "next", alias = "pv"): string {
-  return targetFields(project).map((field) => `json_extract(${alias}.rpps_json, ${sqlString(rppsJsonPath(field))}) IS ${sqlString(state === "original" ? originalValue(project, field) : nextValue(project, field))}`).join(" AND ");
+  const column = alias ? `${alias}.rpps_json` : "rpps_json";
+  return targetFields(project).map((field) => `json_extract(${column}, ${sqlString(rppsJsonPath(field))}) IS ${sqlString(state === "original" ? originalValue(project, field) : nextValue(project, field))}`).join(" AND ");
 }
 
 function targetSetClauses(project: PreparedReviewedRepositoryMetadata, state: "original" | "next"): string {
@@ -520,10 +521,10 @@ WHERE ${guard} AND EXISTS (SELECT 1 FROM evidence e WHERE e.id = ${sqlString(evi
     }
     const allEvidence = project.evidence.map((evidence) => evidenceExists(project, evidence)).join(" AND ");
     lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.nextRppsJson)}
-  WHERE id = ${sqlString(project.row.current_version_id)} AND project_id = ${sqlString(project.row.id)} AND ${allEvidence}
+  WHERE id = ${sqlString(project.row.current_version_id)} AND project_id = ${sqlString(project.row.id)} AND ${targetRppsConditions(project, "original", "")} AND ${allEvidence}
     AND EXISTS (SELECT 1 FROM projects p WHERE p.id = ${sqlString(project.row.id)} AND p.current_version_id = ${sqlString(project.row.current_version_id)} AND p.updated_at = ${sqlString(project.row.updated_at)} AND ${targetColumnConditions(project, "original", "p")});`);
     lines.push(`UPDATE projects SET ${targetSetClauses(project, "next")}, updated_at = ${sqlString(now)}
-  WHERE id = ${sqlString(project.row.id)} AND slug = ${sqlString(project.row.slug)} AND name = ${sqlString(project.row.name)} AND project_kind = ${sqlString(project.row.project_kind)} AND repository_url IS ${sqlString(project.row.repository_url)} AND revision IS ${sqlString(project.row.revision)} AND ${targetColumnConditions(project, "original")} AND visibility = 'public' AND status = 'published' AND current_version_id = ${sqlString(project.row.current_version_id)} AND updated_at = ${sqlString(project.row.updated_at)}
+  WHERE id = ${sqlString(project.row.id)} AND slug = ${sqlString(project.row.slug)} AND name = ${sqlString(project.row.name)} AND project_kind = ${sqlString(project.row.project_kind)} AND repository_url IS ${sqlString(project.row.repository_url)} AND revision IS ${sqlString(project.row.revision)} AND ${targetColumnConditions(project, "original", "")} AND visibility = 'public' AND status = 'published' AND current_version_id = ${sqlString(project.row.current_version_id)} AND updated_at = ${sqlString(project.row.updated_at)}
     AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(project.row.current_version_id)} AND pv.project_id = ${sqlString(project.row.id)} AND ${targetRppsConditions(project, "next", "pv")});`);
   }
   return `${lines.join("\n")}\n`;
@@ -546,8 +547,8 @@ export function buildReviewedRepositoryMetadataRollbackSql(
       lines.push(`DELETE FROM evidence_claims WHERE id = ${sqlString(evidence.claimId)} AND evidence_id = ${sqlString(evidence.evidenceId)} AND entity_type = 'project' AND entity_id = ${sqlString(row.id)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
       lines.push(`DELETE FROM evidence WHERE id = ${sqlString(evidence.evidenceId)} AND source_url = ${sqlString(evidence.source.source_url)} AND content_hash IS ${sqlString(evidence.contentHash)} AND created_at = ${sqlString(now)} AND NOT EXISTS (SELECT 1 FROM evidence_claims ec WHERE ec.evidence_id = ${sqlString(evidence.evidenceId)}) AND ${currentGuard};`);
     }
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND ${targetRppsConditions(project, "next")} AND ${currentGuard};`);
-    lines.push(`UPDATE projects SET ${targetSetClauses(project, "original")}, updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND ${targetColumnConditions(project, "next")} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND ${targetRppsConditions(project, "original", "pv")});`);
+    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND ${targetRppsConditions(project, "next", "")} AND ${currentGuard};`);
+    lines.push(`UPDATE projects SET ${targetSetClauses(project, "original")}, updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND ${targetColumnConditions(project, "next", "")} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND ${targetRppsConditions(project, "original", "pv")});`);
   }
   return `${lines.join("\n")}\n`;
 }
