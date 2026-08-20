@@ -1,0 +1,19 @@
+{
+  "wave": "reviewed-robotiq-mesh-completion-4-2026-08-20",
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "slug": "a-price-robotiq-arg85-description",
+      "repository_url": "https://github.com/a-price/robotiq_arg85_description",
+      "revision": "a65190bdbb0666609fe7e8c3bb17341e09e81625",
+      "path": "meshes/outer_knuckle_fine.STL",
+      "sha256": "9f4c3205bd05c72a4e375776a11e1e5d0021899dfe424da92c1c28096c4e753a",
+      "size_bytes": 62284,
+      "media_type": "application/octet-stream",
+      "file_kind": "cad",
+      "purpose": "cad",
+      "rpps_kind": "cad",
+      "description": "Complete fine-resolution Robotiq 85 outer-knuckle mesh referenced by the pinned project URDF."
+    }
+  ]
+}
