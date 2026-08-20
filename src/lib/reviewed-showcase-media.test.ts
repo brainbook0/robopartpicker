@@ -240,6 +240,34 @@ describe("reviewed showcase media", () => {
     expect(() => splitReviewedShowcaseSql(`SELECT '${"x".repeat(400)}';\n`, 300)).toThrow("Generated SQL statement exceeds");
   });
 
+  it("keeps large physical-project forward and rollback statements below the D1 limit", () => {
+    const project = prepared();
+    const revision = "a".repeat(40);
+    const largeDescription = "x".repeat(60_000);
+    const originalRpps = JSON.stringify({ rpps_version: "1.0.0", name: "Large robot", cover_image_url: "https://opengraph.githubassets.com/1/example/robot", description: largeDescription });
+    const physical: PreparedReviewedShowcaseMedia = {
+      ...project,
+      definition: {
+        ...project.definition,
+        project_kind: "physical_design",
+        repository_url: "https://github.com/example/robot",
+        revision,
+        expected_cover_url: "https://opengraph.githubassets.com/1/example/robot",
+      },
+      row: {
+        ...project.row,
+        project_kind: "physical_design",
+        repository_url: "https://github.com/example/robot",
+        revision,
+        rpps_json: originalRpps,
+      },
+      nextRppsJson: JSON.stringify({ rpps_version: "1.0.0", name: "Large robot", cover_image_url: project.coverUrl, description: largeDescription }),
+    };
+
+    expect(() => splitReviewedShowcaseSql(buildReviewedShowcaseMediaForwardSql([physical], wave.wave, "2026-08-20T17:30:00.000Z"), 100_000)).not.toThrow();
+    expect(() => splitReviewedShowcaseSql(buildReviewedShowcaseMediaRollbackSql([physical], wave.wave, "2026-08-20T17:30:00.000Z"), 100_000)).not.toThrow();
+  });
+
   it("validates portable fields without deleting reviewed showcase extensions", () => {
     const serialized = serializeReviewedShowcaseRpps({
       rpps_version: "1.0.0",

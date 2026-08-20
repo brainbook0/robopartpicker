@@ -191,7 +191,11 @@ function prepareProject(
   if (exactApplied && Number(row.media_count) === 1 && current.cover_image_url === coverUrl && exactDocs) {
     return { project: null, alreadyApplied: true };
   }
-  if (!pristine) {
+  const recoverablePartialApply = exactApplied
+    && Number(row.media_count) === 1
+    && definition.expected_cover_url !== undefined
+    && current.cover_image_url === definition.expected_cover_url;
+  if (!pristine && !recoverablePartialApply) {
     throw new Error(`${definition.slug}: existing media state is neither pristine nor the exact reviewed wave (${JSON.stringify({ totalMedia: Number(row.media_count), ...state })})`);
   }
   if (definition.expected_cover_url && current.cover_image_url !== definition.expected_cover_url) {

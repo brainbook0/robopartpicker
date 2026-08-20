@@ -301,12 +301,16 @@ export function splitReviewedShowcaseSql(sql: string, maxBytes: number): string[
   return chunks;
 }
 
-function originalGuard(project: PreparedReviewedShowcaseMedia): string {
+function projectIdentityGuard(project: PreparedReviewedShowcaseMedia): string {
   const { definition, row } = project;
   const repositoryGuard = definition.repository_url
     ? ` AND p.repository_url = ${sqlString(definition.repository_url)} AND p.revision = ${sqlString(definition.revision)}`
     : "";
-  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = ${sqlString(expectedProjectKind(definition))}${repositoryGuard} AND p.visibility = 'public' AND p.status = 'published' AND p.updated_at = ${sqlString(row.updated_at)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(row.rpps_json)}`;
+  return `p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = ${sqlString(expectedProjectKind(definition))}${repositoryGuard} AND p.visibility = 'public' AND p.status = 'published' AND p.updated_at = ${sqlString(row.updated_at)}`;
+}
+
+function originalGuard(project: PreparedReviewedShowcaseMedia): string {
+  return `${projectIdentityGuard(project)} AND pv.id = p.current_version_id AND pv.project_id = p.id AND pv.rpps_json = ${sqlString(project.row.rpps_json)}`;
 }
 
 export function buildReviewedShowcaseMediaForwardSql(
@@ -344,8 +348,12 @@ SELECT ${sqlString(project.evidenceClaimId)}, ${sqlString(project.evidenceId)}, 
 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id
 WHERE ${guard} AND EXISTS (SELECT 1 FROM evidence e WHERE e.id = ${sqlString(project.evidenceId)} AND e.file_id = ${sqlString(project.fileId)})
   AND NOT EXISTS (SELECT 1 FROM evidence_claims existing_claim WHERE existing_claim.id = ${sqlString(project.evidenceClaimId)});`);
+    const priorRppsGuard = definition.expected_cover_url
+      ? `json_extract(rpps_json, '$.cover_image_url') = ${sqlString(definition.expected_cover_url)}`
+      : `rpps_json = ${sqlString(row.rpps_json)}`;
     lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(project.nextRppsJson)}
-WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND rpps_json = ${sqlString(row.rpps_json)}
+  WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND ${priorRppsGuard}
+  AND EXISTS (SELECT 1 FROM projects p WHERE ${projectIdentityGuard(project)})
   AND EXISTS (SELECT 1 FROM project_media pm WHERE pm.id = ${sqlString(project.mediaId)} AND pm.project_id = ${sqlString(row.id)} AND pm.file_id = ${sqlString(project.fileId)})
   AND EXISTS (SELECT 1 FROM evidence_claims ec WHERE ec.id = ${sqlString(project.evidenceClaimId)} AND ec.evidence_id = ${sqlString(project.evidenceId)});`);
     lines.push(`UPDATE projects SET updated_at = ${sqlString(now)}
@@ -363,13 +371,16 @@ export function buildReviewedShowcaseMediaRollbackSql(
   const lines = [`-- Guarded rollback for source-backed showcase cover wave ${wave}.`];
   for (const project of [...projects].reverse()) {
     const { definition, row } = project;
-    const currentGuard = `EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = ${sqlString(expectedProjectKind(definition))} AND p.updated_at IN (${sqlString(row.updated_at)}, ${sqlString(now)}) AND pv.rpps_json IN (${sqlString(row.rpps_json)}, ${sqlString(project.nextRppsJson)}))`;
+    const expectedCoverValues = definition.expected_cover_url
+      ? `${sqlString(definition.expected_cover_url)}, ${sqlString(project.coverUrl)}`
+      : `${sqlString(project.coverUrl)}`;
+    const currentGuard = `EXISTS (SELECT 1 FROM projects p JOIN project_versions pv ON pv.id = p.current_version_id WHERE p.id = ${sqlString(row.id)} AND p.slug = ${sqlString(row.slug)} AND p.current_version_id = ${sqlString(row.current_version_id)} AND p.project_kind = ${sqlString(expectedProjectKind(definition))} AND p.updated_at IN (${sqlString(row.updated_at)}, ${sqlString(now)}) AND json_extract(pv.rpps_json, '$.cover_image_url') IN (${expectedCoverValues}))`;
     lines.push(`DELETE FROM evidence_claims WHERE id = ${sqlString(project.evidenceClaimId)} AND evidence_id = ${sqlString(project.evidenceId)} AND entity_type = 'project' AND entity_id = ${sqlString(row.id)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
     lines.push(`DELETE FROM evidence WHERE id = ${sqlString(project.evidenceId)} AND file_id = ${sqlString(project.fileId)} AND content_hash = ${sqlString(`sha256:${definition.sha256}`)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
     lines.push(`DELETE FROM project_media WHERE id = ${sqlString(project.mediaId)} AND project_id = ${sqlString(row.id)} AND file_id = ${sqlString(project.fileId)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
     lines.push(`DELETE FROM project_files WHERE project_id = ${sqlString(row.id)} AND project_version_id = ${sqlString(row.current_version_id)} AND file_id = ${sqlString(project.fileId)} AND purpose = 'cover' AND relative_path = ${sqlString(project.relativePath)} AND created_at = ${sqlString(now)} AND ${currentGuard};`);
     lines.push(`DELETE FROM files WHERE id = ${sqlString(project.fileId)} AND object_key = ${sqlString(project.objectKey)} AND checksum_sha256 = ${sqlString(definition.sha256)} AND created_at = ${sqlString(now)} AND updated_at = ${sqlString(now)} AND NOT EXISTS (SELECT 1 FROM project_files pf WHERE pf.file_id = ${sqlString(project.fileId)}) AND NOT EXISTS (SELECT 1 FROM evidence e WHERE e.file_id = ${sqlString(project.fileId)}) AND ${currentGuard};`);
-    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND rpps_json = ${sqlString(project.nextRppsJson)} AND ${currentGuard};`);
+    lines.push(`UPDATE project_versions SET rpps_json = ${sqlString(row.rpps_json)} WHERE id = ${sqlString(row.current_version_id)} AND project_id = ${sqlString(row.id)} AND json_extract(rpps_json, '$.cover_image_url') = ${sqlString(project.coverUrl)} AND ${currentGuard};`);
     lines.push(`UPDATE projects SET updated_at = ${sqlString(row.updated_at)} WHERE id = ${sqlString(row.id)} AND slug = ${sqlString(row.slug)} AND current_version_id = ${sqlString(row.current_version_id)} AND updated_at = ${sqlString(now)} AND EXISTS (SELECT 1 FROM project_versions pv WHERE pv.id = ${sqlString(row.current_version_id)} AND pv.project_id = ${sqlString(row.id)} AND pv.rpps_json = ${sqlString(row.rpps_json)});`);
   }
   return `${lines.join("\n")}\n`;
