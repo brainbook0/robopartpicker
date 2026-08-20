@@ -310,6 +310,16 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
     expect(ambiguous.status).toBe(422);
   });
 
+  it("rejects anonymous mine=true project listing instead of returning an empty success", async () => {
+    const anonymous = await call("/api/v1/projects?mine=true&limit=50");
+    expect(anonymous.status).toBe(401);
+    expect(await body<{ error: { code: string } }>(anonymous)).toMatchObject({ error: { code: "AUTHENTICATION_REQUIRED" } });
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS value FROM projects").first<{ value: number }>())?.value)).toBeGreaterThanOrEqual(0);
+
+    const authenticated = await call("/api/v1/projects?mine=true&limit=50", {}, ownerCookie);
+    expect(authenticated.status).toBe(200);
+  });
+
   it("requires RFQ auth and project access before sourcing estimation", async () => {
     const privateProjectResponse = await call("/api/v1/projects", { method: "POST", body: jsonBody({
       visibility: "private",

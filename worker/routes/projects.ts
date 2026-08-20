@@ -46,6 +46,9 @@ projectRoutes.get("/projects", loadAuthSession, async (c) => {
   const userId = c.get("authSession")?.user?.id ?? null;
   const limit = parsePositiveInt(c.req.query("limit"), 50, 1000);
   const page = parsePositiveInt(c.req.query("page"), 1, 10_000);
+  if (c.req.query("mine") === "true" && !userId) {
+    throw new AppError(401, "AUTHENTICATION_REQUIRED", "Listing your own projects requires a signed-in session.");
+  }
   const sort = ["popularity", "updated", "name"].includes(c.req.query("sort") ?? "")
     ? (c.req.query("sort") as "popularity" | "updated" | "name")
     : "popularity";
