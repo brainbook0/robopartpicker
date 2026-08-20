@@ -67,7 +67,16 @@ describe("selectProjectPreviewFiles", () => {
     const jig = file({ originalName: "assembly-jig.stl", relativePath: "tools/assembly-jig.stl", checksumSha256: "b".repeat(64) });
 
     const result = selectProjectPreviewFiles([duplicateA, duplicateB, jig]);
-    expect(result.readyFiles).toHaveLength(2);
+    expect(result.readyFiles).toHaveLength(3);
     expect(result.stlFiles).toHaveLength(2);
+  });
+
+  it("preserves byte-identical files at distinct URDF package paths", () => {
+    const left = file({ originalName: "left_base.STL", relativePath: "meshes/left_base.STL", checksumSha256: "a".repeat(64) });
+    const right = file({ originalName: "right_base.STL", relativePath: "meshes/right_base.STL", checksumSha256: "a".repeat(64) });
+
+    const result = selectProjectPreviewFiles([left, right]);
+    expect(result.readyFiles).toEqual([left, right]);
+    expect(result.stlFiles).toEqual([left]);
   });
 });

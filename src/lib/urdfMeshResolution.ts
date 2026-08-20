@@ -65,6 +65,12 @@ export function rewriteManagedUrdfMeshUrls(
   return urdf.replace(/<mesh\b[^>]*filename\s*=\s*"([^"]+)"([^>]*)>/giu, (match, filename, rest) => {
     const resolved = resolveManagedUrdfMeshUrl(filename, urdfPath, files);
     if (!resolved) return match;
-    return `<mesh filename="${new URL(resolved, baseUrl).toString()}"${rest}>`;
+    const url = new URL(resolved, baseUrl);
+    // URDFLoader selects its mesh parser from the URL suffix. Managed content
+    // routes identify files by query parameter and therefore have no extension.
+    // A fragment preserves the source basename for parser selection without
+    // changing the HTTP request sent to the content route.
+    url.hash = normalizeUrdfAssetPath(filename).split("/").at(-1) ?? "mesh";
+    return `<mesh filename="${url.toString()}"${rest}>`;
   });
 }

@@ -61,7 +61,7 @@ describe("rewriteManagedUrdfMeshUrls", () => {
     const urdf = '<robot><mesh filename="package://robotiq/meshes/robotiq_85_base_link_fine.STL" scale="1 1 1" /></robot>';
 
     expect(rewriteManagedUrdfMeshUrls(urdf, "robots/robot.urdf", files, "https://example.com/projects/robot")).toBe(
-      '<robot><mesh filename="https://example.com/api/v1/files/content?id=fine" scale="1 1 1" /></robot>',
+      '<robot><mesh filename="https://example.com/api/v1/files/content?id=fine#robotiq_85_base_link_fine.STL" scale="1 1 1" /></robot>',
     );
   });
 });

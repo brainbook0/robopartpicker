@@ -14,14 +14,20 @@ const completeDesignName = /(^|[-_\s])(full|complete|combined|whole|total)([-_\s
 const exactCompleteStlName = /(^|\/)(assembly|assembled|robot)([-_\s](model|design))?\.stl$/iu;
 
 export function selectProjectPreviewFiles(files: ProjectFile[]): ProjectPreviewSelection {
-  const readyFiles = dedupeFiles(files.filter((file) => file.status === "ready" && Boolean(file.contentUrl)));
-  const imageFiles = readyFiles.filter((file) => file.kind === "image" || file.mediaType.startsWith("image/"));
-  const urdfCandidates = sortCompleteDesignFirst(readyFiles.filter((file) => extension(file) === "urdf"));
-  const stlCandidates = sortCompleteDesignFirst(readyFiles.filter((file) => extension(file) === "stl"));
+  // URDF resolution is path-sensitive. Two package paths may intentionally
+  // contain byte-identical meshes, such as mirrored left/right robot parts,
+  // so keep every ready path available to the URDF loader. Deduplicate only
+  // the standalone preview collections that would otherwise render the same
+  // payload twice.
+  const readyFiles = files.filter((file) => file.status === "ready" && Boolean(file.contentUrl));
+  const previewFiles = dedupeFiles(readyFiles);
+  const imageFiles = previewFiles.filter((file) => file.kind === "image" || file.mediaType.startsWith("image/"));
+  const urdfCandidates = sortCompleteDesignFirst(previewFiles.filter((file) => extension(file) === "urdf"));
+  const stlCandidates = sortCompleteDesignFirst(previewFiles.filter((file) => extension(file) === "stl"));
   const completeStl = stlCandidates.find(isCompleteDesignFile);
-  const stepFiles = sortCompleteDesignFirst(readyFiles.filter((file) => ["step", "stp", "iges", "igs"].includes(extension(file))));
-  const objFiles = sortCompleteDesignFirst(readyFiles.filter((file) => extension(file) === "obj"));
-  const other3dFiles = readyFiles.filter((file) => ["3mf", "dae", "glb", "gltf", "fcstd", "f3d", "sldprt", "scad"].includes(extension(file)));
+  const stepFiles = sortCompleteDesignFirst(previewFiles.filter((file) => ["step", "stp", "iges", "igs"].includes(extension(file))));
+  const objFiles = sortCompleteDesignFirst(previewFiles.filter((file) => extension(file) === "obj"));
+  const other3dFiles = previewFiles.filter((file) => ["3mf", "dae", "glb", "gltf", "fcstd", "f3d", "sldprt", "scad"].includes(extension(file)));
 
   return {
     readyFiles,
