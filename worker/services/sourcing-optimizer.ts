@@ -30,7 +30,7 @@ export class SourcingOptimizerService {
   /** Produce a whole-BOM estimate from a materialized BOM. */
   async estimateForBom(bomId: string, constraints: SourcingConstraints = {}): Promise<SourcingEstimate> {
     const bom = await new BomsRepository(this.db).detail(bomId);
-    if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
+    if (!bom || bom.is_demo === 1) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
     const lines: SourcingLineInput[] = bom.items.map((item, index) => ({
       id: String(item.slotKey ?? item.id ?? `line-${index + 1}`),
       componentId: typeof item.componentId === "string" ? item.componentId : null,
@@ -45,7 +45,7 @@ export class SourcingOptimizerService {
   }
 
   async estimateForProject(projectId: string, constraints: SourcingConstraints = {}): Promise<SourcingEstimate> {
-    const bom = await this.db.prepare(`SELECT id FROM boms WHERE project_id = ?1 ORDER BY updated_at DESC LIMIT 1`)
+    const bom = await this.db.prepare(`SELECT id FROM boms WHERE project_id = ?1 AND is_demo = 0 ORDER BY updated_at DESC LIMIT 1`)
       .bind(projectId).first<{ id: string }>();
     if (!bom) throw new AppError(404, "PROJECT_BOM_NOT_FOUND", "This project has no BOM to estimate.");
     return this.estimateForBom(bom.id, constraints);
@@ -60,7 +60,7 @@ export class SourcingOptimizerService {
       FROM supplier_offers so
       JOIN suppliers s ON s.id = so.supplier_id
       LEFT JOIN supplier_regions sr ON sr.supplier_id = s.id AND sr.ships_from = 1
-      WHERE so.component_id IN (${placeholders})
+      WHERE so.component_id IN (${placeholders}) AND so.is_demo = 0 AND s.is_demo = 0
       GROUP BY so.id ORDER BY so.unit_price_minor`)
       .bind(...componentIds).all<OfferRow>();
     return rows.results.map((row) => ({

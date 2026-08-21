@@ -34,7 +34,7 @@ function createMcpServer(env: Env): McpServer {
     const rows = await env.DB.prepare(`SELECT c.id, c.slug, c.name, c.category, c.summary,
       m.name AS manufacturer, c.is_demo AS isDemo, c.freshness_at AS freshnessAt
       FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
-      WHERE c.deleted_at IS NULL AND (?2 IS NULL OR c.category = ?2)
+      WHERE c.deleted_at IS NULL AND c.is_demo = 0 AND (?2 IS NULL OR c.category = ?2)
         AND (lower(c.name) LIKE ?1 OR lower(COALESCE(c.summary, '')) LIKE ?1 OR lower(COALESCE(m.name, '')) LIKE ?1)
       ORDER BY c.name LIMIT ?3`).bind(term, category ?? null, limit).all();
     return jsonResult({ items: rows.results });
@@ -49,7 +49,7 @@ function createMcpServer(env: Env): McpServer {
     const placeholders = componentIds.map((_, index) => `?${index + 1}`).join(",");
     const rows = await env.DB.prepare(`SELECT c.id, c.slug, c.name, c.category, c.summary,
       m.name AS manufacturer FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
-      WHERE c.deleted_at IS NULL AND c.id IN (${placeholders})`).bind(...componentIds).all<Record<string, unknown>>();
+      WHERE c.deleted_at IS NULL AND c.is_demo = 0 AND c.id IN (${placeholders})`).bind(...componentIds).all<Record<string, unknown>>();
     const sameCategory = new Set(rows.results.map((row) => row.category)).size === 1;
     return jsonResult({ items: rows.results, sameCategory, dropInCompatibilityVerified: false });
   });
@@ -62,7 +62,7 @@ function createMcpServer(env: Env): McpServer {
   }, async ({ query, limit }) => {
     const rows = await env.DB.prepare(`SELECT id, slug, name, summary, license_spdx AS license,
       repository_url AS repositoryUrl, difficulty, updated_at AS updatedAt, is_demo AS isDemo
-      FROM projects WHERE deleted_at IS NULL AND status = 'published' AND visibility = 'public'
+      FROM projects WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'
         AND (lower(name) LIKE ?1 OR lower(COALESCE(summary, '')) LIKE ?1)
       ORDER BY updated_at DESC LIMIT ?2`).bind(`%${query.toLowerCase()}%`, limit).all();
     return jsonResult({ items: rows.results });
@@ -90,7 +90,7 @@ function createMcpServer(env: Env): McpServer {
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, async ({ query, limit }) => {
     const rows = await env.DB.prepare(`SELECT s.id, s.slug, s.name, s.status, s.freshness_at AS freshnessAt,
-      s.is_demo AS isDemo FROM suppliers s WHERE lower(s.name) LIKE ?1 ORDER BY s.name LIMIT ?2`)
+      s.is_demo AS isDemo FROM suppliers s WHERE s.is_demo = 0 AND lower(s.name) LIKE ?1 ORDER BY s.name LIMIT ?2`)
       .bind(`%${query.toLowerCase()}%`, limit).all();
     return jsonResult({ items: rows.results });
   });

@@ -3,7 +3,7 @@ import { Info } from "lucide-react";
 /** Compact catalog provenance notice. Demo records are withheld from the live
  *  catalog; missing commercial observations remain explicitly unknown. */
 export function CatalogDataNotice({ variant = "banner", className = "" }: { variant?: "banner" | "inline"; className?: string }) {
-  const body = "Only non-demo catalog records and offers are shown. Prices, stock, lead times, specifications, and compatibility reflect the latest stored source observation, not a checkout quote or engineering guarantee; unknown values stay blank.";
+  const body = "Only production catalog records and source-observed offers are shown. Prices, stock, lead times, specifications, and compatibility reflect the latest stored source observation, not a checkout quote or engineering guarantee; unknown values stay blank.";
   if (variant === "inline") {
     return (
       <div className={`text-[11px] text-muted-foreground flex items-start gap-1.5 ${className}`}>
@@ -24,4 +24,4 @@ export function CatalogDataNotice({ variant = "banner", className = "" }: { vari
   );
 }
 
-export const FIXTURE_TOOLTIP = "Latest stored source observation. Verify current price, stock, lead time, and fit with the supplier.";
+export const SOURCE_OBSERVATION_TOOLTIP = "Latest stored source observation. Verify current price, stock, lead time, and fit with the supplier.";

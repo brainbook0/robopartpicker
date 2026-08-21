@@ -94,7 +94,7 @@ function AspectContent({ project, aspect, normalizedBom, normalizedBomLoading }:
     <MetricGrid metrics={[
       ["BOM lines", String(totals.lineCount)],
       ["Total quantity", totals.available ? String(totals.units) : "—"],
-      ["Identified by MPN", String(normalizedBom ? normalizedBom.items.filter((item) => item.manufacturerPartNumber).length : bom.filter((item) => item.mpn).length)],
+      ["Known parts cost", totals.available ? moneyMinor(totals.knownCostMinor, totals.currency) : "—"],
       ["Unpriced lines", totals.available ? String(totals.unpricedLines) : "—"],
     ]} />
     <Card title="Reviewed bill of materials">

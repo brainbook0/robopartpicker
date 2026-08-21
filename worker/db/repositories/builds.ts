@@ -56,14 +56,14 @@ export class BuildsRepository {
         bi.unit, bi.unit_cost_minor AS unitCostMinor, bi.status, bi.substituted_for_item_id AS substitutedForItemId,
         bi.notes, bi.created_at AS createdAt, bi.updated_at AS updatedAt
         FROM build_items bi LEFT JOIN components c ON c.id = bi.component_id
-        LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id
-        LEFT JOIN suppliers s ON s.id = so.supplier_id WHERE bi.build_id = ?1 ORDER BY bi.created_at`).bind(build.id),
+        LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id AND so.is_demo = 0
+        LEFT JOIN suppliers s ON s.id = so.supplier_id AND s.is_demo = 0 WHERE bi.build_id = ?1 ORDER BY bi.created_at`).bind(build.id),
       this.db.prepare(`SELECT bi.id AS buildItemId, so.id, so.supplier_id AS supplierId, s.name AS supplierName,
         so.unit_price_minor AS unitPriceMinor, so.currency, so.stock_quantity AS stockQuantity,
         so.lead_time_days AS leadTimeDays, so.minimum_quantity AS minimumOrderQuantity,
         so.observed_at AS observedAt, so.is_demo AS isDemo
         FROM build_items bi JOIN supplier_offers so ON so.component_id = bi.component_id
-        JOIN suppliers s ON s.id = so.supplier_id WHERE bi.build_id = ?1
+        JOIN suppliers s ON s.id = so.supplier_id WHERE bi.build_id = ?1 AND so.is_demo = 0 AND s.is_demo = 0
         ORDER BY bi.id, so.unit_price_minor, so.lead_time_days`).bind(build.id),
       this.db.prepare(`SELECT id, source_project_step_id AS sourceProjectStepId, title, body, status, sort_order AS sortOrder,
         completed_by_user_id AS completedByUserId, completed_at AS completedAt, created_at AS createdAt, updated_at AS updatedAt

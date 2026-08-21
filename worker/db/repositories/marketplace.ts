@@ -67,7 +67,7 @@ export class MarketplaceRepository {
   async list(userId: string | null, options: { type?: string; q?: string; category?: string; region?: string; condition?: string; sort?: "newest" | "price_asc" | "price_desc" | "parts_cost_asc"; status?: string; mine?: boolean; minPrice?: number; maxPrice?: number; limit: number; offset: number }): Promise<{ items: MarketplaceListingDto[]; total: number }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
-    const clauses = ["ml.deleted_at IS NULL"];
+    const clauses = ["ml.deleted_at IS NULL", "ml.is_demo = 0"];
     if (options.mine) {
       clauses.push(userId ? `(ml.seller_user_id = ${bind(userId)} OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = ml.organization_id AND om.user_id = ${bind(userId)} AND om.status = 'active'))` : "0");
     } else {
@@ -96,7 +96,7 @@ export class MarketplaceRepository {
 
   async find(idOrSlug: string, userId: string | null): Promise<{ row: ListingRow; item: MarketplaceListingDto } | null> {
     const saved = userId ? "EXISTS (SELECT 1 FROM marketplace_saves ms WHERE ms.listing_id = ml.id AND ms.user_id = ?2)" : "0";
-    const statement = this.db.prepare(`${SELECT_LISTING}, ${saved} AS saved ${JOINS} WHERE ml.deleted_at IS NULL AND (ml.id = ?1 OR ml.slug = ?1)`);
+    const statement = this.db.prepare(`${SELECT_LISTING}, ${saved} AS saved ${JOINS} WHERE ml.deleted_at IS NULL AND ml.is_demo = 0 AND (ml.id = ?1 OR ml.slug = ?1)`);
     const row = userId ? await statement.bind(idOrSlug, userId).first<ListingRow>() : await statement.bind(idOrSlug).first<ListingRow>();
     if (!row) return null;
     const item = mapListing(row);

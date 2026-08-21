@@ -164,20 +164,20 @@ async function assertRelatedExists(db: D1Database, type: typeof relatedTypes[num
 
 async function resolveRelated(db: D1Database, type: typeof relatedTypes[number], id: string, userId: string | null) {
   if (type === "component") {
-    const row = await db.prepare("SELECT id, slug, name, category FROM components WHERE id = ?1 AND deleted_at IS NULL").bind(id).first<{ id: string; slug: string; name: string; category: string }>();
+    const row = await db.prepare("SELECT id, slug, name, category FROM components WHERE id = ?1 AND deleted_at IS NULL AND is_demo = 0").bind(id).first<{ id: string; slug: string; name: string; category: string }>();
     return row ? { kind: type, ok: true, label: row.name, sub: row.category, href: `/parts/${row.category}/${row.slug}` } : { kind: type, ok: false, label: "Component unavailable", href: null };
   }
   if (type === "supplier") {
-    const row = await db.prepare("SELECT id, slug, name FROM suppliers WHERE id = ?1").bind(id).first<{ id: string; slug: string; name: string }>();
+    const row = await db.prepare("SELECT id, slug, name FROM suppliers WHERE id = ?1 AND is_demo = 0").bind(id).first<{ id: string; slug: string; name: string }>();
     return row ? { kind: type, ok: true, label: row.name, href: `/suppliers/${row.slug}` } : { kind: type, ok: false, label: "Supplier unavailable", href: null };
   }
   if (type === "project") {
-    const row = await db.prepare(`SELECT id, slug, name, visibility, status, owner_user_id FROM projects WHERE id = ?1 AND deleted_at IS NULL`).bind(id).first<{ id: string; slug: string; name: string; visibility: string; status: string; owner_user_id: string | null }>();
+    const row = await db.prepare(`SELECT id, slug, name, visibility, status, owner_user_id FROM projects WHERE id = ?1 AND deleted_at IS NULL AND is_demo = 0`).bind(id).first<{ id: string; slug: string; name: string; visibility: string; status: string; owner_user_id: string | null }>();
     const visible = row && ((row.visibility === "public" && row.status === "published") || row.visibility === "unlisted" || row.owner_user_id === userId);
     return visible ? { kind: type, ok: true, label: row.name, href: `/projects/${row.slug}` } : { kind: type, ok: false, label: "Project unavailable", href: null };
   }
   if (type === "marketplace_listing") {
-    const row = await db.prepare(`SELECT id, slug, title FROM marketplace_listings WHERE id = ?1 AND status = 'published' AND visibility = 'public' AND deleted_at IS NULL`).bind(id).first<{ id: string; slug: string; title: string }>();
+    const row = await db.prepare(`SELECT id, slug, title FROM marketplace_listings WHERE id = ?1 AND status = 'published' AND visibility = 'public' AND deleted_at IS NULL AND is_demo = 0`).bind(id).first<{ id: string; slug: string; title: string }>();
     return row ? { kind: type, ok: true, label: row.title, href: `/marketplace/${row.slug}` } : { kind: type, ok: false, label: "Listing unavailable", href: null };
   }
   const row = await db.prepare(`SELECT id, slug, name, visibility, owner_user_id FROM builds WHERE id = ?1 AND deleted_at IS NULL`).bind(id).first<{ id: string; slug: string; name: string; visibility: string; owner_user_id: string | null }>();

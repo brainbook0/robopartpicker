@@ -136,9 +136,9 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
     JOIN rpps_releases rr ON rr.id = outcome.release_id
     JOIN builds b ON b.id = outcome.build_id AND b.deleted_at IS NULL
     WHERE rr.project_id = p.id AND outcome.outcome = 'succeeded' AND outcome.independence = 'independent') AS successful_reproduction_count,
-  (SELECT b.id FROM boms b WHERE b.project_id = p.id ORDER BY b.updated_at DESC LIMIT 1) AS bom_id,
+  (SELECT b.id FROM boms b WHERE b.project_id = p.id AND b.is_demo = 0 ORDER BY b.updated_at DESC LIMIT 1) AS bom_id,
   (SELECT COUNT(*) FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
-    WHERE b.project_id = p.id) AS bom_line_count
+    WHERE b.project_id = p.id AND b.is_demo = 0) AS bom_line_count
   FROM projects p LEFT JOIN project_versions pv ON pv.id = p.current_version_id`;
 
 export class ProjectsRepository {
@@ -152,7 +152,7 @@ export class ProjectsRepository {
       : userId
         ? `(p.status = 'published' AND p.visibility = 'public') OR p.owner_user_id = ${bind(userId)} OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id AND om.user_id = ${bind(userId)} AND om.status = 'active')`
         : "p.status = 'published' AND p.visibility = 'public'";
-    const clauses = ["p.deleted_at IS NULL", `(${access})`];
+    const clauses = ["p.deleted_at IS NULL", "p.is_demo = 0", `(${access})`];
     if (options.q) {
       const term = bind(`%${options.q.toLowerCase()}%`);
       clauses.push(`(lower(p.name) LIKE ${term} OR lower(COALESCE(p.summary, '')) LIKE ${term})`);
@@ -178,7 +178,7 @@ export class ProjectsRepository {
       : userId
         ? `(p.status = 'published' AND p.visibility = 'public') OR p.owner_user_id = ${bind(userId)} OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id AND om.user_id = ${bind(userId)} AND om.status = 'active')`
         : "p.status = 'published' AND p.visibility = 'public'";
-    const clauses = ["p.deleted_at IS NULL", `(${access})`];
+    const clauses = ["p.deleted_at IS NULL", "p.is_demo = 0", `(${access})`];
     if (kind) clauses.push(`p.project_kind = ${bind(kind)}`);
     if (category) clauses.push(`p.robot_category = ${bind(category)}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
@@ -209,7 +209,7 @@ export class ProjectsRepository {
   }
 
   async find(idOrSlug: string): Promise<{ row: ProjectDatabaseRow; item: ProjectDto } | null> {
-    const row = await this.db.prepare(`${SELECT_PROJECT} WHERE p.deleted_at IS NULL AND (p.id = ?1 OR p.slug = ?1)`)
+    const row = await this.db.prepare(`${SELECT_PROJECT} WHERE p.deleted_at IS NULL AND p.is_demo = 0 AND (p.id = ?1 OR p.slug = ?1)`)
       .bind(idOrSlug).first<ProjectDatabaseRow>();
     return row ? { row, item: toProjectDto(row) } : null;
   }

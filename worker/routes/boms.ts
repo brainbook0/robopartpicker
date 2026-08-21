@@ -34,8 +34,8 @@ export const bomRoutes = new Hono<AppBindings>();
 
 bomRoutes.get("/boms", loadAuthSession, async (c) => {
   const userId = c.get("authSession")?.user?.id ?? null;
-  const items = await new BomsRepository(c.env.DB).list(userId);
-  return c.json({ items, total: items.length, dataMode: items.length > 0 && items.every((item) => item.is_demo === 1) ? "demo" : "mixed" });
+  const items = (await new BomsRepository(c.env.DB).list(userId)).filter((item) => item.is_demo !== 1);
+  return c.json({ items, total: items.length, dataMode: "live" });
 });
 
 bomRoutes.get("/boms/:id/export", loadAuthSession, async (c) => {
@@ -92,7 +92,7 @@ bomRoutes.post("/boms/:id/builds", loadAuthSession, requireAuth, async (c) => {
 
 async function readableBom(c: Context<AppBindings>, id: string) {
   const detail = await new BomsRepository(c.env.DB).detail(id);
-  if (!detail) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
+  if (!detail || detail.is_demo === 1) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
   const userId = c.get("authSession")?.user?.id ?? null;
   await assertScopedRead(c.env.DB, userId, detail);
   return { detail, userId };

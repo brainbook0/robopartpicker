@@ -140,7 +140,7 @@ export class CatalogRepository {
       .prepare(`SELECT c.id, c.slug, c.name, c.category, c.manufacturer_part_number, c.summary, c.primary_region, c.provenance_label,
         c.freshness_at, c.is_demo, m.name AS maker, m.headquarters_region AS maker_region
         FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
-        WHERE c.deleted_at IS NULL AND (c.id = ?1 OR c.slug = ?1)`)
+        WHERE c.deleted_at IS NULL AND c.is_demo = 0 AND (c.id = ?1 OR c.slug = ?1)`)
       .bind(idOrSlug)
       .first<ComponentRow>();
     if (!row) return null;
@@ -163,7 +163,8 @@ export class CatalogRepository {
       FROM suppliers s
       LEFT JOIN supplier_regions sr ON sr.supplier_id = s.id AND sr.ships_from = 1
       LEFT JOIN supplier_metrics sm ON sm.supplier_id = s.id
-      LEFT JOIN supplier_offers so ON so.supplier_id = s.id
+      LEFT JOIN supplier_offers so ON so.supplier_id = s.id AND so.is_demo = 0
+      WHERE s.is_demo = 0
       GROUP BY s.id
       ORDER BY s.name COLLATE NOCASE
     `).all<SupplierRow>();

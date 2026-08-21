@@ -52,13 +52,13 @@ catalogRoutes.get("/components/:id", async (c) => {
 
 catalogRoutes.get("/suppliers", async (c) => {
   const items = await new CatalogRepository(c.env.DB).listSuppliers();
-  return c.json({ items, total: items.length, dataMode: items.some((item) => item.isDemo) ? "demo" : "live" });
+  return c.json({ items, total: items.length, dataMode: "live" });
 });
 
 catalogRoutes.get("/manufacturers", async (c) => {
   const rows = await c.env.DB.prepare(`SELECT id, slug, name, website_url AS websiteUrl,
     headquarters_region AS headquartersRegion, status, updated_at AS freshnessAt, is_demo AS isDemo
-    FROM manufacturers ORDER BY name COLLATE NOCASE`).all();
+    FROM manufacturers WHERE is_demo = 0 ORDER BY name COLLATE NOCASE`).all();
   return c.json({ items: rows.results, total: rows.results.length });
 });
 
@@ -71,7 +71,9 @@ catalogRoutes.get("/offers", async (c) => {
     stock_quantity AS stockQuantity, lead_time_days AS leadTimeDays, availability, condition,
     price_breaks AS priceBreaks, reliability_score AS reliabilityScore, risk_label AS riskLabel,
     freshness_label AS freshnessLabel, observed_at AS observedAt, is_demo AS isDemo
-    FROM supplier_offers WHERE (?1 IS NULL OR component_id = ?1) AND (?2 IS NULL OR supplier_id = ?2)
+    FROM supplier_offers WHERE is_demo = 0
+      AND EXISTS (SELECT 1 FROM suppliers s WHERE s.id = supplier_offers.supplier_id AND s.is_demo = 0)
+      AND (?1 IS NULL OR component_id = ?1) AND (?2 IS NULL OR supplier_id = ?2)
     ORDER BY unit_price_minor LIMIT 100`).bind(componentId ?? null, supplierId ?? null).all();
   return c.json({ items: rows.results, total: rows.results.length });
 });

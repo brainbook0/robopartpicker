@@ -31,13 +31,18 @@ searchRoutes.get("/search", loadAuthSession, async (c) => {
       WHEN 'community' THEN '/community/t/' || si.entity_id
     END AS path
     FROM search_index si WHERE search_index MATCH ?1 AND si.entity_type IN (${categoryPlaceholders}) AND (
-      si.entity_type IN ('component', 'manufacturer', 'supplier', 'offer', 'community')
-      OR (si.entity_type = 'project' AND EXISTS (SELECT 1 FROM projects p WHERE p.id = si.entity_id AND p.deleted_at IS NULL AND
+      (si.entity_type = 'component' AND EXISTS (SELECT 1 FROM components c WHERE c.id = si.entity_id AND c.deleted_at IS NULL AND c.is_demo = 0))
+      OR (si.entity_type = 'manufacturer' AND EXISTS (SELECT 1 FROM manufacturers m WHERE m.id = si.entity_id AND m.is_demo = 0))
+      OR (si.entity_type = 'supplier' AND EXISTS (SELECT 1 FROM suppliers s WHERE s.id = si.entity_id AND s.is_demo = 0))
+      OR (si.entity_type = 'offer' AND EXISTS (SELECT 1 FROM supplier_offers so JOIN components c ON c.id = so.component_id JOIN suppliers s ON s.id = so.supplier_id
+        WHERE so.id = si.entity_id AND so.is_demo = 0 AND c.is_demo = 0 AND c.deleted_at IS NULL AND s.is_demo = 0))
+      OR si.entity_type = 'community'
+      OR (si.entity_type = 'project' AND EXISTS (SELECT 1 FROM projects p WHERE p.id = si.entity_id AND p.deleted_at IS NULL AND p.is_demo = 0 AND
         (p.visibility IN ('public', 'unlisted') OR p.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id AND om.user_id = ?2 AND om.status = 'active'))))
       OR (si.entity_type = 'build' AND EXISTS (SELECT 1 FROM builds b WHERE b.id = si.entity_id AND b.deleted_at IS NULL AND
         (b.visibility IN ('public', 'unlisted') OR b.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM build_members bm WHERE bm.build_id = b.id AND bm.user_id = ?2)
           OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = b.organization_id AND om.user_id = ?2 AND om.status = 'active'))))
-      OR (si.entity_type = 'marketplace' AND EXISTS (SELECT 1 FROM marketplace_listings ml WHERE ml.id = si.entity_id AND ml.deleted_at IS NULL AND
+      OR (si.entity_type = 'marketplace' AND EXISTS (SELECT 1 FROM marketplace_listings ml WHERE ml.id = si.entity_id AND ml.deleted_at IS NULL AND ml.is_demo = 0 AND
         ((ml.status = 'published' AND ml.visibility IN ('public', 'unlisted')) OR ml.seller_user_id = ?2)))
     ) ORDER BY score, si.title LIMIT ?${selected.length + 3} OFFSET ?${selected.length + 4}`);
   const result = await statement.bind(toFtsQuery(q), userId, ...selected, limit, (page - 1) * limit).all<Record<string, unknown>>();

@@ -242,7 +242,7 @@ export default function PartsCatalog() {
 
   return (
     <>
-      <PageHeader kicker="Catalog" title={categoryTitle(cat)} sub="Source-observed components, manufacturer identities, supplier offers, and explicit unknowns. Demo fixtures are withheld." />
+      <PageHeader kicker="Catalog" title={categoryTitle(cat)} sub="Production components, manufacturer identities, source-observed supplier offers, and explicit unknowns." />
       <div className="mx-auto max-w-[1400px] px-4 py-3">
         <CatalogDataNotice className="mb-3" />
 

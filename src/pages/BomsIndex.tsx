@@ -6,7 +6,7 @@ import { bomsApi } from "@/lib/api/builds";
 export default function BomsIndex() {
   const query = useQuery({ queryKey: ["boms"], queryFn: ({ signal }) => bomsApi.list(signal) });
   return <>
-    <PageHeader kicker="BOMs" title="Versioned bills of materials" sub="D1-backed project and community BOMs. Demo records are explicitly labeled."
+    <PageHeader kicker="BOMs" title="Versioned bills of materials" sub="D1-backed production BOMs with source-observed offers and explicit unresolved lines."
       actions={<Link to="/builder" className="btn-primary">Open build workspace</Link>} />
     <div className="mx-auto max-w-[1400px] px-4 py-6">
       {query.isLoading && <div className="surface-card p-6 text-sm text-muted-foreground">Loading BOMs from D1…</div>}

@@ -15,7 +15,7 @@ import { Star, StarOff, GitCompareArrows, Check } from "lucide-react";
 import { isPartSaved, toggleSavedPart, toggleCompare, readCompare } from "@/lib/catalogWorkspace";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { FIXTURE_TOOLTIP } from "@/components/parts/CatalogDataNotice";
+import { SOURCE_OBSERVATION_TOOLTIP } from "@/components/parts/CatalogDataNotice";
 import { fmtNumber, fmtText, fmtList } from "@/lib/partsFormat";
 
 type Props = { parts: CatalogPart[]; onWorkspaceChange?: () => void };
@@ -76,9 +76,9 @@ export const PartsTable = ({ parts, onWorkspaceChange }: Props) => {
             {cat === "reducer" && <>
               <th>Type</th><th>Ratio</th><th>Rated Nm</th><th>Peak Nm</th><th>Backlash'</th><th>kg</th>
             </>}
-            <th title={FIXTURE_TOOLTIP}>Lowest observed</th>
-            <th title={FIXTURE_TOOLTIP}>30d change</th>
-            <th title={FIXTURE_TOOLTIP}>Lead</th>
+            <th title={SOURCE_OBSERVATION_TOOLTIP}>Lowest observed</th>
+            <th title={SOURCE_OBSERVATION_TOOLTIP}>30d change</th>
+            <th title={SOURCE_OBSERVATION_TOOLTIP}>Lead</th>
             <th title="Number of non-demo supplier offers.">Offers</th>
             <th className="text-right">Actions</th>
           </tr>
