@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Improved media and purchase affordances on public catalog surfaces: project and homepage cards now use up to four source-backed RPPS images instead of only a single cover, marketplace list results hydrate all listing images for multi-image previews, marketplace cards expose a direct inquiry action, and verified supplier/product URLs now render as explicit `Buy / verify` actions on part and project BOM surfaces.
+
 - Completed the demo-record withhold sweep across the remaining BOM, AI-tool, and build-edit paths that surfaced demo records as live claims (BOM list/detail aggregates, AI mutation tools, build selected-offer PATCH). This pass closes the last build-write seams: adding an item to a build via `POST /builds/:id/items` now rejects demo components and demo supplier offers at the repository layer (so the BOM-to-build fork and AI tool calls are covered too), and the RPPS manifest importer no longer resolves release MPNs to demo components. A demo part can therefore no longer be written into a live build, whose detail page renders unguarded component names.
 
 - Kept the generated `REPORT_*.md/json`, offline audit scratch (`.jcode-audit/`, `tmp/`, `.hermes-handoff.md`), and regenerable `data/offer-source/` harvest candidates out of source control. These are outputs of the committed offer-source and catalog-audit tooling, not tracked source, so the working tree no longer shows them as untracked noise.

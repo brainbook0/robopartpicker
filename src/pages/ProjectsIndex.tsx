@@ -335,12 +335,18 @@ function ProjectCard({ p }: { p: ProjectRow }) {
   const sourceLabel = p.license ? "licensed source" : p.repo_url ? "license unclear" : "showcase";
   const kindLabel = kindLabels[p.project_kind ?? "unknown"];
   const categoryLabel = p.robot_category ? ROBOT_CATEGORY_LABELS[p.robot_category] : null;
+  const media = [
+    ...(p.cover_image_url ? [p.cover_image_url] : []),
+    ...(p.rpps.files ?? []).filter((file) => file.kind === "image" && Boolean(file.url)).map((file) => file.url as string),
+  ].filter((url, index, all) => all.indexOf(url) === index).slice(0, 4);
   return (
     <Link to={`/projects/${p.slug}`} className="surface-card overflow-hidden hover:border-primary/50 transition-colors flex flex-col group">
       <div className="relative aspect-[16/8] bg-muted border-b border-border overflow-hidden">
-        {p.cover_image_url ? (
-          <img src={p.cover_image_url} alt="" loading="lazy"
-            className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform" />
+        {media.length > 0 ? (
+          <div className="grid h-full grid-cols-4 gap-0.5">
+            {media.map((url, index) => <img key={url} src={url} alt="" loading="lazy"
+              className={`${index === 0 && media.length > 1 ? "col-span-3" : media.length === 1 ? "col-span-4" : ""} h-full w-full object-cover group-hover:scale-[1.02] transition-transform`} />)}
+          </div>
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
             <Package className="h-8 w-8" />

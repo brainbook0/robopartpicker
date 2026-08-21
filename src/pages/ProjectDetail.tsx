@@ -460,7 +460,7 @@ export default function ProjectDetail() {
                           <td className="pr-2 mono text-right">{i.unit_cost_usd != null ? `$${(i.unit_cost_usd * i.qty).toFixed(2)}` : "—"}</td>
                           <td>
                             {i.supplier_url
-                              ? <a href={i.supplier_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">link <ExternalLink className="h-3 w-3" /></a>
+                              ? <a href={i.supplier_url} target="_blank" rel="noreferrer" className="btn-primary btn-sm inline-flex items-center gap-1">Buy / verify <ExternalLink className="h-3 w-3" /></a>
                               : <span className="text-muted-foreground">—</span>}
                           </td>
                         </tr>

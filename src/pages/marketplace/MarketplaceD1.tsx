@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, Star, Wrench, Plus, AlertTriangle, ClipboardList } from "lucide-react";
+import { Search, Star, Wrench, Plus, AlertTriangle, ClipboardList, MessageSquare } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketplace } from "@/lib/api/marketplace";
@@ -101,14 +101,15 @@ function EmptyCatalog({ type, label, hasFilters, signedIn, onClear }: { type: Ma
 
 function ListingCard({ item }: { item: MarketplaceListing }) {
   const seller = item.seller?.displayName || item.seller?.username || "seller unavailable";
-  return <Link to={`/marketplace/${item.slug}`} className="surface-card p-3 hover:border-primary/50 transition-colors flex flex-col gap-2">
-    {item.images[0] && <img src={item.images[0].contentUrl} alt={item.images[0].altText ?? `${item.title} cover`} className="aspect-[16/9] w-full rounded border border-border bg-muted object-cover" loading="lazy" />}
+  return <article className="surface-card p-3 hover:border-primary/50 transition-colors flex flex-col gap-2">
+    {item.images.length > 0 && <Link to={`/marketplace/${item.slug}`} aria-label={`Open ${item.title}`} className="grid aspect-[16/9] grid-cols-4 gap-0.5 overflow-hidden rounded border border-border bg-muted">{item.images.slice(0, 4).map((image, index) => <img key={image.fileId} src={image.contentUrl} alt={image.altText ?? `${item.title} image ${index + 1}`} className={`${index === 0 && item.images.length > 1 ? "col-span-3" : item.images.length === 1 ? "col-span-4" : ""} h-full w-full object-cover`} loading="lazy" />)}</Link>}
     <div className="flex items-start justify-between gap-2"><div><div className="section-title">{item.listingType}</div><h2 className="font-semibold text-[14px] leading-tight mt-1">{item.title}</h2></div><span className="pill">{item.conditionGrade ?? "n/a"}</span></div>
     <p className="text-[12px] text-muted-foreground line-clamp-3">{item.description}</p>
     <div className="flex flex-wrap gap-1">{item.component && <span className="pill">{item.component.name}</span>}<span className="pill">{item.category}</span></div>
     <div className="mt-auto border-t border-border/60 pt-2 flex items-end justify-between text-[11px]"><div className="text-muted-foreground">{seller} · {item.region ?? "region n/a"}<br />qty <span className="mono">{item.quantity}</span>{item.partsCost != null && <><br />parts <span className="mono">{item.partsCostCurrency ?? "USD"} {item.partsCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></>}</div><div className="text-right"><div className="text-[9px] uppercase text-muted-foreground">asking</div><div className="mono font-semibold text-[15px]">{item.price == null ? "Quote" : `${item.currency ?? "USD"} ${item.price.toLocaleString()}`}</div></div></div>
+    <div className="flex gap-2 pt-1"><Link to={`/marketplace/${item.slug}`} className="btn-primary btn-sm inline-flex flex-1 justify-center"><MessageSquare className="h-3 w-3" /> View & inquire</Link>{item.component && <Link to={`/parts/${item.component.category}/${item.component.slug}`} className="btn-ghost btn-sm">Part details</Link>}</div>
     <div className="flex gap-2 text-[10.5px] text-muted-foreground">{item.details.sellerDeclaresTestReport && <span className="inline-flex gap-1"><Wrench className="h-3 w-3" />seller says test available</span>}{item.saved && <span className="inline-flex gap-1"><Star className="h-3 w-3" />saved</span>}</div>
-  </Link>;
+  </article>;
 }
 
 function State({ children, error = false }: { children: React.ReactNode; error?: boolean }) {

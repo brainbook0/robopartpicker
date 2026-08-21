@@ -91,7 +91,9 @@ export class MarketplaceRepository {
           : "ml.updated_at DESC";
     const rows = await this.db.prepare(`${SELECT_LISTING}, ${savedExpression} AS saved ${JOINS} ${where}
       ORDER BY ${order} LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`).bind(...values, options.limit, options.offset).all<ListingRow>();
-    return { items: rows.results.map(mapListing), total: Number(count?.total ?? 0) };
+    const items = rows.results.map(mapListing);
+    await Promise.all(items.map(async (item) => { item.images = await this.listImages(item.id, userId); }));
+    return { items, total: Number(count?.total ?? 0) };
   }
 
   async find(idOrSlug: string, userId: string | null): Promise<{ row: ListingRow; item: MarketplaceListingDto } | null> {
