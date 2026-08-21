@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Kept the generated `REPORT_*.md/json`, offline audit scratch (`.jcode-audit/`, `tmp/`, `.hermes-handoff.md`), and regenerable `data/offer-source/` harvest candidates out of source control. These are outputs of the committed offer-source and catalog-audit tooling, not tracked source, so the working tree no longer shows them as untracked noise.
+
+- Documented the release-blocking worker test gate as environmental: `npm run test:worker` currently cannot start its Cloudflare test pool on this host because the bundled `workerd` binary (via `@cloudflare/vitest-pool-workers`) requires GLIBC 2.29-2.35 while the host ships glibc 2.28 (AlmaLinux 8.10). The child runtime dies at load, wrapping as `write EPIPE` in `Runtime.updateConfig`. This reproduces on a clean stashed tree and is not caused by any repo change; there is no in-repo fix (the `MINIFLARE_WORKERD_PATH` override can only re-point to an equally-incompatible binary). Worker test coverage gaps for 8e5dc64, if any, are unverifiable on this host and must be run on glibc ≥2.35.
 - Unified a project's current BOM into one normalized source of truth: the D1-backed BOM linked by `bom_id` now drives the overview, parts, and cost aspect pages instead of the smaller legacy flat RPPS `bom` list. Line count, unit count, known cost, and unpriced counts come from the reviewed, offer-backed items, the legacy list is shown only as supplemental source evidence, and linked-but-unresolved BOMs render honestly instead of deriving a misleading total from the legacy list.
 
 - Made the unit/worker test scripts environment-robust by pinning `NODE_ENV=test` internally, so a globally exported `NODE_ENV=production` can no longer silently load React's production JSX runtime and break UI component rendering in the test suite.

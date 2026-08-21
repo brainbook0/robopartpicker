@@ -40,5 +40,13 @@ RoboPart Picker Hub.zip
 .ingest/bom-harvest-2026-08-12/
 .ingest/github-project-metadata-*.json
 
+# offline audit / report / offer-source scratch (regenerable from committed scripts)
+.jcode-audit/
+tmp/
+REPORT_*.json
+REPORT_*.md
+data/offer-source/
+.hermes-handoff.md
+
 __pycache__/
 *.pyc
