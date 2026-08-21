@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ExternalLink, GitPullRequest } from "lucide-react";
 import { getProjectBySlug, type ProjectRow } from "@/lib/projects";
+import { bomsApi } from "@/lib/api/builds";
+import type { BomDetail, BomItem } from "@/shared/builds";
+import { currentBomTotals } from "@/lib/current-bom";
 
 const aspects = ["reproducibility", "cost", "schedule", "parts", "assembly", "software", "integrations", "evidence"] as const;
 type Aspect = (typeof aspects)[number];
@@ -21,6 +24,8 @@ export default function ProjectInsight() {
   const { slug, aspect: routeAspect } = useParams<{ slug: string; aspect: string }>();
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [normalizedBom, setNormalizedBom] = useState<BomDetail | null>(null);
+  const [normalizedBomLoading, setNormalizedBomLoading] = useState(false);
   const aspect = aspects.includes(routeAspect as Aspect) ? routeAspect as Aspect : null;
 
   useEffect(() => {
@@ -28,6 +33,17 @@ export default function ProjectInsight() {
     setError(null);
     getProjectBySlug(slug).then(setProject).catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load project."));
   }, [slug]);
+
+  useEffect(() => {
+    if (!project?.bom_id) { setNormalizedBom(null); setNormalizedBomLoading(false); return; }
+    const controller = new AbortController();
+    setNormalizedBomLoading(true);
+    bomsApi.get(project.bom_id, controller.signal)
+      .then((result) => setNormalizedBom(result.item))
+      .catch(() => setNormalizedBom(null))
+      .finally(() => setNormalizedBomLoading(false));
+    return () => controller.abort();
+  }, [project?.bom_id]);
 
   if (!aspect) return <State>Unknown project detail.</State>;
   if (error) return <State>{error}</State>;
@@ -45,32 +61,50 @@ export default function ProjectInsight() {
       <nav aria-label="Project detail categories" className="mb-3 flex gap-1 overflow-x-auto border-b border-border pb-2">
         {aspects.map((item) => <Link key={item} to={`/projects/${project.slug}/${item}`} className={item === aspect ? "btn-primary btn-sm whitespace-nowrap" : "btn-ghost btn-sm whitespace-nowrap"}>{labels[item]}</Link>)}
       </nav>
-      <AspectContent project={project} aspect={aspect} />
+      <AspectContent project={project} aspect={aspect} normalizedBom={normalizedBom} normalizedBomLoading={normalizedBomLoading} />
     </main>
   );
 }
 
-function AspectContent({ project, aspect }: { project: ProjectRow; aspect: Aspect }) {
+function AspectContent({ project, aspect, normalizedBom, normalizedBomLoading }: { project: ProjectRow; aspect: Aspect; normalizedBom: BomDetail | null; normalizedBomLoading: boolean }) {
   const bom = project.rpps.bom ?? [];
   const assembly = project.rpps.assembly ?? [];
   const files = project.rpps.files ?? [];
-  const priced = bom.filter((item) => item.unit_cost_usd != null);
-  const knownCost = priced.reduce((sum, item) => sum + (item.unit_cost_usd ?? 0) * item.qty, 0);
+  const totals = currentBomTotals(project, normalizedBom);
 
   if (aspect === "cost") return <div className="space-y-3">
     <MetricGrid metrics={[
-      ["Known parts cost", priced.length ? money(knownCost) : "Not resolved"],
-      ["Priced lines", `${priced.length} / ${bom.length}`],
-      ["Unpriced lines", String(bom.length - priced.length)],
+      ["Known parts cost", totals.source === "normalized" ? moneyMinor(totals.knownCostMinor, totals.currency) : totals.available ? (totals.knownCostMinor ? moneyMinor(totals.knownCostMinor, totals.currency) : "Not resolved") : "Resolving…"],
+      ["Priced lines", totals.available ? `${totals.pricedLines} / ${totals.lineCount}` : `— / ${totals.lineCount}`],
+      ["Unpriced lines", totals.available ? String(totals.unpricedLines) : "—"],
       ["Declared estimate", project.estimated_cost_usd == null ? "Not supplied" : money(project.estimated_cost_usd)],
     ]} />
-    <Card title="Line-item cost breakdown"><BomTable project={project} showCosts /></Card>
+    <Card title="Line-item cost breakdown">
+      {normalizedBomLoading
+        ? <Empty>Loading the normalized BOM…</Empty>
+        : normalizedBom
+          ? <NormalizedBomTable bom={normalizedBom} showCosts />
+          : <BomTable project={project} showCosts />}
+    </Card>
+    <LegacyBomEvidence bom={bom} normalizedBom={normalizedBom} />
     <Card title="How this cost will be resolved"><p className="text-[12px] leading-relaxed text-muted-foreground">RoboPartPicker will match reviewed BOM identities against its internal component catalog and stored supplier offers, then calculate purchasable configurations by region, quantity, availability, shipping constraints, and freshness. It does not infer a purchasable part from CAD geometry, and this release does not claim live prices where no catalog offer has been resolved.</p></Card>
   </div>;
 
   if (aspect === "parts") return <div className="space-y-3">
-    <MetricGrid metrics={[["BOM lines", String(bom.length)], ["Total quantity", String(bom.reduce((sum, item) => sum + item.qty, 0))], ["Identified by MPN", String(bom.filter((item) => item.mpn).length)], ["Fabricated", String(bom.filter((item) => item.fabricated).length)]]} />
-    <Card title="Reviewed bill of materials"><BomTable project={project} /></Card>
+    <MetricGrid metrics={[
+      ["BOM lines", String(totals.lineCount)],
+      ["Total quantity", totals.available ? String(totals.units) : "—"],
+      ["Identified by MPN", String(normalizedBom ? normalizedBom.items.filter((item) => item.manufacturerPartNumber).length : bom.filter((item) => item.mpn).length)],
+      ["Unpriced lines", totals.available ? String(totals.unpricedLines) : "—"],
+    ]} />
+    <Card title="Reviewed bill of materials">
+      {normalizedBomLoading
+        ? <Empty>Loading the normalized BOM…</Empty>
+        : normalizedBom
+          ? <NormalizedBomTable bom={normalizedBom} />
+          : <BomTable project={project} />}
+    </Card>
+    <LegacyBomEvidence bom={bom} normalizedBom={normalizedBom} />
     <Card title="Identity rules"><p className="text-[12px] text-muted-foreground">Original imported values remain preserved. Manufacturer and part number are normalized only after deterministic matching or human review; mesh names and filenames are candidates, not confirmed commercial parts.</p></Card>
   </div>;
 
@@ -107,6 +141,30 @@ function AspectContent({ project, aspect }: { project: ProjectRow; aspect: Aspec
   </div>;
 }
 
+function NormalizedBomTable({ bom, showCosts = false }: { bom: BomDetail; showCosts?: boolean }) {
+  const currency = bom.version?.currency ?? "USD";
+  return <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-[12px]"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="p-2">Ref</th><th className="p-2">Part</th><th className="p-2">Manufacturer / MPN</th><th className="p-2 text-right">Qty</th>{showCosts && <><th className="p-2 text-right">Unit</th><th className="p-2 text-right">Extended</th></>}</tr></thead><tbody>{bom.items.map((item) => <NormalizedBomRow key={item.id} item={item} currency={currency} showCosts={showCosts} />)}</tbody><tfoot><tr className="border-t border-border"><td colSpan={3} className="p-2 text-[11px] text-muted-foreground">Known totals only. Unpriced lines remain visible.</td><td className="p-2 text-right mono">{bom.totals.units}</td>{showCosts && <><td className="p-2" /><td className="p-2 text-right mono font-medium">{moneyMinor(bom.totals.knownCostMinor, currency)}</td></>}</tr></tfoot></table></div>;
+}
+
+function NormalizedBomRow({ item, currency, showCosts }: { item: BomItem; currency: string; showCosts: boolean }) {
+  const unitMinor = item.targetUnitPriceMinor ?? item.selectedUnitPriceMinor ?? item.lowestUnitPriceMinor;
+  return <tr className="border-b border-border/60">
+    <td className="p-2 mono">{item.slotKey}</td>
+    <td className="p-2"><div className="font-medium">{item.componentSlug ? <Link to={`/parts/${item.componentCategory}/${item.componentSlug}`} className="hover:text-primary">{item.componentName ?? item.description}</Link> : item.description}</div><div className="text-[10px] text-muted-foreground">{[item.completeness, item.manufacturerPartNumber ? null : "MPN unresolved"].filter(Boolean).join(" · ") || "No classification"}</div></td>
+    <td className="p-2"><div>{item.manufacturerName ?? "Unresolved"}</div><div className="mono text-[10px] text-muted-foreground">{item.manufacturerPartNumber ?? "No MPN"}</div></td>
+    <td className="p-2 text-right mono">{item.quantity} {item.unit}</td>
+    {showCosts && <><td className="p-2 text-right mono">{moneyMinor(unitMinor, currency)}</td><td className="p-2 text-right mono">{moneyMinor(unitMinor == null ? null : unitMinor * item.quantity, currency)}</td></>}
+  </tr>;
+}
+
+function LegacyBomEvidence({ bom, normalizedBom }: { bom: ProjectRow["rpps"]["bom"]; normalizedBom: BomDetail | null }) {
+  if (!normalizedBom || !bom?.length) return null;
+  return <Card title="Legacy RPPS BOM (source evidence)">
+    <p className="text-[12px] text-muted-foreground">The legacy flat RPPS package retains {bom.length} line{bom.length === 1 ? "" : "s"} of original imported provenance. They are shown as source evidence only: the normalized D1-backed BOM above is the current source of truth for counts, offers, and costs.</p>
+    <ul className="mt-2 space-y-1">{bom.map((item, index) => <li key={`${item.ref ?? item.name}-${index}`} className="text-[11px] text-muted-foreground"><span className="mono text-[10px]">{item.ref ?? "—"}</span> · {item.name}{item.fabricated ? <span className="ml-1 rounded bg-muted px-1 py-0.5 text-[9px] uppercase">fabricated</span> : null}</li>)}</ul>
+  </Card>;
+}
+
 function BomTable({ project, showCosts = false }: { project: ProjectRow; showCosts?: boolean }) {
   const bom = project.rpps.bom ?? [];
   if (!bom.length) return <Empty>No reviewed BOM lines are available.</Empty>;
@@ -124,3 +182,4 @@ function Empty({ children }: { children: React.ReactNode }) { return <p classNam
 function State({ children }: { children: React.ReactNode }) { return <div className="mx-auto max-w-[1120px] px-4 py-10 text-[12px] text-muted-foreground">{children}</div>; }
 function listOrEmpty(items?: readonly string[]) { return items?.length ? <div className="flex flex-wrap gap-1">{items.map((item) => <span key={item} className="rounded border border-border bg-muted px-2 py-1 text-[11px]">{item}</span>)}</div> : <Empty>Not specified.</Empty>; }
 function money(value: number) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value); }
+function moneyMinor(value: number | null, currency: string = "USD") { return value == null ? "—" : new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value / 100); }

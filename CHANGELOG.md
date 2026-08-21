@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Unified a project's current BOM into one normalized source of truth: the D1-backed BOM linked by `bom_id` now drives the overview, parts, and cost aspect pages instead of the smaller legacy flat RPPS `bom` list. Line count, unit count, known cost, and unpriced counts come from the reviewed, offer-backed items, the legacy list is shown only as supplemental source evidence, and linked-but-unresolved BOMs render honestly instead of deriving a misleading total from the legacy list.
+
 - Made the unit/worker test scripts environment-robust by pinning `NODE_ENV=test` internally, so a globally exported `NODE_ENV=production` can no longer silently load React's production JSX runtime and break UI component rendering in the test suite.
 - Hardened the project catalog listing boundary so `GET /api/v1/projects?mine=true` without a session returns `401 AUTHENTICATION_REQUIRED` instead of a `200` with an empty list. The anonymous call no longer masks the signed-in requirement from API consumers, and the one failing post-deploy acceptance gate now closes safely.
 - Corrected the source-backed GitHub metadata backfill tool's completion-floor thresholds. It previously gated on `summary<20 / description<80`, so its dry run reported `0` projects even though the catalog audit counts 230 holes (177 short summaries under 80 chars, 44 short descriptions under 500, 121 missing licenses). The deterministic gate now matches the documented floor (`summary≥80`, `description≥500`) and honestly skips repos that 404 or report no concrete license/readme text.

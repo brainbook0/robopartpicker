@@ -17,6 +17,7 @@ import { ReleaseCollaborationPanel } from "@/components/projects/ReleaseCollabor
 import { rfqApi } from "@/lib/api/rfq";
 import { bomsApi } from "@/lib/api/builds";
 import type { BomDetail } from "@/shared/builds";
+import { currentBomTotals } from "@/lib/current-bom";
 import { ExpandableImage } from "@/components/common/ExpandableImage";
 import { selectProjectPreviewFiles } from "@/lib/projectPreview";
 
@@ -130,10 +131,12 @@ export default function ProjectDetail() {
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
 
-  const bomLineCount = normalizedBom?.totals.lines ?? p.bom_line_count ?? bom.length;
-  const bomQty = normalizedBom?.totals.units ?? bom.reduce((s, i) => s + i.qty, 0);
-  const bomCostMinor = normalizedBom?.totals.knownCostMinor ?? Math.round(bom.reduce((s, i) => s + (i.unit_cost_usd ?? 0) * i.qty, 0) * 100);
-  const bomPricedCount = normalizedBom ? normalizedBom.totals.lines - normalizedBom.totals.unpricedLines : bom.filter(i => i.unit_cost_usd != null).length;
+  const {
+    lineCount: bomLineCount,
+    units: bomQty,
+    knownCostMinor: bomCostMinor,
+    pricedLines: bomPricedCount,
+  } = currentBomTotals(p, normalizedBom);
   const totalBuildMin = assembly.reduce((s, a) => s + (a.duration_min ?? 0), 0);
   const integrationCounts = (() => {
     const c: Record<string, number> = {};
