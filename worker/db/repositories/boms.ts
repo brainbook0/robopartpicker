@@ -49,7 +49,7 @@ export class BomsRepository {
       COALESCE(SUM(CASE WHEN COALESCE(bi.target_unit_price_minor, so.unit_price_minor) IS NULL THEN 1 ELSE 0 END), 0) AS unpriced_lines
       FROM boms b
       LEFT JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
-      LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id
+      LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id AND so.is_demo = 0
       WHERE ${access}
       GROUP BY b.id ORDER BY b.updated_at DESC`);
     const result = userId
@@ -75,13 +75,13 @@ export class BomsRepository {
         s.name AS selectedSupplierName, so.unit_price_minor AS selectedUnitPriceMinor,
         bi.target_unit_price_minor AS targetUnitPriceMinor, bi.notes, bi.sort_order AS sortOrder,
         bi.extraction_method AS extractionMethod, bi.completeness, bi.evidence_locator AS evidenceLocator, bi.confidence,
-        (SELECT MIN(so2.unit_price_minor) FROM supplier_offers so2 WHERE so2.component_id = bi.component_id AND so2.stock_quantity > 0) AS lowestUnitPriceMinor,
-        (SELECT COUNT(*) FROM supplier_offers so3 WHERE so3.component_id = bi.component_id) AS knownOfferCount
+        (SELECT MIN(so2.unit_price_minor) FROM supplier_offers so2 WHERE so2.component_id = bi.component_id AND so2.stock_quantity > 0 AND so2.is_demo = 0) AS lowestUnitPriceMinor,
+        (SELECT COUNT(*) FROM supplier_offers so3 WHERE so3.component_id = bi.component_id AND so3.is_demo = 0) AS knownOfferCount
         FROM bom_items bi
         LEFT JOIN components c ON c.id = bi.component_id
         LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
-        LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id
-        LEFT JOIN suppliers s ON s.id = so.supplier_id
+        LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id AND so.is_demo = 0
+        LEFT JOIN suppliers s ON s.id = so.supplier_id AND s.is_demo = 0
         WHERE bi.bom_version_id = ?1 ORDER BY bi.sort_order, bi.id`).bind(bom.current_version_id),
     ]);
     const rows = items.results as Array<Record<string, unknown>>;

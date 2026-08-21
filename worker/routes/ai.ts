@@ -456,13 +456,13 @@ async function applyProposal(db: D1Database, userId: string, toolName: string, i
   }
   const buildId = String(input.buildId); const build = await assertBuildWritable(db, userId, buildId); const repository = new BuildsRepository(db);
   if (toolName === "propose_bom_item") {
-    const component = await db.prepare("SELECT id, name FROM components WHERE id = ?1 AND deleted_at IS NULL").bind(input.componentId).first<{ id: string; name: string }>();
+    const component = await db.prepare("SELECT id, name FROM components WHERE id = ?1 AND deleted_at IS NULL AND is_demo = 0").bind(input.componentId).first<{ id: string; name: string }>();
     if (!component) throw new AppError(422, "COMPONENT_NOT_FOUND", "Proposed component not found.");
     return repository.addItem(build.id, userId, { componentId: component.id, description: component.name, quantity: Number(input.quantity), notes: typeof input.notes === "string" ? input.notes : null });
   }
   if (toolName === "propose_substitution") {
     const existing = await db.prepare("SELECT * FROM build_items WHERE id = ?1 AND build_id = ?2").bind(input.existingItemId, build.id).first<Record<string, unknown>>();
-    const component = await db.prepare("SELECT id, name FROM components WHERE id = ?1 AND deleted_at IS NULL").bind(input.replacementComponentId).first<{ id: string; name: string }>();
+    const component = await db.prepare("SELECT id, name FROM components WHERE id = ?1 AND deleted_at IS NULL AND is_demo = 0").bind(input.replacementComponentId).first<{ id: string; name: string }>();
     if (!existing || !component) throw new AppError(422, "SUBSTITUTION_INVALID", "The build item or replacement component no longer exists.");
     const added = await repository.addItem(build.id, userId, { componentId: component.id, description: component.name, quantity: Number(existing.quantity), substitutedForItemId: String(existing.id), notes: String(input.reason) });
     await repository.updateItem(build.id, String(existing.id), userId, { status: "replaced" }); return added;

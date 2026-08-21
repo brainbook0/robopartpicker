@@ -114,7 +114,7 @@ buildRoutes.patch("/builds/:id/items/:itemId", loadAuthSession, requireAuth, asy
   const body = await parseJson(c, itemUpdateSchema);
   if (body.selectedSupplierOfferId) {
     const valid = await c.env.DB.prepare(`SELECT 1 FROM supplier_offers so JOIN build_items bi ON bi.component_id = so.component_id
-      WHERE so.id = ?1 AND bi.id = ?2 AND bi.build_id = ?3`).bind(body.selectedSupplierOfferId, c.req.param("itemId"), build.id).first();
+      WHERE so.id = ?1 AND so.is_demo = 0 AND bi.id = ?2 AND bi.build_id = ?3`).bind(body.selectedSupplierOfferId, c.req.param("itemId"), build.id).first();
     if (!valid) throw new AppError(422, "OFFER_COMPONENT_MISMATCH", "The supplier offer is not for this component.");
   }
   const item = await new BuildsRepository(c.env.DB).updateItem(build.id, c.req.param("itemId"), userId, body);
