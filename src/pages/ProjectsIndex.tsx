@@ -337,6 +337,7 @@ function ProjectCard({ p }: { p: ProjectRow }) {
   const categoryLabel = p.robot_category ? ROBOT_CATEGORY_LABELS[p.robot_category] : null;
   const media = [
     ...(p.cover_image_url ? [p.cover_image_url] : []),
+    ...(p.media ?? []).map((file) => file.contentUrl),
     ...(p.rpps.files ?? []).filter((file) => file.kind === "image" && Boolean(file.url)).map((file) => file.url as string),
   ].filter((url, index, all) => all.indexOf(url) === index).slice(0, 4);
   return (

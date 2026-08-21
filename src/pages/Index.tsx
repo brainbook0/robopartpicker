@@ -17,9 +17,10 @@ function lowestLivePrice(part: CatalogPart): number | null {
   return offers.length ? Math.min(...offers.map((o) => o.price)) : null;
 }
 
-function projectMedia(project: { cover_image_url: string | null; rpps: { files?: Array<{ kind: string; url?: string }> } }) {
+function projectMedia(project: { cover_image_url: string | null; media?: Array<{ contentUrl: string }>; rpps: { files?: Array<{ kind: string; url?: string }> } }) {
   return [
     ...(project.cover_image_url ? [project.cover_image_url] : []),
+    ...(project.media ?? []).map((file) => file.contentUrl),
     ...(project.rpps.files ?? []).filter((file) => file.kind === "image" && Boolean(file.url)).map((file) => file.url as string),
   ].filter((url, index, all) => all.indexOf(url) === index).slice(0, 4);
 }

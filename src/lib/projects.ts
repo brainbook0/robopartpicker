@@ -21,6 +21,7 @@ export type ProjectRow = {
   repo_url: string | null;
   docs_url: string | null;
   cover_image_url: string | null;
+  media: Array<{ id: string; contentUrl: string; altText: string | null; caption: string | null }>;
   tags: string[];
   difficulty: "beginner" | "intermediate" | "advanced" | "expert" | null;
   estimated_cost_usd: number | null;

@@ -66,6 +66,7 @@ export type ProjectDto = {
   repo_url: string | null;
   docs_url: string | null;
   cover_image_url: string | null;
+  media: Array<{ id: string; contentUrl: string; altText: string | null; caption: string | null }>;
   tags: string[];
   difficulty: "beginner" | "intermediate" | "advanced" | "expert" | null;
   estimated_cost_usd: number | null;
@@ -167,7 +168,20 @@ export class ProjectsRepository {
     const rows = await this.db.prepare(listQuery)
       .bind(...values, options.limit, options.offset).all<ProjectDatabaseRow>();
     const stats = await this.catalogStats(userId, options.mine ?? false, options.kind, options.category);
-    return { items: rows.results.map(toProjectDto), total: Number(count?.total ?? 0), stats };
+    const items = rows.results.map(toProjectDto);
+    await Promise.all(items.map(async (item) => { item.media = await this.listPreviewMedia(item.id, userId); }));
+    return { items, total: Number(count?.total ?? 0), stats };
+  }
+
+  private async listPreviewMedia(projectId: string, userId: string | null): Promise<ProjectDto["media"]> {
+    const rows = await this.db.prepare(`SELECT f.id, pm.alt_text, pm.caption
+      FROM project_files pf JOIN files f ON f.id = pf.file_id LEFT JOIN project_media pm ON pm.project_id = pf.project_id AND pm.file_id = pf.file_id
+      WHERE pf.project_id = ?1 AND f.deleted_at IS NULL AND f.status = 'ready' AND f.kind = 'image'
+        AND (f.visibility = 'public' OR f.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM organization_members om
+          WHERE om.organization_id = f.organization_id AND om.user_id = ?2 AND om.status = 'active'))
+      ORDER BY CASE pf.purpose WHEN 'cover' THEN 0 WHEN 'media' THEN 1 ELSE 2 END, pf.created_at DESC LIMIT 4`)
+      .bind(projectId, userId).all<{ id: string; alt_text: string | null; caption: string | null }>();
+    return rows.results.map((row) => ({ id: row.id, contentUrl: fileContentUrl(row.id), altText: row.alt_text, caption: row.caption }));
   }
 
   private async catalogStats(userId: string | null, mine: boolean, kind?: ProjectKind, category?: RobotCategory): Promise<ProjectCatalogStats> {
@@ -502,6 +516,7 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     repo_url: row.repository_url,
     docs_url: rpps.docs_url ?? null,
     cover_image_url: rpps.cover_image_url ?? null,
+    media: [],
     tags: rpps.tags ?? [],
     difficulty: (row.difficulty as ProjectDto["difficulty"]) ?? null,
     estimated_cost_usd: row.estimated_cost_minor == null ? null : row.estimated_cost_minor / 100,
