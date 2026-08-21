@@ -5,7 +5,17 @@ import { useComponents, useSuppliers } from "@/lib/api/catalog";
 import { useMarketplace } from "@/lib/api/marketplace";
 import { bomsApi } from "@/lib/api/builds";
 import { listProjectsPage } from "@/lib/projects";
-import { lowestPrice } from "@/shared/catalog";
+import type { CatalogPart } from "@/shared/catalog";
+import { ComingSoon } from "@/components/common/ComingSoon";
+
+function liveOffers(part: CatalogPart) {
+  return (part.offers ?? []).filter((o) => !o.isDemo && o.price > 0);
+}
+
+function lowestLivePrice(part: CatalogPart): number | null {
+  const offers = liveOffers(part);
+  return offers.length ? Math.min(...offers.map((o) => o.price)) : null;
+}
 
 const workflow = [
   { to: "/projects", icon: Package, title: "1. Discover a design", text: "Browse source-linked open robotics projects and clearly labeled commercial showcases." },
@@ -27,7 +37,9 @@ export default function Index() {
   const showcaseRows = showcases.data?.items ?? [];
   const humanoidRows = showcaseRows.filter((project) => project.robot_category === "humanoid");
   const featuredShowcases = humanoidRows.length > 0 ? humanoidRows : showcaseRows;
-  const demoOnly = components.data?.items.every((item) => item.isDemo) ?? true;
+  const liveComponents = (components.data?.items ?? []).filter((item) => !item.isDemo);
+  const liveListings = (marketplace.data?.items ?? []).filter((item) => !item.isDemo);
+  const liveSuppliers = (suppliers.data?.items ?? []).filter((item) => !item.isDemo);
 
   return <main>
     <section className="border-b border-border bg-surface/40">
@@ -52,7 +64,7 @@ export default function Index() {
           <Metric label="Robotics projects" value={projects.data?.total} />
           <Metric label="BOMs" value={boms.data?.total} />
           <Metric label="Components" value={components.data?.total} />
-          <Metric label="Suppliers" value={suppliers.data?.total} />
+          <Metric label="Suppliers" value={suppliers.isLoading ? undefined : liveSuppliers.length} />
         </div>
       </div>
     </section>
@@ -81,12 +93,11 @@ export default function Index() {
 
       <section>
         <div className="mb-3 flex items-end justify-between"><div><div className="section-title">Supporting component intelligence</div><h2 className="text-lg font-bold">Recently indexed parts and observed offers</h2></div><Link to="/parts/actuator" className="text-xs hover:text-primary">Full component catalog →</Link></div>
-        {components.isLoading ? <State>Loading from D1…</State> : components.error ? <State error>{components.error.message}</State> : <div className="surface-card overflow-x-auto"><table className="data-table min-w-[850px]"><thead><tr><th>Component</th><th>Maker</th><th>Category</th><th className="text-right">Known offers</th><th className="text-right">Lowest observed</th><th>Freshness</th></tr></thead><tbody>{components.data?.items.map((part) => <tr key={part.id}><td><Link className="font-medium hover:text-primary" to={`/parts/${part.category}/${part.slug}`}>{part.name}</Link>{part.isDemo && <span className="pill pill-yellow ml-2">demo</span>}</td><td>{part.maker}</td><td className="uppercase text-muted-foreground">{part.category}</td><td className="text-right mono">{part.offers.length}</td><td className="text-right mono">{part.offers.length ? `$${lowestPrice(part).toLocaleString()}` : "—"}</td><td className="text-xs text-muted-foreground">{part.freshnessAt ? new Date(part.freshnessAt).toLocaleDateString() : "unknown"}</td></tr>)}</tbody></table></div>}
-        {demoOnly && <div className="mt-2 border border-warning/30 bg-warning/5 p-2 text-[11px] text-muted-foreground">Catalog values currently come from labeled fixtures and are not live commercial data.</div>}
+        {components.isLoading ? <State>Loading from D1…</State> : components.error ? <State error>{components.error.message}</State> : liveComponents.length === 0 ? <ComingSoon icon={Boxes} kicker="Coming soon" title="Component catalog not yet available" body="No real, non-demo component records are published yet. Demonstration fixtures with fabricated pricing and offers are withheld from this view." actionLabel="Submit a component" actionTo="/parts/actuator" /> : <div className="surface-card overflow-x-auto"><table className="data-table min-w-[850px]"><thead><tr><th>Component</th><th>Maker</th><th>Category</th><th className="text-right">Known offers</th><th className="text-right">Lowest observed</th><th>Freshness</th></tr></thead><tbody>{liveComponents.map((part) => { const price = lowestLivePrice(part); return <tr key={part.id}><td><Link className="font-medium hover:text-primary" to={`/parts/${part.category}/${part.slug}`}>{part.name}</Link></td><td>{part.maker}</td><td className="uppercase text-muted-foreground">{part.category}</td><td className="text-right mono">{liveOffers(part).length}</td><td className="text-right mono">{price != null ? `$${price.toLocaleString()}` : "—"}</td><td className="text-xs text-muted-foreground">{part.freshnessAt ? new Date(part.freshnessAt).toLocaleDateString() : "unknown"}</td></tr>; })}</tbody></table></div>}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section><div className="mb-3 flex justify-between"><div><div className="section-title">Marketplace</div><h2 className="font-bold">Parts, designs, robots, and services</h2></div><Link to="/marketplace" className="text-xs hover:text-primary">Marketplace →</Link></div><div className="space-y-2">{marketplace.data?.items.slice(0, 4).map((listing) => <Link key={listing.id} to={`/marketplace/${listing.slug}`} className="surface-card surface-card-hover flex items-center justify-between gap-4 p-3"><div><div className="font-medium">{listing.title}</div><div className="text-[10px] text-muted-foreground">{listing.category} · {listing.region ?? "region n/a"}{listing.isDemo ? " · demo" : ""}</div></div><div className="mono text-sm font-semibold">{listing.price == null ? "Quote" : `${listing.currency} ${listing.price.toLocaleString()}`}</div></Link>)}</div></section>
+        <section><div className="mb-3 flex justify-between"><div><div className="section-title">Marketplace</div><h2 className="font-bold">Parts, designs, robots, and services</h2></div><Link to="/marketplace" className="text-xs hover:text-primary">Marketplace →</Link></div><div className="space-y-2">{liveListings.length === 0 ? <div className="surface-card p-4 text-sm text-muted-foreground">No public listings have been published yet. <Link to="/marketplace" className="text-primary hover:underline">Go to the marketplace</Link> to create the first one.</div> : liveListings.slice(0, 4).map((listing) => <Link key={listing.id} to={`/marketplace/${listing.slug}`} className="surface-card surface-card-hover flex items-center justify-between gap-4 p-3"><div><div className="font-medium">{listing.title}</div><div className="text-[10px] text-muted-foreground">{listing.category} · {listing.region ?? "region n/a"}</div></div><div className="mono text-sm font-semibold">{listing.price == null ? "Quote" : `${listing.currency} ${listing.price.toLocaleString()}`}</div></Link>)}</div></section>
         <section className="surface-card p-5"><div className="section-title">For suppliers, project owners, and partners</div><h2 className="mt-1 text-lg font-bold">Add data without buying placement in technical results</h2><p className="mt-2 text-xs leading-5 text-muted-foreground">Claim a project, improve its BOM, publish a supplier profile, list fabrication services, or discuss a clearly labeled sponsorship. Organic ranking and evidence quality remain separate from advertising.</p><div className="mt-4 flex flex-wrap gap-2"><Link to="/partners" className="btn-primary">Partnership options</Link><Link to="/developers" className="btn-ghost">MCP and APIs</Link></div></section>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import {
-  lowestPrice,
+  lowestObservedPrice,
   priceDelta30,
-  type Part,
+  type CatalogPart,
   type Actuator,
   type Hand,
   type Sensor,
@@ -11,17 +11,16 @@ import {
   type Reducer,
 } from "@/shared/catalog";
 import { PriceDeltaPill } from "@/components/common/PriceDeltaPill";
-import { ExpandableImage } from "@/components/common/ExpandableImage";
-import { gallery } from "@/lib/media";
 import { Star, StarOff, GitCompareArrows, Check } from "lucide-react";
 import { isPartSaved, toggleSavedPart, toggleCompare, readCompare } from "@/lib/catalogWorkspace";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { FIXTURE_TOOLTIP } from "@/components/parts/CatalogDataNotice";
+import { fmtNumber, fmtText, fmtList } from "@/lib/partsFormat";
 
-type Props = { parts: Part[]; onWorkspaceChange?: () => void };
+type Props = { parts: CatalogPart[]; onWorkspaceChange?: () => void };
 
-const fmt = (n: number) => n.toLocaleString();
+const yn = (value: unknown) => (typeof value === "boolean" ? (value ? "yes" : "no") : "—");
 
 export const PartsTable = ({ parts, onWorkspaceChange }: Props) => {
   const [, bump] = useState(0);
@@ -35,7 +34,7 @@ export const PartsTable = ({ parts, onWorkspaceChange }: Props) => {
     toast({ title: now ? "Component saved" : "Component unsaved", description: `${name} — local workspace only.` });
     refresh();
   };
-  const doCompare = (id: string, name: string, cat: Part["category"]) => {
+  const doCompare = (id: string, name: string, cat: CatalogPart["category"]) => {
     // First attempt without replace so we can announce the reset explicitly.
     let r = toggleCompare(id, cat);
     if (r.kind === "category-mismatch") {
@@ -77,62 +76,64 @@ export const PartsTable = ({ parts, onWorkspaceChange }: Props) => {
             {cat === "reducer" && <>
               <th>Type</th><th>Ratio</th><th>Rated Nm</th><th>Peak Nm</th><th>Backlash'</th><th>kg</th>
             </>}
-            <th title={FIXTURE_TOOLTIP}>Low $ (fixture)</th>
-            <th title={FIXTURE_TOOLTIP}>Fixture 30d Δ</th>
-            <th title="Shortest fixture lead across known offers.">Lead (fixture)</th>
-            <th title="Number of known fixture offers.">Offers</th>
+            <th title={FIXTURE_TOOLTIP}>Lowest observed</th>
+            <th title={FIXTURE_TOOLTIP}>30d change</th>
+            <th title={FIXTURE_TOOLTIP}>Lead</th>
+            <th title="Number of non-demo supplier offers.">Offers</th>
             <th className="text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {parts.map(p => {
-            const low = lowestPrice(p);
-            const minLead = p.offers.reduce((m, o) => Math.min(m, o.leadDays), 999);
-            const g = gallery("part-" + p.category, p.id, 3);
+            const liveOffers = p.offers.filter((offer) => !offer.isDemo);
+            const low = lowestObservedPrice(p);
+            const knownLeads = liveOffers.filter((offer) => offer.leadKnown).map((offer) => offer.leadDays);
+            const minLead = knownLeads.length ? Math.min(...knownLeads) : null;
             const saved = isPartSaved(p.id);
             const inCompare = compare.ids.includes(p.id);
             return (
               <tr key={p.id}>
-                <td><ExpandableImage src={g.hero} alt={p.name} thumbs={g.thumbs} caption={`${p.name} — ${p.maker}`} className="h-10 w-14" /></td>
+                <td><div className="h-10 w-14 rounded border border-border bg-muted/40 flex items-center justify-center text-[10px] leading-tight text-muted-foreground text-center" title="No curated, source-backed photograph for this component.">no photo</div></td>
                 <td>
                   <Link to={`/parts/${p.category}/${p.slug}`} className="font-medium hover:text-primary">{p.name}</Link>
                   {p.openSource && <span className="ml-1 pill pill-good">OS</span>}
+                  {p.mpn && <div className="mono text-[10px] text-muted-foreground">MPN {p.mpn}</div>}
                 </td>
                 <td className="text-muted-foreground">{p.maker}</td>
                 {cat === "actuator" && (() => { const a = p as Actuator; return <>
-                  <td className="mono">{a.peakNm}</td><td className="mono">{a.contNm}</td><td className="mono">{a.speedRpm}</td>
-                  <td className="mono">{a.voltageV}</td><td className="mono">{a.weightKg.toFixed(2)}</td>
-                  <td>{a.protocol}</td><td className="text-[12px]">{a.rosSupport}</td>
+                  <td className="mono">{fmtNumber(a.peakNm)}</td><td className="mono">{fmtNumber(a.contNm)}</td><td className="mono">{fmtNumber(a.speedRpm)}</td>
+                  <td className="mono">{fmtNumber(a.voltageV)}</td><td className="mono">{fmtNumber(a.weightKg, { digits: 2 })}</td>
+                  <td>{fmtText(a.protocol)}</td><td className="text-[12px]">{fmtText(a.rosSupport)}</td>
                 </>; })()}
                 {cat === "hand" && (() => { const h = p as Hand; return <>
-                  <td className="mono">{h.dof}</td><td className="mono">{h.actuatedDof}</td>
-                  <td className="mono">{h.payloadKg}</td><td className="mono">{h.gripForceN}</td>
-                  <td>{h.tactile ? "yes" : "no"}</td><td className="mono">{h.weightKg.toFixed(2)}</td>
-                  <td className="text-[12px]">{h.interface}</td>
+                  <td className="mono">{fmtNumber(h.dof)}</td><td className="mono">{fmtNumber(h.actuatedDof)}</td>
+                  <td className="mono">{fmtNumber(h.payloadKg)}</td><td className="mono">{fmtNumber(h.gripForceN)}</td>
+                  <td>{yn(h.tactile)}</td><td className="mono">{fmtNumber(h.weightKg, { digits: 2 })}</td>
+                  <td className="text-[12px]">{fmtText(h.interface)}</td>
                 </>; })()}
                 {cat === "sensor" && (() => { const s = p as Sensor; return <>
-                  <td>{s.type}</td><td className="mono">{s.rangeM}</td><td className="mono">{s.fovDeg}</td>
-                  <td className="mono">{s.hz}</td><td className="text-[12px]">{s.resolution}</td>
-                  <td className="mono">{s.weightKg.toFixed(2)}</td><td className="text-[12px]">{s.interface}</td>
+                  <td>{fmtText(s.type)}</td><td className="mono">{fmtNumber(s.rangeM)}</td><td className="mono">{fmtNumber(s.fovDeg)}</td>
+                  <td className="mono">{fmtNumber(s.hz)}</td><td className="text-[12px]">{fmtText(s.resolution)}</td>
+                  <td className="mono">{fmtNumber(s.weightKg, { digits: 2 })}</td><td className="text-[12px]">{fmtText(s.interface)}</td>
                 </>; })()}
                 {cat === "compute" && (() => { const c = p as Compute; return <>
-                  <td className="mono">{c.tops}</td><td className="mono">{c.ramGb}GB</td>
-                  <td className="mono">{c.storageGb}GB</td><td className="mono">{c.powerW}</td>
-                  <td className="mono">{c.weightKg.toFixed(2)}</td>
+                  <td className="mono">{fmtNumber(c.tops)}</td><td className="mono">{fmtNumber(c.ramGb, { suffix: "GB" })}</td>
+                  <td className="mono">{fmtNumber(c.storageGb, { suffix: "GB" })}</td><td className="mono">{fmtNumber(c.powerW)}</td>
+                  <td className="mono">{fmtNumber(c.weightKg, { digits: 2 })}</td>
                 </>; })()}
                 {cat === "driver" && (() => { const d = p as Driver; return <>
-                  <td className="mono">{d.maxCurrentA}</td><td className="mono">{d.voltageV}</td>
-                  <td className="text-[12px]">{d.protocols.join("/")}</td><td className="mono">{d.weightKg.toFixed(2)}</td>
+                  <td className="mono">{fmtNumber(d.maxCurrentA)}</td><td className="mono">{fmtNumber(d.voltageV)}</td>
+                  <td className="text-[12px]">{fmtList(d.protocols, "/")}</td><td className="mono">{fmtNumber(d.weightKg, { digits: 2 })}</td>
                 </>; })()}
                 {cat === "reducer" && (() => { const r = p as Reducer; return <>
-                  <td>{r.type}</td><td className="mono">{r.ratio}:1</td>
-                  <td className="mono">{r.ratedTorqueNm}</td><td className="mono">{r.peakTorqueNm}</td>
-                  <td className="mono">{r.backlashArcmin}</td><td className="mono">{r.weightKg.toFixed(2)}</td>
+                  <td>{fmtText(r.type)}</td><td className="mono">{fmtNumber(r.ratio, { suffix: ":1" })}</td>
+                  <td className="mono">{fmtNumber(r.ratedTorqueNm)}</td><td className="mono">{fmtNumber(r.peakTorqueNm)}</td>
+                  <td className="mono">{fmtNumber(r.backlashArcmin)}</td><td className="mono">{fmtNumber(r.weightKg, { digits: 2 })}</td>
                 </>; })()}
-                <td className="mono font-semibold">${fmt(low)}</td>
-                <td><PriceDeltaPill pct={priceDelta30(p)} /></td>
-                <td className="mono">{minLead}d</td>
-                <td className="mono">{p.offers.length}</td>
+                <td className="mono font-semibold">{low == null ? <span className="text-muted-foreground">Unpriced</span> : new Intl.NumberFormat(undefined, { style: "currency", currency: liveOffers.find((offer) => offer.price === low)?.currency ?? "USD" }).format(low)}</td>
+                <td>{p.priceHistory.length >= 2 ? <PriceDeltaPill pct={priceDelta30(p)} /> : <span className="text-muted-foreground">—</span>}</td>
+                <td className="mono">{minLead == null ? <span className="text-muted-foreground">—</span> : `${minLead}d`}</td>
+                <td className="mono">{liveOffers.length}</td>
                 <td>
                   <div className="flex justify-end items-center gap-1 whitespace-nowrap">
                     <button onClick={() => doSave(p.id, p.name)} className="btn-ghost btn-sm inline-flex items-center gap-1" aria-label={saved ? `Unsave ${p.name}` : `Save ${p.name}`} title={saved ? "Saved locally" : "Save to local workspace"}>

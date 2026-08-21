@@ -1,20 +1,20 @@
 import { Hono } from "hono";
-import type { PartCategory } from "../../src/shared/catalog";
 import { OfferValidationError, normalizeOfferWriteInput } from "../../src/shared/offer";
 import { CatalogRepository } from "../db/repositories/catalog";
 import type { AppBindings } from "../env";
 import { AppError, parsePositiveInt } from "../http";
 import { sha256 } from "../services/ingestion";
 
-const CATEGORIES = new Set<PartCategory>(["actuator", "hand", "sensor", "compute", "driver", "reducer"]);
-
 export const catalogRoutes = new Hono<AppBindings>();
 
 catalogRoutes.get("/components", async (c) => {
-  const categoryRaw = c.req.query("category");
-  if (categoryRaw && !CATEGORIES.has(categoryRaw as PartCategory)) {
-    throw new AppError(400, "VALIDATION_ERROR", "Unknown component category.");
+  const categoryRaw = c.req.query("category")?.trim();
+  // Components span many live, data-driven categories (electronics, connector,
+  // ic, actuator, cable, ...); validate shape rather than a closed allow-list.
+  if (categoryRaw && (categoryRaw.length > 60 || !/^[a-z0-9][a-z0-9_-]*$/i.test(categoryRaw))) {
+    throw new AppError(400, "VALIDATION_ERROR", "category must be a valid catalog category.");
   }
+  const category = categoryRaw || undefined;
   const minPrice = optionalNonNegativeNumber(c.req.query("minPrice"), "minPrice");
   const maxPrice = optionalNonNegativeNumber(c.req.query("maxPrice"), "maxPrice");
   if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
@@ -23,7 +23,7 @@ catalogRoutes.get("/components", async (c) => {
   const limit = parsePositiveInt(c.req.query("limit"), 50, 100);
   const page = parsePositiveInt(c.req.query("page"), 1, 10_000);
   const result = await new CatalogRepository(c.env.DB).listComponents({
-    category: categoryRaw as PartCategory | undefined,
+    category,
     q: cleanSearch(c.req.query("q")),
     manufacturerRegions: csv(c.req.query("manufacturerRegion")),
     supplierRegions: csv(c.req.query("supplierRegion")),

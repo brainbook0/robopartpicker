@@ -1,6 +1,7 @@
 import type { OfferAvailability, OfferCondition, OfferFreshnessLabel, OfferRiskLabel, PriceBreak } from "./offer";
 
-export type PartCategory = "actuator" | "hand" | "sensor" | "compute" | "driver" | "reducer";
+export type RoboticsPartCategory = "actuator" | "hand" | "sensor" | "compute" | "driver" | "reducer";
+export type PartCategory = string;
 export type Region = "US" | "EU" | "CN" | "JP" | "KR" | "Global";
 
 export type PricePoint = { date: string; price: number };
@@ -11,9 +12,15 @@ export type CatalogOffer = {
   supplierRegion: string | null;
   price: number;
   stock: number;
+  stockKnown?: boolean;
   leadDays: number;
+  leadKnown?: boolean;
   moq: number;
   currency?: string;
+  /** Supplier SKU for this offer, when the source feed records one. */
+  supplierSku?: string;
+  /** Authentic product page URL for this offer, when one was observed. */
+  productUrl?: string;
   condition?: OfferCondition;
   availability?: OfferAvailability;
   priceBreaks?: PriceBreak[];
@@ -27,8 +34,13 @@ export type CatalogOffer = {
 export type CatalogPart = {
   id: string;
   slug: string;
-  category: PartCategory;
+  /** Component category. Live catalogs span many more categories than the six
+   *  robotics fixture categories, so this is a data-driven string rather than a
+   *  closed union. The robotics-specific spec types below still narrow it. */
+  category: string;
   name: string;
+  /** Manufacturer part number, when the source record provides one. */
+  mpn?: string;
   maker: string;
   makerCountry: string;
   region: Region;
@@ -118,7 +130,7 @@ export type Reducer = CatalogPart & {
 
 export type Part = Actuator | Hand | Sensor | Compute | Driver | Reducer;
 
-export const categoryLabel: Record<PartCategory, string> = {
+export const categoryLabel: Record<string, string> = {
   actuator: "Actuators",
   hand: "Hands & grippers",
   sensor: "Sensors",
@@ -126,6 +138,13 @@ export const categoryLabel: Record<PartCategory, string> = {
   driver: "Motor drivers",
   reducer: "Reducers",
 };
+
+export function lowestObservedPrice(part: Pick<CatalogPart, "offers">): number | null {
+  const prices = part.offers
+    .filter((offer) => !offer.isDemo && offer.price > 0)
+    .map((offer) => offer.price);
+  return prices.length ? Math.min(...prices) : null;
+}
 
 export function lowestPrice(part: Pick<CatalogPart, "offers">): number {
   if (part.offers.length === 0) return 0;

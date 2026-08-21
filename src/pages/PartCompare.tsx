@@ -1,276 +1,226 @@
-import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQueries } from "@tanstack/react-query";
-import { lowestPrice, priceDelta30, categoryLabel, type Part, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer, type PartCategory, type CatalogPart } from "@/shared/catalog";
+import { categoryLabel, lowestObservedPrice, type CatalogPart } from "@/shared/catalog";
 import { api } from "@/lib/api/client";
 import { COMPARE_CAP, removeFromCompare, clearCompare, copyText } from "@/lib/catalogWorkspace";
-import { CatalogDataNotice } from "@/components/parts/CatalogDataNotice";
 import { toast } from "@/hooks/use-toast";
 import { Copy, Trash2, X, ExternalLink, Plus, ChevronLeft } from "lucide-react";
 
-const minLead = (p: Part) => p.offers.length ? Math.min(...p.offers.map(o => o.leadDays)) : null;
-const totalStock = (p: Part) => p.offers.reduce((s, o) => s + o.stock, 0);
+const CORE_FIELDS = new Set([
+  "id", "slug", "category", "name", "mpn", "maker", "makerCountry", "region", "blurb", "tags",
+  "openSource", "datasheetUrl", "cadAvailable", "rosSupport", "warrantyMonths", "priceHistory", "offers",
+  "failures", "compatibility", "provenanceLabel", "freshnessAt", "isDemo",
+]);
+
+const SPEC_LABELS: Record<string, string> = {
+  peakNm: "Peak torque (Nm)", contNm: "Continuous torque (Nm)", speedRpm: "Maximum speed (RPM)",
+  voltageV: "Voltage (V)", weightKg: "Weight (kg)", torqueDensity: "Torque density (Nm/kg)",
+  backlashArcmin: "Backlash (arcmin)", encoderType: "Encoder", protocol: "Protocol", protocols: "Protocols",
+  thermalLimitC: "Thermal limit (°C)", dutyCyclePct: "Duty cycle (%)", dof: "Degrees of freedom",
+  actuatedDof: "Actuated degrees of freedom", payloadKg: "Payload (kg)", gripForceN: "Grip force (N)",
+  tactile: "Tactile sensing", interface: "Interface", sdk: "SDK", type: "Type", rangeM: "Range (m)",
+  fovDeg: "Field of view (°)", hz: "Frame rate (Hz)", resolution: "Resolution", tops: "AI TOPS",
+  ramGb: "Memory (GB)", storageGb: "Storage (GB)", ports: "Ports", powerW: "Power (W)",
+  maxCurrentA: "Maximum current (A)", ratio: "Ratio", ratedTorqueNm: "Rated torque (Nm)",
+  peakTorqueNm: "Peak torque (Nm)",
+};
+
+const titleCase = (value: string) => value
+  .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+  .replace(/[_-]+/g, " ")
+  .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const categoryTitle = (category: string) => categoryLabel[category] ?? titleCase(category);
+const liveOffers = (part: CatalogPart) => part.offers.filter((offer) => !offer.isDemo);
+
+const minKnownLead = (part: CatalogPart): number | null => {
+  const values = liveOffers(part).filter((offer) => offer.leadKnown).map((offer) => offer.leadDays);
+  return values.length ? Math.min(...values) : null;
+};
+
+const totalKnownStock = (part: CatalogPart): number | null => {
+  const values = liveOffers(part).filter((offer) => offer.stockKnown).map((offer) => offer.stock);
+  return values.length ? values.reduce((sum, value) => sum + value, 0) : null;
+};
 
 type Row = {
   key: string;
   label: string;
-  values: (string | number | null)[];
-  best?: "lower" | "higher"; // when direction is unambiguous
+  values: Array<string | number | null>;
+  best?: "lower" | "higher";
   mono?: boolean;
   hint?: string;
 };
 
-function baseRows(parts: Part[]): Row[] {
-  const rows: Row[] = [
-    { key: "maker", label: "Maker", values: parts.map(p => p.maker) },
-    { key: "region", label: "Manufacturer region", values: parts.map(p => p.region) },
-    { key: "openSource", label: "Open source", values: parts.map(p => p.openSource ? "yes" : "no") },
-    { key: "ros", label: "ROS support", values: parts.map(p => p.rosSupport) },
-    { key: "cad", label: "CAD available", values: parts.map(p => p.cadAvailable ? "yes" : "no") },
-    { key: "warranty", label: "Warranty (mo)", values: parts.map(p => p.warrantyMonths), best: "higher", mono: true },
-    { key: "price", label: "Fixture lowest price ($)", values: parts.map(p => p.offers.length ? lowestPrice(p) : null), best: "lower", mono: true, hint: "Fixture only — not a live quote." },
-    { key: "delta", label: "Fixture price Δ (last 30d %)", values: parts.map(p => p.offers.length ? +priceDelta30(p).toFixed(1) : null), mono: true, hint: "Change against previous fixture point." },
-    { key: "lead", label: "Shortest fixture lead (d)", values: parts.map(p => minLead(p)), best: "lower", mono: true },
-    { key: "stock", label: "Fixture stock (all offers)", values: parts.map(p => totalStock(p)), mono: true, hint: "Sum of static fixture stock counts — not current inventory." },
-    { key: "offers", label: "Known offers", values: parts.map(p => p.offers.length), mono: true },
-    { key: "incidents", label: "Reported incidents (fixture)", values: parts.map(p => p.failures), best: "lower", mono: true, hint: "Count of fixture incident records — not a validated failure rate." },
-    { key: "compat", label: "Usage/integration tags", values: parts.map(p => p.compatibility.join(", ") || "—"), hint: "Not a compatibility guarantee." },
-    { key: "supplierNames", label: "Fixture suppliers", values: parts.map(p =>
-        p.offers.map(o => o.supplierName).join(", ") || "—") },
-  ];
-  return rows;
+function normalizeSpecValue(value: unknown): string | number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (Array.isArray(value)) {
+    const entries = value.filter((entry) => typeof entry === "string" || typeof entry === "number").map(String);
+    return entries.length ? entries.join(", ") : null;
+  }
+  return null;
 }
 
-function catRows(parts: Part[]): Row[] {
-  const c = parts[0].category;
-  if (c === "actuator") {
-    const A = parts as Actuator[];
-    return [
-      { key: "peakNm", label: "Peak torque (Nm)", values: A.map(p => p.peakNm), best: "higher", mono: true },
-      { key: "contNm", label: "Continuous torque (Nm)", values: A.map(p => p.contNm), best: "higher", mono: true },
-      { key: "rpm", label: "Max speed (RPM)", values: A.map(p => p.speedRpm), best: "higher", mono: true },
-      { key: "volt", label: "Voltage (V)", values: A.map(p => p.voltageV), mono: true },
-      { key: "kg", label: "Weight (kg)", values: A.map(p => p.weightKg), best: "lower", mono: true },
-      { key: "density", label: "Torque density (Nm/kg)", values: A.map(p => +p.torqueDensity.toFixed(1)), best: "higher", mono: true },
-      { key: "backlash", label: "Backlash (arcmin)", values: A.map(p => p.backlashArcmin), best: "lower", mono: true },
-      { key: "protocol", label: "Protocol", values: A.map(p => p.protocol) },
-      { key: "encoder", label: "Encoder", values: A.map(p => p.encoderType) },
-      { key: "thermal", label: "Thermal limit (°C)", values: A.map(p => p.thermalLimitC), best: "higher", mono: true },
-    ];
-  }
-  if (c === "hand") {
-    const H = parts as Hand[];
-    return [
-      { key: "dof", label: "Total DoF", values: H.map(p => p.dof), best: "higher", mono: true },
-      { key: "adof", label: "Actuated DoF", values: H.map(p => p.actuatedDof), best: "higher", mono: true },
-      { key: "payload", label: "Payload (kg)", values: H.map(p => p.payloadKg), best: "higher", mono: true },
-      { key: "grip", label: "Grip force (N)", values: H.map(p => p.gripForceN), best: "higher", mono: true },
-      { key: "tactile", label: "Tactile", values: H.map(p => p.tactile ? "yes" : "no") },
-      { key: "kg", label: "Weight (kg)", values: H.map(p => p.weightKg), best: "lower", mono: true },
-      { key: "iface", label: "Interface", values: H.map(p => p.interface) },
-      { key: "sdk", label: "SDK", values: H.map(p => p.sdk) },
-    ];
-  }
-  if (c === "sensor") {
-    const S = parts as Sensor[];
-    return [
-      { key: "type", label: "Type", values: S.map(p => p.type) },
-      { key: "range", label: "Range (m)", values: S.map(p => p.rangeM), best: "higher", mono: true },
-      { key: "fov", label: "FoV (°)", values: S.map(p => p.fovDeg), best: "higher", mono: true },
-      { key: "hz", label: "Frame rate (Hz)", values: S.map(p => p.hz), best: "higher", mono: true },
-      { key: "res", label: "Resolution", values: S.map(p => p.resolution) },
-      { key: "iface", label: "Interface", values: S.map(p => p.interface) },
-      { key: "kg", label: "Weight (kg)", values: S.map(p => p.weightKg), best: "lower", mono: true },
-    ];
-  }
-  if (c === "compute") {
-    const C = parts as Compute[];
-    return [
-      { key: "tops", label: "AI TOPS", values: C.map(p => p.tops), best: "higher", mono: true },
-      { key: "ram", label: "RAM (GB)", values: C.map(p => p.ramGb), best: "higher", mono: true },
-      { key: "storage", label: "Storage (GB)", values: C.map(p => p.storageGb), best: "higher", mono: true },
-      { key: "power", label: "Power (W)", values: C.map(p => p.powerW), best: "lower", mono: true },
-      { key: "ports", label: "Ports", values: C.map(p => p.ports) },
-      { key: "kg", label: "Weight (kg)", values: C.map(p => p.weightKg), best: "lower", mono: true },
-    ];
-  }
-  if (c === "driver") {
-    const D = parts as Driver[];
-    return [
-      { key: "amps", label: "Max current (A)", values: D.map(p => p.maxCurrentA), best: "higher", mono: true },
-      { key: "volt", label: "Voltage (V)", values: D.map(p => p.voltageV), mono: true },
-      { key: "proto", label: "Protocols", values: D.map(p => p.protocols.join(", ")) },
-      { key: "kg", label: "Weight (kg)", values: D.map(p => p.weightKg), best: "lower", mono: true },
-    ];
-  }
-  const R = parts as Reducer[];
+function sourceSpecRows(parts: CatalogPart[]): Row[] {
+  const keys = new Set<string>();
+  parts.forEach((part) => Object.entries(part).forEach(([key, value]) => {
+    if (!CORE_FIELDS.has(key) && normalizeSpecValue(value) != null) keys.add(key);
+  }));
+  return [...keys].sort().slice(0, 30).map((key) => ({
+    key: `spec:${key}`,
+    label: SPEC_LABELS[key] ?? titleCase(key),
+    values: parts.map((part) => normalizeSpecValue(part[key])),
+    mono: parts.every((part) => normalizeSpecValue(part[key]) == null || typeof normalizeSpecValue(part[key]) === "number"),
+  }));
+}
+
+function baseRows(parts: CatalogPart[]): Row[] {
   return [
-    { key: "type", label: "Type", values: R.map(p => p.type) },
-    { key: "ratio", label: "Ratio", values: R.map(p => `${p.ratio}:1`) },
-    { key: "rated", label: "Rated torque (Nm)", values: R.map(p => p.ratedTorqueNm), best: "higher", mono: true },
-    { key: "peak", label: "Peak torque (Nm)", values: R.map(p => p.peakTorqueNm), best: "higher", mono: true },
-    { key: "backlash", label: "Backlash (arcmin)", values: R.map(p => p.backlashArcmin), best: "lower", mono: true },
-    { key: "kg", label: "Weight (kg)", values: R.map(p => p.weightKg), best: "lower", mono: true },
+    { key: "mpn", label: "Manufacturer part number", values: parts.map((part) => part.mpn ?? null), mono: true },
+    { key: "maker", label: "Manufacturer", values: parts.map((part) => part.maker || null) },
+    { key: "region", label: "Primary region", values: parts.map((part) => part.region || null) },
+    { key: "price", label: "Lowest observed price", values: parts.map(lowestObservedPrice), best: "lower", mono: true, hint: "Authentic, non-demo positive-priced offers only." },
+    { key: "lead", label: "Shortest known lead (days)", values: parts.map(minKnownLead), best: "lower", mono: true },
+    { key: "stock", label: "Known stock across offers", values: parts.map(totalKnownStock), best: "higher", mono: true },
+    { key: "offers", label: "Authentic offers", values: parts.map((part) => liveOffers(part).length), best: "higher", mono: true },
+    { key: "links", label: "Direct product links", values: parts.map((part) => liveOffers(part).filter((offer) => Boolean(offer.productUrl)).length), best: "higher", mono: true },
+    { key: "suppliers", label: "Suppliers", values: parts.map((part) => [...new Set(liveOffers(part).map((offer) => offer.supplierName))].join(", ") || null) },
+    { key: "compat", label: "Usage and integration tags", values: parts.map((part) => part.compatibility.join(", ") || null), hint: "Tags are not a drop-in compatibility guarantee." },
+    { key: "provenance", label: "Provenance", values: parts.map((part) => part.provenanceLabel || null) },
   ];
 }
 
-function bestIndex(vals: (string | number | null)[], dir?: "lower" | "higher"): number | null {
-  if (!dir) return null;
-  const numeric = vals.map(v => (typeof v === "number" && Number.isFinite(v)) ? v : null);
-  if (numeric.some(v => v == null)) return null;
-  const nums = numeric as number[];
-  const target = dir === "lower" ? Math.min(...nums) : Math.max(...nums);
-  // Only highlight if there's a unique best
-  if (nums.filter(v => v === target).length !== 1) return null;
-  return nums.indexOf(target);
+function bestIndex(values: Array<string | number | null>, direction?: "lower" | "higher"): number | null {
+  if (!direction) return null;
+  const numeric = values.map((value) => typeof value === "number" && Number.isFinite(value) ? value : null);
+  if (numeric.some((value) => value == null)) return null;
+  const numbers = numeric as number[];
+  const target = direction === "lower" ? Math.min(...numbers) : Math.max(...numbers);
+  if (numbers.filter((value) => value === target).length !== 1) return null;
+  return numbers.indexOf(target);
 }
 
 function rowsToCsv(header: string[], rows: Row[]): string {
-  const esc = (s: unknown) => {
-    const v = s == null ? "" : String(s);
-    return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  const escape = (input: unknown) => {
+    const value = input == null ? "" : String(input);
+    return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
   };
-  const out: string[] = [header.map(esc).join(",")];
-  rows.forEach(r => out.push([r.label, ...r.values.map(v => v ?? "")].map(esc).join(",")));
-  return out.join("\n");
+  return [header.map(escape).join(","), ...rows.map((row) => [row.label, ...row.values].map(escape).join(","))].join("\n");
 }
 
 export default function PartCompare() {
-  const [sp, setSp] = useSearchParams();
-  const rawIds = (sp.get("ids") ?? "").split(",").map(s => s.trim()).filter(Boolean);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawIds = (searchParams.get("ids") ?? "").split(",").map((value) => value.trim()).filter(Boolean);
   const seen = new Set<string>();
-  const idList: string[] = [];
-  for (const id of rawIds) { if (!seen.has(id)) { seen.add(id); idList.push(id); } if (idList.length >= COMPARE_CAP) break; }
+  const ids: string[] = [];
+  for (const id of rawIds) {
+    if (!seen.has(id)) { seen.add(id); ids.push(id); }
+    if (ids.length >= COMPARE_CAP) break;
+  }
 
   const componentQueries = useQueries({
-    queries: idList.map((id) => ({
+    queries: ids.map((id) => ({
       queryKey: ["catalog-component", id],
       queryFn: ({ signal }: { signal: AbortSignal }) => api.get<{ item: CatalogPart }>(`/api/v1/components/${encodeURIComponent(id)}`, { signal }),
       retry: false,
       staleTime: 30_000,
     })),
   });
-  const resolved = idList.map((id, index) => ({ id, part: componentQueries[index]?.data?.item as Part | undefined }));
-  const missing = resolved.filter((row, index) => componentQueries[index]?.isError && !row.part).map(row => row.id);
-  const foundParts = resolved.map(r => r.part).filter((p): p is Part => Boolean(p));
+
+  const resolved = ids.map((id, index) => ({ id, part: componentQueries[index]?.data?.item }));
+  const missing = resolved.filter((row, index) => componentQueries[index]?.isError && !row.part).map((row) => row.id);
+  const published = resolved.map((row) => row.part).filter((part): part is CatalogPart => Boolean(part && !part.isDemo));
   const loading = componentQueries.some((query) => query.isPending);
-
-  // Determine dominant category from first valid part; drop other-category picks.
-  const primaryCat: PartCategory | null = foundParts[0]?.category ?? null;
-  const compatible = primaryCat ? foundParts.filter(p => p.category === primaryCat) : [];
-  const mixed = foundParts.length !== compatible.length;
-
-  const rows = useMemo(() => compatible.length ? [...catRows(compatible), ...baseRows(compatible)] : [], [compatible]);
+  const primaryCategory = published[0]?.category ?? null;
+  const compatible = primaryCategory ? published.filter((part) => part.category === primaryCategory) : [];
+  const mixed = published.length !== compatible.length;
+  const rows = compatible.length ? [...sourceSpecRows(compatible), ...baseRows(compatible)] : [];
 
   const removeOne = (id: string) => {
-    const next = compatible.filter(p => p.id !== id).map(p => p.id);
+    const next = compatible.filter((part) => part.id !== id).map((part) => part.id);
     removeFromCompare(id);
-    if (next.length) setSp(new URLSearchParams({ ids: next.join(",") }), { replace: true });
-    else setSp(new URLSearchParams(), { replace: true });
+    setSearchParams(next.length ? new URLSearchParams({ ids: next.join(",") }) : new URLSearchParams(), { replace: true });
   };
-  const clearAll = () => { clearCompare(); setSp(new URLSearchParams(), { replace: true }); };
+
+  const clearAll = () => {
+    clearCompare();
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
+
   const share = async () => {
-    const url = `${window.location.origin}/parts/compare?ids=${compatible.map(p => p.id).join(",")}`;
-    const ok = await copyText(url);
-    toast({ title: ok ? "Compare URL copied" : "Copy failed", description: ok ? url : "Clipboard not available.", variant: ok ? undefined : "destructive" });
+    const url = `${window.location.origin}/parts/compare?ids=${compatible.map((part) => part.id).join(",")}`;
+    const copied = await copyText(url);
+    toast({ title: copied ? "Compare URL copied" : "Copy failed", description: copied ? url : "Clipboard not available.", variant: copied ? undefined : "destructive" });
   };
+
   const exportCsv = () => {
     if (!compatible.length) return;
-    const csv = rowsToCsv(["Metric", ...compatible.map(p => `${p.name} (${p.maker})`)], rows);
+    const csv = rowsToCsv(["Metric", ...compatible.map((part) => `${part.name} (${part.maker})`)], rows);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `compare-${compatible.map(p => p.slug).join("-")}.csv`; a.click();
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `compare-${compatible.map((part) => part.slug).join("-")}.csv`;
+    anchor.click();
     URL.revokeObjectURL(url);
   };
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6">
-      <div className="text-[12px] text-muted-foreground mb-1">
-        <Link to="/parts/actuator" className="hover:text-primary inline-flex items-center gap-1"><ChevronLeft className="h-3 w-3" />Catalog</Link>
+      <div className="mb-1 text-[12px] text-muted-foreground">
+        <Link to={primaryCategory ? `/parts/${primaryCategory}` : "/parts/actuator"} className="inline-flex items-center gap-1 hover:text-primary"><ChevronLeft className="h-3 w-3" />Catalog</Link>
         {" / "}<span className="text-foreground">Component comparison</span>
       </div>
-      <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
+
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-bold tracking-tight">Component comparison</h1>
-          <p className="text-[12px] text-muted-foreground mt-0.5">
-            Same-category side-by-side · up to {COMPARE_CAP} components{primaryCat ? ` · ${categoryLabel[primaryCat]}` : ""}.
-          </p>
+          <p className="mt-0.5 text-[12px] text-muted-foreground">Same-category source observations · up to {COMPARE_CAP} components{primaryCategory ? ` · ${categoryTitle(primaryCategory)}` : ""}</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <button onClick={share} className="btn-ghost btn-sm inline-flex items-center gap-1"><Copy className="h-3.5 w-3.5" /> Copy share URL</button>
+          <button onClick={share} disabled={!compatible.length} className="btn-ghost btn-sm inline-flex items-center gap-1"><Copy className="h-3.5 w-3.5" /> Copy share URL</button>
           <button onClick={exportCsv} disabled={!compatible.length} className="btn-ghost btn-sm inline-flex items-center gap-1"><ExternalLink className="h-3.5 w-3.5" /> Export CSV</button>
           <button onClick={clearAll} disabled={!compatible.length} className="btn-ghost btn-sm inline-flex items-center gap-1 text-negative"><Trash2 className="h-3.5 w-3.5" /> Clear</button>
         </div>
       </div>
 
-      <CatalogDataNotice />
-
-      <div className="mt-3 surface-card px-3 py-2 text-[11.5px] text-muted-foreground">
-        <span className="font-medium text-foreground">Same-category comparison only.</span> This view does <em>not</em> prove drop-in compatibility, mechanical fit, thermal integration, firmware/SDK readiness, or supply reliability. Best-value markers are shown only for metrics with an unambiguous direction (e.g. lower weight, higher torque). Subjective specs are shown without a winner.
+      <div className="surface-card mt-3 px-3 py-2 text-[11.5px] text-muted-foreground">
+        <span className="font-medium text-foreground">Authentic records only.</span> Demo fixtures are excluded. Unknown specifications, prices, stock, and lead times stay blank. Comparison does not prove mechanical fit, electrical compatibility, firmware readiness, or supplier availability.
       </div>
 
-      {mixed && (
-        <div className="mt-2 surface-card px-3 py-2 text-[11.5px] border-warning/40 bg-warning/5 text-warning">
-          Some selected components were in a different category than {primaryCat ? categoryLabel[primaryCat].toLowerCase() : "the first pick"} and were dropped from this comparison. Comparison is restricted to one category at a time.
-        </div>
-      )}
-      {missing.length > 0 && (
-        <div className="mt-2 surface-card px-3 py-2 text-[11.5px] border-warning/40 bg-warning/5 text-warning">
-          Unknown component id(s): <span className="mono">{missing.join(", ")}</span>
-        </div>
-      )}
+      {mixed && <div className="surface-card mt-2 border-warning/40 bg-warning/5 px-3 py-2 text-[11.5px] text-warning">Components outside {primaryCategory ? categoryTitle(primaryCategory) : "the first selected category"} were excluded because comparison is same-category only.</div>}
+      {missing.length > 0 && <div className="surface-card mt-2 border-warning/40 bg-warning/5 px-3 py-2 text-[11.5px] text-warning">Unknown or unavailable component id(s): <span className="mono">{missing.join(", ")}</span></div>}
 
       {loading ? (
-        <div className="mt-4 surface-card p-6 text-center text-[13px] text-muted-foreground" role="status">
-          Loading selected components from the API…
-        </div>
+        <div className="surface-card mt-4 p-6 text-center text-[13px] text-muted-foreground" role="status">Loading selected components from the API…</div>
       ) : !compatible.length ? (
-        <div className="mt-4 surface-card p-6 text-center text-[13px] text-muted-foreground">
-          No components selected. Add components from the <Link to="/parts/actuator" className="text-primary hover:underline">catalog</Link>.
-        </div>
+        <div className="surface-card mt-4 p-6 text-center text-[13px] text-muted-foreground">No published components selected. Add components from the <Link to="/parts/actuator" className="text-primary hover:underline">catalog</Link>.</div>
       ) : (
-        <div className="mt-3 surface-card overflow-x-auto">
+        <div className="surface-card mt-3 overflow-x-auto">
           <table className="data-table min-w-[900px]">
-            <thead>
-              <tr>
-                <th className="w-[220px]">Metric</th>
-                {compatible.map(p => (
-                  <th key={p.id} className="min-w-[200px]">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link to={`/parts/${p.category}/${p.slug}`} className="font-medium hover:text-primary leading-tight">{p.name}</Link>
-                      <button aria-label={`Remove ${p.name} from comparison`} onClick={() => removeOne(p.id)} className="text-muted-foreground hover:text-negative">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground font-normal">{p.maker}</div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      <Link to={`/builder?add=${encodeURIComponent(p.id)}`} className="btn-ghost btn-sm inline-flex items-center gap-1"><Plus className="h-3 w-3" /> BOM</Link>
-                      <Link to={`/parts/${p.category}/${p.slug}`} className="btn-ghost btn-sm">Detail →</Link>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(r => {
-                const best = bestIndex(r.values, r.best);
-                return (
-                  <tr key={r.key}>
-                    <td className="text-[12px] text-muted-foreground align-top">
-                      {r.label}
-                      {r.hint && <div className="text-[10.5px] italic mt-0.5">{r.hint}</div>}
-                    </td>
-                    {r.values.map((v, i) => (
-                      <td key={i} className={`${r.mono ? "mono" : ""} ${best === i ? "text-[hsl(var(--positive))] font-semibold" : ""}`}>
-                        {v == null ? <span className="text-muted-foreground">—</span> : String(v)}
-                        {best === i && r.best && <span className="ml-1 pill pill-good text-[10px]">{r.best === "lower" ? "lowest" : "highest"}</span>}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
+            <thead><tr><th className="w-[220px]">Metric</th>{compatible.map((part) => <th key={part.id} className="min-w-[200px]">
+              <div className="flex items-start justify-between gap-2">
+                <Link to={`/parts/${part.category}/${part.slug}`} className="font-medium leading-tight hover:text-primary">{part.name}</Link>
+                <button aria-label={`Remove ${part.name} from comparison`} onClick={() => removeOne(part.id)} className="text-muted-foreground hover:text-negative"><X className="h-3.5 w-3.5" /></button>
+              </div>
+              <div className="text-[11px] font-normal text-muted-foreground">{part.maker}{part.mpn ? ` · ${part.mpn}` : ""}</div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                <Link to={`/builder?add=${encodeURIComponent(part.id)}`} className="btn-ghost btn-sm inline-flex items-center gap-1"><Plus className="h-3 w-3" /> BOM</Link>
+                <Link to={`/parts/${part.category}/${part.slug}`} className="btn-ghost btn-sm">Detail →</Link>
+              </div>
+            </th>)}</tr></thead>
+            <tbody>{rows.map((row) => {
+              const best = bestIndex(row.values, row.best);
+              return <tr key={row.key}>
+                <td className="align-top text-[12px] text-muted-foreground">{row.label}{row.hint && <div className="mt-0.5 text-[10.5px] italic">{row.hint}</div>}</td>
+                {row.values.map((value, index) => <td key={index} className={`${row.mono ? "mono" : ""} ${best === index ? "font-semibold text-[hsl(var(--positive))]" : ""}`}>
+                  {value == null ? <span className="text-muted-foreground">—</span> : String(value)}
+                  {best === index && row.best && <span className="pill pill-good ml-1 text-[10px]">{row.best === "lower" ? "lowest" : "highest"}</span>}
+                </td>)}
+              </tr>;
+            })}</tbody>
           </table>
         </div>
       )}

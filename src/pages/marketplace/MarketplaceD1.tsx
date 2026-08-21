@@ -23,7 +23,10 @@ export default function MarketplaceD1() {
   const maxPrice = params.get("maxPrice") ?? "";
   const query = useMarketplace({ type, q, category, region, condition, sort, minPrice: minPrice ? Number(minPrice) : null, maxPrice: maxPrice ? Number(maxPrice) : null });
   const drafts = useMarketplace({ mine: true, status: "draft" });
-  const categories = useMemo(() => [...new Set((query.data?.items ?? []).map((item) => item.category))].sort(), [query.data?.items]);
+  // Only real (non-demo) listings are shown. Seeded demo fixtures carry fake
+  // prices and are withheld from the public marketplace.
+  const liveItems = (query.data?.items ?? []).filter((item) => !item.isDemo);
+  const categories = useMemo(() => [...new Set(liveItems.map((item) => item.category))].sort(), [liveItems]);
 
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(params);
@@ -59,8 +62,8 @@ export default function MarketplaceD1() {
         {hasFilters && <button type="button" className="btn-ghost btn-sm" onClick={() => setParams(type === "sell" ? {} : { type })}>Clear filters</button>}
       </div>
 
-      {query.isPending ? <State>Loading Marketplace records from D1…</State> : query.isError ? <State error>{query.error.message}</State> : query.data!.items.length === 0 ? <EmptyCatalog type={type} label={emptyKind} hasFilters={hasFilters} signedIn={Boolean(user)} onClear={() => setParams(type === "sell" ? {} : { type })} /> :
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{query.data!.items.map((item) => <ListingCard key={item.id} item={item} />)}</div>}
+      {query.isPending ? <State>Loading Marketplace records from D1…</State> : query.isError ? <State error>{query.error.message}</State> : liveItems.length === 0 ? <EmptyCatalog type={type} label={emptyKind} hasFilters={hasFilters} signedIn={Boolean(user)} onClear={() => setParams(type === "sell" ? {} : { type })} /> :
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{liveItems.map((item) => <ListingCard key={item.id} item={item} />)}</div>}
     </main>
   </>;
 }
@@ -97,12 +100,12 @@ function EmptyCatalog({ type, label, hasFilters, signedIn, onClear }: { type: Ma
 }
 
 function ListingCard({ item }: { item: MarketplaceListing }) {
-  const seller = item.seller?.displayName || item.seller?.username || (item.isDemo ? "demo fixture" : "seller unavailable");
+  const seller = item.seller?.displayName || item.seller?.username || "seller unavailable";
   return <Link to={`/marketplace/${item.slug}`} className="surface-card p-3 hover:border-primary/50 transition-colors flex flex-col gap-2">
     {item.images[0] && <img src={item.images[0].contentUrl} alt={item.images[0].altText ?? `${item.title} cover`} className="aspect-[16/9] w-full rounded border border-border bg-muted object-cover" loading="lazy" />}
     <div className="flex items-start justify-between gap-2"><div><div className="section-title">{item.listingType}</div><h2 className="font-semibold text-[14px] leading-tight mt-1">{item.title}</h2></div><span className="pill">{item.conditionGrade ?? "n/a"}</span></div>
     <p className="text-[12px] text-muted-foreground line-clamp-3">{item.description}</p>
-    <div className="flex flex-wrap gap-1">{item.component && <span className="pill">{item.component.name}</span>}<span className="pill">{item.category}</span>{item.isDemo && <span className="pill pill-yellow">demo</span>}</div>
+    <div className="flex flex-wrap gap-1">{item.component && <span className="pill">{item.component.name}</span>}<span className="pill">{item.category}</span></div>
     <div className="mt-auto border-t border-border/60 pt-2 flex items-end justify-between text-[11px]"><div className="text-muted-foreground">{seller} · {item.region ?? "region n/a"}<br />qty <span className="mono">{item.quantity}</span>{item.partsCost != null && <><br />parts <span className="mono">{item.partsCostCurrency ?? "USD"} {item.partsCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></>}</div><div className="text-right"><div className="text-[9px] uppercase text-muted-foreground">asking</div><div className="mono font-semibold text-[15px]">{item.price == null ? "Quote" : `${item.currency ?? "USD"} ${item.price.toLocaleString()}`}</div></div></div>
     <div className="flex gap-2 text-[10.5px] text-muted-foreground">{item.details.sellerDeclaresTestReport && <span className="inline-flex gap-1"><Wrench className="h-3 w-3" />seller says test available</span>}{item.saved && <span className="inline-flex gap-1"><Star className="h-3 w-3" />saved</span>}</div>
   </Link>;

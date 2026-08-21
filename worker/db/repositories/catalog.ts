@@ -1,11 +1,12 @@
-import type { CatalogOffer, CatalogPart, PartCategory, SupplierSummary } from "../../../src/shared/catalog";
+import type { CatalogOffer, CatalogPart, SupplierSummary } from "../../../src/shared/catalog";
 import { normalizePriceBreaks, shouldAppendHistory, type OfferWriteInput } from "../../../src/shared/offer";
 
 type ComponentRow = {
   id: string;
   slug: string;
   name: string;
-  category: PartCategory;
+  category: string;
+  manufacturer_part_number: string | null;
   summary: string | null;
   primary_region: string | null;
   provenance_label: string;
@@ -28,6 +29,8 @@ type OfferRow = {
   supplier_id: string;
   supplier_name: string;
   supplier_region: string | null;
+  supplier_sku: string | null;
+  product_url: string | null;
   currency: string | null;
   unit_price_minor: number;
   stock_quantity: number | null;
@@ -51,7 +54,7 @@ type HistoryRow = {
 };
 
 export type CatalogListOptions = {
-  category?: PartCategory;
+  category?: string;
   q?: string;
   manufacturerRegions?: string[];
   supplierRegions?: string[];
@@ -68,7 +71,7 @@ export class CatalogRepository {
   constructor(private readonly db: D1Database) {}
 
   async listComponents(options: CatalogListOptions): Promise<{ items: CatalogPart[]; total: number }> {
-    const clauses = ["c.deleted_at IS NULL"];
+    const clauses = ["c.deleted_at IS NULL", "c.is_demo = 0"];
     const values: unknown[] = [];
     const bind = (value: unknown) => {
       values.push(value);
@@ -96,29 +99,32 @@ export class CatalogRepository {
         SELECT 1 FROM supplier_offers so
         JOIN suppliers sup ON sup.id = so.supplier_id
         JOIN supplier_regions sr ON sr.supplier_id = sup.id
-        WHERE so.component_id = c.id AND sr.region_code IN (${options.supplierRegions.map((value) => bind(value)).join(", ")})
+        WHERE so.component_id = c.id AND so.is_demo = 0 AND sup.is_demo = 0
+          AND sr.region_code IN (${options.supplierRegions.map((value) => bind(value)).join(", ")})
       )`);
     }
     if (options.supplierIds?.length) {
       clauses.push(`EXISTS (
         SELECT 1 FROM supplier_offers so
-        WHERE so.component_id = c.id AND so.supplier_id IN (${options.supplierIds.map((value) => bind(value)).join(", ")})
+        JOIN suppliers sup ON sup.id = so.supplier_id
+        WHERE so.component_id = c.id AND so.is_demo = 0 AND sup.is_demo = 0
+          AND so.supplier_id IN (${options.supplierIds.map((value) => bind(value)).join(", ")})
       )`);
     }
     if (options.inStock) {
-      clauses.push("EXISTS (SELECT 1 FROM supplier_offers so WHERE so.component_id = c.id AND so.stock_quantity > 0)");
+      clauses.push("EXISTS (SELECT 1 FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.stock_quantity > 0)");
     }
     if (options.minPrice !== undefined) {
-      clauses.push(`EXISTS (SELECT 1 FROM supplier_offers so WHERE so.component_id = c.id AND so.unit_price_minor >= ${bind(Math.round(options.minPrice * 100))})`);
+      clauses.push(`EXISTS (SELECT 1 FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor >= ${bind(Math.round(options.minPrice * 100))})`);
     }
     if (options.maxPrice !== undefined) {
-      clauses.push(`EXISTS (SELECT 1 FROM supplier_offers so WHERE so.component_id = c.id AND so.unit_price_minor <= ${bind(Math.round(options.maxPrice * 100))})`);
+      clauses.push(`EXISTS (SELECT 1 FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor <= ${bind(Math.round(options.maxPrice * 100))})`);
     }
 
     const from = `FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id WHERE ${clauses.join(" AND ")}`;
     const count = await this.db.prepare(`SELECT COUNT(*) AS total ${from}`).bind(...values).first<{ total: number }>();
     const rows = await this.db
-      .prepare(`SELECT c.id, c.slug, c.name, c.category, c.summary, c.primary_region, c.provenance_label,
+      .prepare(`SELECT c.id, c.slug, c.name, c.category, c.manufacturer_part_number, c.summary, c.primary_region, c.provenance_label,
         c.freshness_at, c.is_demo, m.name AS maker, m.headquarters_region AS maker_region
         ${from}
         ORDER BY c.name COLLATE NOCASE
@@ -131,7 +137,7 @@ export class CatalogRepository {
 
   async findComponent(idOrSlug: string): Promise<CatalogPart | null> {
     const row = await this.db
-      .prepare(`SELECT c.id, c.slug, c.name, c.category, c.summary, c.primary_region, c.provenance_label,
+      .prepare(`SELECT c.id, c.slug, c.name, c.category, c.manufacturer_part_number, c.summary, c.primary_region, c.provenance_label,
         c.freshness_at, c.is_demo, m.name AS maker, m.headquarters_region AS maker_region
         FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
         WHERE c.deleted_at IS NULL AND (c.id = ?1 OR c.slug = ?1)`)
@@ -368,15 +374,16 @@ export class CatalogRepository {
       this.db.prepare(`SELECT component_id, tag FROM component_tags WHERE component_id IN (${placeholders}) ORDER BY tag`).bind(...ids),
       this.db.prepare(`SELECT component_id, tag FROM component_compatibility_tags WHERE component_id IN (${placeholders}) ORDER BY tag`).bind(...ids),
       this.db.prepare(`SELECT so.id, so.component_id, so.supplier_id, s.name AS supplier_name,
-        MIN(sr.region_code) AS supplier_region, so.currency, so.unit_price_minor, so.stock_quantity,
+        MIN(sr.region_code) AS supplier_region, so.supplier_sku, so.product_url, so.currency, so.unit_price_minor, so.stock_quantity,
         so.lead_time_days, so.minimum_quantity, so.availability, so.condition, so.price_breaks,
         so.reliability_score, so.risk_label, so.freshness_label, so.observed_at, so.is_demo
         FROM supplier_offers so JOIN suppliers s ON s.id = so.supplier_id
         LEFT JOIN supplier_regions sr ON sr.supplier_id = s.id AND sr.ships_from = 1
-        WHERE so.component_id IN (${placeholders}) GROUP BY so.id ORDER BY so.unit_price_minor`).bind(...ids),
+        WHERE so.component_id IN (${placeholders}) AND so.is_demo = 0 AND s.is_demo = 0
+        GROUP BY so.id ORDER BY so.unit_price_minor`).bind(...ids),
       this.db.prepare(`SELECT so.component_id, h.id, h.unit_price_minor, h.observed_at
         FROM offer_price_history h JOIN supplier_offers so ON so.id = h.supplier_offer_id
-        WHERE so.component_id IN (${placeholders}) ORDER BY h.id`).bind(...ids),
+        WHERE so.component_id IN (${placeholders}) AND so.is_demo = 0 ORDER BY h.id`).bind(...ids),
     ]);
 
     const specs = new Map<string, Record<string, unknown>>();
@@ -402,8 +409,12 @@ export class CatalogRepository {
         supplierRegion: row.supplier_region,
         price: row.unit_price_minor / 100,
         stock: row.stock_quantity ?? 0,
+        stockKnown: row.stock_quantity != null,
         leadDays: row.lead_time_days ?? 0,
+        leadKnown: row.lead_time_days != null,
         moq: row.minimum_quantity,
+        supplierSku: row.supplier_sku ?? undefined,
+        productUrl: row.product_url ?? undefined,
         currency: row.currency ?? undefined,
         condition: (row.condition as CatalogOffer["condition"]) ?? "unknown",
         availability: (row.availability as CatalogOffer["availability"]) ?? "unknown",
@@ -433,6 +444,7 @@ export class CatalogRepository {
         slug: row.slug,
         category: row.category,
         name: row.name,
+        mpn: row.manufacturer_part_number ?? undefined,
         maker: row.maker ?? "Unknown manufacturer",
         makerCountry: row.maker_region ?? "Unknown",
         region: (row.primary_region ?? "Global") as CatalogPart["region"],

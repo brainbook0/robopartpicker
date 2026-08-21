@@ -2,7 +2,7 @@
 // Nothing here is sent, monitored, published, or synchronized with any server.
 // All data lives in this browser's localStorage.
 
-import type { Part, PartCategory } from "@/shared/catalog";
+import type { CatalogPart, Part, PartCategory } from "@/shared/catalog";
 
 const SAVED_PARTS_KEY = "rpp:cat:saved-parts:v1";
 const COMPARE_KEY = "rpp:cat:compare:v1";
@@ -331,7 +331,7 @@ export const CATEGORY_REQUIRED_FIELDS: Record<PartCategory, string[]> = {
   reducer: ["ratio", "ratedTorqueNm"],
 };
 
-export const missingRequiredFields = (part: Part): string[] => {
+export const missingRequiredFields = (part: CatalogPart): string[] => {
   const required = CATEGORY_REQUIRED_FIELDS[part.category] ?? [];
   return required.filter((field) => {
     const value = (part as Record<string, unknown>)[field];
@@ -339,17 +339,17 @@ export const missingRequiredFields = (part: Part): string[] => {
   });
 };
 
-export const fieldFloorOk = (part: Part): boolean => missingRequiredFields(part).length === 0;
+export const fieldFloorOk = (part: CatalogPart): boolean => missingRequiredFields(part).length === 0;
 
 export type FieldFloorReport = { category: PartCategory; required: string[]; missing: string[]; complete: boolean };
 
-export const fieldFloorReport = (part: Part): FieldFloorReport => {
+export const fieldFloorReport = (part: CatalogPart): FieldFloorReport => {
   const missing = missingRequiredFields(part);
   return { category: part.category, required: CATEGORY_REQUIRED_FIELDS[part.category] ?? [], missing, complete: missing.length === 0 };
 };
 
 /** Synthetic/demo fixtures must never be presented as live supplier data. */
-export const isSyntheticPart = (part: Pick<Part, "isDemo" | "provenanceLabel">): boolean =>
+export const isSyntheticPart = (part: Pick<CatalogPart, "isDemo" | "provenanceLabel">): boolean =>
   part.isDemo === true || part.provenanceLabel === "demo" || part.provenanceLabel === "inferred";
 
 // ---------------- Testing hooks (exported for unit tests) ----------------

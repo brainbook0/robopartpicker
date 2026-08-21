@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CatalogPart, PartCategory, SupplierSummary } from "@/shared/catalog";
+import type { CatalogPart, SupplierSummary } from "@/shared/catalog";
 import { api } from "./client";
 
 export type ComponentListResponse = {
@@ -11,8 +11,13 @@ export type ComponentListResponse = {
   dataMode: "demo" | "live";
 };
 
+/** Page size the components list API serves (its documented default and the
+ *  largest value the production endpoint accepts). The client clamps any
+ *  caller-supplied `limit` here so it never sends a value the API rejects. */
+export const COMPONENTS_PAGE_SIZE = 50;
+
 export type ComponentListParams = {
-  category?: PartCategory;
+  category?: string;
   q?: string;
   manufacturerRegion?: string[];
   supplierRegion?: string[];
@@ -25,7 +30,7 @@ export type ComponentListParams = {
   limit?: number;
 };
 
-function componentPath(params: ComponentListParams): string {
+export function componentPath(params: ComponentListParams): string {
   const search = new URLSearchParams();
   if (params.category) search.set("category", params.category);
   if (params.q) search.set("q", params.q);
@@ -36,8 +41,10 @@ function componentPath(params: ComponentListParams): string {
   if (params.minPrice != null) search.set("minPrice", String(params.minPrice));
   if (params.maxPrice != null) search.set("maxPrice", String(params.maxPrice));
   if (params.inStock) search.set("inStock", "true");
-  search.set("page", String(params.page ?? 1));
-  search.set("limit", String(params.limit ?? 100));
+  search.set("page", String(Math.max(1, params.page ?? 1)));
+  const requested = params.limit ?? COMPONENTS_PAGE_SIZE;
+  const limit = Math.min(Math.max(1, requested), COMPONENTS_PAGE_SIZE);
+  search.set("limit", String(limit));
   return `/api/v1/components?${search}`;
 }
 

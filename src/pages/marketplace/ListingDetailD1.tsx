@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { marketplaceApi, useMarketplaceListing } from "@/lib/api/marketplace";
+import { ComingSoon } from "@/components/common/ComingSoon";
 
 export default function ListingDetailD1() {
   const { id } = useParams();
@@ -18,8 +19,14 @@ export default function ListingDetailD1() {
   if (query.isPending) return <div className="p-8" role="status">Loading listing from D1…</div>;
   if (query.isError || !query.data?.item) return <div className="p-8 text-negative" role="alert">Listing could not be loaded: {query.error?.message}</div>;
   const item = query.data.item;
+  if (item.isDemo) {
+    return <main className="mx-auto max-w-[1200px] px-4 py-5">
+      <div className="text-[12px] text-muted-foreground"><Link to="/marketplace" className="hover:text-primary">Marketplace</Link> / {item.slug}</div>
+      <ComingSoon kicker="Unavailable" title="Listing not available" body="This listing is a demonstration record and is withheld from the public marketplace. No real price, imagery, or transaction data is shown for it." actionLabel="Back to marketplace" actionTo="/marketplace" />
+    </main>;
+  }
   const own = user?.id === item.sellerUserId;
-  const seller = item.seller?.displayName || item.seller?.username || (item.isDemo ? "Demo fixture" : "Seller unavailable");
+  const seller = item.seller?.displayName || item.seller?.username || "Seller unavailable";
 
   const toggleSave = async () => {
     if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
@@ -48,7 +55,7 @@ export default function ListingDetailD1() {
         <div><div className="section-title">{item.listingType} · {item.category}</div><h1 className="text-[22px] font-bold tracking-tight mt-1">{item.title}</h1><div className="text-[12px] text-muted-foreground mt-1">{seller} · {item.region ?? "region not specified"} · status {item.status}</div></div>
         <div className="text-right"><div className="mono text-[22px] font-semibold">{item.price == null ? "Quote requested" : `${item.currency ?? "USD"} ${item.price.toLocaleString()}`}</div><div className="text-[11px] text-muted-foreground">quantity {item.quantity}</div></div>
       </div>
-      <div className="mt-3 flex flex-wrap gap-1"><span className="pill">{item.conditionGrade ?? "condition n/a"}</span>{item.component && <Link className="pill pill-yellow" to={`/parts/${item.component.category}/${item.component.slug}`}>{item.component.name}</Link>}{item.isDemo && <span className="pill pill-yellow">demonstration record</span>}</div>
+      <div className="mt-3 flex flex-wrap gap-1"><span className="pill">{item.conditionGrade ?? "condition n/a"}</span>{item.component && <Link className="pill pill-yellow" to={`/parts/${item.component.category}/${item.component.slug}`}>{item.component.name}</Link>}</div>
       {item.partsCost != null && <div className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-3"><PriceContext label="Asking price" value={`${item.currency ?? "USD"} ${item.price?.toLocaleString() ?? "—"}`} /><PriceContext label="Known parts cost" value={`${item.partsCostCurrency ?? "USD"} ${item.partsCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} detail={`${item.partsCostPricedItems}/${item.partsCostTotalItems} build lines priced`} /><PriceContext label="Ask minus parts" value={item.price == null ? "—" : `${item.currency ?? "USD"} ${(item.price - item.partsCost).toLocaleString(undefined, { maximumFractionDigits: 2 })}`} detail="Not seller margin; excludes labor and other costs" /></div>}
     </div>
 
