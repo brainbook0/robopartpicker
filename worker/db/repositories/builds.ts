@@ -173,7 +173,7 @@ export class BuildsRepository {
               WHERE json_extract(value, '$.mpn') IS NOT NULL
                 AND c.manufacturer_part_number = json_extract(value, '$.mpn')
                 AND (json_extract(value, '$.manufacturer') IS NULL OR m.name = json_extract(value, '$.manufacturer') COLLATE NOCASE)
-                AND c.deleted_at IS NULL LIMIT 1),
+                AND c.deleted_at IS NULL AND c.is_demo = 0 LIMIT 1),
             json_extract(value, '$.name'), json_extract(value, '$.quantity'), json_extract(value, '$.unit'),
             'needed', json_extract(value, '$.notes'), ?2, ?2 FROM json_each(?3)`)
           .bind(id, now, itemJson));
@@ -248,8 +248,12 @@ export class BuildsRepository {
 
   async addItem(buildId: string, userId: string, input: { componentId?: string | null; description: string; quantity: number; unit?: string; selectedSupplierOfferId?: string | null; unitCostMinor?: number | null; notes?: string | null; substitutedForItemId?: string | null }): Promise<Record<string, unknown>> {
     if (input.componentId) {
-      const component = await this.db.prepare("SELECT name FROM components WHERE id = ?1 AND deleted_at IS NULL").bind(input.componentId).first();
+      const component = await this.db.prepare("SELECT name FROM components WHERE id = ?1 AND deleted_at IS NULL AND is_demo = 0").bind(input.componentId).first();
       if (!component) throw new AppError(422, "COMPONENT_NOT_FOUND", "Component not found.");
+    }
+    if (input.selectedSupplierOfferId) {
+      const offer = await this.db.prepare("SELECT id FROM supplier_offers WHERE id = ?1 AND is_demo = 0").bind(input.selectedSupplierOfferId).first();
+      if (!offer) throw new AppError(422, "OFFER_NOT_FOUND", "Supplier offer not found.");
     }
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
