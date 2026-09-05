@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,12 +12,13 @@ import Finder from "./pages/Finder.tsx";
 import Builder from "./pages/Builder.tsx";
 import BomsIndex from "./pages/BomsIndex.tsx";
 import BomDetail from "./pages/BomDetail.tsx";
+import BomItemDetail from "./pages/BomItemDetail.tsx";
 import Marketplace from "./pages/marketplace/MarketplaceD1.tsx";
 import ListingDetail from "./pages/marketplace/ListingDetailD1.tsx";
 import WantedNew from "./pages/marketplace/WantedEditorD1.tsx";
 import ListingNew from "./pages/marketplace/ListingEditorD1.tsx";
 import Suppliers from "./pages/Suppliers.tsx";
-import SupplierDetail from "./pages/SupplierDetail.tsx";
+
 import Teardowns from "./pages/Teardowns.tsx";
 import Community from "./pages/Community.tsx";
 import ForumCategory from "./pages/ForumCategory.tsx";
@@ -40,6 +41,11 @@ import Developers from "./pages/Developers.tsx";
 import Partners from "./pages/Partners.tsx";
 import About from "./pages/About.tsx";
 import QuoteDetail from "./pages/QuoteDetail.tsx";
+import CompletedQuoteDetail from "./pages/CompletedQuoteDetail.tsx";
+import ProjectClaimsReview from "./pages/ProjectClaimsReview.tsx";
+import AdminAnalytics from "./pages/AdminAnalytics.tsx";
+import { LegalCenter } from "./pages/LegalCenter.tsx";
+import { LegalDocumentPage } from "./pages/LegalDocumentPage.tsx";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -64,7 +70,20 @@ const App = () => (
             <Route path="/developers" element={<Developers />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/about" element={<About />} />
+            <Route path="/legal" element={<LegalCenter />} />
+            <Route path="/privacy" element={<LegalDocumentPage documentId="privacy" />} />
+            <Route path="/terms" element={<LegalDocumentPage documentId="terms" />} />
+            <Route path="/cookies" element={<LegalDocumentPage documentId="cookies" />} />
+            <Route path="/acceptable-use" element={<LegalDocumentPage documentId="acceptable-use" />} />
+            <Route path="/marketplace-terms" element={<LegalDocumentPage documentId="marketplace-terms" />} />
+            <Route path="/ai-notice" element={<LegalDocumentPage documentId="ai-notice" />} />
+            <Route path="/intellectual-property" element={<LegalDocumentPage documentId="intellectual-property" />} />
+            <Route path="/accessibility" element={<LegalDocumentPage documentId="accessibility" />} />
+            <Route path="/contact" element={<LegalDocumentPage documentId="contact" />} />
             <Route path="/quotes/:id" element={<QuoteDetail />} />
+            <Route path="/completed-quotes/:id" element={<CompletedQuoteDetail />} />
+            <Route path="/admin/project-claims" element={<ProjectClaimsReview />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/parts/:category" element={<PartsCatalog />} />
             <Route path="/parts/:category/:slug" element={<PartDetail />} />
             <Route path="/projects" element={<ProjectsIndex />} />
@@ -77,13 +96,14 @@ const App = () => (
             <Route path="/finder/:type" element={<Finder />} />
             <Route path="/builder" element={<Builder />} />
             <Route path="/boms" element={<BomsIndex />} />
+            <Route path="/boms/:bomId/items/:itemId" element={<BomItemDetail />} />
             <Route path="/boms/:slug" element={<BomDetail />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/marketplace/new" element={<ListingNew />} />
             <Route path="/marketplace/wanted/new" element={<WantedNew />} />
             <Route path="/marketplace/:id" element={<ListingDetail />} />
             <Route path="/suppliers" element={<Suppliers />} />
-            <Route path="/suppliers/:slug" element={<SupplierDetail />} />
+            <Route path="/suppliers/:slug" element={<Navigate to="/suppliers" replace />} />
             <Route path="/robots" element={<ProjectsIndex />} />
             <Route path="/robots/:slug" element={<ProjectDetail />} />
             <Route path="/teardowns" element={<Teardowns />} />

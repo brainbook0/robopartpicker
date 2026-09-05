@@ -1,0 +1,15 @@
+[
+  {
+    "slug": "skydio-x10",
+    "name": "Skydio X10",
+    "manufacturer": "Skydio, Inc.",
+    "model": "Skydio X10",
+    "category": "aerial",
+    "officialProductUrl": "https://www.skydio.com/x10",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  }
+]

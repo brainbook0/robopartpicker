@@ -24,6 +24,7 @@ type Props = {
   releases: PortableRppsReleaseSummary[];
   userId?: string;
   canManage: boolean;
+  buildActionsEnabled: boolean;
   onReleaseChanged: () => Promise<void>;
 };
 
@@ -43,7 +44,7 @@ const proposalLabels: Partial<Record<RppsProposalType, string>> = {
   withdraw_claim: "Withdraw outdated claim",
 };
 
-export function ReleaseCollaborationPanel({ projectId, release, releases, userId, canManage, onReleaseChanged }: Props) {
+export function ReleaseCollaborationPanel({ projectId, release, releases, userId, canManage, buildActionsEnabled, onReleaseChanged }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
@@ -100,7 +101,7 @@ export function ReleaseCollaborationPanel({ projectId, release, releases, userId
     setBusy("build");
     try {
       const result = await createReleaseBuildPassport(projectId, release.id, { visibility: "private" });
-      toast({ title: "Exact-release build started", description: `The build passport is pinned to ${release.version} and sha256:${release.packageSha256.slice(0, 12)}…` });
+      toast({ title: "Exact-release build started", description: `The build passport is pinned to immutable release ${release.version}.` });
       navigate(`/builder?build=${encodeURIComponent(result.item.id)}`);
     } catch (error) {
       toast({ title: "Could not start build", description: message(error), variant: "destructive" });
@@ -181,7 +182,7 @@ export function ReleaseCollaborationPanel({ projectId, release, releases, userId
   return (
     <div className="rounded border border-border p-2">
       <div className="flex items-center justify-between gap-2"><span className="mono text-[10px] font-semibold">{release.version}</span><span className="pill text-[8px]">{release.status}</span></div>
-      <div className="mt-1 flex justify-between text-[9.5px] text-muted-foreground"><span>Core {release.report.profiles.core.score}%</span><span>Buildable {release.report.profiles.buildable.score}%</span></div>
+      <div className="mt-1 flex justify-between text-[9.5px] text-muted-foreground"><span>Core {release.report.profiles.core.score}%</span><span>{buildActionsEnabled ? `Buildable ${release.report.profiles.buildable.score}%` : "Reference package"}</span></div>
       {collaboration && <div className="mt-2 flex flex-wrap gap-1">
         {collaboration.evidence.achieved.map((level) => <span key={level} className="rounded bg-primary/10 px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-primary">{evidenceLabels[level]}</span>)}
         {!collaboration.evidence.current && <span className="rounded bg-muted px-1.5 py-0.5 text-[8px] uppercase tracking-wide text-muted-foreground">Freshness not revalidated</span>}
@@ -189,11 +190,11 @@ export function ReleaseCollaborationPanel({ projectId, release, releases, userId
       <div className="mt-2 grid grid-cols-2 gap-1">
         <button type="button" className="btn-ghost btn-sm justify-center" disabled={busy === "manifest"} onClick={() => void download("manifest")}><Download className="h-3 w-3" /> manifest</button>
         {release.hasLockfile && <button type="button" className="btn-ghost btn-sm justify-center" disabled={busy === "lockfile"} onClick={() => void download("lockfile")}><Download className="h-3 w-3" /> lock</button>}
-        {release.status === "published" && <button type="button" className="btn-primary btn-sm justify-center" disabled={busy === "build"} onClick={() => void startBuild()}><Play className="h-3 w-3" /> Build this release</button>}
+        {buildActionsEnabled && release.status === "published" && <button type="button" className="btn-primary btn-sm justify-center" disabled={busy === "build"} onClick={() => void startBuild()}><Play className="h-3 w-3" /> Build this release</button>}
         {release.status === "draft" && canManage && <button type="button" className="btn-primary btn-sm justify-center" disabled={busy === "publish"} onClick={() => void publish()}><ShieldCheck className="h-3 w-3" /> Publish</button>}
         <button type="button" className="btn-ghost btn-sm justify-center" onClick={toggle}>{expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />} Collaboration</button>
       </div>
-      <div className="mono mt-1 truncate text-[8.5px] text-muted-foreground" title={release.packageSha256}>sha256:{release.packageSha256}</div>
+      <div className="mt-1 text-[9px] text-muted-foreground">Integrity verified · immutable release</div>
 
       {expanded && <div className="mt-3 space-y-3 border-t border-border pt-3">
         {busy === "load" && !collaboration ? <div className="flex items-center gap-1 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Loading release evidence…</div> : collaboration && <>
@@ -208,7 +209,7 @@ export function ReleaseCollaborationPanel({ projectId, release, releases, userId
             {diff && <DiffSummary diff={diff} />}
           </div>}
 
-          {userId && collaboration.eligibleBuilds.length > 0 && <div className="space-y-1.5">
+          {buildActionsEnabled && userId && collaboration.eligibleBuilds.length > 0 && <div className="space-y-1.5">
             <div className="section-title">Report exact-release outcome</div>
             <select value={outcomeBuild} onChange={(event) => setOutcomeBuild(event.target.value)} className="input-bare h-8 w-full text-[10px]">{collaboration.eligibleBuilds.map((build) => <option key={build.id} value={build.id}>{build.name} · {build.status}</option>)}</select>
             <select value={outcome} onChange={(event) => setOutcome(event.target.value as typeof outcome)} className="input-bare h-8 w-full text-[10px]"><option value="succeeded">Succeeded</option><option value="partially_succeeded">Partially succeeded</option><option value="failed">Failed</option><option value="abandoned">Abandoned</option></select>

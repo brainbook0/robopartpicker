@@ -45,7 +45,7 @@ export function RelatedDiscussionList({
         {!err && !threads && <div className="text-[11px] text-muted-foreground px-1 py-2">Loading…</div>}
         {threads && threads.length === 0 && (
           <div className="text-[11px] text-muted-foreground px-1 py-2">
-            No discussions linked to this yet. <Link to={newHref} className="text-primary hover:underline">Start one →</Link>
+            No discussions linked to this yet. <Link to={newHref} className="text-link hover:underline">Start one →</Link>
           </div>
         )}
         <ul className="divide-y divide-border/60">

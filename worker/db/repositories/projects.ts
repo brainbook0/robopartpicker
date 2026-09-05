@@ -1,8 +1,9 @@
 import type { RppsPackage } from "../../../src/lib/rpps/schema";
 import { classifyProjectKind, projectKindAfterRppsUpdate, type ProjectKind } from "../../../src/shared/projectKind";
 import type { RobotCategory } from "../../../src/shared/robotCategory";
-import { buildProjectCatalogStatsQuery, buildProjectFilesQuery, buildProjectListQuery, type ProjectListSort } from "../../../src/shared/projectListQuery";
+import { buildProjectCatalogStatsQuery, buildProjectFilesQuery, buildProjectListQuery, latestProjectBomLineCountExpression, latestProjectBomStateExpression, projectFilterCostExpression, projectSourceClassExpression, type ProjectFacetCounts, type ProjectListFilters, type ProjectListSort } from "../../../src/shared/projectListQuery";
 import { computePublishability, resolveUpstreamIdentity } from "../../../src/shared/provenance";
+import { normalizeManagedFileUrl } from "../../../src/shared/managedFileUrl";
 import { AppError } from "../../http";
 import { fileContentUrl } from "../../services/file-urls";
 
@@ -46,6 +47,13 @@ type ProjectDatabaseRow = {
   successful_reproduction_count: number;
   bom_id: string | null;
   bom_line_count: number;
+  bom_publication_state?: ProjectDto["bom_publication_state"];
+  preview_cost_minor?: number | null;
+  preview_cost_currency?: string | null;
+  preview_cost_kind?: ProjectDto["preview_cost_kind"];
+  preview_cost_confidence?: ProjectDto["preview_cost_confidence"];
+  preview_cost_method?: string | null;
+  preview_cost_valued_at?: string | null;
 };
 
 export type ProjectDto = {
@@ -75,6 +83,13 @@ export type ProjectDto = {
   successful_reproduction_count: number;
   bom_id: string | null;
   bom_line_count: number;
+  bom_publication_state: "draft" | "verified" | "partial" | "unavailable" | "manufacturer_unavailable" | "not_applicable" | "classification_required" | "rejected" | null;
+  preview_cost_minor: number | null;
+  preview_cost_currency: string | null;
+  preview_cost_kind: "published_price" | "published_range" | "market_estimate" | "published" | "known_bom" | "inferred" | null;
+  preview_cost_confidence: "high" | "medium" | "low" | null;
+  preview_cost_method: string | null;
+  preview_cost_valued_at: string | null;
   rpps_version: string;
   rpps: RppsPackage;
   is_demo: boolean;
@@ -102,6 +117,8 @@ export type ProjectCatalogStats = {
   roboticsSoftwareProjects: number;
   commercialShowcaseProjects: number;
   publishedProjects: number;
+  totalReproductions: number;
+  successfulReproductions: number;
 };
 
 export type ProjectFileDto = {
@@ -138,14 +155,16 @@ const SELECT_PROJECT = `SELECT p.id, p.slug, p.name, p.summary, p.description, p
     JOIN builds b ON b.id = outcome.build_id AND b.deleted_at IS NULL
     WHERE rr.project_id = p.id AND outcome.outcome = 'succeeded' AND outcome.independence = 'independent') AS successful_reproduction_count,
   (SELECT b.id FROM boms b WHERE b.project_id = p.id AND b.is_demo = 0 ORDER BY b.updated_at DESC LIMIT 1) AS bom_id,
-  (SELECT COUNT(*) FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+  (SELECT COUNT(*) FROM boms b
+    JOIN bom_versions bv ON bv.id = b.current_version_id AND bv.publication_state IN ('verified', 'partial')
+    JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
     WHERE b.project_id = p.id AND b.is_demo = 0) AS bom_line_count
   FROM projects p LEFT JOIN project_versions pv ON pv.id = p.current_version_id`;
 
 export class ProjectsRepository {
   constructor(private readonly db: D1Database) {}
 
-  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; category?: RobotCategory; limit: number; offset: number; sort?: ProjectListSort }): Promise<{ items: ProjectDto[]; total: number; stats: ProjectCatalogStats }> {
+  async listVisible(userId: string | null, options: { q?: string; mine?: boolean; kind?: ProjectKind; category?: RobotCategory; filters?: ProjectListFilters; includeFacets?: boolean; limit: number; offset: number; sort?: ProjectListSort }): Promise<{ items: ProjectDto[]; total: number; stats: ProjectCatalogStats; facets?: ProjectFacetCounts }> {
     const values: unknown[] = [];
     const bind = (value: unknown) => { values.push(value); return `?${values.length}`; };
     const access = options.mine
@@ -156,10 +175,36 @@ export class ProjectsRepository {
     const clauses = ["p.deleted_at IS NULL", "p.is_demo = 0", `(${access})`];
     if (options.q) {
       const term = bind(`%${options.q.toLowerCase()}%`);
-      clauses.push(`(lower(p.name) LIKE ${term} OR lower(COALESCE(p.summary, '')) LIKE ${term})`);
+      clauses.push(`(lower(p.name) LIKE ${term} OR lower(COALESCE(p.summary, '')) LIKE ${term}
+        OR lower(COALESCE(p.maintainer, '')) LIKE ${term}
+        OR lower(COALESCE((SELECT search_pv.rpps_json FROM project_versions search_pv WHERE search_pv.id = p.current_version_id), '')) LIKE ${term})`);
     }
     if (options.kind) clauses.push(`p.project_kind = ${bind(options.kind)}`);
     if (options.category) clauses.push(`p.robot_category = ${bind(options.category)}`);
+    const filters = options.filters ?? {};
+    if (filters.source === "open") clauses.push("p.project_kind <> 'commercial_showcase' AND COALESCE(p.repository_url, p.upstream_url) IS NOT NULL");
+    if (filters.source === "commercial") clauses.push("p.project_kind = 'commercial_showcase'");
+    if (filters.source === "licensed") clauses.push("p.license_spdx IS NOT NULL AND COALESCE(p.repository_url, p.upstream_url) IS NOT NULL");
+    if (filters.source === "official") clauses.push("p.project_kind = 'commercial_showcase' AND COALESCE(p.repository_url, p.upstream_url) IS NOT NULL");
+    if (filters.source === "unclear") clauses.push("p.license_spdx IS NULL");
+    if (filters.priceMinMinor != null) clauses.push(`${projectFilterCostExpression()} >= ${bind(filters.priceMinMinor)}`);
+    if (filters.priceMaxMinor != null) clauses.push(`${projectFilterCostExpression()} <= ${bind(filters.priceMaxMinor)}`);
+    if (filters.bomState) clauses.push(`${latestProjectBomStateExpression()} = ${bind(filters.bomState)}`);
+    if (filters.bomLinesMin != null) clauses.push(`${latestProjectBomLineCountExpression()} >= ${bind(filters.bomLinesMin)}`);
+    if (filters.build === "started") clauses.push("EXISTS (SELECT 1 FROM rpps_releases filter_rr JOIN rpps_build_passports filter_bp ON filter_bp.release_id = filter_rr.id JOIN builds filter_build ON filter_build.id = filter_bp.build_id AND filter_build.deleted_at IS NULL WHERE filter_rr.project_id = p.id)");
+    if (filters.build === "verified") clauses.push("EXISTS (SELECT 1 FROM rpps_releases filter_rr JOIN rpps_build_outcomes filter_outcome ON filter_outcome.release_id = filter_rr.id AND filter_outcome.outcome = 'succeeded' AND filter_outcome.independence = 'independent' JOIN builds filter_build ON filter_build.id = filter_outcome.build_id AND filter_build.deleted_at IS NULL WHERE filter_rr.project_id = p.id)");
+    if (filters.difficulty) clauses.push(`p.difficulty = ${bind(filters.difficulty)}`);
+    if (filters.ros) {
+      const ros = "lower(COALESCE(json_extract((SELECT ros_pv.rpps_json FROM project_versions ros_pv WHERE ros_pv.id = p.current_version_id), '$.software.ros_support'), 'none'))";
+      if (filters.ros === "supported") clauses.push(`${ros} IN ('native', 'community')`);
+      else clauses.push(`${ros} = ${bind(filters.ros)}`);
+    }
+    if (filters.license) clauses.push(`lower(COALESCE(p.license_spdx, '')) = ${bind(filters.license.toLowerCase())}`);
+    if (filters.hasMedia) clauses.push("EXISTS (SELECT 1 FROM project_files filter_pf JOIN files filter_f ON filter_f.id = filter_pf.file_id WHERE filter_pf.project_id = p.id AND filter_f.kind = 'image' AND filter_f.status = 'ready' AND filter_f.deleted_at IS NULL)");
+    if (filters.hasCad) clauses.push("EXISTS (SELECT 1 FROM project_files filter_pf JOIN files filter_f ON filter_f.id = filter_pf.file_id WHERE filter_pf.project_id = p.id AND filter_f.kind = 'cad' AND filter_f.status = 'ready' AND filter_f.deleted_at IS NULL)");
+    if (filters.hasAssembly) clauses.push("EXISTS (SELECT 1 FROM project_steps filter_step WHERE filter_step.project_version_id = p.current_version_id)");
+    if (filters.hasOfficialSource) clauses.push("COALESCE(p.repository_url, p.upstream_url) IS NOT NULL");
+    if (filters.verifiedSince) clauses.push(`COALESCE(p.last_checked_at, p.updated_at) >= ${bind(filters.verifiedSince)}`);
     const where = `WHERE ${clauses.join(" AND ")}`;
     const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM projects p ${where}`).bind(...values).first<{ total: number }>();
     const pageLimitPlaceholder = `?${values.length + 1}`;
@@ -168,9 +213,29 @@ export class ProjectsRepository {
     const rows = await this.db.prepare(listQuery)
       .bind(...values, options.limit, options.offset).all<ProjectDatabaseRow>();
     const stats = await this.catalogStats(userId, options.mine ?? false, options.kind, options.category);
+    const facets = options.includeFacets ? await this.facetCounts(where, values) : undefined;
     const items = rows.results.map(toProjectDto);
     await Promise.all(items.map(async (item) => { item.media = await this.listPreviewMedia(item.id, userId); }));
-    return { items, total: Number(count?.total ?? 0), stats };
+    return { items, total: Number(count?.total ?? 0), stats, ...(facets ? { facets } : {}) };
+  }
+
+  private async facetCounts(where: string, values: unknown[]): Promise<ProjectFacetCounts> {
+    const queries = [
+      `SELECT COALESCE(p.project_kind, 'unknown') key, COUNT(*) count FROM projects p ${where} GROUP BY key`,
+      `SELECT COALESCE(p.robot_category, 'other') key, COUNT(*) count FROM projects p ${where} GROUP BY key`,
+      `SELECT ${projectSourceClassExpression()} key, COUNT(*) count FROM projects p ${where} GROUP BY key`,
+      `SELECT ${latestProjectBomStateExpression()} key, COUNT(*) count FROM projects p ${where} GROUP BY key`,
+      `SELECT COALESCE(p.difficulty, 'unspecified') key, COUNT(*) count FROM projects p ${where} GROUP BY key`,
+    ];
+    const results = await this.db.batch(queries.map((query) => this.db.prepare(query).bind(...values)));
+    const asRecord = (rows: unknown[]) => Object.fromEntries((rows as Array<{ key: string; count: number }>).map((row) => [String(row.key), Number(row.count)]));
+    return {
+      kinds: asRecord(results[0].results),
+      categories: asRecord(results[1].results),
+      sources: asRecord(results[2].results),
+      bomStates: asRecord(results[3].results),
+      difficulties: asRecord(results[4].results),
+    };
   }
 
   private async listPreviewMedia(projectId: string, userId: string | null): Promise<ProjectDto["media"]> {
@@ -181,7 +246,15 @@ export class ProjectsRepository {
           WHERE om.organization_id = f.organization_id AND om.user_id = ?2 AND om.status = 'active'))
       ORDER BY CASE pf.purpose WHEN 'cover' THEN 0 WHEN 'media' THEN 1 ELSE 2 END, pf.created_at DESC LIMIT 4`)
       .bind(projectId, userId).all<{ id: string; alt_text: string | null; caption: string | null }>();
-    return rows.results.map((row) => ({ id: row.id, contentUrl: fileContentUrl(row.id), altText: row.alt_text, caption: row.caption }));
+    return rows.results.map((row) => {
+      const generatedUrl = fileContentUrl(row.id);
+      return {
+        id: row.id,
+        contentUrl: normalizeManagedFileUrl(generatedUrl) ?? generatedUrl,
+        altText: row.alt_text,
+        caption: row.caption,
+      };
+    });
   }
 
   private async catalogStats(userId: string | null, mine: boolean, kind?: ProjectKind, category?: RobotCategory): Promise<ProjectCatalogStats> {
@@ -203,8 +276,17 @@ export class ProjectsRepository {
       commercialShowcaseProjects: number;
       publishedProjects: number;
       totalParts: number;
+      totalReproductions: number;
+      successfulReproductions: number;
     }>();
-    const costs = await this.db.prepare(`SELECT p.estimated_cost_minor AS cost FROM projects p ${where} AND p.estimated_cost_minor IS NOT NULL ORDER BY p.estimated_cost_minor`)
+    const costs = await this.db.prepare(`SELECT cost FROM (
+      SELECT COALESCE(ppe.representative_minor, ppe.min_minor,
+        CASE WHEN p.project_kind <> 'commercial_showcase' THEN p.estimated_cost_minor END) AS cost
+      FROM projects p
+      LEFT JOIN project_price_estimates ppe ON ppe.project_id = p.id AND ppe.status = 'active'
+        AND (ppe.expires_at IS NULL OR datetime(ppe.expires_at) > datetime('now'))
+      ${where}
+    ) WHERE cost IS NOT NULL ORDER BY cost`)
       .bind(...values).all<{ cost: number }>();
     const sortedCosts = costs.results.map((row) => Number(row.cost)).filter(Number.isFinite);
     const middle = Math.floor(sortedCosts.length / 2);
@@ -219,6 +301,8 @@ export class ProjectsRepository {
       roboticsSoftwareProjects: Number(result?.roboticsSoftwareProjects ?? 0),
       commercialShowcaseProjects: Number(result?.commercialShowcaseProjects ?? 0),
       publishedProjects: Number(result?.publishedProjects ?? 0),
+      totalReproductions: Number(result?.totalReproductions ?? 0),
+      successfulReproductions: Number(result?.successfulReproductions ?? 0),
     };
   }
 
@@ -252,7 +336,7 @@ export class ProjectsRepository {
       altText: row.alt_text,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      contentUrl: fileContentUrl(row.id),
+      contentUrl: normalizeManagedFileUrl(fileContentUrl(row.id)) ?? fileContentUrl(row.id),
     }));
   }
 
@@ -446,13 +530,20 @@ export class ProjectsRepository {
       this.db.prepare(`INSERT INTO bom_versions (id, bom_id, version_label, notes, currency, created_by_user_id, created_at)
         VALUES (?1, ?2, ?3, 'Generated from the published RPPS package', 'USD', ?4, ?5)`).bind(bomVersionId, bomId, rpps.version, actorUserId, now),
     ];
-    rpps.bom.forEach((item, index) => {
+    for (const [index, item] of rpps.bom.entries()) {
+      const componentId = await resolveExactBomComponent(this.db, item.manufacturer, item.mpn);
+      const classification = item.fabricated ? "fabricated" : item.optional ? "optional" : "purchased";
+      const completeness = componentId ? "complete" : item.completeness ?? (item.fabricated ? "custom-fabricated" : item.mpn ? "probable" : "unresolved");
       statements.push(this.db.prepare(`INSERT INTO bom_items
-        (id, bom_version_id, slot_key, description, quantity, unit, target_unit_price_minor, notes, sort_order)
-        VALUES (?1, ?2, ?3, ?4, ?5, 'each', ?6, ?7, ?8)`)
-        .bind(crypto.randomUUID(), bomVersionId, item.ref ?? `item-${index + 1}`, item.name, item.qty,
-          item.unit_cost_usd == null ? null : Math.round(item.unit_cost_usd * 100), item.notes ?? null, index));
-    });
+        (id, bom_version_id, component_id, slot_key, description, quantity, unit, target_unit_price_minor, notes,
+         extraction_method, completeness, evidence_locator, confidence, line_classification, included, optional,
+         raw_fields_json, aggregated_locators_json, sort_order)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 1, ?15, ?16, ?17, ?18)`)
+        .bind(crypto.randomUUID(), bomVersionId, componentId, item.ref ?? `item-${index + 1}`, item.name, item.qty,
+          item.unit ?? "each", item.unit_cost_usd == null ? null : Math.round(item.unit_cost_usd * 100), item.notes ?? null,
+          item.extraction_method ?? "explicit-bom", completeness, item.evidence_locator ?? null, item.confidence ?? null,
+          classification, item.optional ? 1 : 0, JSON.stringify(item), JSON.stringify(item.evidence_locator ? [item.evidence_locator] : []), index));
+    }
     (rpps.assembly ?? []).forEach((step, index) => {
       statements.push(this.db.prepare(`INSERT INTO project_steps
         (id, project_version_id, step_key, title, body, sort_order, estimated_minutes)
@@ -495,9 +586,26 @@ export class ProjectsRepository {
   }
 }
 
+async function resolveExactBomComponent(db: D1Database, manufacturer: string | undefined, mpn: string | undefined): Promise<string | null> {
+  const normalizedMpn = mpn?.trim();
+  if (!normalizedMpn) return null;
+  const rows = manufacturer?.trim()
+    ? await db.prepare(`SELECT c.id FROM components c
+        JOIN manufacturers m ON m.id = c.manufacturer_id
+        WHERE c.deleted_at IS NULL AND c.is_demo = 0
+          AND lower(trim(c.manufacturer_part_number)) = lower(?1)
+          AND lower(trim(m.name)) = lower(?2)
+        ORDER BY c.id LIMIT 2`).bind(normalizedMpn, manufacturer.trim()).all<{ id: string }>()
+    : await db.prepare(`SELECT c.id FROM components c
+        WHERE c.deleted_at IS NULL AND c.is_demo = 0
+          AND lower(trim(c.manufacturer_part_number)) = lower(?1)
+        ORDER BY c.id LIMIT 2`).bind(normalizedMpn).all<{ id: string }>();
+  return rows.results.length === 1 ? rows.results[0].id : null;
+}
+
 function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
   if (!row.rpps_json) throw new Error(`Project ${row.id} has no current RPPS version.`);
-  const rpps = JSON.parse(row.rpps_json) as RppsPackage;
+  const rpps = canonicalizeRppsMediaUrls(JSON.parse(row.rpps_json) as RppsPackage);
   return {
     id: row.id,
     owner_id: row.owner_user_id,
@@ -525,6 +633,13 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     successful_reproduction_count: Number(row.successful_reproduction_count ?? 0),
     bom_id: row.bom_id ?? null,
     bom_line_count: Number(row.bom_line_count ?? 0),
+    bom_publication_state: row.bom_publication_state ?? null,
+    preview_cost_minor: row.preview_cost_minor ?? (row.project_kind === "commercial_showcase" ? null : row.estimated_cost_minor) ?? null,
+    preview_cost_currency: row.preview_cost_currency ?? row.estimated_cost_currency ?? null,
+    preview_cost_kind: row.preview_cost_kind ?? (row.project_kind === "commercial_showcase" || row.estimated_cost_minor == null ? null : "published"),
+    preview_cost_confidence: row.preview_cost_confidence ?? null,
+    preview_cost_method: row.preview_cost_method ?? null,
+    preview_cost_valued_at: row.preview_cost_valued_at ?? (row.project_kind === "commercial_showcase" || row.estimated_cost_minor == null ? null : row.updated_at),
     rpps_version: row.rpps_schema_version ?? rpps.rpps_version,
     rpps,
     is_demo: row.is_demo === 1,
@@ -542,5 +657,18 @@ function toProjectDto(row: ProjectDatabaseRow): ProjectDto {
     upstream_revision: row.upstream_revision,
     clone_created_at: row.clone_created_at,
     change_summary: row.change_summary,
+  };
+}
+
+function canonicalizeRppsMediaUrls(rpps: RppsPackage): RppsPackage {
+  const coverImageUrl = normalizeManagedFileUrl(rpps.cover_image_url);
+  return {
+    ...rpps,
+    cover_image_url: coverImageUrl ?? undefined,
+    files: rpps.files?.map((file) => {
+      if (!file.url) return file;
+      const url = normalizeManagedFileUrl(file.url);
+      return { ...file, url: url ?? undefined };
+    }),
   };
 }

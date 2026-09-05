@@ -10,6 +10,7 @@ import {
   updateThreadStatus, setAcceptedAnswer, contributorStatsFor,
 } from "@/lib/forum";
 import { toast } from "@/hooks/use-toast";
+import { AutoLinkBody } from "@/components/common/AutoLinkBody";
 import {
   Heart, MessageSquare, Eye, Lock, Pin, Reply, Trash2,
   CheckCircle2, Bookmark, BookmarkCheck, Link2, ClipboardCopy, Unlock, HelpCircle,
@@ -430,7 +431,7 @@ function PostBlock({
               )}
             </span>
           </div>
-          <div className="mt-1.5 whitespace-pre-wrap text-[13.5px] leading-relaxed">{body}</div>
+          <AutoLinkBody className="mt-1.5 whitespace-pre-wrap text-[13.5px] leading-relaxed" text={body} />
           <div className="mt-2 flex flex-wrap gap-1">
             {EMOJIS.map(e => {
               const count = reactions[e] ?? 0;

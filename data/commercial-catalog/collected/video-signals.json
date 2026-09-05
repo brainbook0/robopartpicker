@@ -1,0 +1,3769 @@
+{
+  "collectedAt": "2026-08-25T19:43:00.000Z",
+  "methodology": "first-10-unique-public-search-results; sum views/day for results <=365 days old",
+  "records": [
+    {
+      "candidateKey": "skydio-x10",
+      "signal": "videoViewVelocity",
+      "value": 25.88447488584475,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Skydio%2C+Inc.+Skydio+X10+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "1x-technologies-neo",
+      "signal": "videoViewVelocity",
+      "value": 57006.65101471334,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=1X+Technologies+NEO+%28Home+Robot%29+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "apptronik-apollo-2",
+      "signal": "videoViewVelocity",
+      "value": 1312.775114155251,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Apptronik%2C+Inc.+Apptronik+Apollo%E2%84%A2+2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "boston-dynamics-atlas",
+      "signal": "videoViewVelocity",
+      "value": 49419.32063492063,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Boston+Dynamics+Atlas+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-atom-html",
+      "signal": "videoViewVelocity",
+      "value": 141.10836505959793,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+atom.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-x-trainer-html",
+      "signal": "videoViewVelocity",
+      "value": 48.30705769370153,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+x-trainer.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "figure-ai-figure-03",
+      "signal": "videoViewVelocity",
+      "value": 21547.693624338626,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Figure+AI%2C+Inc.+Figure+03+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "fourier-gr2",
+      "signal": "videoViewVelocity",
+      "value": 151.97808219178083,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Fourier+Intelligence+Fourier+GR-2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-kangaroo",
+      "signal": "videoViewVelocity",
+      "value": 28.63727687837277,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+kangaroo+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-reem-c",
+      "signal": "videoViewVelocity",
+      "value": 2.013394216133942,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+reem-c+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-talos",
+      "signal": "videoViewVelocity",
+      "value": 0.7833333333333333,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+talos+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "sanctuary-ai-phoenix",
+      "signal": "videoViewVelocity",
+      "value": 283.12520547945206,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Sanctuary+AI+Sanctuary+AI+Phoenix+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "tesla-optimus",
+      "signal": "videoViewVelocity",
+      "value": 37527.72392779721,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Tesla%2C+Inc.+Tesla+Optimus+%28Gen+2%29+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "ubtech-walker-s",
+      "signal": "videoViewVelocity",
+      "value": 9016.411379285351,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=UBTECH+Robotics+Walker+S+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-g1",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+G1+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "unitree-robotics-h1",
+      "signal": "videoViewVelocity",
+      "value": 757466.4597412482,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+H1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-h2",
+      "signal": "videoViewVelocity",
+      "value": 767636.0236899325,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+H2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "abb-yumi",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=ABB+Ltd+ABB+YuMi+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr-30h-collaborative-robots-html",
+      "signal": "videoViewVelocity",
+      "value": 15.04255707762557,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr-30h-collaborative-robots.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr10as-html",
+      "signal": "videoViewVelocity",
+      "value": 3.480300065231572,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr10as.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr10s-html",
+      "signal": "videoViewVelocity",
+      "value": 0.3561643835616438,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr10s.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr20a-html",
+      "signal": "videoViewVelocity",
+      "value": 125.1159672392549,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr20a.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr3as-html",
+      "signal": "videoViewVelocity",
+      "value": 26.54194824961948,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr3as.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr3s-html",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr3s.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr5as-html",
+      "signal": "videoViewVelocity",
+      "value": 0.9397260273972603,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr5as.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-cr5s-html",
+      "signal": "videoViewVelocity",
+      "value": 0.9397260273972603,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+cr5s.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-m1-pro-html",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+m1-pro.html+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "dobot-magician-e6-html",
+      "signal": "videoViewVelocity",
+      "value": 7.233561643835617,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+magician-e6.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-magician-go-html",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+magician-go.html+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "dobot-magician-lite-html",
+      "signal": "videoViewVelocity",
+      "value": 5.5441400304414,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+magician-lite.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-magician-html",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+magician.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-mg400-html",
+      "signal": "videoViewVelocity",
+      "value": 77.1041095890411,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+mg400.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-nova2-html",
+      "signal": "videoViewVelocity",
+      "value": 55.94037834311807,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+nova2.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-nova5-html",
+      "signal": "videoViewVelocity",
+      "value": 18.876019243313763,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+nova5.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "dobot-vx500-html",
+      "signal": "videoViewVelocity",
+      "value": 90.10746901500326,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Dobot+vx500.html+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-a0509",
+      "signal": "videoViewVelocity",
+      "value": 4.592465753424658,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+a0509+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-a0509f",
+      "signal": "videoViewVelocity",
+      "value": 1.3863013698630138,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+a0509f+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-a0509s",
+      "signal": "videoViewVelocity",
+      "value": 1.1424657534246576,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+a0509s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-a0912",
+      "signal": "videoViewVelocity",
+      "value": 8.978995433789954,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+a0912+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-a0912f",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+a0912f+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-a0912s",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+a0912s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-m0609",
+      "signal": "videoViewVelocity",
+      "value": 1.9555555555555557,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+Doosan+M0609+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-e0509",
+      "signal": "videoViewVelocity",
+      "value": 1.1424657534246576,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+e0509+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-h2017",
+      "signal": "videoViewVelocity",
+      "value": 5.0554794520547945,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+h2017+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-h2515",
+      "signal": "videoViewVelocity",
+      "value": 6.9452054794520555,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+h2515+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-m0609",
+      "signal": "videoViewVelocity",
+      "value": 0.28888888888888886,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+m0609+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-m0617",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+m0617+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-m1013",
+      "signal": "videoViewVelocity",
+      "value": 1.7232876712328766,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+m1013+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-m1509",
+      "signal": "videoViewVelocity",
+      "value": 2.011111111111111,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+m1509+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "doosan-robotics-p3020",
+      "signal": "videoViewVelocity",
+      "value": 10.509360730593608,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Doosan+Robotics+p3020+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc12-b1401ste3ss",
+      "signal": "videoViewVelocity",
+      "value": 5.038356164383561,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC12-B1401STE3SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc12-c1401st83sl",
+      "signal": "videoViewVelocity",
+      "value": 21.239817351598173,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC12-C1401ST83SL+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc12xl-a1401st73ss",
+      "signal": "videoViewVelocity",
+      "value": 9.076803652968037,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC12XL-A1401ST73SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc4-a601st75",
+      "signal": "videoViewVelocity",
+      "value": 5.038356164383561,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC4-A601ST75+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc4-a901st73-w",
+      "signal": "videoViewVelocity",
+      "value": 10.386392694063927,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC4-A901ST73-W+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc4-b601ste3",
+      "signal": "videoViewVelocity",
+      "value": 17.139817351598175,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC4-B601STE3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc4-b901ste3",
+      "signal": "videoViewVelocity",
+      "value": 14.526803652968036,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC4-B901STE3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc8-a1401st75ss",
+      "signal": "videoViewVelocity",
+      "value": 7.400091324200913,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC8-A1401ST75SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc8-a701st75ss",
+      "signal": "videoViewVelocity",
+      "value": 9.926803652968037,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC8-A701ST75SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc8-a901st75ss",
+      "signal": "videoViewVelocity",
+      "value": 15.98365296803653,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC8-A901ST75SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc8-b1401ste3ss",
+      "signal": "videoViewVelocity",
+      "value": 5.013698630136986,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC8-B1401STE3SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc8-b901ste3ss",
+      "signal": "videoViewVelocity",
+      "value": 8.556255707762556,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC8-B901STE3SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rc8-c1401st83sl",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC8-C1401ST83SL+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-c901st83sl",
+      "signal": "videoViewVelocity",
+      "value": 6.787077625570776,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RC8-C901ST83SL+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rcx4-a601syt8s",
+      "signal": "videoViewVelocity",
+      "value": 6.928858447488585,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RCX4-A601SYT8S+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rcx7-a701syt8s",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RCX7-A701SYT8S+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rcx7-a901syt8s",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RCX7-A901SYT8S+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg1-171st13",
+      "signal": "videoViewVelocity",
+      "value": 5.937077625570776,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG1-171ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg1-221st13",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG1-221ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg10-651st13",
+      "signal": "videoViewVelocity",
+      "value": 10.208310502283105,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG10-651ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg10-851st13",
+      "signal": "videoViewVelocity",
+      "value": 10.208310502283105,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG10-851ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg20-851st13",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG20-851ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg20-a01st13",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG20-A01ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg3-251sst13",
+      "signal": "videoViewVelocity",
+      "value": 6.5069406392694065,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG3-251SST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg3-301sst13",
+      "signal": "videoViewVelocity",
+      "value": 6.928858447488584,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG3-301SST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg3-351sst13",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG3-351SST13+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "epson-robots-rg6-453st13",
+      "signal": "videoViewVelocity",
+      "value": 7.191623080116231,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG6-453ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg6-553st13",
+      "signal": "videoViewVelocity",
+      "value": 6.5069406392694065,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG6-553ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rg6-653st13",
+      "signal": "videoViewVelocity",
+      "value": 17.139817351598175,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RG6-653ST13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx1-c171st83s",
+      "signal": "videoViewVelocity",
+      "value": 10.811050228310503,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX1-C171ST83S+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx10-b651sste",
+      "signal": "videoViewVelocity",
+      "value": 9.926803652968035,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX10-B651SSTE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx10-b851sste",
+      "signal": "videoViewVelocity",
+      "value": 9.926803652968037,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX10-B851SSTE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx10-c651sst8",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX10-C651SST8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx20-b851sste",
+      "signal": "videoViewVelocity",
+      "value": 5.937077625570776,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX20-B851SSTE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx20-ba01sste",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX20-BA01SSTE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx20-c851sst8",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX20-C851SST8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-a251sstsd",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX4-A251SSTSD+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-a301sstsd",
+      "signal": "videoViewVelocity",
+      "value": 6.928858447488584,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX4-A301SSTSD+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-a351sstsd",
+      "signal": "videoViewVelocity",
+      "value": 6.224748858447489,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX4-A351SSTSD+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-b251sstse",
+      "signal": "videoViewVelocity",
+      "value": 9.076803652968037,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX4-B251SSTSE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-b301sstse",
+      "signal": "videoViewVelocity",
+      "value": 9.846666666666666,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX4-B301SSTSE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-b351sstse",
+      "signal": "videoViewVelocity",
+      "value": 10.838447488584475,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX4-B351SSTSE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-c251ssts8",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX4-C251SSTS8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-a452sstd",
+      "signal": "videoViewVelocity",
+      "value": 8.345296803652968,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX8-A452SSTD+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-a552sstd",
+      "signal": "videoViewVelocity",
+      "value": 6.928858447488585,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX8-A552SSTD+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-a652sstd",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX8-A652SSTD+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-b452sste",
+      "signal": "videoViewVelocity",
+      "value": 9.076803652968035,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX8-B452SSTE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-b552sste",
+      "signal": "videoViewVelocity",
+      "value": 6.88013698630137,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX8-B552SSTE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-b652sste",
+      "signal": "videoViewVelocity",
+      "value": 9.646666666666667,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX8-B652SSTE+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-c452sst8",
+      "signal": "videoViewVelocity",
+      "value": 18.131598173515982,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RGX8-C452SST8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rla3a401stl",
+      "signal": "videoViewVelocity",
+      "value": 19.89324200913242,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLA3A401STL+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rla6a502stl",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLA6A502STL+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls10b602st9b3",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS10B602ST9B3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls10b702st9b3",
+      "signal": "videoViewVelocity",
+      "value": 13.104070450097847,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS10B702ST9B3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls10b802st9b3",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS10B802ST9B3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls20-804st9p5",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS20-804ST9P5+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "epson-robots-rls20-a04st9p5",
+      "signal": "videoViewVelocity",
+      "value": 16.186327462491846,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS20-A04ST9P5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls20b804st9b3",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS20B804ST9B3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls20ba04st9b3",
+      "signal": "videoViewVelocity",
+      "value": 12.717769080234833,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS20BA04ST9B3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls20c804st8",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS20C804ST8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls3401st9p5",
+      "signal": "videoViewVelocity",
+      "value": 10.838447488584475,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS3401ST9P5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls3b401st9b3",
+      "signal": "videoViewVelocity",
+      "value": 4.808310502283105,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS3B401ST9B3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls4c401st8",
+      "signal": "videoViewVelocity",
+      "value": 9.846666666666668,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS4C401ST8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls50ca02st8",
+      "signal": "videoViewVelocity",
+      "value": 6.783652968036529,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS50CA02ST8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls6502st9p5",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS6502ST9P5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls6602st9p5",
+      "signal": "videoViewVelocity",
+      "value": 10.208310502283105,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS6602ST9P5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls6702st9p5-w",
+      "signal": "videoViewVelocity",
+      "value": 10.208310502283105,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS6702ST9P5-W+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls6b502st9b5",
+      "signal": "videoViewVelocity",
+      "value": 5.937077625570776,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS6B502ST9B5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls6b602st9b5",
+      "signal": "videoViewVelocity",
+      "value": 5.937077625570776,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS6B602ST9B5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls6b702st9b5",
+      "signal": "videoViewVelocity",
+      "value": 17.139817351598175,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS6B702ST9B5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rls8c502st8",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RLS8C502ST8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rn2-a45ss73ss",
+      "signal": "videoViewVelocity",
+      "value": 2.8904109589041096,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RN2-A45SS73SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rn6-a10ss73ss",
+      "signal": "videoViewVelocity",
+      "value": 6.928858447488584,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RN6-A10SS73SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rn6-a85sr73ss",
+      "signal": "videoViewVelocity",
+      "value": 6.928858447488585,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RN6-A85SR73SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rrs-351ssr13",
+      "signal": "videoViewVelocity",
+      "value": 6.928858447488584,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RRS-351SSR13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rrs-551ssr13",
+      "signal": "videoViewVelocity",
+      "value": 9.076803652968037,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RRS-551SSR13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rrs-c351ssr8",
+      "signal": "videoViewVelocity",
+      "value": 9.076803652968037,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RRS-C351SSR8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rrs-c552ssr8",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RRS-C552SSR8+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "epson-robots-rs5-as0t13",
+      "signal": "videoViewVelocity",
+      "value": 10.397351598173515,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RS5-AS0T13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rs5l-as0t13",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RS5L-AS0T13+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rt3-401ss",
+      "signal": "videoViewVelocity",
+      "value": 4.808310502283105,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RT3-401SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rt3b-401ss",
+      "signal": "videoViewVelocity",
+      "value": 9.846666666666668,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RT3B-401SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rt6-602ss",
+      "signal": "videoViewVelocity",
+      "value": 5.937077625570776,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RT6-602SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rt6b-602ss",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RT6B-602SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-rvt6l-a901ss",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+RVT6L-A901SS+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-w810",
+      "signal": "videoViewVelocity",
+      "value": 8.556255707762556,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+w810+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "epson-robots-w820",
+      "signal": "videoViewVelocity",
+      "value": 8.085022831050228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Epson+Robots+w820+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a-20",
+      "signal": "videoViewVelocity",
+      "value": 60.842282413172825,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+A+20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a12",
+      "signal": "videoViewVelocity",
+      "value": 11.81978691019787,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+A12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a12l",
+      "signal": "videoViewVelocity",
+      "value": 48.682252663622535,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+A12L+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a5",
+      "signal": "videoViewVelocity",
+      "value": 39.37719431760527,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+A5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai12",
+      "signal": "videoViewVelocity",
+      "value": 85.96966007102994,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Ai12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai18",
+      "signal": "videoViewVelocity",
+      "value": 91.7474378488077,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Ai18+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai3",
+      "signal": "videoViewVelocity",
+      "value": 95.62962962962963,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Ai3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai5",
+      "signal": "videoViewVelocity",
+      "value": 2416.6198412698413,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Ai5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai7",
+      "signal": "videoViewVelocity",
+      "value": 104.63280423280423,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Ai7+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-evo-industrial-embodied-intelligence-platform",
+      "signal": "videoViewVelocity",
+      "value": 247.8876984126984,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+EVO+Industrial+Embodied+Intelligence+Platform+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-k1",
+      "signal": "videoViewVelocity",
+      "value": 29.60327245053272,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+K1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-kargo",
+      "signal": "videoViewVelocity",
+      "value": 143.41692034500252,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Kargo+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-lumi",
+      "signal": "videoViewVelocity",
+      "value": 31.486453576864534,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Lumi+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-mini2",
+      "signal": "videoViewVelocity",
+      "value": 33.14680365296804,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Mini2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-minicobo",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+MiniCobo+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-pro12",
+      "signal": "videoViewVelocity",
+      "value": 16.300989345509894,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Pro12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-pro16",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Pro16+robot",
+      "sampledVideos": 0,
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-pro5",
+      "signal": "videoViewVelocity",
+      "value": 17.064182430963253,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Pro5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-s12",
+      "signal": "videoViewVelocity",
+      "value": 15.653120243531202,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+S12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-s5",
+      "signal": "videoViewVelocity",
+      "value": 17.3489417989418,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+S5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-s3",
+      "signal": "videoViewVelocity",
+      "value": 77.81879756468798,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+S%C2%B3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu12",
+      "signal": "videoViewVelocity",
+      "value": 12.075342465753424,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Zu12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu18",
+      "signal": "videoViewVelocity",
+      "value": 19.5531202435312,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Zu18+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu20",
+      "signal": "videoViewVelocity",
+      "value": 45.80213089802131,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Zu20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu3",
+      "signal": "videoViewVelocity",
+      "value": 54.05185185185185,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Zu3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu30",
+      "signal": "videoViewVelocity",
+      "value": 49.84771689497717,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Zu30+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu5",
+      "signal": "videoViewVelocity",
+      "value": 82.37239979705733,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Zu5+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu7",
+      "signal": "videoViewVelocity",
+      "value": 36.52777777777778,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=JAKA+Robotics+JAKA+Zu7+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba006l",
+      "signal": "videoViewVelocity",
+      "value": 706.8267123287671,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+ba006l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba006n",
+      "signal": "videoViewVelocity",
+      "value": 6.645433789954337,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+ba006n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba013l",
+      "signal": "videoViewVelocity",
+      "value": 18.668911719939118,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+ba013l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba013n",
+      "signal": "videoViewVelocity",
+      "value": 14.843911719939118,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+ba013n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bt200l",
+      "signal": "videoViewVelocity",
+      "value": 10.728196347031965,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bt200l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-btp210l",
+      "signal": "videoViewVelocity",
+      "value": 721.9562151192289,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+btp210l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bu015n",
+      "signal": "videoViewVelocity",
+      "value": 660.2959665144597,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bu015n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bu015x",
+      "signal": "videoViewVelocity",
+      "value": 662.3909817351598,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bu015x+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx100n",
+      "signal": "videoViewVelocity",
+      "value": 655.8977168949772,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bx100n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx100s",
+      "signal": "videoViewVelocity",
+      "value": 705.3501141552512,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bx100s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx130x",
+      "signal": "videoViewVelocity",
+      "value": 660.6422678843228,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bx130x+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx200l",
+      "signal": "videoViewVelocity",
+      "value": 652.8356164383563,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bx200l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx200x",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bx200x+robot",
+      "sampledVideos": 0,
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx300l",
+      "signal": "videoViewVelocity",
+      "value": 14.470712836123797,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bx300l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp110l",
+      "signal": "videoViewVelocity",
+      "value": 81.58348554033485,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bxp110l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp110s",
+      "signal": "videoViewVelocity",
+      "value": 654.3589041095892,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bxp110s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp135x",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bxp135x+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp210l",
+      "signal": "videoViewVelocity",
+      "value": 51.6976534753932,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+bxp210l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl103n",
+      "signal": "videoViewVelocity",
+      "value": 658.984893455099,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cl103n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl105n",
+      "signal": "videoViewVelocity",
+      "value": 4.745205479452055,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cl105n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl108n",
+      "signal": "videoViewVelocity",
+      "value": 652.9863013698631,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cl108n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl110n",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cl110n+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp180l",
+      "signal": "videoViewVelocity",
+      "value": 656.1964715649648,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cp180l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp300l",
+      "signal": "videoViewVelocity",
+      "value": 652.3969939117201,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cp300l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp500l",
+      "signal": "videoViewVelocity",
+      "value": 6.561963470319634,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cp500l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp700l",
+      "signal": "videoViewVelocity",
+      "value": 9.063356164383562,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+cp700l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kf121",
+      "signal": "videoViewVelocity",
+      "value": 49.97397260273973,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+kf121+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj125",
+      "signal": "videoViewVelocity",
+      "value": 651.323287671233,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+kj125+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj155",
+      "signal": "videoViewVelocity",
+      "value": 653.6113013698631,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+kj155+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj194",
+      "signal": "videoViewVelocity",
+      "value": 7.909931506849315,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+kj194+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj244",
+      "signal": "videoViewVelocity",
+      "value": 653.6113013698631,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+kj244+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj264",
+      "signal": "videoViewVelocity",
+      "value": 6.207990867579909,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+kj264+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj314",
+      "signal": "videoViewVelocity",
+      "value": 4.3342465753424655,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+kj314+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mc004n",
+      "signal": "videoViewVelocity",
+      "value": 11.020167427701674,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mc004n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mc004v",
+      "signal": "videoViewVelocity",
+      "value": 651.427397260274,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mc004v+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mg15hl",
+      "signal": "videoViewVelocity",
+      "value": 653.6551369863015,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mg15hl+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mt400n",
+      "signal": "videoViewVelocity",
+      "value": 654.4137493658043,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mt400n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx350l",
+      "signal": "videoViewVelocity",
+      "value": 651.323287671233,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mx350l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx420l",
+      "signal": "videoViewVelocity",
+      "value": 655.274023338407,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mx420l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx500n",
+      "signal": "videoViewVelocity",
+      "value": 656.7565575849824,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mx500n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx700n",
+      "signal": "videoViewVelocity",
+      "value": 657.0580593607307,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mx700n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mxp360l",
+      "signal": "videoViewVelocity",
+      "value": 1488.1479959411465,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mxp360l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mxp410x",
+      "signal": "videoViewVelocity",
+      "value": 721.8662607813294,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mxp410x+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mxp710l",
+      "signal": "videoViewVelocity",
+      "value": 656.1221760988886,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+mxp710l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-nts10",
+      "signal": "videoViewVelocity",
+      "value": 720.2821917808221,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+nts10+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-nts20",
+      "signal": "videoViewVelocity",
+      "value": 6821.208219178082,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+nts20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ra005l",
+      "signal": "videoViewVelocity",
+      "value": 52.15650684931507,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+ra005l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ra020n",
+      "signal": "videoViewVelocity",
+      "value": 5.949467275494673,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+ra020n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rd080n",
+      "signal": "videoViewVelocity",
+      "value": 655.4210045662101,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rd080n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs003n",
+      "signal": "videoViewVelocity",
+      "value": 700.7716894977169,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs003n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs007l",
+      "signal": "videoViewVelocity",
+      "value": 659.0033789954339,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs007l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs007n",
+      "signal": "videoViewVelocity",
+      "value": 655.3947031963471,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs007n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs013n",
+      "signal": "videoViewVelocity",
+      "value": 9.605555555555556,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs013n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs015x",
+      "signal": "videoViewVelocity",
+      "value": 7.277054794520548,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs015x+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs015x-2",
+      "signal": "videoViewVelocity",
+      "value": 8.441438356164383,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs015x-2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs020n",
+      "signal": "videoViewVelocity",
+      "value": 6.857534246575343,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs020n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs025n",
+      "signal": "videoViewVelocity",
+      "value": 650.3181278538814,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs025n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs030n",
+      "signal": "videoViewVelocity",
+      "value": 657.1489345509895,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs030n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs050n",
+      "signal": "videoViewVelocity",
+      "value": 7.208219178082192,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs050n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs080n",
+      "signal": "videoViewVelocity",
+      "value": 648.4493150684932,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+rs080n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-tts10",
+      "signal": "videoViewVelocity",
+      "value": 657.4359589041097,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+tts10+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-tts20",
+      "signal": "videoViewVelocity",
+      "value": 5.238356164383561,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+tts20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-yf002n",
+      "signal": "videoViewVelocity",
+      "value": 657.1948630136988,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+yf002n+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-yf003n",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+yf003n+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zt130u",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+zt130u+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zt165u",
+      "signal": "videoViewVelocity",
+      "value": 12699.077625570777,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+zt165u+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zt200s",
+      "signal": "videoViewVelocity",
+      "value": 654.1184703196349,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+zt200s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx130l",
+      "signal": "videoViewVelocity",
+      "value": 16.223224251648908,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+zx130l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx165u",
+      "signal": "videoViewVelocity",
+      "value": 1604.3318493150687,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+zx165u+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx200s",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+zx200s+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx300s",
+      "signal": "videoViewVelocity",
+      "value": 13.489373414510402,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Kawasaki+Robotics+zx300s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-1000-titan",
+      "signal": "videoViewVelocity",
+      "value": 1.2708333333333333,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-1000-titan+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-300-pa",
+      "signal": "videoViewVelocity",
+      "value": 1.4284848484848485,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-300-pa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-360-fortec",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-360-fortec+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-4-agilus",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-4-agilus+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-40-pa",
+      "signal": "videoViewVelocity",
+      "value": 0.8133333333333334,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-40-pa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-470-2-pa",
+      "signal": "videoViewVelocity",
+      "value": 0.8133333333333334,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-470-2-pa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-500-fortec",
+      "signal": "videoViewVelocity",
+      "value": 0.29315068493150687,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-500-fortec+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-700-pa",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-700-pa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-agilus",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-agilus+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-agilus-ultra",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-agilus-ultra+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech",
+      "signal": "videoViewVelocity",
+      "value": 5.094444444444444,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-cybertech+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech-arc",
+      "signal": "videoViewVelocity",
+      "value": 0.18356164383561643,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-cybertech-arc+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech-nano",
+      "signal": "videoViewVelocity",
+      "value": 0.18356164383561643,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-cybertech-nano+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech-nano-arc",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-cybertech-nano-arc+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-delta-roboter",
+      "signal": "videoViewVelocity",
+      "value": 1.15,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-delta-roboter+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-fortec",
+      "signal": "videoViewVelocity",
+      "value": 0.3780821917808219,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-fortec+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-fortec-pa",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-fortec-pa+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "kuka-kr-fortec-ultra-heavy-duty-robot",
+      "signal": "videoViewVelocity",
+      "value": 10.824657534246576,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-fortec-ultra-heavy-duty-robot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-fortec-ultra-pa",
+      "signal": "videoViewVelocity",
+      "value": 10.824657534246576,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-fortec-ultra-pa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-iontec",
+      "signal": "videoViewVelocity",
+      "value": 6.95269406392694,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-iontec+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-iontec-ultra-robot-lightweight-spot-welding",
+      "signal": "videoViewVelocity",
+      "value": 12.366027397260273,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-iontec-ultra-robot%2C-lightweight-spot-welding+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-quantec",
+      "signal": "videoViewVelocity",
+      "value": 9.087671232876712,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-quantec+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-quantec-nano",
+      "signal": "videoViewVelocity",
+      "value": 9.087671232876712,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-quantec-nano+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-quantec-pa",
+      "signal": "videoViewVelocity",
+      "value": 9.087671232876712,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-quantec-pa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-quantec-pa-arctic",
+      "signal": "videoViewVelocity",
+      "value": 10.132115677321156,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-quantec-pa-arctic+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-scara-robot",
+      "signal": "videoViewVelocity",
+      "value": 15.456088280060882,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-scara-robot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-kr-titan-ultra",
+      "signal": "videoViewVelocity",
+      "value": 16.674993658041604,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+kr-titan-ultra+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-lbr-iiwa",
+      "signal": "videoViewVelocity",
+      "value": 0.1619047619047619,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+LBR+iiwa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-lbr-iisy-cobot",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+lbr-iisy-cobot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-palletizing-robots",
+      "signal": "videoViewVelocity",
+      "value": 2.70962962962963,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+palletizing-robots+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "kuka-request-a-demo-for-lbr-iiwa",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=KUKA+request-a-demo-for-lbr-iiwa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-cmz05",
+      "signal": "videoViewVelocity",
+      "value": 29.417663260129014,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+cmz05+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-cmz12",
+      "signal": "videoViewVelocity",
+      "value": 32.41146082481699,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+cmz12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-ec06",
+      "signal": "videoViewVelocity",
+      "value": 29.815303215303217,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+ec06+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-ec10",
+      "signal": "videoViewVelocity",
+      "value": 25.336996336996336,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+ec10+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-ez03-2",
+      "signal": "videoViewVelocity",
+      "value": 23.058708414872797,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+ez03-2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-lp130f",
+      "signal": "videoViewVelocity",
+      "value": 26.36089004856128,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+lp130f+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-lp180",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+lp180+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-lp210",
+      "signal": "videoViewVelocity",
+      "value": 26.58983982025078,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+lp210+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc1000dl",
+      "signal": "videoViewVelocity",
+      "value": 20.851692396897874,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc1000dl+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc20",
+      "signal": "videoViewVelocity",
+      "value": 13.761904761904763,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc280l",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc280l+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc350",
+      "signal": "videoViewVelocity",
+      "value": 26.52983982025078,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc350+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc400l",
+      "signal": "videoViewVelocity",
+      "value": 28.918359063564544,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc400l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc470p",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc470p+robot",
+      "sampledVideos": 0,
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc500p",
+      "signal": "videoViewVelocity",
+      "value": 25.44216858737407,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc500p+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc600",
+      "signal": "videoViewVelocity",
+      "value": 25.44216858737407,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mc600+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr20",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mr20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr20l",
+      "signal": "videoViewVelocity",
+      "value": 26.52983982025078,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mr20l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr35",
+      "signal": "videoViewVelocity",
+      "value": 30.00603029644126,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mr35+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr50",
+      "signal": "videoViewVelocity",
+      "value": 26.529839820250782,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mr50+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz01",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz01+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz03el",
+      "signal": "videoViewVelocity",
+      "value": 22.739363629774587,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz03el+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz04",
+      "signal": "videoViewVelocity",
+      "value": 15.88783068783069,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz04+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07",
+      "signal": "videoViewVelocity",
+      "value": 17.27305277168291,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz07+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07f-2",
+      "signal": "videoViewVelocity",
+      "value": 26.82739067122629,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz07f-2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07l",
+      "signal": "videoViewVelocity",
+      "value": 16.99086099086099,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz07l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07lf-2",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz07lf-2+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz10lf",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz10lf+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz12",
+      "signal": "videoViewVelocity",
+      "value": 11.431237851443331,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz12w",
+      "signal": "videoViewVelocity",
+      "value": 25.66115608136156,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz12w+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz25",
+      "signal": "videoViewVelocity",
+      "value": 32.99156667786805,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz25+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz35f",
+      "signal": "videoViewVelocity",
+      "value": 25.44216858737407,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz35f+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz35s",
+      "signal": "videoViewVelocity",
+      "value": 30.253127491483657,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz35s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz50f",
+      "signal": "videoViewVelocity",
+      "value": 27.550322533884177,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz50f+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz50lf",
+      "signal": "videoViewVelocity",
+      "value": 25.44216858737407,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz50lf+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz70f",
+      "signal": "videoViewVelocity",
+      "value": 31.17041385808509,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mz70f+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mzs05",
+      "signal": "videoViewVelocity",
+      "value": 30.684329926795684,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+mzs05+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sc700dl",
+      "signal": "videoViewVelocity",
+      "value": 27.43068783068783,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sc700dl+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100",
+      "signal": "videoViewVelocity",
+      "value": 28.781894614771325,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra100+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100-b",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra100-b+robot",
+      "sampledVideos": 0,
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100h",
+      "signal": "videoViewVelocity",
+      "value": 14.008480104370516,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra100h+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100hb",
+      "signal": "videoViewVelocity",
+      "value": 3.9047619047619047,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra100hb+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100j",
+      "signal": "videoViewVelocity",
+      "value": 26.58983982025078,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra100j+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra120el",
+      "signal": "videoViewVelocity",
+      "value": 15.88783068783069,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra120el+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra133h",
+      "signal": "videoViewVelocity",
+      "value": 26.52983982025078,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra133h+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra133hl",
+      "signal": "videoViewVelocity",
+      "value": 9.857142857142858,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra133hl+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra133l",
+      "signal": "videoViewVelocity",
+      "value": 23.316242661448143,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra133l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra166+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166h",
+      "signal": "videoViewVelocity",
+      "value": 9.857142857142858,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra166h+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166l",
+      "signal": "videoViewVelocity",
+      "value": 9.857142857142858,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra166l+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166t",
+      "signal": "videoViewVelocity",
+      "value": 11.983068783068784,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra166t+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166tl",
+      "signal": "videoViewVelocity",
+      "value": 19.364021164021167,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra166tl+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra210",
+      "signal": "videoViewVelocity",
+      "value": 13.761904761904763,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra210+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra210h",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra210h+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra210t",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra210t+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra240",
+      "signal": "videoViewVelocity",
+      "value": 19.364021164021167,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra240+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra250",
+      "signal": "videoViewVelocity",
+      "value": 28.918359063564544,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Nachi-Fujikoshi+sra250+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "neura-robotics-4ne1",
+      "signal": "videoViewVelocity",
+      "value": 18401.49678843227,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=NEURA+Robotics+4ne1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "neura-robotics-lara",
+      "signal": "videoViewVelocity",
+      "value": 177.29589041095892,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=NEURA+Robotics+lara+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "neura-robotics-maira",
+      "signal": "videoViewVelocity",
+      "value": 0.24666666666666667,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=NEURA+Robotics+maira+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "neura-robotics-mav",
+      "signal": "videoViewVelocity",
+      "value": 177.29589041095892,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=NEURA+Robotics+mav+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "neura-robotics-mipa",
+      "signal": "videoViewVelocity",
+      "value": 2634.612211350294,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=NEURA+Robotics+mipa+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur12e",
+      "signal": "videoViewVelocity",
+      "value": 32.16438356164384,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur12e+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur15",
+      "signal": "videoViewVelocity",
+      "value": 35.556164383561644,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur15+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur16e",
+      "signal": "videoViewVelocity",
+      "value": 32.15890410958904,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur16e+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur18",
+      "signal": "videoViewVelocity",
+      "value": 32.97347447073475,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur18+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur20",
+      "signal": "videoViewVelocity",
+      "value": 9.882648401826483,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur30",
+      "signal": "videoViewVelocity",
+      "value": 37.543226788432264,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur30+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur3e",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur3e+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "universal-robots-ur7e",
+      "signal": "videoViewVelocity",
+      "value": 32.836681887366815,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur7e+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-ur8-long",
+      "signal": "videoViewVelocity",
+      "value": 58.30587380655873,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+ur8-long+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "universal-robots-e-series",
+      "signal": "videoViewVelocity",
+      "value": 0.016666666666666666,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Universal+Robots+A%2FS+%28a+Teradyne+company%29+Universal+Robots+e-Series+%28UR3e%2C+UR7e%2C+UR12e%2C+UR16e%29+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp12",
+      "signal": "videoViewVelocity",
+      "value": 6.5875,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+gp12+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp25",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+gp25+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp7",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+gp7+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp8",
+      "signal": "videoViewVelocity",
+      "value": 0.225,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+gp8+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-motomini",
+      "signal": "videoViewVelocity",
+      "value": 2.8666666666666667,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+motomini+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-mpp3h",
+      "signal": "videoViewVelocity",
+      "value": 0.32054794520547947,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+mpp3h+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-mpp3s",
+      "signal": "videoViewVelocity",
+      "value": 9.952380952380953,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+mpp3s+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-d1-t",
+      "signal": "videoViewVelocity",
+      "value": 268891.7757229833,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+D1-T+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-sg400",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+sg400+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "yaskawa-motoman-sg650",
+      "signal": "videoViewVelocity",
+      "value": 0.3917808219178082,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Yaskawa+Motoman+sg650+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-bunker-mini",
+      "signal": "videoViewVelocity",
+      "value": 11.427711557848543,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+bunker-mini+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-bunker-pro",
+      "signal": "videoViewVelocity",
+      "value": 7.7160469667318985,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+bunker-pro+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-cobot-magic",
+      "signal": "videoViewVelocity",
+      "value": 214.39159165035875,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+cobot-magic+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-hunter-2-0",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+hunter-2-0+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-hunter-se",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+hunter-se+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-limo-corot",
+      "signal": "videoViewVelocity",
+      "value": 0.32054794520547947,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+limo-corot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-limo-pro",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+limo-pro+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-limo-ros2",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+limo-ros2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-mobile-manipulator",
+      "signal": "videoViewVelocity",
+      "value": 177.61689497716895,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+mobile-manipulator+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-ranger",
+      "signal": "videoViewVelocity",
+      "value": 28.568690327936903,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+ranger+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-ranger-mini",
+      "signal": "videoViewVelocity",
+      "value": 158.8489726027397,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+ranger-mini+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-ranger-mini-3",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+ranger-mini-3+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "agilex-robotics-scout-2-0",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+scout-2-0+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-scout-mini",
+      "signal": "videoViewVelocity",
+      "value": 0.3611111111111111,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+scout-mini+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-t-rex-2-0",
+      "signal": "videoViewVelocity",
+      "value": 251.42930676629305,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+t-rex-2-0+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-tracer",
+      "signal": "videoViewVelocity",
+      "value": 15.413698630136988,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+tracer+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-tracer-2-0",
+      "signal": "videoViewVelocity",
+      "value": 156.7936903279369,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+tracer-2-0+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agilex-robotics-umr",
+      "signal": "videoViewVelocity",
+      "value": 158.51095890410957,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgileX+Robotics+umr+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agxeed-agbot-t2-5-series",
+      "signal": "videoViewVelocity",
+      "value": 279.8134910751349,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgXeed+agbot-t2-5-series+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agxeed-agbot-t2-7-series",
+      "signal": "videoViewVelocity",
+      "value": 445.7571328088452,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgXeed+agbot-t2-7-series+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agxeed-agbot-w3-series",
+      "signal": "videoViewVelocity",
+      "value": 7.823972602739726,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgXeed+agbot-w3-series+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "agxeed-agbot-w4-series",
+      "signal": "videoViewVelocity",
+      "value": 91.72054794520548,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=AgXeed+agbot-w4-series+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "boston-dynamics-stretch",
+      "signal": "videoViewVelocity",
+      "value": 4516.401369863013,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Boston+Dynamics+Stretch+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "clearpath-husky",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Clearpath+Robotics+Clearpath+Husky+A300+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "farmdroid-farmdroid-fd20",
+      "signal": "videoViewVelocity",
+      "value": 499.5152397260274,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=FarmDroid+FarmDroid+FD20+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-ari",
+      "signal": "videoViewVelocity",
+      "value": 0.4986301369863014,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+ari+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-stockbot",
+      "signal": "videoViewVelocity",
+      "value": 3.158333333333333,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+stockbot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-tiago",
+      "signal": "videoViewVelocity",
+      "value": 23.73778538812785,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+tiago+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-tiago-base",
+      "signal": "videoViewVelocity",
+      "value": 16.185094585779517,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+tiago-base+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-tiago-omni-base",
+      "signal": "videoViewVelocity",
+      "value": 24.61723744292237,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+tiago-omni-base+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pal-robotics-tiago-pro",
+      "signal": "videoViewVelocity",
+      "value": 28.14942922374429,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=PAL+Robotics+tiago-pro+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-bellabot",
+      "signal": "videoViewVelocity",
+      "value": 329.7095890410959,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+bellabot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-bellabotpro",
+      "signal": "videoViewVelocity",
+      "value": 496.71194824961947,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+bellabotpro+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-d9",
+      "signal": "videoViewVelocity",
+      "value": 826.5211567732115,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+d9+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-flashbot",
+      "signal": "videoViewVelocity",
+      "value": 189.40184032101837,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+flashbot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-flashbot-arm",
+      "signal": "videoViewVelocity",
+      "value": 187.025404732254,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+flashbot-arm+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-flashbot-new",
+      "signal": "videoViewVelocity",
+      "value": 185.3826622388266,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+flashbot-new+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-holabot",
+      "signal": "videoViewVelocity",
+      "value": 156.90410958904107,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+holabot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-kettybot",
+      "signal": "videoViewVelocity",
+      "value": 167.17808219178082,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+kettybot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-mt1",
+      "signal": "videoViewVelocity",
+      "value": 12525.424505327244,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+mt1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-pudua1",
+      "signal": "videoViewVelocity",
+      "value": 27680.488323548598,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+puduA1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-pudubot",
+      "signal": "videoViewVelocity",
+      "value": 13489.376396206533,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+pudubot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-puducc1",
+      "signal": "videoViewVelocity",
+      "value": 15566.845624048708,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+puduCC1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-pudud1",
+      "signal": "videoViewVelocity",
+      "value": 30350.51794871795,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+puduD1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-pudush1",
+      "signal": "videoViewVelocity",
+      "value": 11496.377266797132,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+puduSH1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-pudut300",
+      "signal": "videoViewVelocity",
+      "value": 4060.306849315068,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+pudut300+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-sh",
+      "signal": "videoViewVelocity",
+      "value": 29578.138724973658,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+sh+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "pudu-robotics-swiftbot",
+      "signal": "videoViewVelocity",
+      "value": 164.96712328767123,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Pudu+Robotics+swiftbot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "anybotics-anymal",
+      "signal": "videoViewVelocity",
+      "value": 9.758904109589041,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=ANYbotics+ANYmal+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "anybotics-anymal-x",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=ANYbotics+ANYmal+X+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "boston-dynamics-spot",
+      "signal": "videoViewVelocity",
+      "value": 6309.625,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Boston+Dynamics+Spot+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "ghost-robotics-vision-60",
+      "signal": "videoViewVelocity",
+      "value": 5.024657534246575,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Ghost+Robotics+Vision+60+%28Q-UGV%29+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-a1",
+      "signal": "videoViewVelocity",
+      "value": 952463.8559088932,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+A1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-aliengo",
+      "signal": "videoViewVelocity",
+      "value": 400838.98202942667,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+ALIENGO+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-b1",
+      "signal": "videoViewVelocity",
+      "value": 551489.4152283105,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+B1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-b2",
+      "signal": "videoViewVelocity",
+      "value": 769190.1631428441,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+B2+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-b2-w",
+      "signal": "videoViewVelocity",
+      "value": 403635.895890411,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+B2-W+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-go1",
+      "signal": "videoViewVelocity",
+      "value": 285577.89915778796,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+GO1+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "unitree-robotics-go2",
+      "signal": "videoViewVelocity",
+      "value": null,
+      "status": "missing",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Unitree+Robotics+GO2+robot",
+      "sampledVideos": 0,
+      "error": "No parseable video results"
+    },
+    {
+      "candidateKey": "blueye-robotics-x3",
+      "signal": "videoViewVelocity",
+      "value": 0.2821917808219178,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Blueye+Robotics+x3+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "blueye-robotics-x3-ultra",
+      "signal": "videoViewVelocity",
+      "value": 2416.6266362252663,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Blueye+Robotics+x3-ultra+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "blueye-robotics-x7",
+      "signal": "videoViewVelocity",
+      "value": 2421.677473363775,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=Blueye+Robotics+x7+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-ally",
+      "signal": "videoViewVelocity",
+      "value": 2.6,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=VideoRay+mission-specialist-ally+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-defender",
+      "signal": "videoViewVelocity",
+      "value": 1.441095890410959,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=VideoRay+mission-specialist-defender+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-defender-alt",
+      "signal": "videoViewVelocity",
+      "value": 1.158904109589041,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=VideoRay+mission-specialist-defender-alt+robot",
+      "sampledVideos": 10
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-pro-5",
+      "signal": "videoViewVelocity",
+      "value": 0,
+      "status": "ok",
+      "collectedAt": "2026-08-25T19:43:00.000Z",
+      "sourceUrl": "https://www.youtube.com/results?search_query=VideoRay+mission-specialist-pro-5+robot",
+      "sampledVideos": 10
+    }
+  ]
+}

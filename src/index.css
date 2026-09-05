@@ -127,6 +127,10 @@
 
 @layer utilities {
   .tnum { font-feature-settings: "tnum", "zero"; font-variant-numeric: tabular-nums; }
+  .text-link { color: #996b00; }
+  .dark .text-link { color: #ffd84d; }
+  a.text-primary { color: #996b00; }
+  .dark a.text-primary { color: #ffd84d; }
   .text-positive { color: hsl(var(--positive)); }
   .text-negative { color: hsl(var(--negative)); }
   .text-warning { color: hsl(var(--warning)); }
@@ -187,9 +191,9 @@
 
   /* Density helpers */
   .stat-tile {
-    @apply flex items-baseline gap-1.5 border-r border-border/60 px-3 py-1 last:border-r-0;
+    @apply flex shrink-0 items-baseline gap-1.5 border-r border-border/60 px-3 py-1 last:border-r-0;
   }
-  .stat-tile .k { @apply text-[10px] uppercase tracking-wider text-muted-foreground; }
+  .stat-tile .k { @apply whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground; }
   .stat-tile .v { @apply text-[12px] font-semibold tnum; }
   .kbd-key {
     @apply inline-flex h-4 min-w-4 items-center justify-center rounded border border-border bg-muted px-1 text-[10px] mono text-muted-foreground;
@@ -207,4 +211,9 @@
   .ticker-mask {
     mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
   }
+}
+
+:where(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid hsl(var(--foreground)) !important;
+  outline-offset: 2px;
 }

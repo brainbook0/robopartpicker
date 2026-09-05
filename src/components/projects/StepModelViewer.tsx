@@ -1,28 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Grid, OrbitControls } from "@react-three/drei";
 import { Box3, Group, Vector3 } from "three";
-import { Box, ExternalLink, Rotate3D } from "lucide-react";
+import { Box, ChevronLeft, ChevronRight, ExternalLink, Rotate3D } from "lucide-react";
 import occtWasmUrl from "occt-import-js/dist/occt-import-js.wasm?url";
 import { buildOcctMeshGroup, disposeThreeObject } from "@/lib/occtMesh";
 
 type CadFile = { contentUrl: string; name: string };
-type Props = { files: CadFile[]; sourceUrl?: string; title?: string };
+type Props = { files: CadFile[]; sourceUrl?: string; title?: string; completeAssembly?: boolean };
 
 let importerPromise: ReturnType<typeof loadImporter> | null = null;
 
-export default function StepModelViewer({ files, sourceUrl, title = "Interactive STEP/IGES model" }: Props) {
-  const { group, error, warning, progress } = useCadAssembly(files);
+export default function StepModelViewer({ files, sourceUrl, title = "Interactive STEP/IGES model", completeAssembly = false }: Props) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const fileKey = useMemo(() => files.map((file) => `${file.name}:${file.contentUrl}`).join("\n"), [files]);
+  const selectedFile = files[Math.min(selectedIndex, Math.max(files.length - 1, 0))];
+  const visibleFiles = completeAssembly ? files : selectedFile ? [selectedFile] : [];
+  const { group, error, warning, progress } = useCadAssembly(visibleFiles);
+  useEffect(() => { setSelectedIndex(0); }, [fileKey]);
   return (
     <section className="surface-card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-3 py-2">
         <div>
-          <div className="flex items-center gap-1.5 text-[12px] font-semibold"><Box className="h-3.5 w-3.5 text-primary" /> {title}</div>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">Rendered locally from the native OpenCascade geometry; drag to orbit, scroll to zoom.</p>
+          <div className="flex flex-wrap items-center gap-1.5 text-[12px] font-semibold"><Box className="h-3.5 w-3.5 text-primary" /> {title}<span className={`pill ${completeAssembly ? "pill-good" : "pill-yellow"}`}>{completeAssembly ? "complete assembly" : "source parts"}</span></div>
+          <p className="mt-0.5 max-w-2xl text-[10px] leading-4 text-muted-foreground">{completeAssembly ? "Rendered locally from a source-named complete native CAD assembly." : `${files.length} loose native CAD source part${files.length === 1 ? " is" : "s are"} available without verified assembly transforms. Each file is rendered individually.`} Drag to orbit and scroll to zoom.</p>
         </div>
-        {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Official model source <ExternalLink className="h-3 w-3" /></a>}
+        <div className="flex max-w-full flex-wrap gap-2">{!completeAssembly && files.length > 1 && <div className="inline-flex max-w-full items-center rounded border border-border p-0.5" aria-label="Native CAD source part"><button type="button" aria-label="Previous CAD source part" disabled={selectedIndex <= 0} onClick={() => setSelectedIndex((index) => Math.max(0, index - 1))} className="rounded-sm p-1.5 hover:bg-muted disabled:opacity-30"><ChevronLeft className="h-3.5 w-3.5" /></button><select aria-label="Rendered CAD source part" className="max-w-[260px] bg-transparent px-1 text-[10.5px]" value={selectedIndex} onChange={(event) => setSelectedIndex(Number(event.target.value))}>{files.map((file, index) => <option key={file.contentUrl} value={index}>{index + 1}. {file.name}</option>)}</select><button type="button" aria-label="Next CAD source part" disabled={selectedIndex >= files.length - 1} onClick={() => setSelectedIndex((index) => Math.min(files.length - 1, index + 1))} className="rounded-sm p-1.5 hover:bg-muted disabled:opacity-30"><ChevronRight className="h-3.5 w-3.5" /></button></div>}{sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Official model source <ExternalLink className="h-3 w-3" /></a>}</div>
       </div>
-      <div className="relative h-[420px] bg-gradient-to-b from-muted/15 to-muted/50" data-testid="step-model-viewer">
+      <div className="relative h-[420px] bg-gradient-to-b from-muted/15 to-muted/50" data-testid="step-model-viewer" data-layout={completeAssembly ? "assembly" : "source-part"} data-source-part={completeAssembly ? undefined : selectedIndex + 1}>
         {!group && !error && <div className="absolute inset-0 z-10 grid place-items-center text-center text-[11px] text-muted-foreground"><div><Rotate3D className="mx-auto mb-2 h-6 w-6 animate-pulse text-primary" />Converting native CAD geometry…<div className="mt-1 font-mono">{progress.loaded}/{progress.total} files</div></div></div>}
         {error && !group ? (
           <div className="absolute inset-0 grid place-items-center p-6 text-center text-[11px] text-muted-foreground"><div><Box className="mx-auto mb-2 h-6 w-6 opacity-60" /><p>3D preview unavailable.</p><p className="mt-1 max-w-md">{error}</p><div className="mt-3 flex flex-wrap justify-center gap-2">{files.map((file) => <a key={file.contentUrl} href={file.contentUrl} className="btn-ghost btn-sm">Open {file.name}</a>)}</div></div></div>

@@ -4,7 +4,7 @@ import { Bounds, Grid, OrbitControls } from "@react-three/drei";
 import { LoadingManager, type Object3D } from "three";
 import URDFLoader from "urdf-loader";
 import { Box, ExternalLink, Rotate3D } from "lucide-react";
-import { rewriteManagedUrdfMeshUrls } from "@/lib/urdfMeshResolution";
+import { resolveCompleteManagedUrdf } from "@/lib/urdfMeshResolution";
 
 type Props = {
   urdfUrl: string;
@@ -33,12 +33,15 @@ export default function UrdfModelViewer({ urdfUrl, urdfPath, files = [], sourceU
         setResolvedUrdf(rewritten);
       })
       .catch((reason) => {
-        if (active) setError(reason instanceof Error ? reason.message : "The URDF could not be resolved.");
+        if (!active) return;
+        const message = reason instanceof Error ? reason.message : "The URDF could not be resolved.";
+        setError(message);
+        onUnavailable?.(message);
       });
     return () => {
       active = false;
     };
-  }, [urdfUrl, urdfPath, files]);
+  }, [urdfUrl, urdfPath, files, onUnavailable]);
 
   useEffect(() => {
     if (!resolvedUrdf) return;
@@ -122,7 +125,7 @@ async function resolveUrdfMeshes(urdfUrl: string, urdfPath: string | null, files
   if (!response.ok) throw new Error(`URDF fetch failed with ${response.status}`);
   const text = await response.text();
 
-  return rewriteManagedUrdfMeshUrls(text, urdfPath, files ?? [], window.location.origin);
+  return resolveCompleteManagedUrdf(text, urdfPath, files ?? [], window.location.origin);
 }
 
 function shortUrl(url: string): string {

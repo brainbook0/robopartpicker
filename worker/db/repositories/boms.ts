@@ -1,4 +1,6 @@
 import { AppError } from "../../http";
+import type { BomPublicationState } from "../../../src/shared/bomPublication";
+import { fileContentUrl } from "../../services/file-urls";
 
 export type BomRow = {
   id: string;
@@ -27,10 +29,31 @@ export type BomItemInput = {
   completeness?: string;
   evidenceLocator?: string | null;
   confidence?: number | null;
+  lineClassification?: "purchased" | "fabricated" | "optional" | "non-procurement" | "unresolved";
+  included?: boolean;
+  optional?: boolean;
+  rawFields?: Record<string, unknown>;
+  aggregatedLocators?: string[];
 };
 
 export type BomDetail = BomRow & {
-  version: { id: string; label: string; notes: string | null; currency: string; createdAt: string } | null;
+  version: {
+    id: string;
+    label: string;
+    notes: string | null;
+    currency: string;
+    generationRunId: string | null;
+    sourceFingerprint: string | null;
+    validationReport: { blockers?: Array<{ lineId: string; description: string }> };
+    publicationState: BomPublicationState;
+    coverageNote: string | null;
+    omissionReport: Array<Record<string, unknown>>;
+    compilerVersion: string;
+    policyVersion: string;
+    quoteReady: number;
+    confirmedAt: string | null;
+    createdAt: string;
+  } | null;
   items: Array<Record<string, unknown>>;
   totals: { lines: number; units: number; knownCostMinor: number; unpricedLines: number };
 };
@@ -43,12 +66,17 @@ export class BomsRepository {
       ? `(b.visibility IN ('public', 'unlisted') OR b.owner_user_id = ?1 OR EXISTS (
           SELECT 1 FROM organization_members om WHERE om.organization_id = b.organization_id AND om.user_id = ?1 AND om.status = 'active'))`
       : `b.visibility = 'public'`;
-    const statement = this.db.prepare(`SELECT b.*,
+    const lineAccess = userId
+      ? `(bv.publication_state IN ('verified', 'partial') OR b.owner_user_id = ?1 OR EXISTS (
+          SELECT 1 FROM organization_members om2 WHERE om2.organization_id = b.organization_id AND om2.user_id = ?1 AND om2.status = 'active'))`
+      : `bv.publication_state IN ('verified', 'partial')`;
+    const statement = this.db.prepare(`SELECT b.*, bv.publication_state,
       COUNT(bi.id) AS line_count,
       COALESCE(SUM(COALESCE(bi.target_unit_price_minor, so.unit_price_minor, 0) * bi.quantity), 0) AS known_cost_minor,
       COALESCE(SUM(CASE WHEN COALESCE(bi.target_unit_price_minor, so.unit_price_minor) IS NULL THEN 1 ELSE 0 END), 0) AS unpriced_lines
       FROM boms b
-      LEFT JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+      LEFT JOIN bom_versions bv ON bv.id = b.current_version_id
+      LEFT JOIN bom_items bi ON bi.bom_version_id = b.current_version_id AND ${lineAccess}
       LEFT JOIN supplier_offers so ON so.id = bi.selected_supplier_offer_id AND so.is_demo = 0
       WHERE ${access}
       GROUP BY b.id ORDER BY b.updated_at DESC`);
@@ -66,7 +94,13 @@ export class BomsRepository {
     const bom = await this.find(idOrSlug);
     if (!bom) return null;
     const [version, items] = await this.db.batch([
-      this.db.prepare(`SELECT id, version_label AS label, notes, currency, created_at AS createdAt
+      this.db.prepare(`SELECT id, version_label AS label, notes, currency,
+        generation_run_id AS generationRunId, source_fingerprint AS sourceFingerprint,
+        validation_report_json AS validationReport, quote_ready AS quoteReady,
+        publication_state AS publicationState, coverage_note AS coverageNote,
+        omission_report_json AS omissionReport, compiler_version AS compilerVersion,
+        policy_version AS policyVersion,
+        confirmed_at AS confirmedAt, created_at AS createdAt
         FROM bom_versions WHERE id = ?1`).bind(bom.current_version_id),
       this.db.prepare(`SELECT bi.id, bi.component_id AS componentId, c.slug AS componentSlug, c.name AS componentName,
         c.category AS componentCategory, c.manufacturer_part_number AS manufacturerPartNumber,
@@ -75,6 +109,12 @@ export class BomsRepository {
         s.name AS selectedSupplierName, so.unit_price_minor AS selectedUnitPriceMinor,
         bi.target_unit_price_minor AS targetUnitPriceMinor, bi.notes, bi.sort_order AS sortOrder,
         bi.extraction_method AS extractionMethod, bi.completeness, bi.evidence_locator AS evidenceLocator, bi.confidence,
+        bi.line_classification AS lineClassification, bi.included, bi.optional,
+        bi.raw_fields_json AS rawFields, bi.aggregated_locators_json AS aggregatedLocators,
+        (SELECT cf.file_id FROM component_files cf JOIN files image_file ON image_file.id = cf.file_id
+          WHERE cf.component_id = bi.component_id AND cf.purpose = 'image' AND image_file.status = 'ready'
+            AND image_file.visibility = 'public' AND image_file.deleted_at IS NULL
+          ORDER BY image_file.updated_at DESC, cf.file_id LIMIT 1) AS componentImageFileId,
         (SELECT MIN(so2.unit_price_minor) FROM supplier_offers so2 WHERE so2.component_id = bi.component_id AND so2.stock_quantity > 0 AND so2.is_demo = 0) AS lowestUnitPriceMinor,
         (SELECT COUNT(*) FROM supplier_offers so3 WHERE so3.component_id = bi.component_id AND so3.is_demo = 0) AS knownOfferCount
         FROM bom_items bi
@@ -84,7 +124,13 @@ export class BomsRepository {
         LEFT JOIN suppliers s ON s.id = so.supplier_id AND s.is_demo = 0
         WHERE bi.bom_version_id = ?1 ORDER BY bi.sort_order, bi.id`).bind(bom.current_version_id),
     ]);
-    const rows = items.results as Array<Record<string, unknown>>;
+    const rows: Array<Record<string, unknown>> = (items.results as Array<Record<string, unknown>>).map((row): Record<string, unknown> => {
+      const { componentImageFileId, ...item } = row;
+      return {
+        ...item,
+        componentImageUrl: typeof componentImageFileId === "string" ? fileContentUrl(componentImageFileId) : null,
+      };
+    });
     let units = 0;
     let knownCostMinor = 0;
     let unpricedLines = 0;
@@ -95,9 +141,15 @@ export class BomsRepository {
       if (unitPrice == null) unpricedLines += 1;
       else knownCostMinor += Number(unitPrice) * quantity;
     }
+    const versionRow = version.results[0] as Record<string, unknown> | undefined;
+    const parsedVersion = versionRow ? {
+      ...versionRow,
+      validationReport: parseObject(versionRow.validationReport),
+      omissionReport: parseArray(versionRow.omissionReport),
+    } as BomDetail["version"] : null;
     return {
       ...bom,
-      version: (version.results[0] as BomDetail["version"] | undefined) ?? null,
+      version: parsedVersion,
       items: rows,
       totals: { lines: rows.length, units, knownCostMinor, unpricedLines },
     };
@@ -142,19 +194,69 @@ export class BomsRepository {
     await this.db.batch(statements);
     return (await this.detail(bom.id))!;
   }
+
+  async confirm(bomId: string, expectedVersionId: string): Promise<BomDetail> {
+    const bom = await this.find(bomId);
+    if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
+    if (bom.current_version_id !== expectedVersionId) throw new AppError(409, "BOM_VERSION_CONFLICT", "The BOM changed; refresh and retry.");
+    const detail = await this.detail(bom.id);
+    if (!detail?.version) throw new AppError(409, "BOM_VERSION_MISSING", "This BOM has no current version.");
+    const blockers: Array<{ lineId: string; description: string }> = [];
+    for (const item of detail.items) {
+      if (Number(item.included) !== 1 || item.lineClassification === "non-procurement") continue;
+      const lineId = String(item.id);
+      const name = String(item.description);
+      if (!(Number(item.quantity) > 0)) blockers.push({ lineId, description: `${name}: quantity must be confirmed.` });
+      if (!item.evidenceLocator) blockers.push({ lineId, description: `${name}: source evidence is missing.` });
+      if (item.lineClassification === "unresolved") blockers.push({ lineId, description: `${name}: classify this line.` });
+      if (item.lineClassification === "purchased" && !item.componentId) blockers.push({ lineId, description: `${name}: link an exact catalog component.` });
+      if (item.lineClassification === "purchased" && !["complete", "verified"].includes(String(item.completeness))) {
+        blockers.push({ lineId, description: `${name}: commercial identity is not verified.` });
+      }
+    }
+    const now = new Date().toISOString();
+    const report = { schemaVersion: "bom-validation/1", validatedAt: now, quoteReady: blockers.length === 0, blockers };
+    await this.db.prepare(`UPDATE bom_versions SET confirmed_at = ?1, quote_ready = ?2, validation_report_json = ?3
+      WHERE id = ?4 AND bom_id = ?5`).bind(now, blockers.length === 0 ? 1 : 0, JSON.stringify(report), expectedVersionId, bom.id).run();
+    return (await this.detail(bom.id))!;
+  }
 }
 
 function appendItems(db: D1Database, statements: D1PreparedStatement[], versionId: string, items: BomItemInput[]): void {
   items.forEach((item, index) => statements.push(db.prepare(`INSERT INTO bom_items
     (id, bom_version_id, component_id, slot_key, description, quantity, unit, selected_supplier_offer_id,
-     target_unit_price_minor, notes, extraction_method, completeness, evidence_locator, confidence, sort_order)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`)
+     target_unit_price_minor, notes, extraction_method, completeness, evidence_locator, confidence,
+     line_classification, included, optional, raw_fields_json, aggregated_locators_json, sort_order)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)`)
     .bind(crypto.randomUUID(), versionId, item.componentId ?? null, item.slotKey, item.description, item.quantity,
       item.unit ?? "each", item.selectedSupplierOfferId ?? null, item.targetUnitPriceMinor ?? null, item.notes ?? null,
       item.extractionMethod ?? "explicit-bom", item.completeness ?? "probable", item.evidenceLocator ?? null,
-      item.confidence ?? null, index)));
+      item.confidence ?? null, item.lineClassification ?? "unresolved", item.included === false ? 0 : 1,
+      item.optional === true ? 1 : 0, JSON.stringify(item.rawFields ?? {}), JSON.stringify(item.aggregatedLocators ?? []), index)));
 }
 
 function slugify(value: string): string {
   return value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9\s-]/gu, "").trim().replace(/\s+/gu, "-").replace(/-+/gu, "-").slice(0, 70) || "bom";
+}
+
+function parseObject(value: unknown): Record<string, unknown> {
+  if (typeof value !== "string") return {};
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
+
+function parseArray(value: unknown): Array<Record<string, unknown>> {
+  if (typeof value !== "string") return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+      : [];
+  } catch {
+    return [];
+  }
 }

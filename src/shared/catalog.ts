@@ -5,6 +5,49 @@ export type PartCategory = string;
 export type Region = "US" | "EU" | "CN" | "JP" | "KR" | "Global";
 
 export type PricePoint = { date: string; price: number };
+export type CatalogPartFile = {
+  id: string;
+  originalName: string;
+  mediaType: string;
+  sizeBytes: number;
+  purpose: "image" | "datasheet" | "cad" | "drawing" | "firmware" | "document" | "other";
+  contentUrl: string;
+};
+export type CatalogPartUsage = {
+  projectId: string;
+  projectSlug: string;
+  projectName: string;
+  bomId: string;
+  bomSlug: string | null;
+  bomItemId: string;
+  quantity: number;
+  unit: string;
+  evidenceLocator: string | null;
+  notes: string | null;
+};
+export type CatalogPartEvidence = {
+  id: string;
+  title: string;
+  sourceType: string;
+  sourceUrl: string | null;
+  confidence: number;
+  retrievedAt: string;
+};
+export type CatalogPartProfile = {
+  identity: "exact" | "partial" | "unresolved";
+  technicalSpecCount: number;
+  imageCount: number;
+  engineeringFileCount: number;
+  projectUsageCount: number;
+  evidenceCount: number;
+  missing: string[];
+};
+export type CatalogTechnicalSpecification = {
+  key: string;
+  label: string;
+  value: unknown;
+  unit: string | null;
+};
 export type CatalogOffer = {
   id: string;
   supplierId: string;
@@ -56,8 +99,16 @@ export type CatalogPart = {
   failures: number;
   compatibility: string[];
   provenanceLabel: string;
+  lifecycleStatus?: "active" | "limited" | "obsolete" | "prototype" | "unknown";
+  sourceUrl?: string;
+  manufacturerUrl?: string;
   freshnessAt: string | null;
   isDemo: boolean;
+  files?: CatalogPartFile[];
+  projectUsage?: CatalogPartUsage[];
+  evidence?: CatalogPartEvidence[];
+  profile?: CatalogPartProfile;
+  technicalSpecifications?: CatalogTechnicalSpecification[];
   [spec: string]: unknown;
 };
 

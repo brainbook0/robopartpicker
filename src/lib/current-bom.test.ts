@@ -74,7 +74,7 @@ describe("currentBomTotals", () => {
     expect(totals.unpricedLines).toBe(0);
   });
 
-  it("falls back to the legacy RPPS bom only when no D1 BOM is linked", () => {
+  it("does not present legacy RPPS rows when no source-validated D1 BOM is linked", () => {
     const rpps = {
       rpps_version: "1.0.0",
       name: "x",
@@ -87,14 +87,15 @@ describe("currentBomTotals", () => {
       ],
     } as ProjectRow["rpps"];
     const totals = currentBomTotals(project({ rpps }), null);
-    expect(totals.source).toBe("rpps");
-    expect(totals.available).toBe(true);
-    expect(totals.lineCount).toBe(3);
-    expect(totals.pricedLines).toBe(2);
-    expect(totals.unpricedLines).toBe(1);
-    // known total derives only from priced lines: 2*$5 + 3*$10 = $40.
-    expect(totals.knownCostMinor).toBe(4000);
-    expect(totals.units).toBe(6);
+    expect(totals).toMatchObject({
+      source: "unavailable",
+      available: false,
+      lineCount: 0,
+      pricedLines: 0,
+      unpricedLines: 0,
+      knownCostMinor: 0,
+      units: 0,
+    });
   });
 
   it("keeps priced + unpriced equal to line count across every path", () => {
@@ -102,8 +103,8 @@ describe("currentBomTotals", () => {
     const viaNormalized = currentBomTotals(project({ bom_id: "b", bom_line_count: 10 }), normalized);
     expect(viaNormalized.pricedLines + viaNormalized.unpricedLines).toBe(viaNormalized.lineCount);
 
-    const viaRpps = currentBomTotals(project({ rpps: { rpps_version: "1.0.0", name: "x", slug: "x", version: "0.1.0", bom: [{ name: "a", qty: 1 }] } as ProjectRow["rpps"] }), null);
-    expect(viaRpps.pricedLines + viaRpps.unpricedLines).toBe(viaRpps.lineCount);
+    const unavailable = currentBomTotals(project({ rpps: { rpps_version: "1.0.0", name: "x", slug: "x", version: "0.1.0", bom: [{ name: "a", qty: 1 }] } as ProjectRow["rpps"] }), null);
+    expect(unavailable.pricedLines + unavailable.unpricedLines).toBe(unavailable.lineCount);
   });
 });
 

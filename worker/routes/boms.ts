@@ -5,9 +5,10 @@ import { BomsRepository, type BomRow } from "../db/repositories/boms";
 import { BuildsRepository } from "../db/repositories/builds";
 import { AppError } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
-import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId } from "../middleware/authorization";
+import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId, organizationRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
+import { publicBomLinesAllowed } from "../../src/shared/bomPublication";
 
 const visibilitySchema = z.enum(["private", "organization", "unlisted", "public"]);
 const bomItemSchema = z.object({
@@ -17,6 +18,9 @@ const bomItemSchema = z.object({
   targetUnitPriceMinor: z.number().int().nonnegative().nullable().optional(), notes: z.string().trim().max(4_000).nullable().optional(),
   extractionMethod: z.string().trim().min(1).max(60).optional(), completeness: z.string().trim().min(1).max(60).optional(),
   evidenceLocator: z.string().trim().max(1_024).nullable().optional(), confidence: z.number().min(0).max(1).nullable().optional(),
+  lineClassification: z.enum(["purchased", "fabricated", "optional", "non-procurement", "unresolved"]).optional(),
+  included: z.boolean().optional(), optional: z.boolean().optional(),
+  rawFields: z.record(z.string(), z.unknown()).optional(), aggregatedLocators: z.array(z.string().max(1_024)).max(1_000).optional(),
 }).strict();
 const createSchema = z.object({
   name: z.string().trim().min(2).max(120), projectId: z.string().uuid().nullable().optional(),
@@ -29,6 +33,7 @@ const versionSchema = z.object({
   currency: z.string().regex(/^[A-Z]{3}$/u).default("USD"), items: z.array(bomItemSchema).max(500),
 }).strict();
 const forkSchema = z.object({ name: z.string().trim().min(2).max(120).optional(), visibility: visibilitySchema.default("private") }).strict();
+const confirmSchema = z.object({ expectedVersionId: z.string().trim().min(1).max(200) }).strict();
 
 export const bomRoutes = new Hono<AppBindings>();
 
@@ -71,6 +76,22 @@ bomRoutes.post("/boms/:id/versions", loadAuthSession, requireAuth, async (c) => 
   return c.json({ item }, 201);
 });
 
+bomRoutes.post("/boms/:id/confirm", loadAuthSession, requireAuth, async (c) => {
+  const { bom, userId } = await writableBom(c, c.req.param("id"));
+  const body = await parseJson(c, confirmSchema);
+  const item = await new BomsRepository(c.env.DB).confirm(bom.id, body.expectedVersionId);
+  await recordAuditEvent(c.env.DB, {
+    actorUserId: userId,
+    organizationId: bom.organization_id,
+    action: "bom.confirm",
+    entityType: "bom",
+    entityId: bom.id,
+    requestId: c.get("requestId"),
+    after: { versionId: item.current_version_id, quoteReady: item.version?.quoteReady === 1 },
+  });
+  return c.json({ item });
+});
+
 bomRoutes.post("/boms/:id/builds", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const { detail } = await readableBom(c, c.req.param("id"));
@@ -95,6 +116,20 @@ async function readableBom(c: Context<AppBindings>, id: string) {
   if (!detail || detail.is_demo === 1) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
   const userId = c.get("authSession")?.user?.id ?? null;
   await assertScopedRead(c.env.DB, userId, detail);
+  const canReview = Boolean(userId && (detail.owner_user_id === userId
+    || (detail.organization_id && await organizationRole(c.env.DB, userId, detail.organization_id))));
+  const state = detail.version?.publicationState ?? "draft";
+  if (!canReview && !publicBomLinesAllowed(state)) {
+    return {
+      detail: {
+        ...detail,
+        items: [],
+        totals: { lines: 0, units: 0, knownCostMinor: 0, unpricedLines: 0 },
+        publicLinesHidden: true,
+      },
+      userId,
+    };
+  }
   return { detail, userId };
 }
 

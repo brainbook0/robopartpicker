@@ -10,6 +10,10 @@ EMAIL_PROVIDER_URL=
 EMAIL_PROVIDER_TOKEN=
 EMAIL_FROM=RoboPartPicker <no-reply@example.invalid>
 GITHUB_TOKEN=
+# Optional Google sign-in. Configure both or leave both blank.
+# Local callback: http://127.0.0.1:8080/api/auth/callback/google
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 AI_PROVIDER_URL=https://openrouter.ai/api/v1
 AI_PROVIDER_KEY=
 AI_MODEL=deepseek/deepseek-v4-pro

@@ -1,0 +1,3819 @@
+{
+  "generatedAt": "2026-08-27T00:00:00.000Z",
+  "methodologyVersion": "humanoid-market-official-listing-v1",
+  "profiles": [
+    {
+      "slug": "agibot-a2",
+      "name": "AGIBOT A2",
+      "manufacturer": "AGIBOT",
+      "model": "A2",
+      "category": "humanoid",
+      "officialProductUrl": "https://agibot.com/products/A2",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "AgiBot A2"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://agibot.com/products/A2",
+      "description": "AGIBOT A2 is a closed-source humanoid robot from AGIBOT. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://agibot.com/products/A2",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://agibot.com/products/A2"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 1,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official AGIBOT A2 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://agibot.com/products/A2",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://agibot.com/public/static/index/en/images/proA2Two-img.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for AGIBOT A2",
+          "altText": "AGIBOT A2 product image",
+          "attribution": "AGIBOT"
+        }
+      ]
+    },
+    {
+      "slug": "agibot-a2-lite",
+      "name": "AGIBOT A2 Lite",
+      "manufacturer": "AGIBOT",
+      "model": "A2 Lite",
+      "category": "humanoid",
+      "officialProductUrl": "https://store.agibot.com/products/a2-lite",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "AgiBot A2 Lite"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://store.agibot.com/products/a2-lite",
+      "description": "AGIBOT A2 Lite is a closed-source humanoid robot from AGIBOT. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://store.agibot.com/products/a2-lite",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://store.agibot.com/products/a2-lite"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 2,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official AGIBOT A2 Lite product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://store.agibot.com/products/a2-lite",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "http://store.agibot.com/cdn/shop/files/A2-1_2cfdd06e-a2f4-4957-a49c-b32ee7092579.png?v=1765518468&width=2048",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for AGIBOT A2 Lite",
+          "altText": "AGIBOT A2 Lite product image",
+          "attribution": "AGIBOT"
+        }
+      ]
+    },
+    {
+      "slug": "agibot-a2-max",
+      "name": "AGIBOT A2 Max",
+      "manufacturer": "AGIBOT",
+      "model": "A2 Max",
+      "category": "humanoid",
+      "officialProductUrl": "https://agibot.com/products/A2_Max",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "AgiBot A2 Max"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://agibot.com/products/A2_Max",
+      "description": "AGIBOT A2 Max is a closed-source humanoid robot from AGIBOT. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://agibot.com/products/A2_Max",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://agibot.com/products/A2_Max"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 3,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official AGIBOT A2 Max product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://agibot.com/products/A2_Max",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://agibot.com/public/static/index/en/images/a2max-l1.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for AGIBOT A2 Max",
+          "altText": "AGIBOT A2 Max product image",
+          "attribution": "AGIBOT"
+        }
+      ]
+    },
+    {
+      "slug": "agibot-a2-ultra",
+      "name": "AGIBOT A2 Ultra",
+      "manufacturer": "AGIBOT",
+      "model": "A2 Ultra",
+      "category": "humanoid",
+      "officialProductUrl": "https://store.agibot.com/products/a2-ultra",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "AgiBot A2 Ultra"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://store.agibot.com/products/a2-ultra",
+      "description": "AGIBOT A2 Ultra is a closed-source humanoid robot from AGIBOT. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://store.agibot.com/products/a2-ultra",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://store.agibot.com/products/a2-ultra"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 4,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official AGIBOT A2 Ultra product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://store.agibot.com/products/a2-ultra",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "http://store.agibot.com/cdn/shop/files/3_2d26b845-0a00-427e-9e4f-d9afb5f317fe.png?v=1766128167&width=2048",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for AGIBOT A2 Ultra",
+          "altText": "AGIBOT A2 Ultra product image",
+          "attribution": "AGIBOT"
+        }
+      ]
+    },
+    {
+      "slug": "booster-robotics-k1",
+      "name": "Booster K1",
+      "manufacturer": "Booster Robotics",
+      "model": "K1",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.booster.tech/booster-k1/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://www.booster.tech/",
+      "description": "Booster K1 is a closed-source humanoid robot from Booster Robotics. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.booster.tech/booster-k1/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "published_price",
+        "currency": "USD",
+        "minMinor": 599900,
+        "maxMinor": 599900,
+        "confidence": 0.95,
+        "methodVersion": "official-product-price-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.booster.tech/"
+        ]
+      },
+      "trend": {
+        "rank": 5,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Booster Robotics K1 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.booster.tech/booster-k1/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Booster Robotics market availability evidence for K1",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://www.booster.tech/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.booster.tech/_astro/hero-geek.CeXOLaGf_1eM3SQ.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Booster K1",
+          "altText": "Booster Robotics K1 product image",
+          "attribution": "Booster Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "booster-robotics-t1",
+      "name": "Booster T1",
+      "manufacturer": "Booster Robotics",
+      "model": "T1",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.booster.tech/booster-t1/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://www.booster.tech/booster-t1/",
+      "description": "Booster T1 is a closed-source humanoid robot from Booster Robotics. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.booster.tech/booster-t1/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.booster.tech/booster-t1/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 6,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Booster Robotics T1 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.booster.tech/booster-t1/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.booster.tech/_astro/hero-basic.BQe3HROB_Z1VSNvX.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Booster T1",
+          "altText": "Booster Robotics T1 product image",
+          "attribution": "Booster Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "deep-robotics-dr02",
+      "name": "DEEP Robotics DR02",
+      "manufacturer": "DEEP Robotics",
+      "model": "DR02",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.deeprobotics.cn/en/index/dr02.html",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "DR 02"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.deeprobotics.cn/en/index/dr02.html",
+      "description": "DEEP Robotics DR02 is a closed-source humanoid robot from DEEP Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.deeprobotics.cn/en/index/dr02.html",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.deeprobotics.cn/en/index/dr02.html"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 7,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official DEEP Robotics DR02 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.deeprobotics.cn/en/index/dr02.html",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://images.newsfilecorp.com/files/8457/270856_e887b351a4480a13_004full.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for DEEP Robotics DR02",
+          "altText": "DEEP Robotics DR02 product image",
+          "attribution": "DEEP Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "engineai-pm01",
+      "name": "ENGINEAI PM01",
+      "manufacturer": "ENGINEAI",
+      "model": "PM01",
+      "category": "humanoid",
+      "officialProductUrl": "https://en.engineai.com.cn/product-pm01",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://en.engineai.com.cn",
+      "description": "ENGINEAI PM01 is a closed-source humanoid robot from ENGINEAI. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://en.engineai.com.cn/product-pm01",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://en.engineai.com.cn/product-pm01"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 8,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official ENGINEAI PM01 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://en.engineai.com.cn/product-pm01",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official ENGINEAI market availability evidence for PM01",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://en.engineai.com.cn",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/uploads/upload/images/20251201/b5ef6111c38d79c268e85f17f67ae04e.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for ENGINEAI PM01",
+          "altText": "ENGINEAI PM01 product image",
+          "attribution": "ENGINEAI"
+        }
+      ]
+    },
+    {
+      "slug": "engineai-s2",
+      "name": "ENGINEAI S2",
+      "manufacturer": "ENGINEAI",
+      "model": "S2",
+      "category": "humanoid",
+      "officialProductUrl": "https://en.engineai.com.cn/product-s2",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://en.engineai.com.cn",
+      "description": "ENGINEAI S2 is a closed-source humanoid robot from ENGINEAI. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://en.engineai.com.cn/product-s2",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://en.engineai.com.cn/product-s2"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 9,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official ENGINEAI S2 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://en.engineai.com.cn/product-s2",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official ENGINEAI market availability evidence for S2",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://en.engineai.com.cn",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/static/home/images/x-ss1.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for ENGINEAI S2",
+          "altText": "ENGINEAI S2 product image",
+          "attribution": "ENGINEAI"
+        }
+      ]
+    },
+    {
+      "slug": "engineai-sa01",
+      "name": "ENGINEAI SA01",
+      "manufacturer": "ENGINEAI",
+      "model": "SA01",
+      "category": "humanoid",
+      "officialProductUrl": "https://en.engineai.com.cn/product-sa01",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://en.engineai.com.cn",
+      "description": "ENGINEAI SA01 is a closed-source humanoid robot from ENGINEAI. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://en.engineai.com.cn/product-sa01",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://en.engineai.com.cn/product-sa01"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 10,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official ENGINEAI SA01 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://en.engineai.com.cn/product-sa01",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official ENGINEAI market availability evidence for SA01",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://en.engineai.com.cn",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/uploads/upload/images/20251110/e21ea0bef16f2ef1a5c314e3cd44605f.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for ENGINEAI SA01",
+          "altText": "ENGINEAI SA01 product image",
+          "attribution": "ENGINEAI"
+        }
+      ]
+    },
+    {
+      "slug": "engineai-se01",
+      "name": "ENGINEAI SE01",
+      "manufacturer": "ENGINEAI",
+      "model": "SE01",
+      "category": "humanoid",
+      "officialProductUrl": "https://en.engineai.com.cn/product-se01",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://en.engineai.com.cn",
+      "description": "ENGINEAI SE01 is a closed-source humanoid robot from ENGINEAI. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://en.engineai.com.cn/product-se01",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://en.engineai.com.cn/product-se01"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 11,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official ENGINEAI SE01 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://en.engineai.com.cn/product-se01",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official ENGINEAI market availability evidence for SE01",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://en.engineai.com.cn",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/uploads/upload/images/20251113/86d2573b860e656ed4c4551d9d71a2cb.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for ENGINEAI SE01",
+          "altText": "ENGINEAI SE01 product image",
+          "attribution": "ENGINEAI"
+        }
+      ]
+    },
+    {
+      "slug": "engineai-t800",
+      "name": "ENGINEAI T800",
+      "manufacturer": "ENGINEAI",
+      "model": "T800",
+      "category": "humanoid",
+      "officialProductUrl": "https://en.engineai.com.cn/product-t800",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://www.engineai.com.cn/product-t800",
+      "description": "ENGINEAI T800 is a closed-source humanoid robot from ENGINEAI. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://en.engineai.com.cn/product-t800",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://en.engineai.com.cn/product-t800"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 12,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official ENGINEAI T800 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://en.engineai.com.cn/product-t800",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official ENGINEAI market availability evidence for T800",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://www.engineai.com.cn/product-t800",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/uploads/upload/images/20251114/47d0aba28f5824968b2e57aec85f5415.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for ENGINEAI T800",
+          "altText": "ENGINEAI T800 product image",
+          "attribution": "ENGINEAI"
+        }
+      ]
+    },
+    {
+      "slug": "engineered-arts-ameca",
+      "name": "Ameca",
+      "manufacturer": "Engineered Arts",
+      "model": "Ameca",
+      "category": "humanoid",
+      "officialProductUrl": "https://engineeredarts.com/robots/ameca",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "rental_or_quote",
+      "availabilityEvidenceUrl": "https://engineeredarts.com/uk/rentals",
+      "description": "Ameca is a closed-source humanoid robot from Engineered Arts. It is available by rental or manufacturer quote. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available by rental or manufacturer quote",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://engineeredarts.com/robots/ameca",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://engineeredarts.com/robots/ameca"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 13,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Engineered Arts Ameca product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://engineeredarts.com/robots/ameca",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Engineered Arts market availability evidence for Ameca",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://engineeredarts.com/uk/rentals",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://media.engineeredarts.com/wp-content/uploads/2025/07/Ameca-Gen-2-6-Fullfigure-Humanoid-Robot-Engineered-Arts.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Ameca",
+          "altText": "Engineered Arts Ameca product image",
+          "attribution": "Engineered Arts"
+        }
+      ]
+    },
+    {
+      "slug": "engineered-arts-ameca-desktop",
+      "name": "Ameca Desktop Gen 3",
+      "manufacturer": "Engineered Arts",
+      "model": "Ameca Desktop Gen 3",
+      "category": "humanoid",
+      "officialProductUrl": "https://engineeredarts.com/robots/ameca-desktop",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Ameca Desktop"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://engineeredarts.com/robots/ameca-desktop",
+      "description": "Ameca Desktop Gen 3 is a closed-source humanoid robot from Engineered Arts. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://engineeredarts.com/robots/ameca-desktop",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://engineeredarts.com/robots/ameca-desktop"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 14,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Engineered Arts Ameca Desktop Gen 3 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://engineeredarts.com/robots/ameca-desktop",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://media.engineeredarts.com/wp-content/uploads/2026/07/Ameca-Dektop-MD3-Embodied-AI-Humanoid-Robot-Engineered-Arts.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Ameca Desktop Gen 3",
+          "altText": "Engineered Arts Ameca Desktop Gen 3 product image",
+          "attribution": "Engineered Arts"
+        }
+      ]
+    },
+    {
+      "slug": "engineered-arts-ami",
+      "name": "Ami Desktop",
+      "manufacturer": "Engineered Arts",
+      "model": "Ami Desktop",
+      "category": "humanoid",
+      "officialProductUrl": "https://engineeredarts.com/robots/ami-desktop",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Ami"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "rental_or_quote",
+      "availabilityEvidenceUrl": "https://engineeredarts.com/uk/rentals",
+      "description": "Ami Desktop is a closed-source humanoid robot from Engineered Arts. It is available by rental or manufacturer quote. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available by rental or manufacturer quote",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://engineeredarts.com/robots/ami-desktop",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://engineeredarts.com/robots/ami-desktop"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 15,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Engineered Arts Ami Desktop product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://engineeredarts.com/robots/ami-desktop",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Engineered Arts market availability evidence for Ami Desktop",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://engineeredarts.com/uk/rentals",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://media.engineeredarts.com/wp-content/uploads/2026/05/Ami-Desktop-White-Shell-Gen-3-Embodied-AI-Humanoid-Robot-Engineered-Arts.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Ami Desktop",
+          "altText": "Engineered Arts Ami Desktop product image",
+          "attribution": "Engineered Arts"
+        }
+      ]
+    },
+    {
+      "slug": "engineered-arts-azi",
+      "name": "Azi Desktop",
+      "manufacturer": "Engineered Arts",
+      "model": "Azi Desktop",
+      "category": "humanoid",
+      "officialProductUrl": "https://engineeredarts.com/robots/azi-desktop",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Azi"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "rental_or_quote",
+      "availabilityEvidenceUrl": "https://engineeredarts.com/uk/rentals",
+      "description": "Azi Desktop is a closed-source humanoid robot from Engineered Arts. It is available by rental or manufacturer quote. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available by rental or manufacturer quote",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://engineeredarts.com/robots/azi-desktop",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://engineeredarts.com/robots/azi-desktop"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 16,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Engineered Arts Azi Desktop product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://engineeredarts.com/robots/azi-desktop",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Engineered Arts market availability evidence for Azi Desktop",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://engineeredarts.com/uk/rentals",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://media.engineeredarts.com/wp-content/uploads/2026/05/Azi-Desktop-Black-Shell-Gen-3-Embodied-AI-Humanoid-Robot-Engineered-Arts.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Azi Desktop",
+          "altText": "Engineered Arts Azi Desktop product image",
+          "attribution": "Engineered Arts"
+        }
+      ]
+    },
+    {
+      "slug": "engineered-arts-mesmer",
+      "name": "Mesmer",
+      "manufacturer": "Engineered Arts",
+      "model": "Mesmer",
+      "category": "humanoid",
+      "officialProductUrl": "https://engineeredarts.com/robots/mesmer",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "rental_or_quote",
+      "availabilityEvidenceUrl": "https://engineeredarts.com/uk/rentals",
+      "description": "Mesmer is a closed-source humanoid robot from Engineered Arts. It is available by rental or manufacturer quote. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available by rental or manufacturer quote",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://engineeredarts.com/robots/mesmer",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://engineeredarts.com/robots/mesmer"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 17,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Engineered Arts Mesmer product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://engineeredarts.com/robots/mesmer",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Engineered Arts market availability evidence for Mesmer",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://engineeredarts.com/uk/rentals",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://media.engineeredarts.com/wp-content/uploads/2025/09/Mesmer-Full-Size-Embodied-AI-Social-Humanoid-Robot-Engineered-Arts-1.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Mesmer",
+          "altText": "Engineered Arts Mesmer product image",
+          "attribution": "Engineered Arts"
+        }
+      ]
+    },
+    {
+      "slug": "fourier-gr2",
+      "name": "Fourier GR-2",
+      "manufacturer": "Fourier Intelligence",
+      "model": "GR-2",
+      "category": "humanoid",
+      "officialProductUrl": "https://fftai.com/products-gr2",
+      "officialDocsUrl": "https://fftai.com/resources/download",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Fourier GR2"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://fftai.com/resources/download",
+      "description": "Fourier GR-2 is a closed-source humanoid robot from Fourier Intelligence. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://fftai.com/products-gr2",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://fftai.com/products-gr2"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 18,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Fourier Intelligence GR-2 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://fftai.com/products-gr2",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Fourier Intelligence market availability evidence for GR-2",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://fftai.com/resources/download",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://mma.prnewswire.com/media/2518296/GR_2.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Fourier GR-2",
+          "altText": "Fourier Intelligence GR-2 product image",
+          "attribution": "Fourier Intelligence"
+        }
+      ]
+    },
+    {
+      "slug": "fourier-gr3",
+      "name": "Fourier GR-3",
+      "manufacturer": "Fourier Intelligence",
+      "model": "GR-3",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.fftai.com/grx/gr3",
+      "officialDocsUrl": "https://support.fftai.com/en/getting-started/general-information",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Fourier GR3"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://fftai.com/products-gr3",
+      "description": "Fourier GR-3 is a closed-source humanoid robot from Fourier Intelligence. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.fftai.com/grx/gr3",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.fftai.com/grx/gr3"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 19,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Fourier Intelligence GR-3 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.fftai.com/grx/gr3",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Fourier Intelligence market availability evidence for GR-3",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://fftai.com/products-gr3",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.fftai.com/images/gr3/gr3-banner.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Fourier GR-3",
+          "altText": "Fourier Intelligence GR-3 product image",
+          "attribution": "Fourier Intelligence"
+        }
+      ]
+    },
+    {
+      "slug": "galbot-g1",
+      "name": "Galbot G1",
+      "manufacturer": "Galbot",
+      "model": "G1",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.galbot.com/g1",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Galaxy General G1"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "enterprise_deployment",
+      "availabilityEvidenceUrl": "https://www.galbot.com/",
+      "description": "Galbot G1 is a closed-source humanoid robot from Galbot. It is deployed through an active manufacturer enterprise program. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Active manufacturer-backed enterprise deployment",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.galbot.com/g1",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.galbot.com/g1"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 20,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Galbot G1 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.galbot.com/g1",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Galbot market availability evidence for G1",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://www.galbot.com/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://oss-cn-beijing.galbot.com/online/portal/img/g1/section4-1.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Galbot G1",
+          "altText": "Galbot G1 product image",
+          "attribution": "Galbot"
+        }
+      ]
+    },
+    {
+      "slug": "hexagon-aeon",
+      "name": "AEON",
+      "manufacturer": "Hexagon Robotics",
+      "model": "AEON",
+      "category": "humanoid",
+      "officialProductUrl": "https://robotics.hexagon.com/product",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Hexagon AEON"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "enterprise_deployment",
+      "availabilityEvidenceUrl": "https://hexagon.com/company/newsroom/press-releases/2026/hexagon-schaeffler-deploy-aeon-humanoids-across-global-factory-network",
+      "description": "AEON is a closed-source humanoid robot from Hexagon Robotics. It is deployed through an active manufacturer enterprise program. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Active manufacturer-backed enterprise deployment",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://robotics.hexagon.com/product",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://robotics.hexagon.com/product"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 21,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Hexagon Robotics AEON product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://robotics.hexagon.com/product",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Hexagon Robotics market availability evidence for AEON",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://hexagon.com/company/newsroom/press-releases/2026/hexagon-schaeffler-deploy-aeon-humanoids-across-global-factory-network",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://robotics.hexagon.com/wp-content/uploads/2025/06/AEON_KeyVisual_12.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for AEON",
+          "altText": "Hexagon Robotics AEON product image",
+          "attribution": "Hexagon Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "humanoid-hmnd-01-alpha-bipedal",
+      "name": "HMND 01 Alpha Bipedal",
+      "manufacturer": "Humanoid",
+      "model": "HMND 01 Alpha Bipedal",
+      "category": "humanoid",
+      "officialProductUrl": "https://thehumanoid.ai/hmnd-01-alpha-bipedal/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "early_access",
+      "availabilityEvidenceUrl": "https://thehumanoid.ai/hmnd-01-alpha-bipedal/",
+      "description": "HMND 01 Alpha Bipedal is a closed-source humanoid robot from Humanoid. It is offered through manufacturer early access. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer early access",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://thehumanoid.ai/hmnd-01-alpha-bipedal/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://thehumanoid.ai/hmnd-01-alpha-bipedal/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 22,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Humanoid HMND 01 Alpha Bipedal product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://thehumanoid.ai/hmnd-01-alpha-bipedal/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://thehumanoid.ai/wp-content/uploads/2026/08/photo_2026-08-07-15.04.00.jpeg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for HMND 01 Alpha Bipedal",
+          "altText": "Humanoid HMND 01 Alpha Bipedal product image",
+          "attribution": "Humanoid"
+        }
+      ]
+    },
+    {
+      "slug": "humanoid-hmnd-01-alpha-wheeled",
+      "name": "HMND 01 Alpha Wheeled",
+      "manufacturer": "Humanoid",
+      "model": "HMND 01 Alpha Wheeled",
+      "category": "humanoid",
+      "officialProductUrl": "https://thehumanoid.ai/hmnd-01-alpha-wheeled/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "enterprise_pilot",
+      "availabilityEvidenceUrl": "https://thehumanoid.ai/",
+      "description": "HMND 01 Alpha Wheeled is a closed-source humanoid robot from Humanoid. It is offered through manufacturer enterprise pilots. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer enterprise pilots",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://thehumanoid.ai/hmnd-01-alpha-wheeled/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://thehumanoid.ai/hmnd-01-alpha-wheeled/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 23,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Humanoid HMND 01 Alpha Wheeled product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://thehumanoid.ai/hmnd-01-alpha-wheeled/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Humanoid market availability evidence for HMND 01 Alpha Wheeled",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://thehumanoid.ai/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://thehumanoid.ai/wp-content/uploads/2026/08/photo_2026-08-07-15.04.00.jpeg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for HMND 01 Alpha Wheeled",
+          "altText": "Humanoid HMND 01 Alpha Wheeled product image",
+          "attribution": "Humanoid"
+        }
+      ]
+    },
+    {
+      "slug": "kepler-forerunner-series",
+      "name": "Kepler Forerunner Series",
+      "manufacturer": "Kepler Robotics",
+      "model": "Forerunner Series",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.gotokepler.com/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Kepler K2"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.gotokepler.com/",
+      "description": "Kepler Forerunner Series is a closed-source humanoid robot from Kepler Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.gotokepler.com/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.gotokepler.com/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 24,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Kepler Robotics Forerunner Series product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.gotokepler.com/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://img.gotokepler.com/image/gotokepler/202507281003/13b536655bd24fa19b016703aa0fc7a1",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Kepler Forerunner Series",
+          "altText": "Kepler Robotics Forerunner Series product image",
+          "attribution": "Kepler Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "leju-kuavo-4pro",
+      "name": "KUAVO 4Pro",
+      "manufacturer": "Leju Robot",
+      "model": "KUAVO 4Pro",
+      "category": "humanoid",
+      "officialProductUrl": "https://kuavo.lejurobot.com/beta_manual/basic_usage/kuavo-ros-control/docs/1%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/KUAVO_4pro%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/",
+      "officialDocsUrl": "https://kuavo.lejurobot.com/beta_manual/basic_usage/kuavo-ros-control/docs/1%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/KUAVO_4pro%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Kuavo 4 Pro"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.lejurobot.com/en",
+      "description": "KUAVO 4Pro is a closed-source humanoid robot from Leju Robot. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://kuavo.lejurobot.com/beta_manual/basic_usage/kuavo-ros-control/docs/1%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/KUAVO_4pro%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://kuavo.lejurobot.com/beta_manual/basic_usage/kuavo-ros-control/docs/1%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/KUAVO_4pro%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 25,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Leju Robot KUAVO 4Pro product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://kuavo.lejurobot.com/beta_manual/basic_usage/kuavo-ros-control/docs/1%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/KUAVO_4pro%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Leju Robot market availability evidence for KUAVO 4Pro",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://www.lejurobot.com/en",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://kuavo.lejurobot.com/beta_manual/assets/images/kuavo_4pro-cf84d43f1c370666c6e810d2807ae3e4.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for KUAVO 4Pro",
+          "altText": "Leju Robot KUAVO 4Pro product image",
+          "attribution": "Leju Robot"
+        }
+      ]
+    },
+    {
+      "slug": "leju-kuavo-5",
+      "name": "KUAVO 5",
+      "manufacturer": "Leju Robot",
+      "model": "KUAVO 5",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.lejurobot.com/en/products/kuavo-5",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Kuavo 5"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.lejurobot.com/en/products/kuavo-5",
+      "description": "KUAVO 5 is a closed-source humanoid robot from Leju Robot. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.lejurobot.com/en/products/kuavo-5",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.lejurobot.com/en/products/kuavo-5"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 26,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Leju Robot KUAVO 5 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.lejurobot.com/en/products/kuavo-5",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://kuavo.lejurobot.com/leju_website/images/a2953d80c600ece6129d9822b2abeb8e.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for KUAVO 5",
+          "altText": "Leju Robot KUAVO 5 product image",
+          "attribution": "Leju Robot"
+        }
+      ]
+    },
+    {
+      "slug": "limx-dynamics-luna",
+      "name": "LimX Luna",
+      "manufacturer": "LimX Dynamics",
+      "model": "Luna",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.limxdynamics.com/en/products/luna",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.limxdynamics.com/en/products/luna",
+      "description": "LimX Luna is a closed-source humanoid robot from LimX Dynamics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.limxdynamics.com/en/products/luna",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.limxdynamics.com/en/products/luna"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 27,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official LimX Dynamics Luna product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.limxdynamics.com/en/products/luna",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://limx-video.oss-cn-beijing.aliyuncs.com/limx-website/products/luna/luna-6-1.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for LimX Luna",
+          "altText": "LimX Dynamics Luna product image",
+          "attribution": "LimX Dynamics"
+        }
+      ]
+    },
+    {
+      "slug": "limx-dynamics-oli",
+      "name": "LimX Oli",
+      "manufacturer": "LimX Dynamics",
+      "model": "Oli",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.limxdynamics.com/en/products/oli/spec",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.limxdynamics.com/en/products/oli/spec",
+      "description": "LimX Oli is a closed-source humanoid robot from LimX Dynamics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.limxdynamics.com/en/products/oli/spec",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.limxdynamics.com/en/products/oli/spec"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 28,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official LimX Dynamics Oli product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.limxdynamics.com/en/products/oli/spec",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.limxdynamics.com/en/products/oli",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for LimX Oli",
+          "altText": "LimX Dynamics Oli product image",
+          "attribution": "LimX Dynamics"
+        }
+      ]
+    },
+    {
+      "slug": "magiclab-magicbot-gen1",
+      "name": "MagicBot Gen1",
+      "manufacturer": "MagicLab",
+      "model": "MagicBot Gen1",
+      "category": "humanoid",
+      "officialProductUrl": "https://magiclab.top/en/human",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "MagicBot"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://magiclab.top/en/policy",
+      "description": "MagicBot Gen1 is a closed-source humanoid robot from MagicLab. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://magiclab.top/en/human",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://magiclab.top/en/human"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 29,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official MagicLab MagicBot Gen1 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://magiclab.top/en/human",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official MagicLab market availability evidence for MagicBot Gen1",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://magiclab.top/en/policy",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.magiclab.top/en/human",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for MagicBot Gen1",
+          "altText": "MagicLab MagicBot Gen1 product image",
+          "attribution": "MagicLab"
+        }
+      ]
+    },
+    {
+      "slug": "magiclab-magicbot-z1",
+      "name": "MagicBot Z1",
+      "manufacturer": "MagicLab",
+      "model": "MagicBot Z1",
+      "category": "humanoid",
+      "officialProductUrl": "https://magiclab.top/en/news/55",
+      "officialDocsUrl": "https://magiclab.top/en/app/z1",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://magiclab.top/en/policy",
+      "description": "MagicBot Z1 is a closed-source humanoid robot from MagicLab. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://magiclab.top/en/news/55",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://magiclab.top/en/news/55"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 30,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official MagicLab MagicBot Z1 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://magiclab.top/en/news/55",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official MagicLab market availability evidence for MagicBot Z1",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://magiclab.top/en/policy",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://oss-cdn.magiclab.top/file/img/website/2025-08-28/1c4e02/%E7%AC%AC%E4%B8%80%E5%BC%A0.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for MagicBot Z1",
+          "altText": "MagicLab MagicBot Z1 product image",
+          "attribution": "MagicLab"
+        }
+      ]
+    },
+    {
+      "slug": "neura-robotics-4ne1",
+      "name": "4NE1 Gen 3.5",
+      "manufacturer": "NEURA Robotics",
+      "model": "4NE1 Gen 3.5",
+      "category": "humanoid",
+      "officialProductUrl": "https://neura-robotics.com/product/4ne1-reservation/",
+      "officialDocsUrl": "https://neura-robotics.com/products/4ne1/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "4NE-1",
+        "4NE1"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "reservation",
+      "availabilityEvidenceUrl": "https://neura-robotics.com/product/4ne1-reservation/",
+      "description": "4NE1 Gen 3.5 is a closed-source humanoid robot from NEURA Robotics. It is available through an official manufacturer reservation channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official reservation channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://neura-robotics.com/product/4ne1-reservation/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://neura-robotics.com/product/4ne1-reservation/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 31,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official NEURA Robotics 4NE1 Gen 3.5 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://neura-robotics.com/product/4ne1-reservation/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://neura-robotics.com/wp-content/uploads/2026/01/NEURA_4NE1_Gen3.5-full.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for 4NE1 Gen 3.5",
+          "altText": "NEURA Robotics 4NE1 Gen 3.5 product image",
+          "attribution": "NEURA Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "neura-robotics-4ne1-mini",
+      "name": "4NE1 Mini",
+      "manufacturer": "NEURA Robotics",
+      "model": "4NE1 Mini",
+      "category": "humanoid",
+      "officialProductUrl": "https://neura-robotics.com/product/4ne1-mini-reservation/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "4NE-1 Mini"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "reservation",
+      "availabilityEvidenceUrl": "https://neura-robotics.com/product/4ne1-mini-reservation/",
+      "description": "4NE1 Mini is a closed-source humanoid robot from NEURA Robotics. It is available through an official manufacturer reservation channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official reservation channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://neura-robotics.com/product/4ne1-mini-reservation/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://neura-robotics.com/product/4ne1-mini-reservation/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 32,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official NEURA Robotics 4NE1 Mini product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://neura-robotics.com/product/4ne1-mini-reservation/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://neura-robotics.com/wp-content/uploads/2025/12/4NE1_Mini_showroom-e1767087861629.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for 4NE1 Mini",
+          "altText": "NEURA Robotics 4NE1 Mini product image",
+          "attribution": "NEURA Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "noetix-bumi",
+      "name": "Noetix Bumi",
+      "manufacturer": "Noetix Robotics",
+      "model": "Bumi",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.noetixrobotics.com/en/product/n2/1262",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "preorder",
+      "availabilityEvidenceUrl": "https://noetixrobotics.com/en/news/media/213",
+      "description": "Noetix Bumi is a closed-source humanoid robot from Noetix Robotics. It is available for manufacturer preorder. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available for manufacturer preorder",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.noetixrobotics.com/en/product/n2/1262",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.noetixrobotics.com/en/product/n2/1262"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 33,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Noetix Robotics Bumi product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.noetixrobotics.com/en/product/n2/1262",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Noetix Robotics market availability evidence for Bumi",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://noetixrobotics.com/en/news/media/213",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://image.noetixrobotics.com/pc/home_bumi_banner.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Noetix Bumi",
+          "altText": "Noetix Robotics Bumi product image",
+          "attribution": "Noetix Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "noetix-e1",
+      "name": "Noetix E1",
+      "manufacturer": "Noetix Robotics",
+      "model": "E1",
+      "category": "humanoid",
+      "officialProductUrl": "https://noetixrobotics.com/en/e1",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://noetixrobotics.com/en/e1",
+      "description": "Noetix E1 is a closed-source humanoid robot from Noetix Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://noetixrobotics.com/en/e1",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://noetixrobotics.com/en/e1"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 34,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Noetix Robotics E1 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://noetixrobotics.com/en/e1",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://image.noetixrobotics.com/pc/mqov8hz5z3k34fbi.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Noetix E1",
+          "altText": "Noetix Robotics E1 product image",
+          "attribution": "Noetix Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "noetix-n2",
+      "name": "Noetix N2",
+      "manufacturer": "Noetix Robotics",
+      "model": "N2",
+      "category": "humanoid",
+      "officialProductUrl": "https://noetixrobotics.com/en/n2",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://noetixrobotics.com/en/n2",
+      "description": "Noetix N2 is a closed-source humanoid robot from Noetix Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://noetixrobotics.com/en/n2",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://noetixrobotics.com/en/n2"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 35,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Noetix Robotics N2 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://noetixrobotics.com/en/n2",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://image.noetixrobotics.com/pc/mqov88tiutotjcs9.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Noetix N2",
+          "altText": "Noetix Robotics N2 product image",
+          "attribution": "Noetix Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "oversonic-robee-f",
+      "name": "RoBee F",
+      "manufacturer": "Oversonic Robotics",
+      "model": "RoBee F",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.oversonicrobotics.com/robee-f",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "RoBee Series F"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.oversonicrobotics.com/contacts",
+      "description": "RoBee F is a closed-source humanoid robot from Oversonic Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.oversonicrobotics.com/robee-f",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.oversonicrobotics.com/robee-f"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 36,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Oversonic Robotics RoBee F product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.oversonicrobotics.com/robee-f",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Oversonic Robotics market availability evidence for RoBee F",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://www.oversonicrobotics.com/contacts",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.oversonicrobotics.com/images/share-image-robee-r.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for RoBee F",
+          "altText": "Oversonic Robotics RoBee F product image",
+          "attribution": "Oversonic Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "oversonic-robee-m",
+      "name": "RoBee M",
+      "manufacturer": "Oversonic Robotics",
+      "model": "RoBee M",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.oversonicrobotics.com/robee-m",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "RoBee Series M"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.oversonicrobotics.com/contacts",
+      "description": "RoBee M is a closed-source humanoid robot from Oversonic Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.oversonicrobotics.com/robee-m",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.oversonicrobotics.com/robee-m"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 37,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Oversonic Robotics RoBee M product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.oversonicrobotics.com/robee-m",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Oversonic Robotics market availability evidence for RoBee M",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://www.oversonicrobotics.com/contacts",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.oversonicrobotics.com/images/share-image-robee-m.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for RoBee M",
+          "altText": "Oversonic Robotics RoBee M product image",
+          "attribution": "Oversonic Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "oversonic-robee-r",
+      "name": "RoBee R",
+      "manufacturer": "Oversonic Robotics",
+      "model": "RoBee R",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.oversonicrobotics.com/robee-r",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "RoBee Series R"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://www.oversonicrobotics.com/contacts",
+      "description": "RoBee R is a closed-source humanoid robot from Oversonic Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.oversonicrobotics.com/robee-r",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.oversonicrobotics.com/robee-r"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 38,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Oversonic Robotics RoBee R product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.oversonicrobotics.com/robee-r",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Oversonic Robotics market availability evidence for RoBee R",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://www.oversonicrobotics.com/contacts",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.oversonicrobotics.com/images/share-image-robee-r.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for RoBee R",
+          "altText": "Oversonic Robotics RoBee R product image",
+          "attribution": "Oversonic Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "pal-robotics-kangaroo",
+      "name": "Kangaroo",
+      "manufacturer": "PAL Robotics",
+      "model": "Kangaroo",
+      "category": "humanoid",
+      "officialProductUrl": "https://pal-robotics.com/robot/kangaroo/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://pal-robotics.com/robot/kangaroo/",
+      "description": "Kangaroo is a closed-source humanoid robot from PAL Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://pal-robotics.com/robot/kangaroo/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://pal-robotics.com/robot/kangaroo/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 39,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official PAL Robotics Kangaroo product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://pal-robotics.com/robot/kangaroo/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://pal-robotics.com/wp-content/uploads/2025/01/FeturedImage_KOO-scaled.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Kangaroo",
+          "altText": "PAL Robotics Kangaroo product image",
+          "attribution": "PAL Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "pal-robotics-reem-c",
+      "name": "REEM-C",
+      "manufacturer": "PAL Robotics",
+      "model": "REEM-C",
+      "category": "humanoid",
+      "officialProductUrl": "https://pal-robotics.com/robot/reem-c/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://pal-robotics.com/robot/reem-c/",
+      "description": "REEM-C is a closed-source humanoid robot from PAL Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://pal-robotics.com/robot/reem-c/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://pal-robotics.com/robot/reem-c/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 40,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official PAL Robotics REEM-C product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://pal-robotics.com/robot/reem-c/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://pal-robotics.com/wp-content/uploads/2024/04/REE-C-Robot-3.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for REEM-C",
+          "altText": "PAL Robotics REEM-C product image",
+          "attribution": "PAL Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "pal-robotics-talos",
+      "name": "TALOS",
+      "manufacturer": "PAL Robotics",
+      "model": "TALOS",
+      "category": "humanoid",
+      "officialProductUrl": "https://pal-robotics.com/robot/talos/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://pal-robotics.com/robot/talos/",
+      "description": "TALOS is a closed-source humanoid robot from PAL Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://pal-robotics.com/robot/talos/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://pal-robotics.com/robot/talos/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 41,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official PAL Robotics TALOS product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://pal-robotics.com/robot/talos/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://pal-robotics.com/wp-content/uploads/2024/04/TALOS-Robot.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for TALOS",
+          "altText": "PAL Robotics TALOS product image",
+          "attribution": "PAL Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "persona-industrial-humanoid",
+      "name": "Persona Industrial Humanoid",
+      "manufacturer": "Persona AI",
+      "model": "Industrial Humanoid",
+      "category": "humanoid",
+      "officialProductUrl": "https://persona.ai/teleoperation-preceeds-autonomy",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "enterprise_pilot",
+      "availabilityEvidenceUrl": "https://persona.ai/teleoperation-preceeds-autonomy",
+      "description": "Persona Industrial Humanoid is a closed-source humanoid robot from Persona AI. It is offered through manufacturer enterprise pilots. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer enterprise pilots",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://persona.ai/teleoperation-preceeds-autonomy",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.5,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://persona.ai/teleoperation-preceeds-autonomy"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 42,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Persona AI Industrial Humanoid product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://persona.ai/teleoperation-preceeds-autonomy",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "media": [
+        {
+          "kind": "identity_illustration",
+          "sourceUrl": "https://persona.ai/teleoperation-preceeds-autonomy",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Identity illustration for Persona Industrial Humanoid",
+          "altText": "Persona Industrial Humanoid identity illustration, not a product photograph",
+          "attribution": "RoboPartPicker identity illustration"
+        }
+      ]
+    },
+    {
+      "slug": "pudu-d9",
+      "name": "PUDU D9",
+      "manufacturer": "Pudu Robotics",
+      "model": "D9",
+      "category": "humanoid",
+      "officialProductUrl": "https://pudurobotics.com/products/d9",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://pudurobotics.com/products/d9",
+      "description": "PUDU D9 is a closed-source humanoid robot from Pudu Robotics. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://pudurobotics.com/products/d9",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://pudurobotics.com/products/d9"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 43,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Pudu Robotics D9 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://pudurobotics.com/products/d9",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://cdn.pudutech.com/official-website/d9/section1_bg.webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for PUDU D9",
+          "altText": "Pudu Robotics D9 product image",
+          "attribution": "Pudu Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "realbotix-f-series",
+      "name": "Realbotix F-Series",
+      "manufacturer": "Realbotix",
+      "model": "F-Series",
+      "category": "humanoid",
+      "officialProductUrl": "https://realbotix.ai/newsletters/what-sets-realbotix-apart-",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Realbotix Full-Bodied Robot"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://realbotix.com/robots",
+      "description": "Realbotix F-Series is a closed-source humanoid robot from Realbotix. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://realbotix.ai/newsletters/what-sets-realbotix-apart-",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://realbotix.ai/newsletters/what-sets-realbotix-apart-"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 44,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Realbotix F-Series product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://realbotix.ai/newsletters/what-sets-realbotix-apart-",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Realbotix market availability evidence for F-Series",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://realbotix.com/robots",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://cdn.prod.website-files.com/6655b1a239c70c0be4c6e48d/674d3ab5ac5ecd7ae1d589d1_5f022dd8-4e67-583b-db5e-b02ba1b76730.jpg",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Realbotix F-Series",
+          "altText": "Realbotix F-Series product image",
+          "attribution": "Realbotix"
+        }
+      ]
+    },
+    {
+      "slug": "reflex-robotics-humanoid",
+      "name": "Reflex Humanoid",
+      "manufacturer": "Reflex Robotics",
+      "model": "General-Purpose Humanoid",
+      "category": "humanoid",
+      "officialProductUrl": "https://reflexrobotics.com/",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Reflex Robot"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "raas",
+      "availabilityEvidenceUrl": "https://reflexrobotics.com/",
+      "description": "Reflex Humanoid is a closed-source humanoid robot from Reflex Robotics. It is offered through a manufacturer robot-as-a-service program. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through a manufacturer robot-as-a-service program",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://reflexrobotics.com/",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://reflexrobotics.com/"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 45,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Reflex Robotics General-Purpose Humanoid product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://reflexrobotics.com/",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.reflexrobotics.com/Reflex_Web_Link_Image_V6.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Reflex Humanoid",
+          "altText": "Reflex Robotics General-Purpose Humanoid product image",
+          "attribution": "Reflex Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "robotera-l7",
+      "name": "ROBOTERA L7",
+      "manufacturer": "ROBOTERA",
+      "model": "L7",
+      "category": "humanoid",
+      "officialProductUrl": "https://robotera.com/en/robotics/L7.html",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Robot Era L7"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "contact_sales",
+      "availabilityEvidenceUrl": "https://robotera.com/en/robotics/L7.html",
+      "description": "ROBOTERA L7 is a closed-source humanoid robot from ROBOTERA. It is listed for manufacturer sales inquiries. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through manufacturer sales inquiry",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://robotera.com/en/robotics/L7.html",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://robotera.com/en/robotics/L7.html"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 46,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official ROBOTERA L7 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://robotera.com/en/robotics/L7.html",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.robotera.com/img/jqr.BKZykNcl.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for ROBOTERA L7",
+          "altText": "ROBOTERA L7 product image",
+          "attribution": "ROBOTERA"
+        }
+      ]
+    },
+    {
+      "slug": "ubtech-walker-s2",
+      "name": "UBTECH Walker S2",
+      "manufacturer": "UBTECH Robotics",
+      "model": "Walker S2",
+      "category": "humanoid",
+      "officialProductUrl": "https://ubtrobot.com/en/humanoid/products/walker-s2",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "enterprise_deployment",
+      "availabilityEvidenceUrl": "https://ubtrobot.com/en/about/news/826574022332485",
+      "description": "UBTECH Walker S2 is a closed-source humanoid robot from UBTECH Robotics. It is deployed through an active manufacturer enterprise program. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Active manufacturer-backed enterprise deployment",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://ubtrobot.com/en/humanoid/products/walker-s2",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://ubtrobot.com/en/humanoid/products/walker-s2"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 47,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official UBTECH Robotics Walker S2 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://ubtrobot.com/en/humanoid/products/walker-s2",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official UBTECH Robotics market availability evidence for Walker S2",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://ubtrobot.com/en/about/news/826574022332485",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://owebsite-cdn.ubtrobot.com/resources/image/2025/07/17/698770322690117.jpg?image_process=format,webp/quality,Q_95",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for UBTECH Walker S2",
+          "altText": "UBTECH Robotics Walker S2 product image",
+          "attribution": "UBTECH Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "unitree-r1",
+      "name": "Unitree R1",
+      "manufacturer": "Unitree Robotics",
+      "model": "R1",
+      "category": "humanoid",
+      "officialProductUrl": "https://www.unitree.com/R1",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "buy_now",
+      "availabilityEvidenceUrl": "https://www.unitree.com/R1",
+      "description": "Unitree R1 is a closed-source humanoid robot from Unitree Robotics. It is sold through an official manufacturer purchase channel. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Available through an official purchase channel",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://www.unitree.com/R1",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "published_price",
+        "currency": "USD",
+        "minMinor": 490000,
+        "maxMinor": 490000,
+        "confidence": 0.95,
+        "methodVersion": "official-product-price-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://www.unitree.com/R1"
+        ]
+      },
+      "trend": {
+        "rank": 48,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Unitree Robotics R1 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://www.unitree.com/R1",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://www.unitree.com/images/eec8d82f279b440ea170982ffa80b3fa_3840x2160.jpg?x-oss-process=image/quality,q_60/format,webp",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Unitree R1",
+          "altText": "Unitree Robotics R1 product image",
+          "attribution": "Unitree Robotics"
+        }
+      ]
+    },
+    {
+      "slug": "wandercraft-calvin-40",
+      "name": "Calvin-40",
+      "manufacturer": "Wandercraft",
+      "model": "Calvin-40",
+      "category": "humanoid",
+      "officialProductUrl": "https://en.wandercraft.eu/calvin-40",
+      "lifecycle": "official_catalog_listing",
+      "retrievedAt": "2026-08-27T00:00:00.000Z",
+      "aliases": [
+        "Calvin 40"
+      ],
+      "kind": "complete_robot",
+      "sourceAvailability": "closed_source",
+      "marketStatus": "enterprise_deployment",
+      "availabilityEvidenceUrl": "https://en.wandercraft.eu/calvin",
+      "description": "Calvin-40 is a closed-source humanoid robot from Wandercraft. It is deployed through an active manufacturer enterprise program. Public build documentation and a reproducible manufacturer BOM are not available for this catalog entry.",
+      "useCases": [
+        "Active manufacturer-backed enterprise deployment",
+        "Manufacturer-listed complete humanoid robot"
+      ],
+      "specs": [
+        {
+          "key": "core-technical-specifications",
+          "label": "Core technical specifications",
+          "undisclosed": true,
+          "sourceUrl": "https://en.wandercraft.eu/calvin-40",
+          "observedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.5
+        }
+      ],
+      "price": {
+        "kind": "not_published",
+        "confidence": 0.9,
+        "methodVersion": "official-page-price-status-v1",
+        "valuedAt": "2026-08-27T00:00:00.000Z",
+        "sourceUrls": [
+          "https://en.wandercraft.eu/calvin-40"
+        ],
+        "summary": "No source-backed price is recorded for this model."
+      },
+      "trend": {
+        "rank": 49,
+        "searchInterest": 0,
+        "newsVelocity": 0,
+        "videoViewVelocity": 0,
+        "officialActivity": 0,
+        "firstPartyTraffic": null,
+        "trafficSampleSufficient": false,
+        "compositeScore": 0,
+        "methodologyVersion": "humanoid-market-official-listing-v1",
+        "windowStart": "2026-08-26T00:00:00.000Z",
+        "windowEnd": "2026-08-27T00:00:00.000Z",
+        "capturedAt": "2026-08-27T00:00:00.000Z"
+      },
+      "evidence": [
+        {
+          "title": "Official Wandercraft Calvin-40 product page",
+          "sourceType": "official_product_page",
+          "sourceUrl": "https://en.wandercraft.eu/calvin-40",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        },
+        {
+          "title": "Official Wandercraft market availability evidence for Calvin-40",
+          "sourceType": "official_availability_page",
+          "sourceUrl": "https://en.wandercraft.eu/calvin",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "confidence": 0.9
+        }
+      ],
+      "media": [
+        {
+          "kind": "product_image",
+          "sourceUrl": "https://cdn.prod.website-files.com/6a5e1730e4dc3d8a81f2d73d/6a5e1a606d555ee369477761_hero-2-p-2000.png",
+          "retrievedAt": "2026-08-27T00:00:00.000Z",
+          "title": "Official product image for Calvin-40",
+          "altText": "Wandercraft Calvin-40 product image",
+          "attribution": "Wandercraft"
+        }
+      ]
+    }
+  ],
+  "invalid": []
+}

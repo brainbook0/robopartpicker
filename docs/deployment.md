@@ -61,9 +61,18 @@ npx wrangler secret put INGESTION_SECRET --env production
 npx wrangler secret put AI_PROVIDER_KEY --env production
 ```
 
+Google authentication is optional and fail-closed. Create a Google Cloud OAuth web client with the authorized redirect URI `https://robopartpicker.com/api/auth/callback/google`, then store both credentials interactively:
+
+```powershell
+npx wrangler secret put GOOGLE_CLIENT_ID --env production
+npx wrangler secret put GOOGLE_CLIENT_SECRET --env production
+```
+
+If either secret is absent, `/api/health` reports `googleAuthentication: false` and the frontend does not render a Google sign-in button. Never put either value in `vars`, committed environment files, or any `VITE_*` variable.
+
 The authentication and ingestion names are declared under `secrets.required` in the production Wrangler environment. The AI route fails closed when its provider key is absent. OpenRouter's base URL and `deepseek/deepseek-v4-pro` model ID are non-secret Wrangler vars; the credential is entered only through Wrangler's interactive secret prompt.
 
-Add email provider, OAuth, repository provider, AI provider, and malware scanner credentials only for features that are configured. Secrets are environment-specific, so every production secret command includes `--env production`. Never put them in `vars`, `VITE_*`, source control, or client code.
+Add email provider, Google OAuth, repository provider, AI provider, and malware scanner credentials only for features that are configured. Secrets are environment-specific, so every production secret command includes `--env production`. Never put them in `vars`, `VITE_*`, source control, or client code.
 
 `GITHUB_TOKEN` is optional and only raises the GitHub API rate limit for repository imports. Better Auth provides the OAuth authorization server used by private MCP clients; no separate OAuth client secret is required for dynamically registered public PKCE clients. Migrations `0011_oauth_provider_and_private_mcp.sql` and `0012_rpps_release_collaboration.sql` must be applied before private MCP or exact-release collaboration is enabled.
 

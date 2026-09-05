@@ -102,7 +102,7 @@ Required local variables:
 - `BETTER_AUTH_URL`
 - `INGESTION_SECRET`
 
-Email, authenticated GitHub import, AI, malware scanning, and outbound supplier delivery are optional integration boundaries. Their absence must produce an explicit unavailable or draft-only state.
+Email, Google authentication, authenticated GitHub import, AI, malware scanning, and outbound supplier delivery are optional integration boundaries. Their absence must produce an explicit unavailable or draft-only state. Local Google sign-in uses `GOOGLE_CLIENT_ID` plus `GOOGLE_CLIENT_SECRET` and the callback `http://127.0.0.1:8080/api/auth/callback/google`; production uses `https://robopartpicker.com/api/auth/callback/google`.
 
 ## Quality and verification
 

@@ -2,6 +2,8 @@ import { api } from "@/lib/api/client";
 import { emptyRpps, RPPS_VERSION, slugify, validateRpps, type RppsPackage } from "@/lib/rpps/schema";
 import type { RobotCategory } from "@/shared/robotCategory";
 import type { PortableRppsManifest, RppsValidationReport } from "@/lib/rpps/portable";
+import type { ProjectPriceEstimate, ProjectSpec, ProjectTrendSnapshot } from "@/shared/projectProfiles";
+import type { ProjectBuildFilter, ProjectFacetCounts, ProjectRosFilter, ProjectSourceFilter } from "@/shared/projectListQuery";
 
 export type ProjectRow = {
   id: string;
@@ -20,7 +22,9 @@ export type ProjectRow = {
   visibility: "public" | "organization" | "unlisted" | "private";
   repo_url: string | null;
   docs_url: string | null;
+  /** Managed file URLs are returned as same-origin paths; official external URLs remain absolute. */
   cover_image_url: string | null;
+  /** Managed preview URLs are canonical same-origin paths. */
   media: Array<{ id: string; contentUrl: string; altText: string | null; caption: string | null }>;
   tags: string[];
   difficulty: "beginner" | "intermediate" | "advanced" | "expert" | null;
@@ -30,6 +34,13 @@ export type ProjectRow = {
   successful_reproduction_count: number;
   bom_id: string | null;
   bom_line_count: number;
+  bom_publication_state?: "draft" | "verified" | "partial" | "unavailable" | "manufacturer_unavailable" | "not_applicable" | "classification_required" | "rejected" | null;
+  preview_cost_minor?: number | null;
+  preview_cost_currency?: string | null;
+  preview_cost_kind?: "published_price" | "published_range" | "market_estimate" | "published" | "known_bom" | "inferred" | null;
+  preview_cost_confidence?: "high" | "medium" | "low" | null;
+  preview_cost_method?: string | null;
+  preview_cost_valued_at?: string | null;
   rpps_version: string;
   rpps: RppsPackage;
   is_demo: boolean;
@@ -53,6 +64,19 @@ export type ProjectCatalogStats = {
   roboticsSoftwareProjects: number;
   commercialShowcaseProjects: number;
   publishedProjects: number;
+  totalReproductions: number;
+  successfulReproductions: number;
+};
+export type ProjectCatalogFacets = ProjectFacetCounts;
+
+export type ProjectListOptions = {
+  q?: string; kind?: ProjectKind | ""; category?: RobotCategory | "";
+  sort?: "completeness" | "popularity" | "trend" | "updated" | "name" | "cost_asc" | "repro_desc";
+  source?: ProjectSourceFilter | ""; priceMin?: number | null; priceMax?: number | null;
+  bomState?: string; bomLinesMin?: number | null; build?: ProjectBuildFilter | "";
+  difficulty?: string; ros?: ProjectRosFilter | ""; license?: string;
+  hasMedia?: boolean; hasCad?: boolean; hasAssembly?: boolean; hasOfficialSource?: boolean;
+  verifiedWithinDays?: number | null; facets?: boolean;
 };
 
 export type ProjectKind = "physical_design" | "robotics_software" | "commercial_showcase" | "unknown";
@@ -61,11 +85,28 @@ export async function listPublicProjects(): Promise<ProjectRow[]> {
   return (await api.get<{ items: ProjectRow[] }>("/api/v1/projects?limit=1000&sort=popularity")).items;
 }
 
-export async function listProjectsPage(page: number, limit = 1000, options: { kind?: ProjectKind | ""; category?: RobotCategory | "" } = {}): Promise<{ items: ProjectRow[]; total: number; stats?: ProjectCatalogStats }> {
-  const params = new URLSearchParams({ limit: String(limit), sort: "popularity", page: String(page) });
+export async function listProjectsPage(page: number, limit = 1000, options: ProjectListOptions = {}): Promise<{ items: ProjectRow[]; total: number; stats?: ProjectCatalogStats; facets?: ProjectCatalogFacets }> {
+  const params = new URLSearchParams({ limit: String(limit), page: String(page) });
+  params.set("sort", options.sort ?? "completeness");
+  if (options.q?.trim()) params.set("q", options.q.trim());
   if (options.kind) params.set("kind", options.kind);
   if (options.category) params.set("category", options.category);
-  return await api.get<{ items: ProjectRow[]; total: number; stats?: ProjectCatalogStats }>(`/api/v1/projects?${params.toString()}`);
+  if (options.source) params.set("source", options.source);
+  if (options.priceMin != null) params.set("priceMin", String(options.priceMin));
+  if (options.priceMax != null) params.set("priceMax", String(options.priceMax));
+  if (options.bomState) params.set("bomState", options.bomState);
+  if (options.bomLinesMin != null) params.set("bomLinesMin", String(options.bomLinesMin));
+  if (options.build) params.set("build", options.build);
+  if (options.difficulty) params.set("difficulty", options.difficulty);
+  if (options.ros) params.set("ros", options.ros);
+  if (options.license) params.set("license", options.license);
+  if (options.hasMedia) params.set("hasMedia", "true");
+  if (options.hasCad) params.set("hasCad", "true");
+  if (options.hasAssembly) params.set("hasAssembly", "true");
+  if (options.hasOfficialSource) params.set("hasOfficialSource", "true");
+  if (options.verifiedWithinDays != null) params.set("verifiedWithinDays", String(options.verifiedWithinDays));
+  if (options.facets) params.set("facets", "true");
+  return await api.get<{ items: ProjectRow[]; total: number; stats?: ProjectCatalogStats; facets?: ProjectCatalogFacets }>(`/api/v1/projects?${params.toString()}`);
 }
 
 export async function listMyProjects(userId: string): Promise<ProjectRow[]> {
@@ -80,6 +121,17 @@ export async function getProjectBySlug(slug: string): Promise<ProjectRow | null>
     if (typeof error === "object" && error !== null && "status" in error && error.status === 404) return null;
     throw error;
   }
+}
+
+export type ProjectProfile = {
+  project_id: string;
+  specs: ProjectSpec[];
+  active_price_estimate: (ProjectPriceEstimate & { freshness: "current" | "refresh_required" }) | null;
+  active_trend_snapshot: ProjectTrendSnapshot | null;
+};
+
+export async function getProjectProfile(projectId: string): Promise<ProjectProfile> {
+  return (await api.get<{ item: ProjectProfile }>(`/api/v1/projects/${encodeURIComponent(projectId)}/profile`)).item;
 }
 
 export type NewProjectInput = {

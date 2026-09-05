@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketplace } from "@/lib/api/marketplace";
 import type { MarketplaceListing } from "@/shared/marketplace";
+import { PRODUCT_STATUSES } from "@/lib/product-status";
 
 const TYPES: Array<{ value: MarketplaceListing["listingType"]; label: string }> = [
   { value: "sell", label: "For sale" }, { value: "wanted", label: "Wanted" }, { value: "service", label: "Services" },
@@ -37,7 +38,7 @@ export default function MarketplaceD1() {
   const emptyKind = type === "wanted" ? "wanted requests" : type === "service" ? "service listings" : "for-sale listings";
 
   return <>
-    <PageHeader kicker="Marketplace" title="Robots, parts, kits, fabrication, and services"
+    <PageHeader kicker="Marketplace" title="Robots, parts, kits, fabrication, and services" status={PRODUCT_STATUSES.marketplacePublishing}
       sub="Persistent technical listings and wanted requests. RoboPartPicker provides internal messaging and evidence fields; no payment, escrow, shipping, or inspection provider is configured."
       actions={<div className="flex gap-2"><Link to="/marketplace/new" className="btn-primary"><Plus className="h-3.5 w-3.5" /> New listing</Link><Link to="/marketplace/wanted/new" className="btn-ghost">Post wanted</Link></div>} />
     <main className="mx-auto max-w-[1400px] px-4 py-5">

@@ -9,6 +9,7 @@ import {
 } from "@/lib/forum";
 import {
   Plus, Search, X, Filter, RefreshCw, Link2,
+  BookOpen, FileCheck2, Wrench, MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThreadRow } from "@/components/community/ThreadRow";
@@ -16,6 +17,7 @@ import {
   filterThreads, sortThreads, hasStructured, hasLinked,
   THREAD_SORTS, type ThreadSort,
 } from "@/components/community/threadFilters";
+import { DISCORD_INVITE_URL } from "@/lib/site-config";
 
 export default function Community() {
   const { user } = useAuth();
@@ -203,7 +205,8 @@ export default function Community() {
                 <button onClick={() => setRefreshKey(k => k + 1)} className="ml-2 btn-ghost btn-sm inline-flex"><RefreshCw className="h-3 w-3" /> Retry</button>
               </div>
             )}
-            {!loading && !err && !catErr && filtered.length === 0 && (
+            {!loading && !err && !catErr && baseThreads.length === 0 && !hasFilter && <CommunityBetaGuide />}
+            {!loading && !err && !catErr && filtered.length === 0 && (baseThreads.length > 0 || hasFilter) && (
               <div className="p-12 text-center text-[13px] text-muted-foreground">
                 <Filter className="h-4 w-4 inline mr-1" /> No threads match these filters.{" "}
                 <button onClick={clearFilters} className="text-primary hover:underline">Clear filters</button>
@@ -244,6 +247,15 @@ export default function Community() {
       </div>
     </div>
   );
+}
+
+function CommunityBetaGuide() {
+  const cards = [
+    { icon: FileCheck2, title: "Build report", text: "Pin the project revision, list BOM substitutions, record test results, and attach source evidence." },
+    { icon: Wrench, title: "Integration note", text: "Document the exact components, interfaces, firmware revision, failure mode, and verified workaround." },
+    { icon: BookOpen, title: "BOM correction", text: "Link the source row or CAD object, explain the incorrect line, and propose a quantity or identity correction." },
+  ];
+  return <div className="p-5"><div className="flex items-center gap-2"><span className="pill pill-yellow">beta</span><h2 className="font-semibold">No authentic discussions have been published yet</h2></div><p className="mt-2 text-xs leading-5 text-muted-foreground">The community is reserved for source-linked engineering evidence. RoboPartPicker will not seed fake posts or contributor counts.</p><div className="mt-4 grid gap-2 md:grid-cols-3">{cards.map(({ icon: Icon, title, text }) => <div key={title} className="rounded border border-border bg-background p-3"><Icon className="h-4 w-4 text-primary" /><div className="mt-2 text-xs font-semibold">{title}</div><p className="mt-1 text-[11px] leading-5 text-muted-foreground">{text}</p></div>)}</div><div className="mt-4 flex flex-wrap gap-2"><Link to="/community/new" className="btn-primary inline-flex"><Plus className="h-3.5 w-3.5" /> Publish the first evidence-backed thread</Link><a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost inline-flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Join the Discord</a></div></div>;
 }
 
 function Stat({ label, v, sub }: { label: string; v: number; sub?: string }) {

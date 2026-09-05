@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { Link, NavLink, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
@@ -28,6 +28,8 @@ import {
 } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
 import { healthApi } from "@/lib/api/health";
+import { ProductStatusBadge } from "@/components/common/ProductStatusBadge";
+import { PRODUCT_STATUSES } from "@/lib/product-status";
 
 const SUGGESTIONS = [
   { icon: Cpu, label: "Recommend a 6-DOF arm control MCU under $30" },
@@ -133,12 +135,13 @@ export default function Assistant() {
 
   if (healthQuery.isSuccess && !aiEnabled) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-12">
+      <div className="mx-auto max-w-4xl px-4 py-12">
         <div className="rounded-lg border border-warning/40 bg-warning/5 p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold"><Bot className="h-4 w-4 text-primary" /> Build Assistant coming soon</div>
+          <div className="flex items-center gap-2 text-sm font-semibold"><Bot className="h-4 w-4 text-primary" /> Build Assistant <ProductStatusBadge status={PRODUCT_STATUSES.assistant} /></div>
           <p className="mt-2 text-sm text-muted-foreground">
-            AI chat is not currently available in this environment because the provider is not configured. Catalog, project, BOM, and community pages remain available.
+            AI chat is not available in this environment because the provider is not configured. The deterministic BOM and quote workflow remains available without AI.
           </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3"><BetaLink to="/projects/new" title="Generate a BOM" text="Import project files, tables, robot descriptions, and supported CAD." /><BetaLink to="/boms" title="Review evidence" text="Resolve quantities and identities before confirming a BOM." /><BetaLink to="/suppliers" title="Completed quote method" text="See the fail-closed pricing and email delivery rules." /></div>
         </div>
       </div>
     );
@@ -153,7 +156,7 @@ export default function Assistant() {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Bot className="h-4 w-4" />
             </div>
-            <div className="text-sm font-semibold">Build Assistant</div>
+            <div className="flex items-center gap-1 text-sm font-semibold">Build Assistant <ProductStatusBadge status={PRODUCT_STATUSES.assistant} className="px-1 py-0 text-[8px]" /></div>
           </div>
           <Button size="icon-sm" variant="ghost" onClick={handleNewThread} title="New chat">
             <Plus className="h-4 w-4" />
@@ -195,6 +198,10 @@ export default function Assistant() {
       </main>
     </div>
   );
+}
+
+function BetaLink({ to, title, text }: { to: string; title: string; text: string }) {
+  return <Link to={to} className="rounded border border-border bg-background p-3 hover:border-primary/50"><div className="text-xs font-semibold">{title}</div><p className="mt-1 text-[11px] leading-5 text-muted-foreground">{text}</p></Link>;
 }
 
 function ThreadRow({

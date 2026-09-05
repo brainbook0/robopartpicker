@@ -11,6 +11,7 @@ function invokeWrangler(args: string[], inherit: boolean): WranglerResult {
   const result = spawnSync(process.execPath, [wranglerEntry, ...args], {
     cwd: process.cwd(),
     encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
     stdio: inherit ? "inherit" : "pipe",
   });
   if (result.error) throw result.error;

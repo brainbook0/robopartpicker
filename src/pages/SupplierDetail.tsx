@@ -151,7 +151,7 @@ export default function SupplierDetail() {
           <div id="rfq" ref={rfqRef} className="surface-card p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="section-title">Draft RFQ for {s.name}</div>
-              <span className="text-[10.5px] uppercase tracking-wide text-warning">Local only · not sent</span>
+              <span className="text-[10.5px] font-medium uppercase tracking-wide text-foreground">Local only · not sent</span>
             </div>
             <RfqComposer
               key={`${s.id}:${prefillPartId ?? "none"}:${prefillQty}`}

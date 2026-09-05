@@ -5,11 +5,21 @@ import { getProjectBySlug, type ProjectRow } from "@/lib/projects";
 import { bomsApi } from "@/lib/api/builds";
 import type { BomDetail, BomItem } from "@/shared/builds";
 import { currentBomTotals } from "@/lib/current-bom";
+import { useAuth } from "@/contexts/AuthContext";
+import { ProjectSpecifications } from "@/components/projects/ProjectSpecifications";
+import { ProjectReviews } from "@/components/projects/ProjectReviews";
+import { ProjectDiscussion } from "@/components/projects/ProjectDiscussion";
 
-const aspects = ["reproducibility", "cost", "schedule", "parts", "assembly", "software", "integrations", "evidence"] as const;
+const primaryAspects = ["overview", "specifications", "reviews", "discussion"] as const;
+const engineeringAspects = ["reproducibility", "cost", "schedule", "parts", "assembly", "software", "integrations", "evidence"] as const;
+const aspects = [...primaryAspects, ...engineeringAspects] as const;
 type Aspect = (typeof aspects)[number];
 
 const labels: Record<Aspect, string> = {
+  overview: "Overview",
+  specifications: "Specifications",
+  reviews: "Reviews",
+  discussion: "Discussion",
   reproducibility: "Reproducibility",
   cost: "Cost breakdown",
   schedule: "Build time & requirements",
@@ -26,6 +36,7 @@ export default function ProjectInsight() {
   const [error, setError] = useState<string | null>(null);
   const [normalizedBom, setNormalizedBom] = useState<BomDetail | null>(null);
   const [normalizedBomLoading, setNormalizedBomLoading] = useState(false);
+  const { user } = useAuth();
   const aspect = aspects.includes(routeAspect as Aspect) ? routeAspect as Aspect : null;
 
   useEffect(() => {
@@ -59,18 +70,23 @@ export default function ProjectInsight() {
         </div>
       </div>
       <nav aria-label="Project detail categories" className="mb-3 flex gap-1 overflow-x-auto border-b border-border pb-2">
-        {aspects.map((item) => <Link key={item} to={`/projects/${project.slug}/${item}`} className={item === aspect ? "btn-primary btn-sm whitespace-nowrap" : "btn-ghost btn-sm whitespace-nowrap"}>{labels[item]}</Link>)}
+        {primaryAspects.map((item) => <Link key={item} to={`/projects/${project.slug}/${item}`} className={item === aspect ? "btn-primary btn-sm whitespace-nowrap" : "btn-ghost btn-sm whitespace-nowrap"}>{labels[item]}</Link>)}
       </nav>
-      <AspectContent project={project} aspect={aspect} normalizedBom={normalizedBom} normalizedBomLoading={normalizedBomLoading} />
+      <details className="surface-card mb-3"><summary className="cursor-pointer px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Engineering data views</summary><div className="flex flex-wrap gap-1 border-t border-border p-2">{engineeringAspects.map((item) => <Link key={item} to={`/projects/${project.slug}/${item}`} className={item === aspect ? "btn-primary btn-sm" : "btn-ghost btn-sm"}>{labels[item]}</Link>)}</div></details>
+      <AspectContent project={project} aspect={aspect} normalizedBom={normalizedBom} normalizedBomLoading={normalizedBomLoading} signedIn={Boolean(user)} />
     </main>
   );
 }
 
-function AspectContent({ project, aspect, normalizedBom, normalizedBomLoading }: { project: ProjectRow; aspect: Aspect; normalizedBom: BomDetail | null; normalizedBomLoading: boolean }) {
+function AspectContent({ project, aspect, normalizedBom, normalizedBomLoading, signedIn }: { project: ProjectRow; aspect: Aspect; normalizedBom: BomDetail | null; normalizedBomLoading: boolean; signedIn: boolean }) {
   const bom = project.rpps.bom ?? [];
   const assembly = project.rpps.assembly ?? [];
   const files = project.rpps.files ?? [];
   const totals = currentBomTotals(project, normalizedBom);
+
+  if (aspect === "specifications") return <ProjectSpecifications projectId={project.id} />;
+  if (aspect === "reviews") return <ProjectReviews projectId={project.id} signedIn={signedIn} />;
+  if (aspect === "discussion") return <ProjectDiscussion projectId={project.id} signedIn={signedIn} />;
 
   if (aspect === "cost") return <div className="space-y-3">
     <MetricGrid metrics={[

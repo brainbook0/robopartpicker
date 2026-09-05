@@ -3,6 +3,7 @@ import { z } from "zod";
 import { RppsPackage } from "../../src/lib/rpps/schema";
 import type { AppBindings } from "../env";
 import { ProjectsRepository } from "../db/repositories/projects";
+import { ProjectProfilesRepository } from "../db/repositories/project-profiles";
 import type { ProjectKind } from "../../src/shared/projectKind";
 import { ROBOT_CATEGORIES, type RobotCategory } from "../../src/shared/robotCategory";
 import { AppError, parsePositiveInt } from "../http";
@@ -12,6 +13,7 @@ import { parseJson } from "../validation";
 import { recordAuditEvent } from "../services/audit";
 import { analyzeProjectArchive, analyzeProjectInput, analyzeStoredProjectFiles } from "../services/project-import";
 import { computePublishability } from "../../src/shared/provenance";
+import type { ProjectBuildFilter, ProjectListFilters, ProjectRosFilter, ProjectSourceFilter } from "../../src/shared/projectListQuery";
 
 const createSchema = z.object({
   visibility: z.enum(["private", "organization", "unlisted", "public"]).default("public"),
@@ -39,6 +41,11 @@ const analysisSchema = z.object({
 const archiveAnalysisSchema = z.object({ fileId: z.string().uuid() }).strict();
 const storedFilesAnalysisSchema = z.object({ fileIds: z.array(z.string().uuid()).min(1).max(100) }).strict();
 const projectKinds: ProjectKind[] = ["physical_design", "robotics_software", "commercial_showcase", "unknown"];
+const sourceFilters = new Set<ProjectSourceFilter>(["open", "commercial", "licensed", "official", "unclear"]);
+const buildFilters = new Set<ProjectBuildFilter>(["started", "verified"]);
+const rosFilters = new Set<ProjectRosFilter>(["native", "community", "supported", "none"]);
+const bomStates = new Set(["draft", "verified", "partial", "unavailable", "manufacturer_unavailable", "not_applicable", "classification_required", "rejected"]);
+const difficulties = new Set(["beginner", "intermediate", "advanced", "expert"]);
 
 export const projectRoutes = new Hono<AppBindings>();
 
@@ -49,18 +56,45 @@ projectRoutes.get("/projects", loadAuthSession, async (c) => {
   if (c.req.query("mine") === "true" && !userId) {
     throw new AppError(401, "AUTHENTICATION_REQUIRED", "Listing your own projects requires a signed-in session.");
   }
-  const sort = ["popularity", "updated", "name"].includes(c.req.query("sort") ?? "")
-    ? (c.req.query("sort") as "popularity" | "updated" | "name")
-    : "popularity";
+  const sort = ["completeness", "popularity", "trend", "updated", "name", "cost_asc", "repro_desc"].includes(c.req.query("sort") ?? "")
+    ? (c.req.query("sort") as "completeness" | "popularity" | "trend" | "updated" | "name" | "cost_asc" | "repro_desc")
+    : "completeness";
   const kindParam = c.req.query("kind");
   const kind = projectKinds.includes(kindParam as ProjectKind) ? (kindParam as ProjectKind) : undefined;
   const categoryParam = c.req.query("category");
   const category = ROBOT_CATEGORIES.includes(categoryParam as RobotCategory) ? (categoryParam as RobotCategory) : undefined;
+  const sourceParam = c.req.query("source");
+  const buildParam = c.req.query("build");
+  const rosParam = c.req.query("ros");
+  const bomState = c.req.query("bomState");
+  const difficulty = c.req.query("difficulty");
+  const verifiedWithinDays = optionalBoundedInt(c.req.query("verifiedWithinDays"), "verifiedWithinDays", 365);
+  const filters: ProjectListFilters = {
+    ...(sourceFilters.has(sourceParam as ProjectSourceFilter) ? { source: sourceParam as ProjectSourceFilter } : {}),
+    ...(buildFilters.has(buildParam as ProjectBuildFilter) ? { build: buildParam as ProjectBuildFilter } : {}),
+    ...(rosFilters.has(rosParam as ProjectRosFilter) ? { ros: rosParam as ProjectRosFilter } : {}),
+    ...(bomState && bomStates.has(bomState) ? { bomState } : {}),
+    ...(difficulty && difficulties.has(difficulty) ? { difficulty } : {}),
+    ...optionalMoneyFilter(c.req.query("priceMin"), "priceMin", "priceMinMinor"),
+    ...optionalMoneyFilter(c.req.query("priceMax"), "priceMax", "priceMaxMinor"),
+    ...optionalIntFilter(c.req.query("bomLinesMin"), "bomLinesMin", "bomLinesMin", 100_000),
+    ...(c.req.query("license")?.trim() ? { license: c.req.query("license")!.trim().slice(0, 100) } : {}),
+    ...(c.req.query("hasMedia") === "true" ? { hasMedia: true } : {}),
+    ...(c.req.query("hasCad") === "true" ? { hasCad: true } : {}),
+    ...(c.req.query("hasAssembly") === "true" ? { hasAssembly: true } : {}),
+    ...(c.req.query("hasOfficialSource") === "true" ? { hasOfficialSource: true } : {}),
+    ...(verifiedWithinDays ? { verifiedSince: new Date(Date.now() - verifiedWithinDays * 86_400_000).toISOString() } : {}),
+  };
+  if (filters.priceMinMinor != null && filters.priceMaxMinor != null && filters.priceMinMinor > filters.priceMaxMinor) {
+    throw new AppError(422, "VALIDATION_ERROR", "priceMin must not exceed priceMax.");
+  }
   const result = await new ProjectsRepository(c.env.DB).listVisible(userId, {
     q: c.req.query("q")?.trim().slice(0, 100) || undefined,
     mine: c.req.query("mine") === "true",
     kind,
     category,
+    filters,
+    includeFacets: c.req.query("facets") === "true",
     sort,
     limit,
     offset: (page - 1) * limit,
@@ -182,6 +216,14 @@ projectRoutes.get("/projects/:id", loadAuthSession, async (c) => {
   return c.json({ item: project.item });
 });
 
+projectRoutes.get("/projects/:id/profile", loadAuthSession, async (c) => {
+  const repository = new ProjectsRepository(c.env.DB);
+  const project = await repository.find(c.req.param("id"));
+  if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
+  await assertScopedRead(c.env.DB, c.get("authSession")?.user?.id ?? null, project.row);
+  return c.json({ item: await new ProjectProfilesRepository(c.env.DB).get(project.row.id) });
+});
+
 projectRoutes.post("/projects", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);
   const body = await parseJson(c, createSchema);
@@ -250,6 +292,24 @@ projectRoutes.delete("/projects/:id", loadAuthSession, requireAuth, async (c) =>
   await recordAuditEvent(c.env.DB, { actorUserId: userId, organizationId: project.row.organization_id, action: "project.archive", entityType: "project", entityId: project.row.id, requestId: c.get("requestId"), before: project.item });
   return c.body(null, 204);
 });
+
+function optionalBoundedInt(value: string | undefined, label: string, max: number): number | undefined {
+  if (value == null || value === "") return undefined;
+  if (!/^\d+$/u.test(value)) throw new AppError(422, "VALIDATION_ERROR", `${label} must be a non-negative integer.`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed > max) throw new AppError(422, "VALIDATION_ERROR", `${label} is outside the supported range.`);
+  return parsed;
+}
+
+function optionalMoneyFilter<K extends "priceMinMinor" | "priceMaxMinor">(value: string | undefined, label: string, key: K): Partial<Record<K, number>> {
+  const dollars = optionalBoundedInt(value, label, 100_000_000);
+  return dollars == null ? {} : { [key]: dollars * 100 } as Partial<Record<K, number>>;
+}
+
+function optionalIntFilter<K extends "bomLinesMin">(value: string | undefined, label: string, key: K, max: number): Partial<Record<K, number>> {
+  const parsed = optionalBoundedInt(value, label, max);
+  return parsed == null ? {} : { [key]: parsed } as Partial<Record<K, number>>;
+}
 
 async function sha256(value: string): Promise<string> {
   const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));

@@ -3,6 +3,7 @@ import { api } from "./client";
 export type HealthCapabilities = {
   emailDelivery: boolean;
   ai: boolean;
+  googleAuthentication: boolean;
   mcp: { publicReadOnly: boolean; privateOAuth: boolean };
   repositoryImport: { publicGitHub: boolean; authenticatedGitHub: boolean; directFiles: boolean; storedFileSets: boolean; privateArchives: boolean };
 };

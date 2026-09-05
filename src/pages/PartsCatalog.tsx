@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
-  categoryLabel, lowestObservedPrice,
-  type PartCategory, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer, type CatalogPart,
+  categoryLabel,
+  type PartCategory, type Actuator, type Hand, type Sensor, type Compute, type Driver, type Reducer,
 } from "@/shared/catalog";
 import { useComponents, COMPONENTS_PAGE_SIZE } from "@/lib/api/catalog";
 import { PartsTable } from "@/components/parts/PartsTable";
@@ -20,11 +20,9 @@ const categoryTitle = (c: string) =>
 const joints = ["shoulder","elbow","wrist","hip","knee","ankle","neck","gripper"];
 const regions = ["US","EU","CN","JP","KR"];
 
-type SortKey =
-  | "price-asc" | "price-desc" | "name"
-  | "weight-asc" | "torque-desc" | "failures-asc" | "lead-asc";
+type SortKey = "name" | "weight-asc" | "torque-desc" | "failures-asc";
 
-const ALL_SORTS: SortKey[] = ["price-asc","price-desc","name","weight-asc","torque-desc","failures-asc","lead-asc"];
+const ALL_SORTS: SortKey[] = ["name","weight-asc","torque-desc","failures-asc"];
 
 const Chip = ({ on, children, onClick }: { on?: boolean; children: React.ReactNode; onClick: () => void }) => (
   <button onClick={onClick} className={`pill ${on ? "pill-yellow" : ""}`}>{children}</button>
@@ -39,12 +37,6 @@ const Section = ({ title, children, defaultOpen = true, count }: { title: string
   </details>
 );
 
-const median = (nums: number[]): number | null => {
-  if (!nums.length) return null;
-  const s = [...nums].sort((a,b) => a-b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : Math.round((s[m-1] + s[m]) / 2);
-};
 
 const Stat = ({ label, value }: { label: string; value: string | number }) => (
   <div className="p-2">
@@ -77,16 +69,11 @@ export default function PartsCatalog() {
   const ros = getBool("ros");
   const opensrc = getBool("os");
   const cad = getBool("cad");
-  const inStock = getBool("stock");
   const region = getList("region");            // Manufacturer region
-  const supplyRegion = getList("supregion");   // Supplier region (from fixture offers)
   const makers = getList("maker");
-  const priceMin = getNum("pmin");
-  const priceMax = getNum("pmax");
   const wMax = getNum("wmax");
   const tMin = getNum("tmin");
   const vMin = getNum("vmin");
-  const leadMax = getNum("lmax");
   const warMin = getNum("warmin");
 
   // Category-specific extras
@@ -107,8 +94,8 @@ export default function PartsCatalog() {
   const rtMin = getNum("rtmin");
   const backlashMax = getNum("blmax");
 
-  const rawSort = (sp.get("sort") ?? "price-asc") as SortKey;
-  const sort: SortKey = ALL_SORTS.includes(rawSort) ? rawSort : "price-asc";
+  const rawSort = (sp.get("sort") ?? "name") as SortKey;
+  const sort: SortKey = ALL_SORTS.includes(rawSort) ? rawSort : "name";
 
   const pageRaw = Number(sp.get("page") ?? "1");
   const page = Number.isInteger(pageRaw) && pageRaw >= 1 ? pageRaw : 1;
@@ -118,24 +105,13 @@ export default function PartsCatalog() {
     category: cat,
     q,
     manufacturerRegion: region,
-    supplierRegion: supplyRegion,
     manufacturer: makers,
-    minPrice: priceMin,
-    maxPrice: priceMax,
-    inStock,
     page,
     limit: COMPONENTS_PAGE_SIZE,
   });
   const all = (componentQuery.data?.items ?? []).filter((part) => !part.isDemo);
   const catalogAll = (facetQuery.data?.items ?? []).filter((part) => !part.isDemo);
   const makerOptions = useMemo(() => Array.from(new Set(catalogAll.map(p => p.maker))).sort(), [catalogAll]);
-  const supplierRegionOptions = useMemo(() => {
-    const set = new Set<string>();
-    catalogAll.forEach(p => p.offers.forEach(o => {
-      if (o.supplierRegion) set.add(o.supplierRegion);
-    }));
-    return Array.from(set).sort();
-  }, [catalogAll]);
 
   const filtered = useMemo(() => {
     let list = all.slice();
@@ -143,9 +119,6 @@ export default function PartsCatalog() {
     if (opensrc) list = list.filter(p => p.openSource);
     if (cad) list = list.filter(p => p.cadAvailable);
     if (warMin !== null) list = list.filter(p => p.warrantyMonths >= warMin);
-    if (leadMax !== null) list = list.filter(p => p.offers.some(o => !o.isDemo && o.leadKnown && o.leadDays <= leadMax));
-    if (priceMin !== null) list = list.filter(p => (lowestObservedPrice(p) ?? -Infinity) >= priceMin);
-    if (priceMax !== null) list = list.filter(p => (lowestObservedPrice(p) ?? Infinity) <= priceMax);
     if (joint && cat === "actuator") list = list.filter(p => p.compatibility.some(c => c.includes(joint)));
     if (protocol && cat === "actuator") list = list.filter(p => typeof p.protocol === "string" && p.protocol === protocol);
     if (cat === "actuator") {
@@ -182,33 +155,20 @@ export default function PartsCatalog() {
       if (backlashMax !== null) list = list.filter(p => (p as Reducer).backlashArcmin <= backlashMax);
     }
 
-    const lp = (p: CatalogPart) => lowestObservedPrice(p);
-    const ml = (p: CatalogPart) => {
-      const leads = p.offers.filter((offer) => !offer.isDemo && offer.leadKnown).map((offer) => offer.leadDays);
-      return leads.length ? Math.min(...leads) : Infinity;
-    };
-    if (sort === "price-asc") list.sort((a,b) => (lp(a) ?? Infinity) - (lp(b) ?? Infinity));
-    if (sort === "price-desc") list.sort((a,b) => (lp(b) ?? -Infinity) - (lp(a) ?? -Infinity));
     if (sort === "name") list.sort((a,b) => a.name.localeCompare(b.name));
     if (sort === "failures-asc") list.sort((a,b) => a.failures - b.failures);
-    if (sort === "lead-asc") list.sort((a,b) => ml(a) - ml(b));
     if (sort === "weight-asc" && cat === "actuator") list.sort((a,b) => (a as Actuator).weightKg - (b as Actuator).weightKg);
     if (sort === "torque-desc" && cat === "actuator") list.sort((a,b) => (b as Actuator).peakNm - (a as Actuator).peakNm);
     return list;
-  }, [all, ros, opensrc, cad, warMin, leadMax, priceMin, priceMax, joint, protocol, wMax, tMin, vMin, sort, cat, dofMin, payloadMin, gripMin, tactileOnly, iface, sensorType, rangeMin, hzMin, topsMin, ramMin, powerMax, currMin, voltMinAll, redType, rtMin, backlashMax]);
+  }, [all, ros, opensrc, cad, warMin, joint, protocol, wMax, tMin, vMin, sort, cat, dofMin, payloadMin, gripMin, tactileOnly, iface, sensorType, rangeMin, hzMin, topsMin, ramMin, powerMax, currMin, voltMinAll, redType, rtMin, backlashMax]);
 
   const overview = useMemo(() => {
     const makerCount = new Set(catalogAll.map(p => p.maker)).size;
-    const offers = catalogAll.flatMap((part) => part.offers.filter((offer) => !offer.isDemo));
-    const knownOffers = offers.length;
-    const multiSource = catalogAll.filter(p => new Set(p.offers.filter((offer) => !offer.isDemo).map((offer) => offer.supplierId)).size >= 2).length;
-    const stockedOffers = offers.filter(o => o.stockKnown && o.stock > 0).length;
-    const prices = catalogAll.map(p => lowestObservedPrice(p)).filter((price): price is number => price != null);
-    const shortestLeads = catalogAll.flatMap((part) => {
-      const leads = part.offers.filter((offer) => !offer.isDemo && offer.leadKnown).map((offer) => offer.leadDays);
-      return leads.length ? [Math.min(...leads)] : [];
-    });
-    return { count: facetQuery.data?.total ?? catalogAll.length, makers: makerCount, knownOffers, multiSource, stockedOffers, medianPrice: median(prices), medianLead: median(shortestLeads) };
+    const exactIdentity = catalogAll.filter((part) => Boolean(part.maker && part.mpn)).length;
+    const sourceLinks = catalogAll.filter((part) => Boolean(part.sourceUrl)).length;
+    const technicalProfiles = catalogAll.filter((part) => (part.technicalSpecifications?.length ?? 0) > 0).length;
+    const summaries = catalogAll.filter((part) => part.blurb.trim().length >= 40).length;
+    return { count: facetQuery.data?.total ?? catalogAll.length, makers: makerCount, exactIdentity, sourceLinks, technicalProfiles, summaries };
   }, [catalogAll, facetQuery.data?.total]);
 
   const setParam = (k: string, v: string | null) => {
@@ -225,15 +185,15 @@ export default function PartsCatalog() {
   };
   const clearAll = () => setSp(new URLSearchParams(), { replace: true });
   const activeCount =
-    (q?1:0)+(joint?1:0)+(protocol?1:0)+(ros?1:0)+(opensrc?1:0)+(cad?1:0)+(inStock?1:0)+
-    region.length+supplyRegion.length+makers.length+(priceMin!==null?1:0)+(priceMax!==null?1:0)+
-    (wMax!==null?1:0)+(tMin!==null?1:0)+(vMin!==null?1:0)+(leadMax!==null?1:0)+(warMin!==null?1:0)+
+    (q?1:0)+(joint?1:0)+(protocol?1:0)+(ros?1:0)+(opensrc?1:0)+(cad?1:0)+
+    region.length+makers.length+
+    (wMax!==null?1:0)+(tMin!==null?1:0)+(vMin!==null?1:0)+(warMin!==null?1:0)+
     (dofMin!==null?1:0)+(payloadMin!==null?1:0)+(gripMin!==null?1:0)+(tactileOnly?1:0)+(iface?1:0)+
     (sensorType?1:0)+(rangeMin!==null?1:0)+(hzMin!==null?1:0)+(topsMin!==null?1:0)+(ramMin!==null?1:0)+
     (powerMax!==null?1:0)+(currMin!==null?1:0)+(voltMinAll!==null?1:0)+(redType?1:0)+(rtMin!==null?1:0)+
     (backlashMax!==null?1:0);
   const hasPageOnlyFilters = Boolean(
-    joint || protocol || ros || opensrc || cad || leadMax !== null || warMin !== null ||
+    joint || protocol || ros || opensrc || cad || warMin !== null ||
     wMax !== null || tMin !== null || vMin !== null || dofMin !== null || payloadMin !== null ||
     gripMin !== null || tactileOnly || iface || sensorType || rangeMin !== null || hzMin !== null ||
     topsMin !== null || ramMin !== null || powerMax !== null || currMin !== null || voltMinAll !== null ||
@@ -242,18 +202,17 @@ export default function PartsCatalog() {
 
   return (
     <>
-      <PageHeader kicker="Catalog" title={categoryTitle(cat)} sub="Production components, manufacturer identities, source-observed supplier offers, and explicit unknowns." />
+      <PageHeader kicker="Catalog" title={categoryTitle(cat)} sub="Production components with source-backed identity, technical profiles, engineering assets, and explicit unknowns." />
       <div className="mx-auto max-w-[1400px] px-4 py-3">
         <CatalogDataNotice className="mb-3" />
 
-        <div className="surface-card mb-3 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 divide-x divide-border overflow-hidden text-[11px]">
+        <div className="surface-card mb-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-border overflow-hidden text-[11px]">
           <Stat label="Components" value={overview.count} />
           <Stat label="Page makers" value={overview.makers} />
-          <Stat label="Page offers" value={overview.knownOffers} />
-          <Stat label="Page multi-source" value={overview.multiSource} />
-          <Stat label="Page stocked offers" value={overview.stockedOffers} />
-          <Stat label="Page median $" value={overview.medianPrice != null ? `$${overview.medianPrice.toLocaleString()}` : "—"} />
-          <Stat label="Page median lead" value={overview.medianLead != null ? `${overview.medianLead}d` : "—"} />
+          <Stat label="Exact identities" value={overview.exactIdentity} />
+          <Stat label="Product sources" value={overview.sourceLinks} />
+          <Stat label="Technical profiles" value={overview.technicalProfiles} />
+          <Stat label="Useful summaries" value={overview.summaries} />
         </div>
 
         <div className="grid gap-3 lg:grid-cols-[212px_1fr]">
@@ -268,12 +227,6 @@ export default function PartsCatalog() {
                 onChange={(e) => setParam("q", e.target.value || null)} />
             </Section>
 
-            <Section title="Observed price (USD)" count={(priceMin!==null?1:0)+(priceMax!==null?1:0)}>
-              <div className="grid grid-cols-2 gap-1.5">
-                <input type="number" className="input-bare" placeholder="min" value={priceMin ?? ""} onChange={e => setParam("pmin", e.target.value || null)} />
-                <input type="number" className="input-bare" placeholder="max" value={priceMax ?? ""} onChange={e => setParam("pmax", e.target.value || null)} />
-              </div>
-            </Section>
 
             {cat === "actuator" && (
               <>
@@ -413,26 +366,15 @@ export default function PartsCatalog() {
               </div>
             </Section>
 
-            {supplierRegionOptions.length > 0 && (
-              <Section title="Supplier region" count={supplyRegion.length}>
-                <div className="flex flex-wrap gap-1">
-                  {supplierRegionOptions.map(r => <Chip key={r} on={supplyRegion.includes(r)} onClick={() => toggleList("supregion", r)}>{r}</Chip>)}
-                </div>
-              </Section>
-            )}
-
-            <Section title="Observed lead / warranty" count={(leadMax!==null?1:0)+(warMin!==null?1:0)}>
-              <div className="grid grid-cols-2 gap-1.5">
-                <label className="text-[11px] text-muted-foreground">Lead ≤
-                  <input type="number" className="input-bare mt-0.5" placeholder="days" value={leadMax ?? ""} onChange={e => setParam("lmax", e.target.value || null)} />
-                </label>
-                <label className="text-[11px] text-muted-foreground">Warr ≥
+            <Section title="Warranty" count={warMin!==null?1:0}>
+              <div>
+                <label className="text-[11px] text-muted-foreground">Minimum months
                   <input type="number" className="input-bare mt-0.5" placeholder="mo" value={warMin ?? ""} onChange={e => setParam("warmin", e.target.value || null)} />
                 </label>
               </div>
             </Section>
 
-            <Section title="Attributes" count={(ros?1:0)+(opensrc?1:0)+(cad?1:0)+(inStock?1:0)}>
+            <Section title="Attributes" count={(ros?1:0)+(opensrc?1:0)+(cad?1:0)}>
               <label className="flex items-center gap-2 text-[12px] py-0.5">
                 <input type="checkbox" checked={ros} onChange={(e) => setParam("ros", e.target.checked?"true":null)} /> ROS native/community
               </label>
@@ -442,9 +384,7 @@ export default function PartsCatalog() {
               <label className="flex items-center gap-2 text-[12px] py-0.5">
                 <input type="checkbox" checked={cad} onChange={(e) => setParam("cad", e.target.checked?"true":null)} /> CAD available
               </label>
-              <label className="flex items-center gap-2 text-[12px] py-0.5">
-                <input type="checkbox" checked={inStock} onChange={(e) => setParam("stock", e.target.checked?"true":null)} /> Any offer with known stock
-              </label>
+
             </Section>
           </aside>
 
@@ -460,14 +400,11 @@ export default function PartsCatalog() {
                 <span><span className="mono text-foreground">{filtered.length}</span> shown on page · <span className="mono">{componentQuery.data?.total ?? facetQuery.data?.total ?? catalogAll.length}</span> total</span>
                 <span className="h-3 w-px bg-border" />
                 <label>Sort
-                  <select className="ml-1 input-bare inline-block w-auto" value={sort} onChange={(e) => setParam("sort", e.target.value === "price-asc" ? null : e.target.value)}>
-                    <option value="price-asc">price ↑</option>
-                    <option value="price-desc">price ↓</option>
+                  <select className="ml-1 input-bare inline-block w-auto" value={sort} onChange={(e) => setParam("sort", e.target.value === "name" ? null : e.target.value)}>
+                    <option value="name">name A–Z</option>
                     {cat === "actuator" && <option value="torque-desc">peak torque ↓</option>}
                     {cat === "actuator" && <option value="weight-asc">weight ↑</option>}
-                    <option value="lead-asc">lead time ↑</option>
                     <option value="failures-asc">incident records ↑</option>
-                    <option value="name">name A–Z</option>
                   </select>
                 </label>
                 {cat === "actuator" && <Link to="/finder/actuator" className="hover:text-primary">Guided finder →</Link>}
@@ -476,7 +413,7 @@ export default function PartsCatalog() {
             </div>
             {hasPageOnlyFilters && (
               <div className="mb-2 rounded border border-warning/30 bg-warning/5 px-3 py-2 text-[11px] text-muted-foreground" role="note">
-                Specification and attribute filters apply to the components loaded on this API page. Search, price, maker, region, supplier, and stock filters are applied server-side. Use Previous and Next to inspect every page.
+                Specification and attribute filters apply to the components loaded on this API page. Search, maker, and manufacturer-region filters are applied server-side. Use Previous and Next to inspect every page.
               </div>
             )}
             {activeCount > 0 && (
@@ -488,17 +425,13 @@ export default function PartsCatalog() {
                 {tMin !== null && <button className="pill pill-yellow" onClick={() => setParam("tmin", null)}>≥{tMin}Nm ×</button>}
                 {wMax !== null && <button className="pill pill-yellow" onClick={() => setParam("wmax", null)}>≤{wMax}kg ×</button>}
                 {vMin !== null && <button className="pill pill-yellow" onClick={() => setParam("vmin", null)}>≥{vMin}V ×</button>}
-                {priceMin !== null && <button className="pill pill-yellow" onClick={() => setParam("pmin", null)}>≥${priceMin} ×</button>}
-                {priceMax !== null && <button className="pill pill-yellow" onClick={() => setParam("pmax", null)}>≤${priceMax} ×</button>}
-                {leadMax !== null && <button className="pill pill-yellow" onClick={() => setParam("lmax", null)}>lead ≤{leadMax}d ×</button>}
                 {warMin !== null && <button className="pill pill-yellow" onClick={() => setParam("warmin", null)}>warr ≥{warMin}mo ×</button>}
                 {region.map(r => <button key={r} className="pill pill-yellow" onClick={() => toggleList("region", r)}>maker {r} ×</button>)}
-                {supplyRegion.map(r => <button key={r} className="pill pill-yellow" onClick={() => toggleList("supregion", r)}>supplier {r} ×</button>)}
                 {makers.map(m => <button key={m} className="pill pill-yellow" onClick={() => toggleList("maker", m)}>{m} ×</button>)}
                 {ros && <button className="pill pill-yellow" onClick={() => setParam("ros", null)}>ROS ×</button>}
                 {opensrc && <button className="pill pill-yellow" onClick={() => setParam("os", null)}>open source ×</button>}
                 {cad && <button className="pill pill-yellow" onClick={() => setParam("cad", null)}>CAD ×</button>}
-                {inStock && <button className="pill pill-yellow" onClick={() => setParam("stock", null)}>in stock ×</button>}
+
                 {sensorType && <button className="pill pill-yellow" onClick={() => setParam("stype", null)}>{sensorType} ×</button>}
                 {redType && <button className="pill pill-yellow" onClick={() => setParam("redtype", null)}>{redType} ×</button>}
                 {tactileOnly && <button className="pill pill-yellow" onClick={() => setParam("tactile", null)}>tactile ×</button>}
@@ -520,7 +453,7 @@ export default function PartsCatalog() {
             ) : (
               <div className="surface-card p-8 text-center">
                 <div className="text-[13px] font-medium">No components match these filters.</div>
-                <div className="text-[11.5px] text-muted-foreground mt-1">Try relaxing price, lead, or spec thresholds — or clear all filters.</div>
+                <div className="text-[11.5px] text-muted-foreground mt-1">Try relaxing technical thresholds or clear all filters.</div>
                 <button onClick={clearAll} className="btn-primary btn-sm mt-2">Clear filters</button>
               </div>
             )}

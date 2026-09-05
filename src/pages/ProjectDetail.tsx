@@ -1,25 +1,40 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
-  Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, Cpu, FileUp,
+  Download, ExternalLink, Github, FileJson, Trash2, Lock, Link2, FileUp,
   Clock, DollarSign, Package, ListChecks, ShieldCheck, BookOpen, AlertTriangle,
   Play, Users, Code2, GitFork, Truck,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { cloneProject, deleteProject, downloadRpps, getProjectBySlug, getProjectEstimate, updateProjectRpps, updateProjectScope, type ProjectRow, type SourcingEstimate } from "@/lib/projects";
+import { cloneProject, deleteProject, downloadRpps, getProjectBySlug, getProjectEstimate, listProjectsPage, updateProjectRpps, updateProjectScope, type ProjectRow, type SourcingEstimate } from "@/lib/projects";
 import { ProjectLineage } from "@/pages/ProjectLineage";
 import { organizationsApi, type Organization } from "@/lib/api/organizations";
 import { attachFile, detachProjectFile, listProjectFiles, uploadFile, type FileKind, type ProjectFile } from "@/lib/api/files";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 import { createReleaseBuildPassport, listPortableReleases, type PortableRppsReleaseSummary } from "@/lib/rpps/client";
 import { ReleaseCollaborationPanel } from "@/components/projects/ReleaseCollaborationPanel";
-import { rfqApi } from "@/lib/api/rfq";
 import { bomsApi } from "@/lib/api/builds";
 import type { BomDetail } from "@/shared/builds";
 import { currentBomTotals } from "@/lib/current-bom";
 import { ExpandableImage } from "@/components/common/ExpandableImage";
 import { selectProjectPreviewFiles } from "@/lib/projectPreview";
+import { BomItemsDisplay } from "@/components/boms/BomItemsDisplay";
+import { BomPublicationNotice } from "@/components/boms/BomPublicationNotice";
+import { PageMeta } from "@/components/PageMeta";
+import { ProjectMedia } from "@/components/projects/ProjectMedia";
+import { ProjectPreviewCard } from "@/components/projects/ProjectPreviewCard";
+import { ProjectMetadataSummary } from "@/components/projects/ProjectMetadataSummary";
+import { ProjectSpecifications } from "@/components/projects/ProjectSpecifications";
+import { SourcesVerification } from "@/components/projects/SourcesVerification";
+import { ProjectProposalPanel } from "@/components/projects/ProjectProposalPanel";
+import { ProjectClaimPanel } from "@/components/projects/ProjectClaimPanel";
+import { PriceHistoryPlaceholder } from "@/components/pricing/PriceHistoryPlaceholder";
+import { GetQuoteForm } from "@/components/quotes/GetQuoteForm";
+import { normalizeCatalogText } from "@/lib/catalogText";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { estimateProjectProfile } from "@/shared/projectEstimate";
+import { completedQuoteAllowed, publicBomLinesAllowed, quoteBlockerForBomState, type BomPublicationState } from "@/shared/bomPublication";
 
 const UrdfModelViewer = lazy(() => import("@/components/projects/UrdfModelViewer"));
 const StlModelViewer = lazy(() => import("@/components/projects/StlModelViewer"));
@@ -43,11 +58,12 @@ export default function ProjectDetail() {
   const [estimateError, setEstimateError] = useState(false);
   const [normalizedBom, setNormalizedBom] = useState<BomDetail | null>(null);
   const [normalizedBomLoading, setNormalizedBomLoading] = useState(false);
+  const [relatedProjects, setRelatedProjects] = useState<ProjectRow[]>([]);
   const [reproducing, setReproducing] = useState(false);
   const [forking, setForking] = useState(false);
-  const [creatingRfq, setCreatingRfq] = useState(false);
-  const [urdfUnavailable, setUrdfUnavailable] = useState(false);
-  const handleUrdfUnavailable = useCallback(() => setUrdfUnavailable(true), []);
+
+  const [urdfCandidateIndex, setUrdfCandidateIndex] = useState(0);
+  const handleUrdfUnavailable = useCallback(() => setUrdfCandidateIndex((index) => index + 1), []);
   const projectId = p?.id;
 
   useEffect(() => {
@@ -55,6 +71,10 @@ export default function ProjectDetail() {
     setLoading(true);
     getProjectBySlug(slug).then(r => { setP(r); setLoading(false); }).catch(e => { setErr(e.message); setLoading(false); });
   }, [slug]);
+
+  useEffect(() => {
+    if (p?.id) trackAnalyticsEvent({ event: "project_open", targetType: "project", targetId: p.slug });
+  }, [p?.id, p?.slug]);
 
   useEffect(() => {
     if (!user) { setOrganizations([]); return; }
@@ -66,7 +86,7 @@ export default function ProjectDetail() {
   useEffect(() => {
     if (!projectId) { setManagedFiles([]); return; }
     let cancelled = false;
-    setUrdfUnavailable(false);
+    setUrdfCandidateIndex(0);
     setManagedFilesLoading(true);
     listProjectFiles(projectId)
       .then((items) => { if (!cancelled) setManagedFiles(items); })
@@ -94,7 +114,8 @@ export default function ProjectDetail() {
   }, [projectId, user?.id]);
 
   useEffect(() => {
-    if (!projectId || !p?.bom_id || p.project_kind === "commercial_showcase") {
+    const publicationState = normalizedBom?.version?.publicationState;
+    if (!projectId || !p?.bom_id || !publicationState || !publicBomLinesAllowed(publicationState)) {
       setEstimate(null);
       setEstimateError(false);
       setEstimateLoading(false);
@@ -108,7 +129,16 @@ export default function ProjectDetail() {
       .catch(() => { if (!cancelled) setEstimateError(true); })
       .finally(() => { if (!cancelled) setEstimateLoading(false); });
     return () => { cancelled = true; };
-  }, [projectId, p?.bom_id, p?.project_kind]);
+  }, [projectId, p?.bom_id, normalizedBom?.version?.publicationState]);
+
+  useEffect(() => {
+    if (!p) return;
+    let cancelled = false;
+    listProjectsPage(1, 8, { kind: p.project_kind, category: p.robot_category ?? "" })
+      .then((result) => { if (!cancelled) setRelatedProjects(result.items.filter((project) => project.id !== p.id).slice(0, 6)); })
+      .catch(() => { if (!cancelled) setRelatedProjects([]); });
+    return () => { cancelled = true; };
+  }, [p?.id, p?.project_kind, p?.robot_category]);
 
   if (loading) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-muted-foreground">Loading…</div>;
   if (err) return <div className="mx-auto max-w-[1200px] px-4 py-8 text-[12px] text-destructive">Error: {err}</div>;
@@ -122,11 +152,17 @@ export default function ProjectDetail() {
   const canEditRpps = p.organization_id
     ? ["owner", "admin", "engineer"].includes(currentOrganization?.member_role ?? "")
     : isOwner;
-  const bom = p.rpps.bom ?? [];
   const assembly = p.rpps.assembly ?? [];
   const integrations = p.rpps.integrations ?? [];
   const files = p.rpps.files ?? [];
-  const { readyFiles, imageFiles, urdfFile: previewUrdf, stlFiles, stepFiles, objFile, other3dFiles } = selectProjectPreviewFiles(managedFiles);
+  const { readyFiles, imageFiles, urdfFiles, urdfIsCompleteAssembly, stlFiles, stlIsCompleteAssembly, stepFiles, stepIsCompleteAssembly, objFile, objIsCompleteAssembly, other3dFiles, excluded3dFiles } = selectProjectPreviewFiles(managedFiles);
+  const previewUrdf = urdfFiles[urdfCandidateIndex] ?? null;
+  const allUrdfCandidatesFailed = urdfFiles.length > 0 && urdfCandidateIndex >= urdfFiles.length;
+  const hasPartialProjectGeometry = (!urdfIsCompleteAssembly && urdfFiles.length > 0)
+    || (!stlIsCompleteAssembly && stlFiles.length > 0)
+    || (!stepIsCompleteAssembly && stepFiles.length > 0)
+    || (!objIsCompleteAssembly && Boolean(objFile))
+    || other3dFiles.length > 0;
   const evidence = p.rpps.evidence ?? [];
   const knownIssues = p.rpps.known_issues ?? [];
   const authors = p.rpps.authors ?? [];
@@ -143,11 +179,85 @@ export default function ProjectDetail() {
     for (const it of integrations) c[it.status] = (c[it.status] ?? 0) + 1;
     return c;
   })();
-
-  const estCost = p.estimated_cost_usd ?? p.rpps.build?.estimated_cost_usd ?? null;
-  const estTime = p.rpps.build?.estimated_time_hours ?? (totalBuildMin > 0 ? totalBuildMin / 60 : null);
-  const latestPublishedRelease = portableReleases.find((release) => release.status === "published");
   const isCommercialShowcase = p.project_kind === "commercial_showcase";
+  const hasHardwareData = Boolean(
+    p.rpps.hardware?.dof
+    || p.rpps.hardware?.payload_kg
+    || p.rpps.hardware?.weight_kg
+    || p.rpps.hardware?.height_cm
+    || p.rpps.hardware?.compute,
+  );
+  const hasSoftwareData = Boolean(
+    p.rpps.software?.os
+    || p.rpps.software?.middleware
+    || p.rpps.software?.ros_support
+    || p.rpps.software?.languages?.length
+    || p.rpps.software?.simulators?.length,
+  );
+  const hasBuildData = Boolean(
+    p.rpps.build?.difficulty
+    || (!isCommercialShowcase && (p.rpps.build?.estimated_time_hours || p.rpps.build?.estimated_cost_usd))
+    || p.rpps.build?.fabrication?.length
+    || p.rpps.build?.required_tools?.length
+    || p.rpps.build?.required_skills?.length,
+  );
+  const commercialSystems = ((p.rpps as unknown as {
+    commercial_profile?: { systems?: Array<{ name?: unknown; description?: unknown; sourceUrl?: unknown }> };
+  }).commercial_profile?.systems ?? []).flatMap((system) => (
+    typeof system.name === "string" && typeof system.description === "string"
+      ? [{ name: system.name, description: system.description, sourceUrl: typeof system.sourceUrl === "string" ? system.sourceUrl : null }]
+      : []
+  )).slice(0, 8);
+  const commercialPrice = (p.rpps as unknown as { commercial_profile?: { price?: { kind?: unknown; currency?: unknown; minMinor?: unknown; methodVersion?: unknown; valuedAt?: unknown } } }).commercial_profile?.price;
+  const normalizedCommercialPrice = ["market_estimate", "published_price", "published_range"].includes(String(commercialPrice?.kind))
+    && commercialPrice.currency === "USD"
+    && typeof commercialPrice.minMinor === "number"
+    && Number.isSafeInteger(commercialPrice.minMinor)
+    && commercialPrice.minMinor > 0
+    && typeof commercialPrice.methodVersion === "string"
+    && commercialPrice.methodVersion.trim()
+    ? {
+      amountMinor: commercialPrice.minMinor,
+      kind: String(commercialPrice.kind) as "market_estimate" | "published_price" | "published_range",
+      methodVersion: commercialPrice.methodVersion,
+      valuedAt: typeof commercialPrice.valuedAt === "string" ? commercialPrice.valuedAt : p.updated_at,
+    }
+    : null;
+
+  const profileEstimate = estimateProjectProfile({
+    projectKind: p.project_kind,
+    category: p.robot_category,
+    publishedCostUsd: normalizedCommercialPrice?.kind === "published_price" || normalizedCommercialPrice?.kind === "published_range"
+      ? normalizedCommercialPrice.amountMinor / 100
+      : isCommercialShowcase ? null : normalizedCommercialPrice ? null : p.estimated_cost_usd ?? p.rpps.build?.estimated_cost_usd ?? null,
+    marketCostMinor: normalizedCommercialPrice?.kind === "market_estimate" ? normalizedCommercialPrice.amountMinor : null,
+    marketCostMethod: normalizedCommercialPrice?.kind === "market_estimate" ? normalizedCommercialPrice.methodVersion : null,
+    publishedTimeHours: p.rpps.build?.estimated_time_hours ?? null,
+    knownCostMinor: bomCostMinor,
+    pricedLines: bomPricedCount,
+    totalLines: bomLineCount,
+    units: bomQty,
+    assemblyDurationMinutes: totalBuildMin,
+    assemblySteps: assembly.length,
+    difficulty: p.difficulty,
+    valuedAt: normalizedCommercialPrice?.valuedAt ?? p.updated_at,
+  });
+  const estCost = profileEstimate.cost ? profileEstimate.cost.amountMinor / 100 : null;
+  const estTime = profileEstimate.time ? profileEstimate.time.minutes / 60 : null;
+  const latestPublishedRelease = portableReleases.find((release) => release.status === "published");
+  const fallbackBomState: BomPublicationState = p.project_kind === "robotics_software"
+    ? "not_applicable"
+    : isCommercialShowcase
+      ? "manufacturer_unavailable"
+      : p.project_kind === "physical_design"
+        ? "unavailable"
+        : "classification_required";
+  const bomState = normalizedBom?.version?.publicationState ?? fallbackBomState;
+  const bomLinesArePublic = publicBomLinesAllowed(bomState);
+  const quoteReady = completedQuoteAllowed(bomState, normalizedBom?.version?.quoteReady === 1);
+  const quoteBlocker = normalizedBom?.version?.validationReport.blockers?.[0]?.description
+    ?? quoteBlockerForBomState(bomState)
+    ?? "The BOM still has unresolved or unpriced required lines.";
 
   const reproduce = async () => {
     if (!user) {
@@ -191,21 +301,6 @@ export default function ProjectDetail() {
     }
   };
 
-  const createQuoteRequest = async () => {
-    if (!user) {
-      nav("/auth", { state: { from: `/projects/${p.slug}` } });
-      return;
-    }
-    setCreatingRfq(true);
-    try {
-      const result = await rfqApi.create({ projectId: p.id, expiresInDays: 30 });
-      nav(`/quotes/${result.item.id}`);
-    } catch (error) {
-      toast({ title: "Could not create quote request", description: errorMessage(error), variant: "destructive" });
-    } finally {
-      setCreatingRfq(false);
-    }
-  };
 
   const remove = async () => {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
@@ -219,6 +314,17 @@ export default function ProjectDetail() {
       toast({ title: "Link copied", description: "Project URL copied to clipboard." });
     } catch (e: any) {
       toast({ title: "Copy failed", description: e?.message ?? "Clipboard unavailable.", variant: "destructive" });
+    }
+  };
+
+  const copyBadge = async () => {
+    const origin = window.location.origin;
+    const markdown = `[![${p.name} on RoboPartPicker](${origin}/badges/project/${encodeURIComponent(p.slug)}.svg)](${origin}/projects/${encodeURIComponent(p.slug)})`;
+    try {
+      await navigator.clipboard.writeText(markdown);
+      toast({ title: "README badge copied", description: "Paste the Markdown into the project's README to link its BOM and files." });
+    } catch (error) {
+      toast({ title: "Copy failed", description: errorMessage(error), variant: "destructive" });
     }
   };
 
@@ -261,11 +367,9 @@ export default function ProjectDetail() {
     }
   };
 
-  const cover = p.cover_image_url ?? p.rpps.cover_image_url ?? null;
-  const updated = new Date(p.updated_at);
-
   return (
     <div className="mx-auto max-w-[1240px] px-4 py-4">
+      <PageMeta title={`${p.name}: BOM, files and build data | RoboPartPicker`} description={normalizeCatalogText(p.summary || p.description) || `Explore ${p.name}, its source repository, technical files, parts and bill of materials.`} path={`/projects/${p.slug}`} />
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-2">
         <Link to="/projects" className="hover:text-foreground">Projects</Link>
@@ -279,60 +383,35 @@ export default function ProjectDetail() {
       </div>
 
       {/* Header */}
-      <div className="surface-card p-3 mb-3">
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="md:w-[220px] shrink-0">
-            {cover ? (
-              <img
-                src={cover}
-                alt={`${p.name} cover image`}
-                className="w-full h-[140px] md:h-[150px] rounded border border-border object-cover bg-muted"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-[140px] md:h-[150px] rounded border border-dashed border-border bg-muted/40 grid place-items-center text-muted-foreground">
-                <div className="flex flex-col items-center gap-1">
-                  <Cpu className="h-6 w-6 opacity-60" aria-hidden />
-                  <span className="text-[10px] uppercase tracking-wider">No cover</span>
-                </div>
+      <div data-project-main-surface className="surface-card p-3 mb-3">
+        <div data-project-identity-actions className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-[22px] font-bold tracking-tight leading-tight break-words">{p.name}</h1>
+            {p.summary && <p className="text-[13px] text-muted-foreground mt-1 max-w-[720px] whitespace-pre-line">{normalizeCatalogText(p.summary)}</p>}
+          </div>
+          <div className="flex w-full shrink-0 flex-col items-start gap-1.5 lg:w-auto lg:items-end">
+            <div className="flex flex-wrap items-center justify-start gap-1.5 lg:justify-end">
+              {p.repo_url && <a href={p.repo_url} target="_blank" rel="noreferrer" aria-label={isCommercialShowcase ? "Open official product page" : "Open source repository"} className="btn-ghost btn-sm"><Github className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Official page" : "Repo"} <ExternalLink className="h-3 w-3" /></a>}
+              {p.docs_url && <a href={p.docs_url} target="_blank" rel="noreferrer" aria-label={isCommercialShowcase ? "Open official product page" : "Open documentation"} className="btn-ghost btn-sm"><BookOpen className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Official page" : "Docs"} <ExternalLink className="h-3 w-3" /></a>}
+              <button onClick={copyLink} aria-label="Copy project link" className="btn-ghost btn-sm"><Link2 className="h-3.5 w-3.5" /> Copy link</button>
+              <button onClick={() => void copyBadge()} aria-label="Copy project README badge" className="btn-ghost btn-sm"><Code2 className="h-3.5 w-3.5" /> README badge</button>
+              {!isCommercialShowcase && <button onClick={() => void forkProject()} disabled={forking} aria-label="Create a private editable fork" className="btn-ghost btn-sm"><GitFork className="h-3.5 w-3.5" /> {forking ? "Forking…" : "Fork & modify"}</button>}
+              {!isCommercialShowcase && <button onClick={() => void reproduce()} disabled={reproducing || portableReleases.length === 0} aria-label="Reproduce this project release" className="btn-primary btn-sm disabled:opacity-50"><Play className="h-3.5 w-3.5" /> {reproducing ? "Creating…" : "Reproduce"}</button>}
+              <button onClick={() => downloadRpps(p.rpps)} aria-label={isCommercialShowcase ? "Export showcase metadata" : "Export RPPS package"} className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Export metadata" : "Export RPPS"}</button>
+            </div>
+            {canManageScope && (
+              <div className="mt-1 border-t border-border/60 pt-1.5 w-full flex justify-end">
+                <button onClick={remove} aria-label="Delete project" className="btn-ghost btn-sm text-destructive"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
               </div>
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="text-[22px] font-bold tracking-tight leading-tight">{p.name}</h1>
-                {p.summary && <p className="text-[13px] text-muted-foreground mt-1 max-w-[720px]">{p.summary}</p>}
-              </div>
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <div className="flex flex-wrap items-center justify-end gap-1.5">
-                  {p.repo_url && <a href={p.repo_url} target="_blank" rel="noreferrer" aria-label={isCommercialShowcase ? "Open official product page" : "Open source repository"} className="btn-ghost btn-sm"><Github className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Official page" : "Repo"} <ExternalLink className="h-3 w-3" /></a>}
-                  {p.docs_url && <a href={p.docs_url} target="_blank" rel="noreferrer" aria-label={isCommercialShowcase ? "Open official product page" : "Open documentation"} className="btn-ghost btn-sm"><BookOpen className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Official page" : "Docs"} <ExternalLink className="h-3 w-3" /></a>}
-                  <button onClick={copyLink} aria-label="Copy project link" className="btn-ghost btn-sm"><Link2 className="h-3.5 w-3.5" /> Copy link</button>
-                  {!isCommercialShowcase && <button onClick={() => void forkProject()} disabled={forking} aria-label="Create a private editable fork" className="btn-ghost btn-sm"><GitFork className="h-3.5 w-3.5" /> {forking ? "Forking…" : "Fork & modify"}</button>}
-                  {!isCommercialShowcase && <button onClick={() => void reproduce()} disabled={reproducing || portableReleases.length === 0} aria-label="Reproduce this project release" className="btn-primary btn-sm disabled:opacity-50"><Play className="h-3.5 w-3.5" /> {reproducing ? "Creating…" : "Reproduce"}</button>}
-                  <button onClick={() => downloadRpps(p.rpps)} aria-label={isCommercialShowcase ? "Export showcase metadata" : "Export RPPS package"} className="btn-primary btn-sm"><Download className="h-3.5 w-3.5" /> {isCommercialShowcase ? "Export metadata" : "Export RPPS"}</button>
-                </div>
-                {canManageScope && (
-                  <div className="mt-1 border-t border-border/60 pt-1.5 w-full flex justify-end">
-                    <button onClick={remove} aria-label="Delete project" className="btn-ghost btn-sm text-destructive"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[11px]">
-              <Meta k="version" v={`v${p.version}`} />
-              <Meta k="rpps" v={p.rpps_version} />
-              <StatusPill kind={p.status === "published" ? "ok" : p.status === "archived" ? "muted" : "warn"} label={p.status} />
-              {p.is_demo && <StatusPill kind="warn" label="demo fixture" />}
-              <StatusPill kind={p.license ? "ok" : "warn"} label={isCommercialShowcase ? "commercial showcase" : p.license ? "licensed source" : p.repo_url ? "license unclear" : "license unavailable"} />
-              <StatusPill kind={p.publishability === "ready" ? "ok" : p.publishability === "blocked" ? "warn" : "info"} label={`publishability: ${p.publishability}`} />
-              {p.difficulty && <Meta k="difficulty" v={p.difficulty} />}
-              {p.license && <Meta k="license" v={p.license} />}
-              <Meta k="updated" v={updated.toLocaleDateString()} />
-              {p.tags.map(t => <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10.5px]">{t}</span>)}
-            </div>
+        </div>
+
+        <div data-project-hero-evidence className="mt-3 grid gap-3 lg:grid-cols-[minmax(280px,36%)_minmax(0,1fr)]">
+          <div className="min-h-[240px] lg:self-start">
+            <ProjectMedia project={p} mode="detail" maxItems={isCommercialShowcase ? 4 : 1} className="aspect-[4/3] min-h-[240px] w-full" />
           </div>
+          <ProjectMetadataSummary project={p} estimate={profileEstimate} variant="hero" />
         </div>
 
         {isCommercialShowcase && (
@@ -344,14 +423,14 @@ export default function ProjectDetail() {
 
         {/* KPI strip */}
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 border-t border-border pt-3">
-          <Kpi to={`/projects/${p.slug}/reproducibility`} icon={<Users className="h-3.5 w-3.5" />} label="Reproductions" value={`${p.reproduction_count} started · ${p.successful_reproduction_count} verified`} />
-          <Kpi to={`/projects/${p.slug}/cost`} icon={<DollarSign className="h-3.5 w-3.5" />} label="Est. cost" value={estCost != null ? `$${estCost.toLocaleString()}` : "—"} />
-          <Kpi to={`/projects/${p.slug}/schedule`} icon={<Clock className="h-3.5 w-3.5" />} label="Est. time" value={estTime != null ? `${Number(estTime).toFixed(estTime >= 10 ? 0 : 1)} h` : "—"} />
-          <Kpi to={`/projects/${p.slug}/parts`} icon={<Package className="h-3.5 w-3.5" />} label="Parts" value={bomLineCount > 0 ? `${bomLineCount} lines · ${bomQty} pcs` : "—"} />
-          <Kpi to={`/projects/${p.slug}/assembly`} icon={<ListChecks className="h-3.5 w-3.5" />} label="Assembly" value={assembly.length > 0 ? `${assembly.length} steps` : "—"} />
-          <Kpi to={`/projects/${p.slug}/software`} icon={<Code2 className="h-3.5 w-3.5" />} label="Software" value={p.rpps.software?.middleware ?? p.rpps.software?.os ?? "—"} />
-          <Kpi to={`/projects/${p.slug}/integrations`} icon={<Link2 className="h-3.5 w-3.5" />} label="Integrations" value={integrations.length > 0 ? `${integrations.length} · ${integrationCounts["verified"] ?? 0} verified` : "—"} />
-          <Kpi to={`/projects/${p.slug}/evidence`} icon={<FileJson className="h-3.5 w-3.5" />} label="Evidence" value={evidence.length > 0 ? `${evidence.length} sources` : "—"} />
+          {!isCommercialShowcase && <Kpi to={`/projects/${p.slug}/reproducibility`} icon={<Users className="h-3.5 w-3.5" />} label="Reproductions" value={`${p.reproduction_count} started · ${p.successful_reproduction_count} verified`} />}
+          <Kpi to={`/projects/${p.slug}/cost`} icon={<DollarSign className="h-3.5 w-3.5" />} label="Price" value={estCost == null || !profileEstimate.cost ? "Official price not published" : `$${estCost.toLocaleString(undefined, { maximumFractionDigits: 0 })} · ${profileEstimate.cost.confidence}`} />
+          <Kpi to={`/projects/${p.slug}/schedule`} icon={<Clock className="h-3.5 w-3.5" />} label={isCommercialShowcase ? "Buildability" : "Est. time"} value={estTime == null || !profileEstimate.time ? isCommercialShowcase ? "Not a buildable release" : "Build time unavailable" : `${Number(estTime).toFixed(estTime >= 10 ? 0 : 1)} h · ${profileEstimate.time.confidence}`} />
+          <Kpi to={`/projects/${p.slug}/parts`} icon={<Package className="h-3.5 w-3.5" />} label="Parts" value={bomLineCount > 0 ? `${bomLineCount} lines · ${bomQty} pcs` : isCommercialShowcase ? "Manufacturer component list not published" : "Source BOM not published"} />
+          <Kpi to={`/projects/${p.slug}/assembly`} icon={<ListChecks className="h-3.5 w-3.5" />} label="Assembly" value={assembly.length > 0 ? `${assembly.length} steps` : isCommercialShowcase ? "Public assembly guide not published" : "Guide research open"} />
+          <Kpi to={`/projects/${p.slug}/software`} icon={<Code2 className="h-3.5 w-3.5" />} label="Software" value={p.rpps.software?.middleware ?? p.rpps.software?.os ?? "Public platform details not published"} />
+          <Kpi to={`/projects/${p.slug}/integrations`} icon={<Link2 className="h-3.5 w-3.5" />} label="Integrations" value={integrations.length > 0 ? `${integrations.length} · ${integrationCounts["verified"] ?? 0} verified` : isCommercialShowcase ? "Compatibility details not published" : "Community verification open"} />
+          <Kpi to={`/projects/${p.slug}/evidence`} icon={<FileJson className="h-3.5 w-3.5" />} label="Sources" value={evidence.length > 0 ? `${evidence.length} verified records` : "Source review queued"} />
         </div>
       </div>
 
@@ -360,27 +439,29 @@ export default function ProjectDetail() {
         <div className="space-y-3 min-w-0">
           {canEditRpps && <ProjectTechnicalEditor project={p} onSaved={setP} />}
 
-          {previewUrdf?.contentUrl && !urdfUnavailable ? (
+          {urdfIsCompleteAssembly && previewUrdf?.contentUrl ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
               <UrdfModelViewer urdfUrl={previewUrdf.contentUrl} urdfPath={previewUrdf.relativePath} files={readyFiles} sourceUrl={p.repo_url ?? previewUrdf.contentUrl} title={`${p.name} · URDF preview`} onUnavailable={handleUrdfUnavailable} />
             </Suspense>
-          ) : stlFiles.length > 0 ? (
+          ) : stlIsCompleteAssembly && stlFiles.length > 0 ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading 3D viewer…</div>}>
-              <StlModelViewer stlUrls={stlFiles.map((file) => file.contentUrl)} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · 3D design (${stlFiles.length} part${stlFiles.length === 1 ? "" : "s"})`} />
+              <StlModelViewer files={stlFiles.map((file) => ({ contentUrl: file.contentUrl, name: file.relativePath ?? file.originalName }))} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · verified 3D assembly`} completeAssembly />
             </Suspense>
-          ) : stepFiles.length > 0 ? (
+          ) : stepIsCompleteAssembly && stepFiles.length > 0 ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading native CAD converter…</div>}>
-              <StepModelViewer files={stepFiles.map((file) => ({ contentUrl: file.contentUrl, name: file.relativePath ?? file.originalName }))} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · STEP/IGES design (${stepFiles.length} source file${stepFiles.length === 1 ? "" : "s"})`} />
+              <StepModelViewer files={stepFiles.map((file) => ({ contentUrl: file.contentUrl, name: file.relativePath ?? file.originalName }))} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · verified native CAD assembly`} completeAssembly />
             </Suspense>
-          ) : objFile ? (
+          ) : objIsCompleteAssembly && objFile ? (
             <Suspense fallback={<div className="surface-card grid h-[420px] place-items-center text-[11px] text-muted-foreground">Loading OBJ design…</div>}>
               <ObjModelViewer file={{ contentUrl: objFile.contentUrl, name: objFile.relativePath ?? objFile.originalName }} sourceUrl={p.repo_url ?? undefined} title={`${p.name} · OBJ design`} />
             </Suspense>
-          ) : other3dFiles.length > 0
-            ? <CadSourceFallback projectName={p.name} files={other3dFiles} sourceUrl={p.repo_url ?? undefined} format="Native CAD" />
-            : urdfUnavailable && previewUrdf
-              ? <CadSourceFallback projectName={p.name} files={[previewUrdf]} sourceUrl={p.repo_url ?? undefined} format="URDF" />
-              : null}
+          ) : allUrdfCandidatesFailed && urdfIsCompleteAssembly
+            ? <div className="surface-card border-warning/30 bg-warning/5 px-3 py-3 text-[11px] leading-5 text-muted-foreground"><strong className="text-foreground">The verified assembly could not be rendered faithfully.</strong> Its authoritative files remain available under Managed artifacts.</div>
+            : null}
+
+          {hasPartialProjectGeometry && <div className="surface-card border-border bg-muted/20 px-3 py-3 text-[11px] leading-5 text-muted-foreground"><strong className="text-foreground">Partial component geometry is not rendered as the complete robot.</strong> Individual source artifacts remain downloadable under Managed artifacts and can be associated with exact component profiles.</div>}
+
+          {excluded3dFiles.length > 0 && <div className="surface-card border-warning/30 bg-warning/5 px-3 py-2 text-[10.5px] leading-4 text-muted-foreground"><strong className="text-foreground">{excluded3dFiles.length} repository model file{excluded3dFiles.length === 1 ? " was" : "s were"} excluded from the project preview.</strong> Environment, terrain, test, fixture, jig, and tool geometry remains downloadable under Managed artifacts but is not presented as robot geometry.</div>}
 
           {imageFiles.length > 0 && (
             <Section title={`Project media · ${imageFiles.length}`}>
@@ -406,9 +487,29 @@ export default function ProjectDetail() {
               : <Empty>No long-form description provided.</Empty>}
           </Section>
 
+          {isCommercialShowcase && <ProjectSpecifications projectId={p.id} />}
+
+          {isCommercialShowcase && commercialSystems.length > 0 && <Section title={`Published systems & capabilities · ${commercialSystems.length}`}>
+            <div className="grid gap-2 sm:grid-cols-2">{commercialSystems.map((system, index) => {
+              const visual = imageFiles.length ? imageFiles[index % imageFiles.length] : null;
+              return <article key={`${system.name}-${index}`} className="grid min-w-0 grid-cols-[96px_minmax(0,1fr)] overflow-hidden border border-border bg-background">
+                {visual ? <img src={visual.contentUrl} alt={`${p.name} official product view`} className="h-full min-h-28 w-24 bg-muted object-cover" loading="lazy" /> : <div className="grid min-h-28 w-24 place-items-center bg-primary/10 text-[9px] font-semibold uppercase tracking-wide">{p.robot_category ?? "Robot"}</div>}
+                <div className="min-w-0 p-3"><h3 className="text-[12px] font-semibold">{system.name}</h3><p className="mt-1 text-[11px] leading-5 text-muted-foreground">{system.description}</p>{system.sourceUrl && <a href={system.sourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[10.5px] font-medium text-link hover:underline">Manufacturer source <ExternalLink className="h-3 w-3" /></a>}<p className="mt-1 text-[9px] text-muted-foreground">Image shows an official product view, not a subsystem photograph.</p></div>
+              </article>;
+            })}</div>
+          </Section>}
+
+          <ProjectClaimPanel projectId={p.id} signedIn={Boolean(user)} isOwner={isOwner} />
+
+          <PriceHistoryPlaceholder entityName={p.name} kind="project" />
+
+          {relatedProjects.length > 0 && <Section title="Related robotics projects">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{relatedProjects.map((project) => <ProjectPreviewCard key={project.id} project={project} variant="compact" />)}</div>
+          </Section>}
+
           <Section
-            title={`Bill of materials${bomLineCount ? ` · ${bomLineCount}` : ""}`}
-            right={bomLineCount > 0 && (
+            title={`Bill of materials${bomLinesArePublic && bomLineCount ? ` · ${bomLineCount}` : ""}`}
+            right={bomLinesArePublic && bomLineCount > 0 && (
               <span className="mono text-[11px] text-muted-foreground">
                 {bomQty} pcs · {bomPricedCount}/{bomLineCount} priced · known total <span className="text-foreground">{moneyMinor(bomCostMinor, normalizedBom?.version?.currency ?? "USD")}</span>
               </span>
@@ -416,73 +517,14 @@ export default function ProjectDetail() {
           >
             {normalizedBomLoading
               ? <Empty>Loading the normalized BOM…</Empty>
-              : bomLineCount === 0
-              ? <Empty>{isCommercialShowcase ? "No public BOM is available for this commercial showcase." : "No BOM items recorded. Add them by editing the RPPS package."}</Empty>
-              : normalizedBom
-                ? <NormalizedBomTable bom={normalizedBom} />
-              : (
-                <div className="overflow-x-auto -mx-3 px-3">
-                  <table className="w-full text-[12px] min-w-[720px]">
-                    <thead className="text-left text-muted-foreground border-b border-border">
-                      <tr>
-                        <th className="py-1 pr-2 font-medium">Ref</th>
-                        <th className="pr-2 font-medium">Part</th>
-                        <th className="pr-2 font-medium">Maker / MPN</th>
-                        <th className="pr-2 font-medium">Class</th>
-                        <th className="pr-2 font-medium text-right">Qty</th>
-                        <th className="pr-2 font-medium text-right">Unit $</th>
-                        <th className="pr-2 font-medium text-right">Ext $</th>
-                        <th className="font-medium">Supplier</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bom.map((i, ix) => (
-                        <tr key={ix} className="border-b border-border/60 align-top">
-                          <td className="py-1 pr-2 mono text-[11px]">{i.ref ?? "—"}</td>
-                          <td className="pr-2">
-                            <div className="font-medium">{i.name}</div>
-                            {i.notes && <div className="text-muted-foreground text-[11px] mt-0.5">{i.notes}</div>}
-                          </td>
-                          <td className="pr-2">
-                            <div>{i.manufacturer ?? "—"}</div>
-                            {i.mpn && <div className="mono text-[11px] text-muted-foreground">{i.mpn}</div>}
-                          </td>
-                          <td className="pr-2">
-                            <div className="flex flex-wrap gap-1">
-                              {i.category && <span className="rounded bg-muted px-1.5 py-0.5 text-[10.5px]">{i.category}</span>}
-                              {i.fabricated && <StatusPill kind="info" label="fabricated" />}
-                              {i.optional && <StatusPill kind="muted" label="optional" />}
-                              {!i.category && !i.fabricated && !i.optional && <span className="text-muted-foreground">—</span>}
-                            </div>
-                          </td>
-                          <td className="pr-2 mono text-right">{i.qty}</td>
-                          <td className="pr-2 mono text-right">{i.unit_cost_usd != null ? `$${i.unit_cost_usd.toFixed(2)}` : "—"}</td>
-                          <td className="pr-2 mono text-right">{i.unit_cost_usd != null ? `$${(i.unit_cost_usd * i.qty).toFixed(2)}` : "—"}</td>
-                          <td>
-                            {i.supplier_url
-                              ? <a href={i.supplier_url} target="_blank" rel="noreferrer" className="btn-primary btn-sm inline-flex items-center gap-1">Buy / verify <ExternalLink className="h-3 w-3" /></a>
-                              : <span className="text-muted-foreground">—</span>}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t border-border">
-                        <td colSpan={4} className="py-1 pr-2 text-[11px] text-muted-foreground">Totals</td>
-                        <td className="pr-2 mono text-right">{bomQty}</td>
-                        <td className="pr-2" />
-                        <td className="pr-2 mono text-right font-medium">{moneyMinor(bomCostMinor, "USD")}</td>
-                        <td />
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
+              : normalizedBom && bomLinesArePublic && normalizedBom.items.length > 0
+                ? <div className="space-y-3"><BomPublicationNotice state={bomState} coverageNote={normalizedBom.version?.coverageNote} omissions={normalizedBom.version?.omissionReport} /><BomItemsDisplay bom={normalizedBom} framed={false} /></div>
+                : <BomPublicationNotice state={bomState} coverageNote={normalizedBom?.version?.coverageNote} omissions={normalizedBom?.version?.omissionReport} />}
           </Section>
 
           <Section title="Sourcing estimate">
-            {isCommercialShowcase
-              ? <Empty>Sourcing is unavailable because this showcase does not include a public, reproducible BOM.</Empty>
+            {!bomLinesArePublic
+              ? <Empty>{quoteBlocker}</Empty>
               : estimateLoading
               ? <Empty>Calculating the whole-BOM procurement estimate…</Empty>
               : estimateError
@@ -506,11 +548,15 @@ export default function ProjectDetail() {
                           <tbody>{estimate.basket.map((line) => <tr key={line.lineId} className="border-b border-border/60 last:border-0"><td className="p-2"><div className="font-medium">{line.name}</div>{line.exclusionReason && <div className="text-[10px] text-warning">{line.exclusionReason}</div>}</td><td className="p-2">{line.supplierName ?? "Not sourced"}</td><td className="p-2"><div className="flex flex-wrap gap-1">{line.riskLabel && <StatusPill kind={line.isSubstitute ? "warn" : "ok"} label={line.riskLabel} />}{line.condition && <StatusPill kind="muted" label={line.condition} />}{line.freshnessLabel && <StatusPill kind="info" label={line.freshnessLabel} />}{line.unpriced && <StatusPill kind="warn" label="unpriced" />}</div></td><td className="p-2 text-right mono">{line.quantity}</td><td className="p-2 text-right mono">{moneyMinor(line.unitPriceMinor, line.currency)}</td><td className="p-2 text-right mono">{moneyMinor(line.subtotalMinor, line.currency)}</td><td className="p-2 text-right mono">{line.leadTimeDays == null ? "unknown" : `${line.leadTimeDays}d`}</td></tr>)}</tbody>
                         </table>
                       </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-primary/25 bg-primary/5 p-3"><div><div className="font-medium">Need firm supplier pricing?</div><div className="text-[10.5px] text-muted-foreground">Capture this estimate in an RFQ package, reconcile supplier responses, and explicitly approve an option. Automated outbound delivery is still coming soon.</div></div><div className="flex gap-2"><Link to="/builder" className="btn-ghost btn-sm">Sourcing preferences</Link><button disabled={creatingRfq} onClick={() => void createQuoteRequest()} className="btn-primary btn-sm">{creatingRfq ? "Creating…" : "Create quote request"}</button></div></div>
+
                     </div>
                   )
                   : <Empty>An estimate is not available for this project yet.</Empty>}
           </Section>
+
+          {quoteReady
+            ? <GetQuoteForm projectId={p.id} bomId={normalizedBom?.id ?? p.bom_id ?? undefined} signedIn={Boolean(user)} defaultEmail={user?.email ?? ""} />
+            : <section className="surface-card border-warning/40 bg-warning/5 p-4" aria-labelledby="quote-unavailable-title"><div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" /><div><h2 id="quote-unavailable-title" className="font-semibold">Quote unavailable</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">{quoteBlocker}</p></div></div></section>}
 
           <Section title="Versions & forks">
             <div className="px-3 py-2"><ProjectLineage projectId={p.id} /></div>
@@ -521,7 +567,7 @@ export default function ProjectDetail() {
             right={totalBuildMin > 0 && <span className="mono text-[11px] text-muted-foreground">{(totalBuildMin / 60).toFixed(1)} h total</span>}
           >
             {assembly.length === 0
-              ? <Empty>No assembly steps documented.</Empty>
+              ? <div className="grid gap-3 border border-primary/25 bg-primary/5 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><div className="font-medium">Assembly guide research is open</div><p className="mt-1 text-[11px] leading-5 text-muted-foreground">Submit a source-linked build video or structured step sequence for owner or moderator review.</p></div><Link to={`/community?compose=assembly&project=${encodeURIComponent(p.id)}`} className="btn-primary justify-center">Propose assembly guidance</Link></div>
               : (
                 <ol className="space-y-2 text-[12px]">
                   {assembly.map((s, ix) => (
@@ -553,7 +599,7 @@ export default function ProjectDetail() {
             )}
           >
             {integrations.length === 0
-              ? <Empty>No component-to-component integrations recorded.</Empty>
+              ? <div className="grid gap-3 border border-primary/25 bg-primary/5 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><div className="font-medium">Integration verification is open</div><p className="mt-1 text-[11px] leading-5 text-muted-foreground">Document exact interfaces, adapters, firmware, middleware, and a source showing that the integration works.</p></div><Link to={`/community?compose=integration&project=${encodeURIComponent(p.id)}`} className="btn-primary justify-center">Propose an integration</Link></div>
               : (
                 <div className="overflow-x-auto -mx-3 px-3">
                   <table className="w-full text-[12px] min-w-[560px]">
@@ -563,7 +609,7 @@ export default function ProjectDetail() {
                         <th className="pr-2 font-medium">B</th>
                         <th className="pr-2 font-medium">Status</th>
                         <th className="pr-2 font-medium">Notes</th>
-                        <th className="font-medium">Evidence</th>
+                        <th className="font-medium">Source</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -572,11 +618,11 @@ export default function ProjectDetail() {
                           <td className="py-1 pr-2 mono text-[11px]">{it.a}</td>
                           <td className="pr-2 mono text-[11px]">{it.b}</td>
                           <td className="pr-2"><IntegrationPill status={it.status} /></td>
-                          <td className="pr-2 text-muted-foreground">{it.notes ?? "—"}</td>
+                          <td className="pr-2 text-muted-foreground">{it.notes ?? "Notes not documented"}</td>
                           <td>
                             {it.evidence_url
                               ? <a href={it.evidence_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">source <ExternalLink className="h-3 w-3" /></a>
-                              : <span className="text-muted-foreground">—</span>}
+                              : <span className="text-muted-foreground">Source verification open</span>}
                           </td>
                         </tr>
                       ))}
@@ -586,52 +632,24 @@ export default function ProjectDetail() {
               )}
           </Section>
 
-          <Section title={`Evidence${evidence.length ? ` · ${evidence.length}` : ""}`}>
-            {evidence.length === 0
-              ? <Empty>No claims sourced yet.</Empty>
-              : (
-                <ul className="space-y-1.5 text-[12px]">
-                  {evidence.map((e, ix) => (
-                    <li key={ix} className="flex items-start gap-2 border-b border-border/60 pb-1.5 last:border-0">
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] mono shrink-0 mt-0.5">{e.source_type}</span>
-                      <div className="min-w-0 flex-1">
-                        <div>{e.claim}</div>
-                        <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground mt-0.5">
-                          {e.confidence != null && <span>confidence {Math.round(e.confidence * 100)}%</span>}
-                          {e.retrieved_at && <span>· {new Date(e.retrieved_at).toLocaleDateString()}</span>}
-                          {e.source_url && (
-                            <a href={e.source_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">source <ExternalLink className="h-3 w-3" /></a>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-          </Section>
+          <SourcesVerification evidence={evidence} projectId={p.id} />
 
-          <Section title={`Known issues${knownIssues.length ? ` · ${knownIssues.length}` : ""}`}>
-            {knownIssues.length === 0
-              ? <Empty>No known issues reported.</Empty>
-              : (
-                <ul className="space-y-2 text-[12px]">
-                  {knownIssues.map((k, ix) => (
-                    <li key={ix} className="flex items-start gap-2">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" aria-hidden />
-                      <div>
-                        <div className="font-medium">{k.title}</div>
-                        {k.body && <div className="text-muted-foreground whitespace-pre-wrap">{k.body}</div>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+          <ProjectProposalPanel
+            projectId={p.id}
+            signedIn={Boolean(user)}
+            canReview={canManageScope}
+          />
+
+          <Section title="Discussion & corrections">
+            <div className="grid gap-3 border border-primary/25 bg-primary/5 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><div className="font-medium">Improve this project with reviewed community data</div><p className="mt-1 text-[11px] leading-5 text-muted-foreground">Submit assembly steps, integrations, sources, issue reports, or corrections. Signed-in proposals remain pending until the project owner or a moderator approves them.</p></div><Link to={`/community?compose=project-correction&project=${encodeURIComponent(p.id)}`} className="btn-primary justify-center">Submit a correction</Link></div>
+            {knownIssues.length > 0 && <details className="mt-3 border border-border p-3"><summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{knownIssues.length} imported issue note{knownIssues.length === 1 ? "" : "s"} awaiting discussion migration</summary><ul className="mt-2 space-y-2 text-[12px]">{knownIssues.map((issue, index) => <li key={`${issue.title}-${index}`}><div className="font-medium">{issue.title}</div>{issue.body && <div className="mt-0.5 whitespace-pre-wrap text-muted-foreground">{issue.body}</div>}</li>)}</ul></details>}
+            <div className="mt-3"><RelatedDiscussionList relatedType="project" relatedId={p.id} title="Discussion & corrections" /></div>
           </Section>
         </div>
 
         {/* Sticky technical summary */}
         <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-          <Section title="Hardware">
+          {(!isCommercialShowcase || hasHardwareData) && <Section title="Hardware">
             <KV rows={[
               ["DoF", p.rpps.hardware?.dof],
               ["Payload", p.rpps.hardware?.payload_kg && `${p.rpps.hardware.payload_kg} kg`],
@@ -639,9 +657,9 @@ export default function ProjectDetail() {
               ["Height", p.rpps.hardware?.height_cm && `${p.rpps.hardware.height_cm} cm`],
               ["Compute", p.rpps.hardware?.compute],
             ]} />
-          </Section>
+          </Section>}
 
-          <Section title="Software">
+          {(!isCommercialShowcase || hasSoftwareData) && <Section title="Software">
             <KV rows={[
               ["OS", p.rpps.software?.os],
               ["Middleware", p.rpps.software?.middleware],
@@ -649,20 +667,20 @@ export default function ProjectDetail() {
               ["Languages", p.rpps.software?.languages?.join(", ")],
               ["Simulators", p.rpps.software?.simulators?.join(", ")],
             ]} />
-          </Section>
+          </Section>}
 
-          <Section title="Build">
+          {(!isCommercialShowcase || hasBuildData) && <Section title="Build">
             <KV rows={[
               ["Difficulty", p.rpps.build?.difficulty],
-              ["Est. time", p.rpps.build?.estimated_time_hours && `${p.rpps.build.estimated_time_hours} h`],
-              ["Est. cost", p.rpps.build?.estimated_cost_usd && `$${p.rpps.build.estimated_cost_usd.toLocaleString()}`],
+              ["Est. time", !isCommercialShowcase && p.rpps.build?.estimated_time_hours ? `${p.rpps.build.estimated_time_hours} h` : undefined],
+              ["Est. cost", !isCommercialShowcase && p.rpps.build?.estimated_cost_usd ? `$${p.rpps.build.estimated_cost_usd.toLocaleString()}` : undefined],
               ["Fabrication", p.rpps.build?.fabrication?.length
                 ? <span className="flex flex-wrap gap-1">{p.rpps.build.fabrication.map(f => <StatusPill key={f} kind="info" label={f} />)}</span>
                 : undefined],
               ["Tools", p.rpps.build?.required_tools?.join(", ")],
               ["Skills", p.rpps.build?.required_skills?.join(", ")],
             ]} />
-          </Section>
+          </Section>}
 
           {canManageScope && <ProjectScopeSettings project={p} organizations={organizations} onSaved={setP} />}
 
@@ -675,7 +693,7 @@ export default function ProjectDetail() {
                       <div className="font-medium truncate">{a.name}</div>
                       {a.role && <div className="text-[10.5px] text-muted-foreground">{a.role}</div>}
                     </div>
-                    {a.url && <a href={a.url} target="_blank" rel="noreferrer" className="text-primary hover:underline text-[11px] inline-flex items-center gap-1 shrink-0">link <ExternalLink className="h-3 w-3" /></a>}
+                    {a.url && <a href={a.url} target="_blank" rel="noreferrer" className="text-link hover:underline text-[11px] inline-flex items-center gap-1 shrink-0">link <ExternalLink className="h-3 w-3" /></a>}
                   </li>
                 ))}
               </ul>
@@ -733,7 +751,7 @@ export default function ProjectDetail() {
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
               <ShieldCheck className="h-3 w-3" /> Portable RPPS releases
             </div>
-            {portableReleases.length === 0 ? <p className="text-[10.5px] text-muted-foreground">No RPPS 0.1 Draft releases yet.</p> : <div className="space-y-2">{portableReleases.map((release) => <ReleaseCollaborationPanel key={release.id} projectId={p.id} release={release} releases={portableReleases} userId={user?.id} canManage={canEditRpps} onReleaseChanged={async () => setPortableReleases(await listPortableReleases(p.id))} />)}</div>}
+            {portableReleases.length === 0 ? <p className="text-[10.5px] text-muted-foreground">No RPPS 0.1 Draft releases yet.</p> : <div className="space-y-2">{portableReleases.map((release) => <ReleaseCollaborationPanel key={release.id} projectId={p.id} release={release} releases={portableReleases} userId={user?.id} canManage={canEditRpps} buildActionsEnabled={!isCommercialShowcase} onReleaseChanged={async () => setPortableReleases(await listPortableReleases(p.id))} />)}</div>}
             {canEditRpps && <Link to="/rpps" className="btn-primary btn-sm mt-2 w-full justify-center"><FileUp className="h-3.5 w-3.5" /> Validate or add release</Link>}
           </div>
 
@@ -745,36 +763,12 @@ export default function ProjectDetail() {
               <Download className="h-3.5 w-3.5" /> Download .rpps.json
             </button>
             <p className="text-[10.5px] text-muted-foreground mt-2">
-              Legacy flat JSON retained for current project compatibility. New portable releases use the <Link to="/rpps" className="text-primary hover:underline">RPPS 0.1 Draft</Link> manifest and lockfile.
+              Legacy flat JSON retained for current project compatibility. New portable releases use the <Link to="/rpps" className="text-link hover:underline">RPPS 0.1 Draft</Link> manifest and lockfile.
             </p>
           </div>
-          <RelatedDiscussionList relatedType="project" relatedId={p.id} title="Community discussions" />
         </aside>
       </div>
     </div>
-  );
-}
-
-function CadSourceFallback({ projectName, files, sourceUrl, format }: { projectName: string; files: ProjectFile[]; sourceUrl?: string; format: string }) {
-  return (
-    <section className="surface-card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <div>
-          <div className="flex items-center gap-1.5 text-[12px] font-semibold"><Cpu className="h-3.5 w-3.5 text-primary" /> {projectName} · {format} design files</div>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">The complete native design is available below, but this format could not be rendered faithfully in the browser.</p>
-        </div>
-        {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Official model source <ExternalLink className="h-3 w-3" /></a>}
-      </div>
-      <div className="grid gap-2 p-3 sm:grid-cols-2">
-        {files.map((file) => (
-          <a key={file.id} href={file.contentUrl} className="rounded border border-border p-3 hover:border-primary/60 hover:bg-muted/30">
-            <div className="truncate text-[12px] font-medium">{file.relativePath ?? file.originalName}</div>
-            <div className="mt-1 text-[10.5px] text-muted-foreground">{format} · {formatProjectFileBytes(file.sizeBytes)} · source artifact</div>
-          </a>
-        ))}
-      </div>
-      <div className="border-t border-warning/30 bg-warning/5 px-3 py-2 text-[10px] text-muted-foreground">No mesh substitute is shown because it could misrepresent the actual design. Open the native file in a compatible CAD tool for authoritative geometry.</div>
-    </section>
   );
 }
 
@@ -793,53 +787,13 @@ function DeliveryPlan({ estimate }: { estimate: SourcingEstimate }) {
   return <div><div className="mb-1.5 flex items-center gap-1.5 font-medium"><Truck className="h-3.5 w-3.5 text-primary" /> Split delivery plan · {shipments.length} shipment{shipments.length === 1 ? "" : "s"}</div><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{shipments.map((shipment, index) => <div key={`${shipment.supplier}-${index}`} className="rounded border border-border p-2"><div className="flex items-center justify-between gap-2"><span className="font-medium">{shipment.supplier}</span><span className="mono text-[10px]">{shipment.leadTimeDays == null ? "date unknown" : `about ${shipment.leadTimeDays}d`}</span></div><div className="mt-1 text-[10.5px] text-muted-foreground">{shipment.lines} BOM line{shipment.lines === 1 ? "" : "s"} · {moneyMinor(shipment.subtotalMinor, estimate.assumptions.currency)}</div></div>)}</div></div>;
 }
 
-function NormalizedBomTable({ bom }: { bom: BomDetail }) {
-  const currency = bom.version?.currency ?? "USD";
-  return <div className="overflow-x-auto -mx-3 px-3">
-    <table className="w-full min-w-[900px] text-[12px]">
-      <thead className="border-b border-border text-left text-muted-foreground"><tr>
-        <th className="py-1 pr-2 font-medium">Slot</th><th className="pr-2 font-medium">Part</th>
-        <th className="pr-2 font-medium">Maker / MPN</th><th className="pr-2 font-medium">Evidence</th>
-        <th className="pr-2 text-right font-medium">Qty</th><th className="pr-2 text-right font-medium">Known unit</th>
-        <th className="pr-2 text-right font-medium">Extended</th><th className="font-medium">Supplier evidence</th>
-      </tr></thead>
-      <tbody>{bom.items.map((item) => {
-        const unitMinor = item.targetUnitPriceMinor ?? item.selectedUnitPriceMinor ?? item.lowestUnitPriceMinor;
-        return <tr key={item.id} className="border-b border-border/60 align-top">
-          <td className="py-1 pr-2 mono text-[11px]">{item.slotKey}</td>
-          <td className="pr-2"><div className="font-medium">{item.componentSlug
-            ? <Link to={`/parts/${item.componentCategory}/${item.componentSlug}`} className="hover:text-primary">{item.componentName ?? item.description}</Link>
-            : item.description}</div>{item.notes && <div className="mt-0.5 text-[11px] text-muted-foreground">{item.notes}</div>}</td>
-          <td className="pr-2"><div>{item.manufacturerName ?? "—"}</div><div className="mono text-[11px] text-muted-foreground">{item.manufacturerPartNumber ?? "MPN unresolved"}</div></td>
-          <td className="pr-2"><div className="flex flex-wrap gap-1"><StatusPill kind={item.completeness === "verified" ? "ok" : item.completeness === "unresolved" ? "warn" : "info"} label={item.completeness} /><StatusPill kind="muted" label={item.extractionMethod} /></div>{item.confidence != null && <div className="mt-0.5 text-[10px] text-muted-foreground">confidence {Math.round(item.confidence * 100)}%</div>}</td>
-          <td className="pr-2 text-right mono">{item.quantity} {item.unit}</td>
-          <td className="pr-2 text-right mono">{moneyMinor(unitMinor, currency)}</td>
-          <td className="pr-2 text-right mono">{moneyMinor(unitMinor == null ? null : unitMinor * item.quantity, currency)}</td>
-          <td>{item.selectedSupplierName ?? (item.knownOfferCount > 0 ? `${item.knownOfferCount} observed offer${item.knownOfferCount === 1 ? "" : "s"}` : "No observed offer")}</td>
-        </tr>;
-      })}</tbody>
-      <tfoot><tr className="border-t border-border"><td colSpan={4} className="py-1 pr-2 text-[11px] text-muted-foreground">Known totals only. Unpriced lines remain visible.</td><td className="pr-2 text-right mono">{bom.totals.units}</td><td /><td className="pr-2 text-right mono font-medium">{moneyMinor(bom.totals.knownCostMinor, currency)}</td><td /></tr></tfoot>
-    </table>
-  </div>;
-}
-
 function moneyMinor(value: number | null, currency: string | null = "USD") {
   if (value == null) return "—";
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency ?? "USD" }).format(value / 100);
 }
 
 function ReadableDescription({ value }: { value: string }) {
-  const cleaned = value
-    .replace(/<!--[\s\S]*?-->/gu, " ")
-    .replace(/```[\s\S]*?```/gu, " ")
-    .replace(/!\[[^\]]*\]\([^)]*\)/gu, " ")
-    .replace(/\[([^\]]+)\]\([^)]*\)/gu, "$1")
-    .replace(/<[^>]+>/gu, " ")
-    .replace(/^\s{0,3}#{1,6}\s*/gmu, "")
-    .replace(/[>*_`~|]/gu, " ")
-    .replace(/\n{3,}/gu, "\n\n")
-    .replace(/[ \t]+/gu, " ")
-    .trim();
+  const cleaned = normalizeCatalogText(value);
   const preview = cleaned.slice(0, 2200);
   if (cleaned.length <= preview.length) return <p className="whitespace-pre-line text-[13px] leading-6">{cleaned}</p>;
   return <div className="text-[13px] leading-6"><p className="whitespace-pre-line">{preview}…</p><details className="mt-2"><summary className="cursor-pointer text-xs font-medium text-primary">Show complete imported description</summary><p className="mt-2 whitespace-pre-line text-muted-foreground">{cleaned}</p></details></div>;
@@ -1044,13 +998,6 @@ function ProjectScopeSettings({ project, organizations, onSaved }: {
     </Section>
   );
 }
-
-const Meta = ({ k, v }: { k: string; v: React.ReactNode }) => (
-  <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
-    <span className="text-muted-foreground">{k}</span>
-    <span className="mono font-medium">{v}</span>
-  </span>
-);
 
 const Kpi = ({ to, icon, label, value }: { to: string; icon: React.ReactNode; label: string; value: React.ReactNode }) => (
   <Link to={to} className="group rounded border border-border bg-surface px-2 py-1.5 transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

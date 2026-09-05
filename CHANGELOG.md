@@ -4,6 +4,68 @@
 
 ### Fixed
 
+- Added a public legal center with separate Privacy, Terms, Cookies and Storage, Acceptable Use, Marketplace Terms, AI Notice, Intellectual Property and Takedown, Accessibility, and Contact pages. Policies describe the deployed Cloudflare, Google OAuth, AI, analytics, robotics, quote, and marketplace boundaries; publish `support@robopartpicker.com`; and avoid inventing a legal entity, business address, jurisdiction, payment protections, or complete-compliance claim.
+
+- Added a single maturity registry and visible Beta labels across the AI Assistant, project import/BOM generation, completed quotes, marketplace publishing, and build/reproduction workspace. Unreleased Build Workspace marketing remains explicitly Coming soon instead of being mislabeled as Beta.
+
+- Added fail-closed Google authentication through Better Auth. The Worker enables Google only when both Cloudflare secret bindings exist, the public health response exposes only a boolean capability, and the auth page preserves validated internal callback destinations while retaining email/password fallback.
+
+- Rebuilt Discover Projects around server-side marketplace facets. New visitors start with 43 open physical humanoid designs, can browse all projects explicitly, and can filter by source type, robot category, inferred/official price range, BOM evidence, build outcomes, difficulty, ROS support, license, media, CAD, assembly guidance, official source and verification freshness. Open physical designs receive clearly labeled low-confidence category/BOM estimates when no stronger cost exists; commercial robots remain official-price-only.
+
+- Added an Open source / Closed source switch to the completeness-ranked homepage rail and replaced the weak verified-BOM count with the live normalized BOM line total.
+
+- Added privacy-safe daily interaction aggregates and a moderator/administrator-only analytics dashboard covering traffic, project engagement, featured interactions, discovery behavior, acquisition, catalog health, operations and bounded CSV export. No IPs, cookies, fingerprints, user identities, raw search text or per-person histories are stored.
+
+- Unified project previews across the catalog, homepage and related-project surfaces. Cost now distinguishes active official prices, published estimates and known BOM subtotals; build counts state started and independently verified outcomes; BOM previews state verified, partial, unavailable, manufacturer-unavailable or not-applicable status without bare dashes. The homepage hero now uses its former empty area for an automatic information-completeness-ranked featured-project scroller, with live catalog metrics in a compact strip beneath it.
+
+- Expanded the reviewed current-market closed-source humanoid catalog to 62 unique products. The release adds or refreshes 49 manufacturer-listed models across direct purchase, preorder, reservation, rental, robot-as-a-service, enterprise pilot, deployment, and sales-inquiry channels. It publishes 48 exact reviewed product visuals and one visibly labeled Persona identity illustration, keeps unverified prices unpublished, and excludes announced-only or historical products without a current manufacturer market channel.
+
+- Made project discovery default to server-ranked information completeness before pagination. Verified BOM publication, BOM depth, current specifications, evidence, managed media, official sources, and core identity metadata now determine the initial order instead of client-side sorting a partial page.
+
+- Repaired the homepage commercial showcase so humanoids are filtered before pagination and eight source-backed cards render instead of one. Project media now keeps a labeled identity illustration visible while lazy images load or fail, preventing blank gray cards.
+
+- Withdrew synthetic category-baseline prices and build times from 300 commercial profiles, added an explicit `not_published` price state, and republished all 2,408 project descriptions from corrected evidence packets. Commercial pages now distinguish manufacturer prices, reservation deposits, contact-sales status, and unpublished pricing; Unitree G1 and H2 retain direct official prices while Atlas and other unpriced systems no longer show guesses.
+
+- Corrected commercial catalog identities discovered during the live audit: DOBOT X-Trainer is now a manipulator rather than a humanoid, DOBOT URL filename suffixes no longer leak into published names, and reviewed manufacturer specifications now back the homepage commercial profiles.
+
+- Rebuilt closed-source project detail surfaces around normal product language and source-backed manufacturer data. Commercial heroes now use resilient multi-image mosaics, empty audit buckets are omitted, manufacturer specifications and named systems render with official product views, BOM rows include verified photos or honest identity illustrations, and raw checksum, `Purchased`, and `Extended` implementation labels no longer leak into customer-facing copy.
+
+- Replaced the public legacy-RPPS BOM fallback with an explicit source-traceable compiler and publication lifecycle. CSV, TSV, XLSX, Markdown, HTML, JSON, YAML, XML and KiCad adapters now account for every source object, preserve evidence locators, keep missing quantities unresolved, aggregate only exact manufacturer-plus-MPN identities, and publish lines only from verified or explicitly partial source BOMs. Software projects, commercial models without manufacturer BOMs, unclassified projects and physical projects without explicit BOMs now render distinct honest states instead of guessed parts.
+
+- Closed unsupported BOM leakage through project counts, BOM lists and exports, component usage, sourcing estimates, customer quotes, completed quotes, project forks and RFQs. Public quote controls now use real version readiness and plain-language blockers, while owners retain private draft-estimation workflows. Removed the hard-coded `Quote gate / Fail closed` homepage metric and replaced it with a live source-verified BOM count.
+
+- Rebuilt the project header so identity and actions occupy a full-width row above the media. The second row pairs a stable 4:3 source image with a height-filling evidence summary, preventing short descriptions and portrait assets from leaving a blank column beside each other. The surface stacks full-width on mobile.
+
+- Added source-cited AI description generation with immutable model, prompt, voice-profile and source fingerprints. Generated prose is third-person and evidence-only, follows Luca's direct builder cadence, and is rejected for unknown citations, unsupported numbers, first-person review claims, em/en dashes, semicolons and common AI filler before publication.
+
+- Added private-evidence open-source project claims with moderator-only evidence streaming, self-review denial, stale-project protection, audited decisions and atomic edit-ownership transfer. Evidence files, references and moderator notes remain outside public DTOs.
+
+- Added the project-page maintainer claim panel and noindexed moderator review workspace. Claimants upload bounded private evidence, track or withdraw pending requests, while authorized reviewers inspect the protected stream, record private notes, and approve or reject without exposing claim material publicly.
+
+- Published stable, non-self-referential source-cited descriptions for all 2,408 production projects. Every current project points to exactly one immutable published generation; all sentence references resolve to the stored fact packet, and production has zero missing mappings, invalid validation reports, banned dash/semicolon prose, or local-to-D1 fingerprint mismatches.
+
+- Mirrored 918 additional exact official component photos from Pololu, REV Robotics, SCHUNK, and T-Motor after exact manufacturer-part-number confirmation on the canonical product page. Every image is bounded, normalized to WebP, content-addressed in R2, and linked with source-page, source-image, checksum, dimensions, and transform provenance; 17 unsupported candidates remain honest identity illustrations.
+
+- Added a global high-contrast keyboard focus indicator and repaired low-contrast warning labels and identity-illustration foregrounds. Live exact-photo and illustration part pages now have zero sampled unlabeled controls, missing alt attributes, focus failures, or horizontal overflow; sampled contrast passes AA thresholds.
+
+- Unified homepage, project-catalog and project-detail imagery behind a resilient source-backed renderer that prioritizes managed media, deduplicates canonical URLs, advances past failed candidates, reserves stable layout space and falls back to honest robot-category illustrations.
+
+- Eliminated mobile document overflow on the audited Unitree project and Adafruit part pages by allowing long evidence hashes to wrap anywhere and giving part-detail grid/file tracks explicit zero minimum widths.
+
+- Canonicalized persisted project cover and RPPS image URLs at the Worker DTO boundary so retired Workers-host media links are returned as same-origin file paths while official third-party product images remain untouched.
+
+- Replaced the part table's hardcoded missing-photo label with source-backed product images when available and honest yellow category illustrations otherwise; broken images now fail over per row without implying the fallback depicts the exact component.
+
+- Made project 3D previews fail closed on incomplete URDF dependencies, preserve package-path mesh identity, try every eligible URDF, reject terrain/world/jig geometry, and show unassembled STL/STEP artifacts one part at a time instead of inventing robot assemblies.
+
+- Reframed the public component catalog as technical data: typed labeled specifications with units, canonical product/manufacturer links, lifecycle and completeness profiles, explicit unknowns, engineering files, normalized BOM usage, and evidence. Supplier identities, SKUs, stock, lead time, prices, offer history, commercial filters, public search entities, public MCP tools, and legacy supplier profiles are no longer exposed; internal completed-quote workflows retain private observations.
+
+- Recovered 23,299 collision-free Adafruit product-image links across 5,495 components from retained numeric product IDs, left seven unmatched files unlinked rather than guessing, and materialized canonical product-source evidence for every production component with a source URL.
+
+- Replaced duplicate homepage SEO metadata on project, component, category, and BOM routes with server-generated titles, descriptions, canonical URLs, Open Graph/Twitter cards, robots directives, and schema.org data; replaced the stale static sitemap with a live D1-backed sitemap that includes every public project, component, category, and BOM while excluding private application routes from robots.
+
+- Rebuilt BOM presentation around readable desktop rows and structured mobile cards, added explicit part-page links to every identified BOM component, expanded component detail pages with public files, source-backed images, evidence, observed product links, and published project usage, and corrected STL previews so partial part sets are normalized for inspection and never presented as a complete robot assembly.
+
 - Improved media and purchase affordances on public catalog surfaces: project and homepage cards now use up to four source-backed RPPS images instead of only a single cover, marketplace list results hydrate all listing images for multi-image previews, marketplace cards expose a direct inquiry action, and verified supplier/product URLs now render as explicit `Buy / verify` actions on part and project BOM surfaces.
 
 - Completed the demo-record withhold sweep across the remaining BOM, AI-tool, and build-edit paths that surfaced demo records as live claims (BOM list/detail aggregates, AI mutation tools, build selected-offer PATCH). This pass closes the last build-write seams: adding an item to a build via `POST /builds/:id/items` now rejects demo components and demo supplier offers at the repository layer (so the BOM-to-build fork and AI tool calls are covered too), and the RPPS manifest importer no longer resolves release MPNs to demo components. A demo part can therefore no longer be written into a live build, whose detail page renders unguarded component names.
@@ -42,6 +104,32 @@
 - Hardened project import BOM detection so ESP32 partition tables and arbitrary CSVs are not classified or parsed as bills of materials unless their filename and headers are credible BOM inputs.
 
 ### Added
+
+- Expanded the reviewed top-300 closed-source commercial robot release from one cover per profile to source-backed product galleries. Static official-page metadata, Product JSON-LD, responsive images, rendered product-page assets, video posters, and model-specific page captures are ranked before mirroring; an explicit reviewed override records Fourier GR-2 images from the manufacturer-issued PR Newswire release after the current Fourier product route began returning a 404 shell. Every asset is normalized to WebP, checked for minimum dimensions, stripped of metadata, assigned a deterministic file identity, and rejected when its checksum or perceptual hash duplicates another image for the same robot. The release adds 828 distinct gallery objects: all 300 profiles have at least two extra images and therefore at least three visible media records, while 228 profiles have three extras. Publication is idempotent and updates managed files, project attachments, project media, and exported RPPS commercial-profile metadata without exposing supplier data.
+
+- Added the reviewed top-300 closed-source commercial robot catalog from a 415-model candidate registry. Ranking uses anchored 12-month Google Trends interest, exact-identity 90-day Google News mentions, recent YouTube view velocity, and official product activity; first-party traffic remains excluded until sample sufficiency. Every published profile carries the raw signal sources, collection timestamps, methodology/window, source-backed description, explicit undisclosed-spec state where needed, labeled USD category estimate, and a manufacturer-attributed managed WebP thumbnail with source provenance and checksum.
+
+- Added normalized project-profile reads and a public Specifications tab with current source-backed fields, public USD price/range freshness, transparent trend signals, methodology/window provenance, and server-ranked `Trending now` catalog pagination.
+
+- Added authenticated project Reviews and Discussion tabs for every public project type: one editable revision-audited review per user/project, published-only rating aggregates, substantive written reviews, one-level comments, idempotent helpful reactions, reporting and platform moderation controls. No fake ratings, comments, counts, or contributor identities are seeded.
+
+- Added private owner/operator/manufacturer-representative experience claims backed by claimant-owned private files. Only platform moderators can verify claims, self-review is denied, and public payloads expose only the approved badge type, display name and verification date, never evidence files, references, or moderator notes.
+
+- Added private, authenticated customer quote requests for projects and BOMs with complete contact and destination intake, explicit consent, 90-day retention, frozen materials/shipping snapshots, deterministic zone-based preliminary shipping estimates, owner-only readback, redacted creation receipts, and human-review labeling. Supplier identities and commercial offer details remain absent from customer-facing snapshots.
+
+- Added signed-in structured project proposals for assembly steps/videos, integrations, sources, identity/BOM corrections, and issue reports. Source links are mandatory, pending proposals stay private, public reads expose approved records only, and project owners, organization administrators, or platform moderators receive an audited review queue with approve/reject controls.
+
+- Added stable detail destinations for every BOM line, including resolved catalog parts and unresolved/fabricated identity records; added source-backed part imagery and exact component STEP/STL/OBJ previews; and added honest price-history frames that display no invented time-series data.
+
+- Added a compact Build Workspace preview to the homepage in place of the recently indexed part table, with planned inventory, BOM revision, compatibility, replacement, price-watch, and order-readiness workflow states.
+
+- Added a fail-closed commercial catalog contract for the top-300 pipeline: closed-source complete-robot identity, canonical URL and alias deduplication, strict RFC3339 provenance, source-backed or explicitly undisclosed specifications, USD minor-unit pricing, bounded five-signal trend snapshots, and validated evidence/product-media declarations.
+
+- Added a deterministic commercial trend scorer and CLI: tied-percentile normalization, explicit exclusion for missing/blocked public signals, first-party weight redistribution only while traffic is insufficient, alias-aware source joins, versioned source/timestamp validation, stable tie-breakers, and contiguous rank output capped at 300.
+
+- Added immutable shared project specification, price-estimate, and trend-snapshot DTOs aligned with migration 0028, including fail-closed active selection, price freshness, proportional traffic-weight redistribution, and commercial-profile completeness that rejects undisclosed or structurally empty required evidence.
+
+- Added a reviewed commercial candidate registry with 415 closed-source complete-robot models in nine disjoint batches, a cross-file fail-closed validator, explicit rejection/merge audit, and source verification for every accepted official URL without publishing any candidate to D1.
 
 - Reviewed BOM Wave 2 for TNY-360 and NodeQuad, with immutable source revisions and SHA-256s, conservative Markdown/XLSX transforms, RPPS-safe deterministic refs, expected-line-count guards, explicit per-line completeness, source evidence, guarded production SQL and rollback generation, plus six verified BOM/document artifacts prepared for R2 publication.
 

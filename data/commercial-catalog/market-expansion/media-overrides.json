@@ -1,0 +1,47 @@
+{
+  "fourier-gr3": "https://www.fftai.com/images/gr3/gr3-banner.webp",
+  "fourier-gr2": "https://mma.prnewswire.com/media/2518296/GR_2.jpg",
+  "robotera-l7": "https://www.robotera.com/img/jqr.BKZykNcl.png",
+  "noetix-n2": "https://image.noetixrobotics.com/pc/mqov88tiutotjcs9.png",
+  "noetix-e1": "https://image.noetixrobotics.com/pc/mqov8hz5z3k34fbi.png",
+  "noetix-bumi": "https://image.noetixrobotics.com/pc/home_bumi_banner.jpg",
+  "agibot-a2-max": "https://agibot.com/public/static/index/en/images/a2max-l1.jpg",
+  "booster-robotics-t1": "https://www.booster.tech/_astro/hero-basic.BQe3HROB_Z1VSNvX.webp",
+  "engineai-se01": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/uploads/upload/images/20251113/86d2573b860e656ed4c4551d9d71a2cb.jpg",
+  "engineai-t800": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/uploads/upload/images/20251114/47d0aba28f5824968b2e57aec85f5415.jpg",
+  "engineai-s2": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/static/home/images/x-ss1.jpg",
+  "engineai-sa01": {
+    "sourceUrl": "https://en-engineai-1304599088.cos.ap-guangzhou.myqcloud.com/uploads/upload/images/20251110/e21ea0bef16f2ef1a5c314e3cd44605f.png",
+    "localPath": ".ingest/commercial-media/humanoid-market-reviewed/engineai-sa01.png",
+    "transform": "reviewed first square frame from the official SA01 product sprite"
+  },
+  "magiclab-magicbot-gen1": {
+    "sourceUrl": "https://www.magiclab.top/en/human",
+    "localPath": ".ingest/commercial-media/humanoid-market-reviewed/magicbot-gen1.png",
+    "transform": "reviewed official product hero capture cropped below site navigation"
+  },
+  "magiclab-magicbot-z1": "https://oss-cdn.magiclab.top/file/img/website/2025-08-28/1c4e02/%E7%AC%AC%E4%B8%80%E5%BC%A0.jpg",
+  "ubtech-walker-s2": "https://owebsite-cdn.ubtrobot.com/resources/image/2025/07/17/698770322690117.jpg?image_process=format,webp/quality,Q_95",
+  "deep-robotics-dr02": "https://images.newsfilecorp.com/files/8457/270856_e887b351a4480a13_004full.jpg",
+  "engineered-arts-ameca": "https://media.engineeredarts.com/wp-content/uploads/2025/07/Ameca-Gen-2-6-Fullfigure-Humanoid-Robot-Engineered-Arts.webp",
+  "engineered-arts-ameca-desktop": "https://media.engineeredarts.com/wp-content/uploads/2026/07/Ameca-Dektop-MD3-Embodied-AI-Humanoid-Robot-Engineered-Arts.webp",
+  "engineered-arts-ami": "https://media.engineeredarts.com/wp-content/uploads/2026/05/Ami-Desktop-White-Shell-Gen-3-Embodied-AI-Humanoid-Robot-Engineered-Arts.webp",
+  "engineered-arts-azi": "https://media.engineeredarts.com/wp-content/uploads/2026/05/Azi-Desktop-Black-Shell-Gen-3-Embodied-AI-Humanoid-Robot-Engineered-Arts.webp",
+  "engineered-arts-mesmer": "https://media.engineeredarts.com/wp-content/uploads/2025/09/Mesmer-Full-Size-Embodied-AI-Social-Humanoid-Robot-Engineered-Arts-1.webp",
+  "kepler-forerunner-series": "https://img.gotokepler.com/image/gotokepler/202507281003/13b536655bd24fa19b016703aa0fc7a1",
+  "limx-dynamics-luna": "https://limx-video.oss-cn-beijing.aliyuncs.com/limx-website/products/luna/luna-6-1.png",
+  "limx-dynamics-oli": {
+    "sourceUrl": "https://www.limxdynamics.com/en/products/oli",
+    "localPath": ".ingest/commercial-media/humanoid-market-reviewed/limx-oli.png",
+    "transform": "reviewed official product hero capture cropped below site navigation"
+  },
+  "pudu-d9": "https://cdn.pudutech.com/official-website/d9/section1_bg.webp",
+  "unitree-r1": "https://www.unitree.com/images/eec8d82f279b440ea170982ffa80b3fa_3840x2160.jpg?x-oss-process=image/quality,q_60/format,webp",
+  "wandercraft-calvin-40": "https://cdn.prod.website-files.com/6a5e1730e4dc3d8a81f2d73d/6a5e1a606d555ee369477761_hero-2-p-2000.png",
+  "persona-industrial-humanoid": {
+    "kind": "identity_illustration",
+    "sourceUrl": "https://persona.ai/teleoperation-preceeds-autonomy",
+    "localPath": ".ingest/commercial-media/humanoid-market-reviewed/persona-industrial-humanoid.svg",
+    "transform": "labeled identity illustration; no verified product photograph"
+  }
+}

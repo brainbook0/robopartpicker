@@ -1,0 +1,3742 @@
+{
+  "collectedAt": "2026-08-25T19:39:00.000Z",
+  "start": "20260527000000",
+  "end": "20260825000000",
+  "records": [
+    {
+      "candidateKey": "skydio-x10",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Skydio%2C+Inc.+Skydio+X10%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "1x-technologies-neo",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%221X+Technologies+NEO+%28Home+Robot%29%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "apptronik-apollo-2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Apptronik%2C+Inc.+Apptronik+Apollo%E2%84%A2+2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "boston-dynamics-atlas",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Boston+Dynamics+Atlas%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-atom-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+atom.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-x-trainer-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+x-trainer.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "figure-ai-figure-03",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Figure+AI%2C+Inc.+Figure+03%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "fourier-gr2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Fourier+Intelligence+Fourier+GR-2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-kangaroo",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+kangaroo%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-reem-c",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+reem-c%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-talos",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+talos%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "sanctuary-ai-phoenix",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Sanctuary+AI+Sanctuary+AI+Phoenix%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "tesla-optimus",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Tesla%2C+Inc.+Tesla+Optimus+%28Gen+2%29%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "ubtech-walker-s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22UBTECH+Robotics+Walker+S%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-g1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+G1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-h1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+H1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-h2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+H2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "abb-yumi",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22ABB+Ltd+ABB+YuMi%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr-30h-collaborative-robots-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr-30h-collaborative-robots.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr10as-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr10as.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr10s-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr10s.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr20a-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr20a.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr3as-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr3as.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr3s-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr3s.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr5as-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr5as.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-cr5s-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+cr5s.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-m1-pro-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+m1-pro.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-magician-e6-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+magician-e6.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-magician-go-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+magician-go.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-magician-lite-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+magician-lite.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-magician-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+magician.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-mg400-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+mg400.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-nova2-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+nova2.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-nova5-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+nova5.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "dobot-vx500-html",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Dobot+vx500.html%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-a0509",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+a0509%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-a0509f",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+a0509f%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-a0509s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+a0509s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-a0912",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+a0912%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-a0912f",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+a0912f%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-a0912s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+a0912s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-m0609",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+Doosan+M0609%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-e0509",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+e0509%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-h2017",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+h2017%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-h2515",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+h2515%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-m0609",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+m0609%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-m0617",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+m0617%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-m1013",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+m1013%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-m1509",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+m1509%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "doosan-robotics-p3020",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Doosan+Robotics+p3020%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc12-b1401ste3ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC12-B1401STE3SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc12-c1401st83sl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC12-C1401ST83SL%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc12xl-a1401st73ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC12XL-A1401ST73SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc4-a601st75",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC4-A601ST75%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc4-a901st73-w",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC4-A901ST73-W%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc4-b601ste3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC4-B601STE3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc4-b901ste3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC4-B901STE3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-a1401st75ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC8-A1401ST75SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-a701st75ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC8-A701ST75SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-a901st75ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC8-A901ST75SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-b1401ste3ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC8-B1401STE3SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-b901ste3ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC8-B901STE3SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-c1401st83sl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC8-C1401ST83SL%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rc8-c901st83sl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RC8-C901ST83SL%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rcx4-a601syt8s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RCX4-A601SYT8S%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rcx7-a701syt8s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RCX7-A701SYT8S%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rcx7-a901syt8s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RCX7-A901SYT8S%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg1-171st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG1-171ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg1-221st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG1-221ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg10-651st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG10-651ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg10-851st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG10-851ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg20-851st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG20-851ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg20-a01st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG20-A01ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg3-251sst13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG3-251SST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg3-301sst13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG3-301SST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg3-351sst13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG3-351SST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg6-453st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG6-453ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg6-553st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG6-553ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rg6-653st13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RG6-653ST13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx1-c171st83s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX1-C171ST83S%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx10-b651sste",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX10-B651SSTE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx10-b851sste",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX10-B851SSTE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx10-c651sst8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX10-C651SST8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx20-b851sste",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX20-B851SSTE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx20-ba01sste",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX20-BA01SSTE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx20-c851sst8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX20-C851SST8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-a251sstsd",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX4-A251SSTSD%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-a301sstsd",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX4-A301SSTSD%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-a351sstsd",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX4-A351SSTSD%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-b251sstse",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX4-B251SSTSE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-b301sstse",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX4-B301SSTSE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-b351sstse",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX4-B351SSTSE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx4-c251ssts8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX4-C251SSTS8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-a452sstd",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX8-A452SSTD%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-a552sstd",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX8-A552SSTD%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-a652sstd",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX8-A652SSTD%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-b452sste",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX8-B452SSTE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-b552sste",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX8-B552SSTE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-b652sste",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX8-B652SSTE%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rgx8-c452sst8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RGX8-C452SST8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rla3a401stl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLA3A401STL%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rla6a502stl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLA6A502STL%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls10b602st9b3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS10B602ST9B3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls10b702st9b3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS10B702ST9B3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls10b802st9b3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS10B802ST9B3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls20-804st9p5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS20-804ST9P5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls20-a04st9p5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS20-A04ST9P5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls20b804st9b3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS20B804ST9B3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls20ba04st9b3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS20BA04ST9B3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls20c804st8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS20C804ST8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls3401st9p5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS3401ST9P5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls3b401st9b3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS3B401ST9B3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls4c401st8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS4C401ST8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls50ca02st8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS50CA02ST8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls6502st9p5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS6502ST9P5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls6602st9p5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS6602ST9P5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls6702st9p5-w",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS6702ST9P5-W%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls6b502st9b5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS6B502ST9B5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls6b602st9b5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS6B602ST9B5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls6b702st9b5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS6B702ST9B5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rls8c502st8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RLS8C502ST8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rn2-a45ss73ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RN2-A45SS73SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rn6-a10ss73ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RN6-A10SS73SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rn6-a85sr73ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RN6-A85SR73SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rrs-351ssr13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RRS-351SSR13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rrs-551ssr13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RRS-551SSR13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rrs-c351ssr8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RRS-C351SSR8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rrs-c552ssr8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RRS-C552SSR8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rs5-as0t13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RS5-AS0T13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rs5l-as0t13",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RS5L-AS0T13%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rt3-401ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RT3-401SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rt3b-401ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RT3B-401SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rt6-602ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RT6-602SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rt6b-602ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RT6B-602SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-rvt6l-a901ss",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+RVT6L-A901SS%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-w810",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+w810%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "epson-robots-w820",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Epson+Robots+w820%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a-20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+A+20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+A12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a12l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+A12L%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-a5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+A5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Ai12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai18",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Ai18%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Ai3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Ai5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-ai7",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Ai7%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-evo-industrial-embodied-intelligence-platform",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+EVO+Industrial+Embodied+Intelligence+Platform%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-k1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+K1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-kargo",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Kargo%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-lumi",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Lumi%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-mini2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Mini2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-minicobo",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+MiniCobo%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-pro12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Pro12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-pro16",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Pro16%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-pro5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Pro5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-s12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+S12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-s5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+S5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-s3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+S%C2%B3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Zu12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu18",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Zu18%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Zu20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Zu3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu30",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Zu30%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Zu5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "jaka-robotics-jaka-zu7",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22JAKA+Robotics+JAKA+Zu7%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba006l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+ba006l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba006n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+ba006n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba013l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+ba013l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ba013n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+ba013n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bt200l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bt200l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-btp210l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+btp210l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bu015n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bu015n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bu015x",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bu015x%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx100n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bx100n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx100s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bx100s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx130x",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bx130x%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx200l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bx200l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx200x",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bx200x%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bx300l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bx300l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp110l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bxp110l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp110s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bxp110s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp135x",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bxp135x%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-bxp210l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+bxp210l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl103n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cl103n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl105n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cl105n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl108n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cl108n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cl110n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cl110n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp180l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cp180l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp300l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cp300l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp500l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cp500l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-cp700l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+cp700l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kf121",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+kf121%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj125",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+kj125%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj155",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+kj155%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj194",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+kj194%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj244",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+kj244%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj264",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+kj264%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-kj314",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+kj314%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mc004n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mc004n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mc004v",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mc004v%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mg15hl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mg15hl%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mt400n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mt400n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx350l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mx350l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx420l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mx420l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx500n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mx500n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mx700n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mx700n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mxp360l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mxp360l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mxp410x",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mxp410x%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-mxp710l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+mxp710l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-nts10",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+nts10%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-nts20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+nts20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ra005l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+ra005l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-ra020n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+ra020n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rd080n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rd080n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs003n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs003n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs007l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs007l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs007n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs007n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs013n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs013n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs015x",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs015x%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs015x-2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs015x-2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs020n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs020n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs025n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs025n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs030n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs030n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs050n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs050n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-rs080n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+rs080n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-tts10",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+tts10%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-tts20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+tts20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-yf002n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+yf002n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-yf003n",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+yf003n%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zt130u",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+zt130u%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zt165u",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+zt165u%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zt200s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+zt200s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx130l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+zx130l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx165u",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+zx165u%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx200s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+zx200s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kawasaki-robotics-zx300s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Kawasaki+Robotics+zx300s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-1000-titan",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-1000-titan%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-300-pa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-300-pa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-360-fortec",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-360-fortec%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-4-agilus",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-4-agilus%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-40-pa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-40-pa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-470-2-pa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-470-2-pa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-500-fortec",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-500-fortec%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-700-pa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-700-pa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-agilus",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-agilus%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-agilus-ultra",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-agilus-ultra%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-cybertech%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech-arc",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-cybertech-arc%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech-nano",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-cybertech-nano%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-cybertech-nano-arc",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-cybertech-nano-arc%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-delta-roboter",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-delta-roboter%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-fortec",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-fortec%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-fortec-pa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-fortec-pa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-fortec-ultra-heavy-duty-robot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-fortec-ultra-heavy-duty-robot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-fortec-ultra-pa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-fortec-ultra-pa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-iontec",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-iontec%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-iontec-ultra-robot-lightweight-spot-welding",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-iontec-ultra-robot%2C-lightweight-spot-welding%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-quantec",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-quantec%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-quantec-nano",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-quantec-nano%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-quantec-pa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-quantec-pa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-quantec-pa-arctic",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-quantec-pa-arctic%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-scara-robot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-scara-robot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-kr-titan-ultra",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+kr-titan-ultra%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-lbr-iiwa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+LBR+iiwa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-lbr-iisy-cobot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+lbr-iisy-cobot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-palletizing-robots",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+palletizing-robots%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "kuka-request-a-demo-for-lbr-iiwa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22KUKA+request-a-demo-for-lbr-iiwa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-cmz05",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+cmz05%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-cmz12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+cmz12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-ec06",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+ec06%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-ec10",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+ec10%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-ez03-2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+ez03-2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-lp130f",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+lp130f%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-lp180",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+lp180%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-lp210",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+lp210%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc1000dl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc1000dl%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc280l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc280l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc350",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc350%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc400l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc400l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc470p",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc470p%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc500p",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc500p%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mc600",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mc600%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mr20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr20l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mr20l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr35",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mr35%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mr50",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mr50%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz01",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz01%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz03el",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz03el%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz04",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz04%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz07%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07f-2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz07f-2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz07l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz07lf-2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz07lf-2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz10lf",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz10lf%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz12w",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz12w%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz25",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz25%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz35f",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz35f%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz35s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz35s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz50f",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz50f%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz50lf",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz50lf%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mz70f",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mz70f%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-mzs05",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+mzs05%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sc700dl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sc700dl%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra100%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100-b",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra100-b%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100h",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra100h%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100hb",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra100hb%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra100j",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra100j%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra120el",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra120el%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra133h",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra133h%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra133hl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra133hl%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra133l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra133l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra166%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166h",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra166h%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166l",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra166l%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166t",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra166t%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra166tl",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra166tl%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra210",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra210%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra210h",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra210h%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra210t",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra210t%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra240",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra240%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "nachi-fujikoshi-sra250",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Nachi-Fujikoshi+sra250%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "neura-robotics-4ne1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22NEURA+Robotics+4ne1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "neura-robotics-lara",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22NEURA+Robotics+lara%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "neura-robotics-maira",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22NEURA+Robotics+maira%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "neura-robotics-mav",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22NEURA+Robotics+mav%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "neura-robotics-mipa",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22NEURA+Robotics+mipa%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur12e",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur12e%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur15",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur15%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur16e",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur16e%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur18",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur18%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur30",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur30%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur3e",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur3e%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur7e",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur7e%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-ur8-long",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+ur8-long%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "universal-robots-e-series",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Universal+Robots+A%2FS+%28a+Teradyne+company%29+Universal+Robots+e-Series+%28UR3e%2C+UR7e%2C+UR12e%2C+UR16e%29%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp12",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+gp12%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp25",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+gp25%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp7",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+gp7%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-gp8",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+gp8%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-motomini",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+motomini%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-mpp3h",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+mpp3h%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-mpp3s",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+mpp3s%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-d1-t",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+D1-T%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-sg400",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+sg400%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "yaskawa-motoman-sg650",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Yaskawa+Motoman+sg650%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-bunker-mini",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+bunker-mini%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-bunker-pro",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+bunker-pro%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-cobot-magic",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+cobot-magic%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-hunter-2-0",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+hunter-2-0%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-hunter-se",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+hunter-se%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-limo-corot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+limo-corot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-limo-pro",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+limo-pro%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-limo-ros2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+limo-ros2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-mobile-manipulator",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+mobile-manipulator%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-ranger",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+ranger%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-ranger-mini",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+ranger-mini%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-ranger-mini-3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+ranger-mini-3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-scout-2-0",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+scout-2-0%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-scout-mini",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+scout-mini%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-t-rex-2-0",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+t-rex-2-0%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-tracer",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+tracer%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-tracer-2-0",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+tracer-2-0%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agilex-robotics-umr",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgileX+Robotics+umr%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agxeed-agbot-t2-5-series",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgXeed+agbot-t2-5-series%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agxeed-agbot-t2-7-series",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgXeed+agbot-t2-7-series%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agxeed-agbot-w3-series",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgXeed+agbot-w3-series%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "agxeed-agbot-w4-series",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22AgXeed+agbot-w4-series%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "boston-dynamics-stretch",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Boston+Dynamics+Stretch%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "clearpath-husky",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Clearpath+Robotics+Clearpath+Husky+A300%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "farmdroid-farmdroid-fd20",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22FarmDroid+FarmDroid+FD20%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-ari",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+ari%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-stockbot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+stockbot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-tiago",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+tiago%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-tiago-base",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+tiago-base%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-tiago-omni-base",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+tiago-omni-base%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pal-robotics-tiago-pro",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22PAL+Robotics+tiago-pro%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-bellabot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+bellabot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-bellabotpro",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+bellabotpro%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-d9",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+d9%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-flashbot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+flashbot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-flashbot-arm",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+flashbot-arm%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-flashbot-new",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+flashbot-new%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-holabot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+holabot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-kettybot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+kettybot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-mt1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+mt1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-pudua1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+puduA1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-pudubot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+pudubot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-puducc1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+puduCC1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-pudud1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+puduD1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-pudush1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+puduSH1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-pudut300",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+pudut300%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-sh",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+sh%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "pudu-robotics-swiftbot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Pudu+Robotics+swiftbot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "anybotics-anymal",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22ANYbotics+ANYmal%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "anybotics-anymal-x",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22ANYbotics+ANYmal+X%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "boston-dynamics-spot",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Boston+Dynamics+Spot%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "ghost-robotics-vision-60",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Ghost+Robotics+Vision+60+%28Q-UGV%29%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-a1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+A1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-aliengo",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+ALIENGO%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-b1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+B1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-b2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+B2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-b2-w",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+B2-W%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-go1",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+GO1%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "unitree-robotics-go2",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Unitree+Robotics+GO2%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "blueye-robotics-x3",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Blueye+Robotics+x3%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "blueye-robotics-x3-ultra",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Blueye+Robotics+x3-ultra%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "blueye-robotics-x7",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22Blueye+Robotics+x7%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-ally",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22VideoRay+mission-specialist-ally%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-defender",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22VideoRay+mission-specialist-defender%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-defender-alt",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22VideoRay+mission-specialist-defender-alt%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    },
+    {
+      "candidateKey": "videoray-mission-specialist-pro-5",
+      "signal": "newsVelocity",
+      "value": null,
+      "status": "blocked",
+      "collectedAt": "2026-08-25T19:39:00.000Z",
+      "sourceUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=%22VideoRay+mission-specialist-pro-5%22+robot&mode=timelinevolraw&format=json&maxrecords=250&startdatetime=20260527000000&enddatetime=20260825000000",
+      "error": "fetch failed"
+    }
+  ]
+}

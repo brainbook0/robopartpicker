@@ -22,6 +22,7 @@ coverage/
 playwright-report/
 test-results/
 exports/
+.superpowers/
 RoboPart Picker Hub.zip
 *.tsbuildinfo
 

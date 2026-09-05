@@ -1,0 +1,22 @@
+{
+  "unitree-r1": {
+    "kind": "published_price",
+    "currency": "USD",
+    "minMinor": 490000,
+    "maxMinor": 490000,
+    "confidence": 0.95,
+    "methodVersion": "official-product-price-v1",
+    "valuedAt": "2026-08-27T00:00:00.000Z",
+    "sourceUrls": ["https://www.unitree.com/R1"]
+  },
+  "booster-robotics-k1": {
+    "kind": "published_price",
+    "currency": "USD",
+    "minMinor": 599900,
+    "maxMinor": 599900,
+    "confidence": 0.95,
+    "methodVersion": "official-product-price-v1",
+    "valuedAt": "2026-08-27T00:00:00.000Z",
+    "sourceUrls": ["https://www.booster.tech/"]
+  }
+}

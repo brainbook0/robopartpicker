@@ -1,0 +1,93 @@
+[
+  {
+    "slug": "blueye-robotics-x3",
+    "name": "x3",
+    "manufacturer": "Blueye Robotics",
+    "model": "x3",
+    "category": "underwater",
+    "officialProductUrl": "https://www.blueyerobotics.com/products/x3",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  },
+  {
+    "slug": "blueye-robotics-x3-ultra",
+    "name": "x3-ultra",
+    "manufacturer": "Blueye Robotics",
+    "model": "x3-ultra",
+    "category": "underwater",
+    "officialProductUrl": "https://www.blueyerobotics.com/products/x3-ultra",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  },
+  {
+    "slug": "blueye-robotics-x7",
+    "name": "x7",
+    "manufacturer": "Blueye Robotics",
+    "model": "x7",
+    "category": "underwater",
+    "officialProductUrl": "https://www.blueyerobotics.com/products/x7",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  },
+  {
+    "slug": "videoray-mission-specialist-ally",
+    "name": "mission-specialist-ally",
+    "manufacturer": "VideoRay",
+    "model": "mission-specialist-ally",
+    "category": "underwater",
+    "officialProductUrl": "https://videoray.com/products/mission-specialist-ally/",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  },
+  {
+    "slug": "videoray-mission-specialist-defender",
+    "name": "mission-specialist-defender",
+    "manufacturer": "VideoRay",
+    "model": "mission-specialist-defender",
+    "category": "underwater",
+    "officialProductUrl": "https://videoray.com/products/mission-specialist-defender/",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  },
+  {
+    "slug": "videoray-mission-specialist-defender-alt",
+    "name": "mission-specialist-defender-alt",
+    "manufacturer": "VideoRay",
+    "model": "mission-specialist-defender-alt",
+    "category": "underwater",
+    "officialProductUrl": "https://videoray.com/products/mission-specialist-defender-alt/",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  },
+  {
+    "slug": "videoray-mission-specialist-pro-5",
+    "name": "mission-specialist-pro-5",
+    "manufacturer": "VideoRay",
+    "model": "mission-specialist-pro-5",
+    "category": "underwater",
+    "officialProductUrl": "https://videoray.com/products/mission-specialist-pro-5/",
+    "lifecycle": "official_catalog_listing",
+    "retrievedAt": "2026-08-25T00:00:00.000Z",
+    "aliases": [],
+    "kind": "complete_robot",
+    "sourceAvailability": "closed_source"
+  }
+]

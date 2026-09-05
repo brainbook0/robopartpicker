@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { AppBindings } from "../env";
 import { SourcingOptimizerService } from "../services/sourcing-optimizer";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
-import { assertScopedRead, authenticatedUserId } from "../middleware/authorization";
+import { assertScopedRead, authenticatedUserId, organizationRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { BomsRepository } from "../db/repositories/boms";
 import { ProjectsRepository } from "../db/repositories/projects";
@@ -40,15 +40,21 @@ sourcingRoutes.post("/sourcing/estimate", loadAuthSession, async (c) => {
     const bom = await new BomsRepository(c.env.DB).find(body.bomId);
     if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
     await assertScopedRead(c.env.DB, userId, bom);
-    estimate = await service.estimateForBom(bom.id, body.constraints ?? {});
+    estimate = await service.estimateForBom(bom.id, body.constraints ?? {}, await canReview(c.env.DB, userId, bom));
   } else {
     const project = await new ProjectsRepository(c.env.DB).find(body.projectId!);
     if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
     await assertScopedRead(c.env.DB, userId, project.row);
-    estimate = await service.estimateForProject(project.row.id, body.constraints ?? {});
+    estimate = await service.estimateForProject(project.row.id, body.constraints ?? {}, await canReview(c.env.DB, userId, project.row));
   }
   return c.json({ estimate });
 });
+
+async function canReview(db: D1Database, userId: string | null, resource: { owner_user_id: string | null; organization_id: string | null }): Promise<boolean> {
+  if (!userId) return false;
+  if (resource.owner_user_id === userId) return true;
+  return Boolean(resource.organization_id && await organizationRole(db, userId, resource.organization_id));
+}
 
 sourcingRoutes.get("/sourcing/preferences", loadAuthSession, requireAuth, async (c) => {
   const userId = authenticatedUserId(c);

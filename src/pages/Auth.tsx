@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
+import { healthApi } from "@/lib/api/health";
 import { isSafeInternalPath } from "@/lib/safe-url";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -26,6 +28,13 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const healthQuery = useQuery({
+    queryKey: ["health-capabilities"],
+    queryFn: ({ signal }) => healthApi.get(signal),
+    staleTime: 5 * 60_000,
+  });
+  const googleEnabled = healthQuery.data?.capabilities.googleAuthentication === true;
 
   useEffect(() => {
     if (!loading && user) navigate(redirect, { replace: true });
@@ -73,6 +82,17 @@ export default function Auth() {
     }
   };
 
+  const onGoogleSignIn = async () => {
+    setGoogleBusy(true);
+    try {
+      const result = await authClient.signIn.social({ provider: "google", callbackURL: redirect });
+      if (result.error) throw new Error(result.error.message);
+    } catch (error) {
+      toast({ title: "Google authentication error", description: messageOf(error), variant: "destructive" });
+      setGoogleBusy(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[420px] px-4 py-12">
       <Link to="/" className="mb-6 flex items-center justify-center gap-2">
@@ -100,6 +120,16 @@ export default function Auth() {
             <div className="text-sm font-semibold">Reset password</div>
             <p className="mt-1 text-[11px] text-muted-foreground">Email delivery must be configured by the operator.</p>
           </div>
+        )}
+
+        {mode !== "reset" && googleEnabled && (
+          <>
+            <button type="button" onClick={() => void onGoogleSignIn()} disabled={googleBusy || busy} className="btn-ghost w-full justify-center border-input">
+              <span aria-hidden="true" className="grid h-4 w-4 place-items-center rounded-full border border-border bg-background text-[10px] font-bold">G</span>
+              {googleBusy ? "Connecting to Google…" : "Continue with Google"}
+            </button>
+            <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wide text-muted-foreground" aria-hidden="true"><span className="h-px flex-1 bg-border" /><span>or use email</span><span className="h-px flex-1 bg-border" /></div>
+          </>
         )}
 
         <form onSubmit={onSubmit} className="space-y-2">
@@ -158,7 +188,7 @@ export default function Auth() {
         )}
 
         <p className="mt-4 text-center text-[11px] text-muted-foreground">
-          By continuing you agree to the community guidelines. Be excellent to each other.
+          By continuing you agree to the <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link> and acknowledge the <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.
         </p>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { oauthProvider } from "@better-auth/oauth-provider";
 import type { Env } from "./env";
 import { UsersRepository } from "./db/repositories/users";
 import { sendAuthEmail } from "./services/email";
+import { googleSocialProviders } from "./auth-providers";
 
 export function createAuth(env: Env) {
   const users = new UsersRepository(env.DB);
@@ -17,6 +18,7 @@ export function createAuth(env: Env) {
     secret: env.BETTER_AUTH_SECRET,
     database: env.DB,
     trustedOrigins: [origin],
+    socialProviders: googleSocialProviders(env),
     disabledPaths: ["/token"],
     plugins: [
       jwt(),

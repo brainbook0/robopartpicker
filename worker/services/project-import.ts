@@ -1,7 +1,7 @@
 import { unzipSync } from "fflate";
 import { parse as parseYaml } from "yaml";
 import { buildBomLine, withCompleteness } from "../../src/lib/rpps/bom";
-import { normalizeBomHeader, parseCsvObjects, parseXlsxObjects } from "../../src/lib/bom-format-parser";
+import { normalizeBomHeader, parseCsvObjects, parseMarkdownBomObjects, parseXlsxObjects } from "../../src/lib/bom-format-parser";
 import { RppsPackage } from "../../src/lib/rpps/schema";
 import { extractProcedureCandidates } from "../../src/lib/project-procedures";
 import {
@@ -29,7 +29,7 @@ export type ExtractedProjectIntelligence = {
   parts: {
     sourcePaths: string[];
     candidates: Array<{ id: string; name: string; quantity: number; unit: string; manufacturer?: string; mpn?: string; fabricated: boolean; optional: boolean; sourcePath: string; confidence: number; extractionMethod: "explicit-bom" | "rpps-manifest" }>;
-    modelCandidates: Array<{ name: string; linkName: string; meshPath: string; classification: "fabricated-or-assembly"; purchasablePartInferred: false; sourcePath: string; confidence: number }>;
+    modelCandidates: Array<{ name: string; linkName: string; meshPath: string; quantity?: number; classification: "fabricated-or-assembly"; purchasablePartInferred: false; sourcePath: string; confidence: number }>;
   };
   model: null | { sourcePath: string; robotName?: string; linkCount: number; jointCount: number; movableJointCount: number; jointTypes: Record<string, number>; joints: Array<{ name: string; type: string; parent?: string; child?: string; axis?: string; lower?: number; upper?: number; effort?: number; velocity?: number }>; meshPaths: string[]; materialNames: string[]; transmissionCount: number };
   software: { packages: Array<{ ecosystem: "ros" | "npm" | "python" | "cargo" | "platformio"; name: string; version?: string; dependencies: string[]; sourcePath: string }> };
@@ -309,7 +309,10 @@ export async function analyzeFileSet(sourceType: ProjectImportKind, label: strin
   const components = manifest ? [] : componentExtraction.components;
   const model = extractModelSummary(textFiles);
   const software = extractSoftwarePackages(textFiles);
-  const modelCandidates = extractModelPartCandidates(textFiles);
+  const modelCandidates = dedupeModelCandidates([
+    ...extractModelPartCandidates(textFiles),
+    ...extractCadPartCandidates(textFiles, byteFiles),
+  ]);
   const configuration = { parameters: extractConfigurationParameters(textFiles) };
   const repository = extractRepositorySignals(relevant);
   const procedureCandidates = extractProcedureCandidates(textFiles, slug);
@@ -458,69 +461,120 @@ function extractComponents(files: Map<string, string>, warnings: string[], slug:
   sourcePath?: string;
   extractionMethod: "explicit-bom";
 } {
-  const candidate = [...files].find(([path]) => isBomArtifactPath(path));
-  if (!candidate) return { components: [], extractionMethod: "explicit-bom" };
-  let rows: unknown[] = [];
-  try {
-    if (/\.csv$/iu.test(candidate[0])) {
-      const firstLine = candidate[1].slice(0, 8_000).split("\n", 1)[0] ?? "";
-      const tabs = (firstLine.match(/\t/gu) ?? []).length;
-      const commas = (firstLine.match(/,/gu) ?? []).length;
-      rows = parseCsvObjects(candidate[1], tabs > commas ? "\t" : ",");
-    }
-    else if (/\.xlsx$/iu.test(candidate[0])) {
-      const raw = byteFiles?.get(candidate[0]);
-      if (!raw) {
-        warnings.push(`BOM file ${candidate[0]} was not available in binary form; only text formats were fetched.`);
-        return { components: [], sourcePath: candidate[0], extractionMethod: "explicit-bom" };
-      }
-      try {
-        rows = parseXlsxObjects(raw);
-      } catch (error) {
-        warnings.push(`BOM parser could not read ${candidate[0]}: ${error instanceof Error ? error.message : "invalid xlsx"}`);
-        return { components: [], sourcePath: candidate[0], extractionMethod: "explicit-bom" };
-      }
-    }
-    else {
-      const parsed = tryParseData(candidate[1]);
-      rows = Array.isArray(parsed) ? parsed : isRecord(parsed)
-        ? firstArray(parsed, ["bom", "components", "items", "parts"]) : [];
-    }
-  } catch (error) {
-    warnings.push(`BOM parser could not read ${candidate[0]}: ${error instanceof Error ? error.message : "invalid data"}`);
-    return { components: [], sourcePath: candidate[0], extractionMethod: "explicit-bom" };
-  }
+  const candidates = [...files].filter(([path, text]) => isBomArtifactPath(path)
+    || (/\.(?:md|markdown|html?|txt)$/iu.test(path) && /(?:bill of materials|\bbom\b)/iu.test(text)));
+  if (!candidates.length) return { components: [], extractionMethod: "explicit-bom" };
   const components: PortableRppsManifest["components"] = [];
-  for (const [index, raw] of rows.slice(0, 10_000).entries()) {
-    if (!isRecord(raw)) continue;
-    const normalized = Object.fromEntries(Object.entries(raw).map(([key, value]) => [normalizeBomHeader(key), value]));
-    const name = firstString(normalized, ["name", "part", "partname", "partnumber", "component", "componentname", "description", "item", "value", "comment", "type", "pcb", "名称", "规格"]);
-    if (!name) continue;
-    const quantity = firstValue(normalized, ["quantity", "qty", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform", "数量", "用量"])
-      ?? firstValue(normalized, Object.keys(normalized).filter((key) => /^qty|^quantity/iu.test(key)));
-    const manufacturer = cleanBomValue(firstString(normalized, ["manufacturer", "maker", "mfr", "制造商", "厂商", "品牌"]));
-    const mpn = cleanBomValue(firstString(normalized, ["manufacturerpartnumber", "manufacturerpart", "mpn", "partnumber", "sku", "制造商料号", "制造商型号", "型号", "料号", "物料编号", "物料编码"]));
-    const ref = firstString(normalized, ["reference", "ref", "designator", "id", "序号", "编号", "位号"]);
-    const line = buildBomLine({
-      name,
-      quantity,
-      unit: firstString(normalized, ["unit", "uom", "单位"]),
-      manufacturer,
-      mpn,
-      fabricated: /^(true|yes|fabricated|make)$/iu.test(String(firstValue(normalized, ["fabricated", "makeorbuy"]) ?? "")),
-      optional: /^(true|yes|optional)$/iu.test(String(firstValue(normalized, ["optional"]) ?? "")),
-      sourcePath: candidate[0],
-      rowIndex: index,
-      extractionMethod: "explicit-bom",
-    });
-    components.push({
-      ...line,
-      id: `component:${slug}:${slugify(ref || name || String(index + 1)).slice(0, 80) || index + 1}`,
-      artifactRefs: [],
-    });
+  for (const [sourceIndex, candidate] of candidates.entries()) {
+    let rows: unknown[] = [];
+    try {
+      rows = parseBomRows(candidate[0], candidate[1], byteFiles?.get(candidate[0]));
+    } catch (error) {
+      warnings.push(`BOM parser could not read ${candidate[0]}: ${error instanceof Error ? error.message : "invalid data"}`);
+      continue;
+    }
+    for (const [index, raw] of rows.slice(0, 10_000).entries()) {
+      if (!isRecord(raw)) continue;
+      const normalized = Object.fromEntries(Object.entries(raw).map(([key, value]) => [normalizeBomHeader(key), value]));
+      const name = firstString(normalized, ["name", "part", "partname", "partnumber", "component", "componentname", "description", "item", "value", "comment", "type", "pcb", "名称", "规格"]);
+      if (!name) continue;
+      const quantity = firstValue(normalized, ["quantity", "qty", "amount", "count", "qtyperassembly", "qtyperboard", "qtyfor1platform", "数量", "用量"])
+        ?? firstValue(normalized, Object.keys(normalized).filter((key) => /^qty|^quantity/iu.test(key)));
+      const manufacturer = cleanBomValue(firstString(normalized, ["manufacturer", "maker", "mfr", "制造商", "厂商", "品牌"]));
+      const mpn = cleanBomValue(firstString(normalized, ["manufacturerpartnumber", "manufacturerpart", "mpn", "partnumber", "supplierpart", "sku", "制造商料号", "制造商型号", "型号", "料号", "物料编号", "物料编码"]));
+      const ref = firstString(normalized, ["reference", "ref", "designator", "id", "序号", "编号", "位号"]);
+      const line = buildBomLine({
+        name,
+        quantity,
+        unit: firstString(normalized, ["unit", "uom", "单位"]),
+        manufacturer,
+        mpn,
+        fabricated: /^(true|yes|fabricated|make)$/iu.test(String(firstValue(normalized, ["fabricated", "makeorbuy"]) ?? "")),
+        optional: /^(true|yes|optional)$/iu.test(String(firstValue(normalized, ["optional"]) ?? "")),
+        sourcePath: candidate[0],
+        rowIndex: index,
+        extractionMethod: "explicit-bom",
+      });
+      components.push({
+        ...line,
+        id: `component:${slug}:${slugify(candidate[0]).slice(0, 30)}:${slugify(ref || name || String(index + 1)).slice(0, 50) || sourceIndex + 1}`,
+        artifactRefs: [],
+      });
+    }
+    if (rows.length && !components.some((component) => component.evidenceLocator?.startsWith(candidate[0]))) {
+      warnings.push(`BOM file ${candidate[0]} did not expose recognizable name and quantity columns.`);
+    }
   }
-  if (rows.length && !components.length) warnings.push(`BOM file ${candidate[0]} did not expose recognizable name or quantity columns.`);
-  return { components, sourcePath: candidate[0], extractionMethod: "explicit-bom" };
+  return { components, sourcePath: candidates[0]?.[0], extractionMethod: "explicit-bom" };
+}
+
+function parseBomRows(path: string, text: string, bytes?: Uint8Array): unknown[] {
+  const lower = path.toLowerCase();
+  if (/\.(?:csv|tsv)$/u.test(lower)) {
+    const firstLine = text.slice(0, 8_000).split("\n", 1)[0] ?? "";
+    const tabs = (firstLine.match(/\t/gu) ?? []).length;
+    const commas = (firstLine.match(/,/gu) ?? []).length;
+    return parseCsvObjects(text, lower.endsWith(".tsv") || tabs > commas ? "\t" : ",");
+  }
+  if (/\.xlsx$/u.test(lower)) {
+    if (!bytes) throw new Error("binary XLSX content was not available");
+    return parseXlsxObjects(bytes);
+  }
+  if (/\.(?:md|markdown)$/u.test(lower)) return parseMarkdownBomObjects(text);
+  if (/\.html?$/u.test(lower)) return parseHtmlBomObjects(text);
+  if (/\.xml$/u.test(lower)) return parseXmlBomObjects(text);
+  if (/\.txt$/u.test(lower)) {
+    const markdown = parseMarkdownBomObjects(text);
+    if (markdown.length) return markdown;
+    const firstLine = text.slice(0, 8_000).split("\n", 1)[0] ?? "";
+    return parseCsvObjects(text, (firstLine.match(/\t/gu) ?? []).length >= (firstLine.match(/,/gu) ?? []).length ? "\t" : ",");
+  }
+  const parsed = tryParseData(text);
+  return Array.isArray(parsed) ? parsed : isRecord(parsed) ? firstArray(parsed, ["bom", "components", "items", "parts"]) : [];
+}
+
+function parseHtmlBomObjects(html: string): Record<string, string>[] {
+  const rows = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/giu)].map((row) =>
+    [...row[1].matchAll(/<t[hd]\b[^>]*>([\s\S]*?)<\/t[hd]>/giu)]
+      .map((cell) => htmlText(cell[1])));
+  if (rows.length < 2) return [];
+  const markdown = rows.map((row, index) => `| ${row.join(" | ")} |${index === 0 ? `\n| ${row.map(() => "---").join(" | ")} |` : ""}`).join("\n");
+  return parseMarkdownBomObjects(markdown);
+}
+
+function parseXmlBomObjects(xml: string): Record<string, string>[] {
+  const output: Record<string, string>[] = [];
+  for (const match of xml.matchAll(/<(?:item|part|component|comp)\b([^>]*)>([\s\S]*?)<\/(?:item|part|component|comp)>/giu)) {
+    const attrs = match[1];
+    const body = match[2];
+    const field = (names: string[]) => {
+      for (const name of names) {
+        const fromAttribute = attrs.match(new RegExp(`\\b${name}=["']([^"']+)["']`, "iu"))?.[1];
+        if (fromAttribute) return htmlText(fromAttribute);
+        const fromElement = body.match(new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)</${name}>`, "iu"))?.[1];
+        if (fromElement) return htmlText(fromElement);
+        const fromField = body.match(new RegExp(`<field\\b[^>]*name=["']${name}["'][^>]*>([\\s\\S]*?)</field>`, "iu"))?.[1];
+        if (fromField) return htmlText(fromField);
+      }
+      return "";
+    };
+    const record = {
+      name: field(["name", "value", "description", "part"]),
+      quantity: field(["quantity", "qty", "count"]) || "1",
+      manufacturer: field(["manufacturer", "mfr", "maker"]),
+      manufacturerpartnumber: field(["manufacturerpartnumber", "mpn", "partnumber"]),
+      reference: field(["ref", "reference", "designator"]),
+      unit: field(["unit", "uom"]),
+    };
+    if (record.name) output.push(record);
+  }
+  return output;
+}
+
+function htmlText(value: string): string {
+  return value.replace(/<br\s*\/?\s*>/giu, " ").replace(/<[^>]+>/gu, " ")
+    .replace(/&lt;/gu, "<").replace(/&gt;/gu, ">").replace(/&quot;/gu, '"')
+    .replace(/&#39;|&apos;/gu, "'").replace(/&amp;/gu, "&").replace(/\s+/gu, " ").trim();
 }
 
 function extractUrdfInterfaces(files: Map<string, string>, slug: string): PortableRppsManifest["interfaces"] {
@@ -587,11 +641,110 @@ function extractModelPartCandidates(files: Map<string, string>): ExtractedProjec
   return output;
 }
 
+function extractCadPartCandidates(files: Map<string, string>, byteFiles: Map<string, Uint8Array>): ExtractedProjectIntelligence["parts"]["modelCandidates"] {
+  const output: ExtractedProjectIntelligence["parts"]["modelCandidates"] = [];
+  const add = (sourcePath: string, name: string, meshPath = sourcePath, quantity = 1, confidence = 0.75) => {
+    const clean = name.replace(/[_-]+/gu, " ").replace(/\s+/gu, " ").trim();
+    if (!clean || /^(?:assembly|part|body|object|mesh|solid|unnamed)$/iu.test(clean)) return;
+    output.push({ name: clean.slice(0, 500), linkName: name.slice(0, 500), meshPath, quantity, classification: "fabricated-or-assembly", purchasablePartInferred: false, sourcePath, confidence });
+  };
+  for (const [path, text] of files) {
+    const lower = path.toLowerCase();
+    if (/\.(?:step|stp)$/u.test(lower)) {
+      const names = [...text.matchAll(/\bPRODUCT\s*\(\s*'((?:''|[^'])*)'/giu)].map((match) => match[1].replace(/''/gu, "'").trim());
+      const counts = countNames(names);
+      for (const [name, quantity] of counts) add(path, name, `${path}#product:${name}`, quantity, 0.8);
+    } else if (/\.obj$/u.test(lower)) {
+      for (const match of text.matchAll(/^(?:o|g)\s+(.+)$/gmu)) add(path, match[1], `${path}#object:${match[1]}`, 1, 0.8);
+    } else if (/\.stl$/u.test(lower)) {
+      const solidName = text.match(/^solid\s+([^\r\n]+)/iu)?.[1] ?? fileStem(path);
+      add(path, solidName, path, 1, 0.65);
+    } else if (/\.gltf$/u.test(lower)) {
+      try { extractGltfCandidates(path, JSON.parse(text) as unknown, add); } catch { /* Unparseable JSON remains in the artifact inventory. */ }
+    }
+  }
+  for (const [path, bytes] of byteFiles) {
+    const lower = path.toLowerCase();
+    if (/\.glb$/u.test(lower)) {
+      const parsed = parseGlbJson(bytes);
+      if (parsed) extractGltfCandidates(path, parsed, add);
+    } else if (/\.3mf$/u.test(lower)) {
+      try {
+        const zip = unzipSync(bytes);
+        for (const [entryPath, entry] of Object.entries(zip)) {
+          if (!/3d\/.*\.model$/iu.test(entryPath)) continue;
+          const xml = decodeText(entry);
+          const names = [...xml.matchAll(/<object\b([^>]*)>/giu)].map((match) => match[1].match(/\bname=["']([^"']+)["']/iu)?.[1]).filter((name): name is string => Boolean(name));
+          for (const [name, quantity] of countNames(names)) add(path, name, `${path}#${entryPath}:${name}`, quantity, 0.85);
+        }
+      } catch { /* Invalid 3MF remains inventoried and untrusted. */ }
+    } else if (/\.fcstd$/u.test(lower)) {
+      try {
+        const zip = unzipSync(bytes);
+        const document = decodeText(zip["Document.xml"] ?? new Uint8Array());
+        for (const match of document.matchAll(/<Object\b[^>]*name=["']([^"']+)["'][^>]*>([\s\S]*?)<\/Object>/giu)) {
+          const label = match[2].match(/<Property\b[^>]*name=["']Label["'][^>]*>[\s\S]*?<String\b[^>]*value=["']([^"']+)["']/iu)?.[1] ?? match[1];
+          add(path, label, `${path}#object:${match[1]}`, 1, 0.85);
+        }
+      } catch { /* Invalid FCStd remains inventoried and untrusted. */ }
+    }
+  }
+  return output.slice(0, 2_000);
+}
+
+function extractGltfCandidates(path: string, raw: unknown, add: (sourcePath: string, name: string, meshPath?: string, quantity?: number, confidence?: number) => void): void {
+  if (!isRecord(raw) || !Array.isArray(raw.nodes)) return;
+  const meshes = Array.isArray(raw.meshes) ? raw.meshes : [];
+  const names = raw.nodes.map((node, index) => {
+    if (!isRecord(node) || typeof node.mesh !== "number") return "";
+    const mesh = meshes[node.mesh];
+    return typeof node.name === "string" ? node.name : isRecord(mesh) && typeof mesh.name === "string" ? mesh.name : `mesh ${node.mesh + 1 || index + 1}`;
+  }).filter(Boolean);
+  for (const [name, quantity] of countNames(names)) add(path, name, `${path}#node:${name}`, quantity, 0.8);
+}
+
+function parseGlbJson(bytes: Uint8Array): unknown | null {
+  if (bytes.byteLength < 20) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (view.getUint32(0, true) !== 0x46546c67) return null;
+  let offset = 12;
+  while (offset + 8 <= bytes.byteLength) {
+    const length = view.getUint32(offset, true);
+    const type = view.getUint32(offset + 4, true);
+    offset += 8;
+    if (offset + length > bytes.byteLength) return null;
+    if (type === 0x4e4f534a) {
+      try { return JSON.parse(new TextDecoder().decode(bytes.subarray(offset, offset + length)).replace(/\u0000+$/gu, "")); } catch { return null; }
+    }
+    offset += length;
+  }
+  return null;
+}
+
+function dedupeModelCandidates(candidates: ExtractedProjectIntelligence["parts"]["modelCandidates"]): ExtractedProjectIntelligence["parts"]["modelCandidates"] {
+  const byKey = new Map<string, ExtractedProjectIntelligence["parts"]["modelCandidates"][number]>();
+  for (const candidate of candidates) {
+    const key = `${candidate.sourcePath}\u0000${candidate.linkName.toLowerCase()}\u0000${candidate.meshPath}`;
+    const current = byKey.get(key);
+    if (current) current.quantity = (current.quantity ?? 1) + (candidate.quantity ?? 1);
+    else byKey.set(key, { ...candidate });
+  }
+  return [...byKey.values()];
+}
+
+function countNames(names: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const name of names.filter(Boolean)) counts.set(name, (counts.get(name) ?? 0) + 1);
+  return counts;
+}
+
+function fileStem(path: string): string { return path.replace(/\\/gu, "/").split("/").pop()?.replace(/\.[^.]+$/u, "") ?? "fabricated part"; }
+
 function deriveFabricatedComponents(candidates: ExtractedProjectIntelligence["parts"]["modelCandidates"], slug: string): PortableRppsManifest["components"] {
   return candidates.slice(0, 500).map((candidate, index) => ({
     ...buildBomLine({
       name: candidate.name || candidate.linkName,
-      quantity: 1,
+      quantity: candidate.quantity ?? 1,
       fabricated: true,
       sourcePath: candidate.sourcePath,
       extractionMethod: "cad-metadata",
@@ -696,9 +849,9 @@ function xmlAttribute(attributes: string, name: string): string | undefined { re
 function finiteNumber(value: string | undefined): number | undefined { const parsed = Number(value); return value !== undefined && Number.isFinite(parsed) ? parsed : undefined; }
 function previewImageScore(path: string): number { const lower = path.toLowerCase(); return /(?:^|\/)(?:cover|hero|render|preview|overview|robot)[-_.]/u.test(lower) ? 10 : /cover|hero|render|preview/u.test(lower) ? 5 : 0; }
 
-const BOM_FILENAME_RE = /^(?:bom|parts(?:[-_ ]list)?|bill[-_ ]of[-_ ]materials)$/iu;
+const BOM_FILENAME_RE = /^(?:bom|bom[-_ ].+|.+[-_ ]bom|parts?(?:[-_ ]list)?|bill[-_ ]of[-_ ]materials|materials?[-_ ]list|component[-_ ]list)$/iu;
 
-function isBomArtifactPath(path: string, extensions: string[] = ["csv", "json", "yaml", "yml", "xlsx"]): boolean {
+function isBomArtifactPath(path: string, extensions: string[] = ["csv", "tsv", "json", "yaml", "yml", "xlsx", "md", "markdown", "html", "htm", "xml", "txt"]): boolean {
   const fileName = path.replace(/\\/gu, "/").split("/").pop() ?? "";
   const match = fileName.match(/^(.+)\.([^.]+)$/u);
   if (!match) return false;
@@ -781,13 +934,18 @@ export function isProjectMetadata(path: string): boolean {
 }
 
 function isRelevantText(path: string): boolean {
-  return isProjectMetadata(path) || /\.(md|txt|csv|json|ya?ml|xml|xlsx|urdf|xacro|sdf|mjcf|toml|launch|ini|cfg)$/iu.test(path);
+  return isProjectMetadata(path) || /\.(md|markdown|html?|txt|csv|tsv|json|ya?ml|xml|xlsx|urdf|xacro|sdf|mjcf|toml|launch|ini|cfg|step|stp|obj|stl|gltf|glb|3mf|fcstd)$/iu.test(path);
 }
 
 function parserFor(path: string): string {
   if (/rpps\./iu.test(path)) return "rpps-portable-0.1";
   if (/\.csv$/iu.test(path)) return "csv-bom-rfc4180";
+  if (/\.tsv$/iu.test(path)) return "tsv-bom-rfc4180";
+  if (/\.xlsx$/iu.test(path)) return "xlsx-bom-openxml";
+  if (/\.(md|markdown|html?|txt)$/iu.test(path) && isBomArtifactPath(path)) return "document-bom-table-v1";
+  if (/\.xml$/iu.test(path) && isBomArtifactPath(path)) return "xml-eda-bom-v1";
   if (/\.(json|ya?ml)$/iu.test(path) && isBomArtifactPath(path, ["json", "yaml", "yml"])) return "structured-bom-v1";
+  if (/\.(step|stp|3mf|fcstd|gltf|glb|stl|obj)$/iu.test(path)) return "cad-assembly-inventory-v1";
   if (/\.urdf(?:\.xacro)?$/iu.test(path)) return "urdf-inventory-v1";
   if (/(^|\/)(package\.(xml|json)|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|cargo\.toml|platformio\.ini)$/iu.test(path)) return "software-manifest-v1";
   if (/\.md$/iu.test(path)) return "markdown-procedure-heuristic-v1";

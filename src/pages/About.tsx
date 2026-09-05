@@ -89,6 +89,10 @@ const faqs = [
     question: "Can agents and developer tools use the data?",
     answer: "Yes. RoboPartPicker exposes a public read-only MCP endpoint and developer documentation today, with authenticated project workflows expanding over time.",
   },
+  {
+    question: "How does RoboPartPicker measure website usage?",
+    answer: "RoboPartPicker uses first-party daily aggregates for public page views and allowlisted product interactions. It does not store IP addresses, analytics cookies, browser fingerprints, user identities, per-person browsing histories, raw search text, or raw event streams. Private routes are excluded.",
+  },
 ];
 
 export default function About() {

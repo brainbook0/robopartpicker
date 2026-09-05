@@ -15,6 +15,8 @@ import { AiFormDraft } from "@/components/ai/AiFormDraft";
 import { AiNarrativeComposer } from "@/components/ai/AiNarrativeComposer";
 import { SubmissionQualityCard } from "@/components/ai/SubmissionQualityCard";
 import { reviewSubmission, type SubmissionQualityReview } from "@/lib/assistant";
+import { ProductStatusBadge } from "@/components/common/ProductStatusBadge";
+import { PRODUCT_STATUSES } from "@/lib/product-status";
 
 const money = (minor: number | null, currency = "USD") => minor == null
   ? "—"
@@ -126,7 +128,7 @@ export default function Builder() {
   if (authLoading) return <Centered><Loader2 className="h-5 w-5 animate-spin" /> Loading account…</Centered>;
   if (!user) return (
     <Centered>
-      <div className="section-title">Persistent build workspace</div>
+      <div className="flex items-center gap-2"><div className="section-title">Persistent build workspace</div><ProductStatusBadge status={PRODUCT_STATUSES.buildWorkspace} /></div>
       <h1 className="text-xl font-bold">Sign in to create a persistent build</h1>
       <p className="max-w-xl text-sm text-muted-foreground">Build items, supplier selections, progress, and exports are private by default and authorized by the Worker.</p>
       <Link to={`/auth?redirect=${encodeURIComponent(`/builder?${search}`)}`} className="btn-primary">Sign in</Link>
@@ -138,7 +140,7 @@ export default function Builder() {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="section-title">Tools · persistent build workspace</div>
-          <h1 className="text-[22px] font-bold">{detail.data?.item.name ?? "Your builds"}</h1>
+          <div className="flex flex-wrap items-center gap-2"><h1 className="text-[22px] font-bold">{detail.data?.item.name ?? "Your builds"}</h1><ProductStatusBadge status={PRODUCT_STATUSES.buildWorkspace} /></div>
           {detail.data?.item.description && <p className="mt-1 max-w-3xl text-xs text-muted-foreground">{detail.data.item.description}</p>}
           <p className="text-xs text-muted-foreground">Worker-authorized · D1 persisted · private by default</p>
         </div>

@@ -4,6 +4,8 @@ import { CatalogRepository } from "../db/repositories/catalog";
 import type { AppBindings } from "../env";
 import { AppError, parsePositiveInt } from "../http";
 import { sha256 } from "../services/ingestion";
+import { loadAuthSession, requireAuth } from "../middleware/authentication";
+import { requirePlatformRole } from "../middleware/authorization";
 
 export const catalogRoutes = new Hono<AppBindings>();
 
@@ -15,23 +17,13 @@ catalogRoutes.get("/components", async (c) => {
     throw new AppError(400, "VALIDATION_ERROR", "category must be a valid catalog category.");
   }
   const category = categoryRaw || undefined;
-  const minPrice = optionalNonNegativeNumber(c.req.query("minPrice"), "minPrice");
-  const maxPrice = optionalNonNegativeNumber(c.req.query("maxPrice"), "maxPrice");
-  if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
-    throw new AppError(400, "VALIDATION_ERROR", "minPrice cannot exceed maxPrice.");
-  }
   const limit = parsePositiveInt(c.req.query("limit"), 50, 100);
   const page = parsePositiveInt(c.req.query("page"), 1, 10_000);
   const result = await new CatalogRepository(c.env.DB).listComponents({
     category,
     q: cleanSearch(c.req.query("q")),
     manufacturerRegions: csv(c.req.query("manufacturerRegion")),
-    supplierRegions: csv(c.req.query("supplierRegion")),
-    supplierIds: csv(c.req.query("supplier")),
     makers: csv(c.req.query("manufacturer")),
-    minPrice,
-    maxPrice,
-    inStock: c.req.query("inStock") === "true",
     limit,
     offset: (page - 1) * limit,
   });
@@ -50,7 +42,14 @@ catalogRoutes.get("/components/:id", async (c) => {
   return c.json({ item: component, dataMode: component.isDemo ? "demo" : "live" });
 });
 
-catalogRoutes.get("/suppliers", async (c) => {
+catalogRoutes.get("/components/:id/alternatives", async (c) => {
+  const limit = parsePositiveInt(c.req.query("limit"), 5, 10);
+  const items = await new CatalogRepository(c.env.DB).listComponentAlternatives(c.req.param("id"), limit);
+  if (items === null) throw new AppError(404, "COMPONENT_NOT_FOUND", "Component not found.");
+  return c.json({ items, total: items.length, compatibilityStatus: "unverified" as const });
+});
+
+catalogRoutes.get("/suppliers", loadAuthSession, requireAuth, requirePlatformRole("moderator", "administrator"), async (c) => {
   const items = await new CatalogRepository(c.env.DB).listSuppliers();
   return c.json({ items, total: items.length, dataMode: "live" });
 });
@@ -62,7 +61,7 @@ catalogRoutes.get("/manufacturers", async (c) => {
   return c.json({ items: rows.results, total: rows.results.length });
 });
 
-catalogRoutes.get("/offers", async (c) => {
+catalogRoutes.get("/offers", loadAuthSession, requireAuth, requirePlatformRole("moderator", "administrator"), async (c) => {
   const componentId = c.req.query("componentId");
   const supplierId = c.req.query("supplierId");
   if (!componentId && !supplierId) throw new AppError(400, "VALIDATION_ERROR", "componentId or supplierId is required.");
@@ -118,12 +117,6 @@ function csv(value: string | undefined): string[] | undefined {
   return result?.length ? result : undefined;
 }
 
-function optionalNonNegativeNumber(value: string | undefined, field: string): number | undefined {
-  if (value === undefined || value === "") return undefined;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) throw new AppError(400, "VALIDATION_ERROR", `${field} must be a non-negative number.`);
-  return parsed;
-}
 
 function cleanSearch(value: string | undefined): string | undefined {
   const cleaned = value?.trim().slice(0, 100);

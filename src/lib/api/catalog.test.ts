@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMPONENTS_PAGE_SIZE, componentPath } from "./catalog";
+import { COMPONENTS_PAGE_SIZE, componentAlternativesPath, componentPath } from "./catalog";
 
 describe("componentPath", () => {
   it("preserves live data-driven categories and API-backed page metadata", () => {
@@ -34,5 +34,12 @@ describe("componentPath", () => {
     expect(path).toContain("minPrice=10");
     expect(path).toContain("maxPrice=200");
     expect(path).toContain("inStock=true");
+  });
+});
+
+describe("componentAlternativesPath", () => {
+  it("encodes the component identity and clamps the recommendation limit", () => {
+    expect(componentAlternativesPath("motor/42", 50)).toBe("/api/v1/components/motor%2F42/alternatives?limit=10");
+    expect(componentAlternativesPath("motor-42", 0)).toBe("/api/v1/components/motor-42/alternatives?limit=1");
   });
 });

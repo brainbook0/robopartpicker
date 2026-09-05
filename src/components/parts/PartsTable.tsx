@@ -1,7 +1,5 @@
 import { Link } from "react-router-dom";
 import {
-  lowestObservedPrice,
-  priceDelta30,
   type CatalogPart,
   type Actuator,
   type Hand,
@@ -10,13 +8,12 @@ import {
   type Driver,
   type Reducer,
 } from "@/shared/catalog";
-import { PriceDeltaPill } from "@/components/common/PriceDeltaPill";
 import { Star, StarOff, GitCompareArrows, Check } from "lucide-react";
 import { isPartSaved, toggleSavedPart, toggleCompare, readCompare } from "@/lib/catalogWorkspace";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { SOURCE_OBSERVATION_TOOLTIP } from "@/components/parts/CatalogDataNotice";
 import { fmtNumber, fmtText, fmtList } from "@/lib/partsFormat";
+import { PartVisual } from "./PartVisual";
 
 type Props = { parts: CatalogPart[]; onWorkspaceChange?: () => void };
 
@@ -76,24 +73,18 @@ export const PartsTable = ({ parts, onWorkspaceChange }: Props) => {
             {cat === "reducer" && <>
               <th>Type</th><th>Ratio</th><th>Rated Nm</th><th>Peak Nm</th><th>Backlash'</th><th>kg</th>
             </>}
-            <th title={SOURCE_OBSERVATION_TOOLTIP}>Lowest observed</th>
-            <th title={SOURCE_OBSERVATION_TOOLTIP}>30d change</th>
-            <th title={SOURCE_OBSERVATION_TOOLTIP}>Lead</th>
-            <th title="Number of non-demo supplier offers.">Offers</th>
+            <th>Lifecycle</th>
+            <th>Product source</th>
             <th className="text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {parts.map(p => {
-            const liveOffers = p.offers.filter((offer) => !offer.isDemo);
-            const low = lowestObservedPrice(p);
-            const knownLeads = liveOffers.filter((offer) => offer.leadKnown).map((offer) => offer.leadDays);
-            const minLead = knownLeads.length ? Math.min(...knownLeads) : null;
             const saved = isPartSaved(p.id);
             const inCompare = compare.ids.includes(p.id);
             return (
               <tr key={p.id}>
-                <td><div className="h-10 w-14 rounded border border-border bg-muted/40 flex items-center justify-center text-[10px] leading-tight text-muted-foreground text-center" title="No curated, source-backed photograph for this component.">no photo</div></td>
+                <td><PartVisual part={p} compact /></td>
                 <td>
                   <Link to={`/parts/${p.category}/${p.slug}`} className="font-medium hover:text-primary">{p.name}</Link>
                   {p.openSource && <span className="ml-1 pill pill-good">OS</span>}
@@ -130,10 +121,8 @@ export const PartsTable = ({ parts, onWorkspaceChange }: Props) => {
                   <td className="mono">{fmtNumber(r.ratedTorqueNm)}</td><td className="mono">{fmtNumber(r.peakTorqueNm)}</td>
                   <td className="mono">{fmtNumber(r.backlashArcmin)}</td><td className="mono">{fmtNumber(r.weightKg, { digits: 2 })}</td>
                 </>; })()}
-                <td className="mono font-semibold">{low == null ? <span className="text-muted-foreground">Unpriced</span> : new Intl.NumberFormat(undefined, { style: "currency", currency: liveOffers.find((offer) => offer.price === low)?.currency ?? "USD" }).format(low)}</td>
-                <td>{p.priceHistory.length >= 2 ? <PriceDeltaPill pct={priceDelta30(p)} /> : <span className="text-muted-foreground">—</span>}</td>
-                <td className="mono">{minLead == null ? <span className="text-muted-foreground">—</span> : `${minLead}d`}</td>
-                <td className="mono">{liveOffers.length}</td>
+                <td>{p.lifecycleStatus ?? "unknown"}</td>
+                <td>{p.sourceUrl ? <a href={p.sourceUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">Open source</a> : <span className="text-muted-foreground">Unknown</span>}</td>
                 <td>
                   <div className="flex justify-end items-center gap-1 whitespace-nowrap">
                     <button onClick={() => doSave(p.id, p.name)} className="btn-ghost btn-sm inline-flex items-center gap-1" aria-label={saved ? `Unsave ${p.name}` : `Save ${p.name}`} title={saved ? "Saved locally" : "Save to local workspace"}>

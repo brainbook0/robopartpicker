@@ -7,7 +7,7 @@
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/files/*", "/mcp", "/mcp/*", "/.well-known/*"]
+    "run_worker_first": true
   },
   "d1_databases": [
     {
@@ -42,7 +42,7 @@
       "assets": {
         "binding": "ASSETS",
         "not_found_handling": "single-page-application",
-        "run_worker_first": ["/api/*", "/files/*", "/mcp", "/mcp/*", "/.well-known/*"]
+        "run_worker_first": true
       },
       "d1_databases": [
         {
@@ -71,10 +71,14 @@
       }
     },
     "production": {
+      "routes": [
+        { "pattern": "robopartpicker.com", "custom_domain": true },
+        { "pattern": "www.robopartpicker.com", "custom_domain": true }
+      ],
       "assets": {
         "binding": "ASSETS",
         "not_found_handling": "single-page-application",
-        "run_worker_first": ["/api/*", "/files/*", "/mcp", "/mcp/*", "/.well-known/*"]
+        "run_worker_first": true
       },
       "d1_databases": [
         {
@@ -93,12 +97,15 @@
       "vars": {
         "APP_ENV": "production",
         "APP_NAME": "RoboPartPicker",
+        "PUBLIC_BASE_URL": "https://robopartpicker.com",
         "AI_PROVIDER_URL": "https://openrouter.ai/api/v1",
         "AI_MODEL": "deepseek/deepseek-v4-pro",
         "AI_DAILY_TOKEN_LIMIT": "150000",
         "AI_MAX_OUTPUT_TOKENS": "2048"
       },
       "secrets": {
+        // Optional Google auth uses GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.
+        // The provider stays disabled unless both Cloudflare secrets exist.
         "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "INGESTION_SECRET"]
       }
     }

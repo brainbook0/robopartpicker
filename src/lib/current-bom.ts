@@ -4,14 +4,14 @@
 // When it is present, line count, unit count, known cost, and unpriced counts
 // all come from its reviewed, offer-backed items. The legacy flat `rpps.bom`
 // list is retained only as source evidence and must never be presented as a
-// competing BOM. Projects without a linked BOM fall back to the flat RPPS list.
+// competing BOM. Projects without a linked, source-validated BOM are unavailable.
 
 import type { ProjectRow } from "@/lib/projects";
 import type { BomDetail } from "@/shared/builds";
 
 export type CurrentBomTotals = {
   /** Which representation supplied these totals. */
-  source: "normalized" | "rpps";
+  source: "normalized" | "unavailable";
   /** False while a linked D1 BOM exists but has not resolved (loading/error). */
   available: boolean;
   lineCount: number;
@@ -78,8 +78,13 @@ export function currentBomTotals(project: ProjectRow, normalizedBom: BomDetail |
   }
 
   return {
-    source: "rpps",
-    available: true,
-    ...rppsBomTotals(project.rpps?.bom ?? []),
+    source: "unavailable",
+    available: false,
+    lineCount: 0,
+    units: 0,
+    knownCostMinor: 0,
+    pricedLines: 0,
+    unpricedLines: 0,
+    currency: "USD",
   };
 }

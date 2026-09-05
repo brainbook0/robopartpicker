@@ -1,0 +1,47 @@
+{
+  "apptronik-apollo-2": {
+    "sourceUrl": "https://cdn.prod.website-files.com/6a0dd86942776facbc2f6ba4/6a31c21bca70bd2a4f82bf35_Apptronik-Apollo2-Humanoid-2.jpg",
+    "pageUrl": "https://apptronik.com/apollo/apollo-2",
+    "retrievedAt": "2026-08-25T20:17:00.000Z",
+    "title": "Official Apollo 2 hero product image",
+    "altText": "Apptronik Apollo 2 humanoid robot",
+    "attribution": "Apptronik, Inc.",
+    "method": "rendered official product page computed background image"
+  },
+  "jaka-robotics-jaka-a12l": {
+    "sourceUrl": "https://www.jaka.com/profile/upload/2025/05/06/20250506163408A014.jpg",
+    "pageUrl": "https://www.jaka.com/en/productDetails/JAKA%20A12L",
+    "retrievedAt": "2026-08-25T20:19:00.000Z",
+    "title": "Official JAKA A12L product image",
+    "altText": "JAKA A12L collaborative robot",
+    "attribution": "JAKA Robotics",
+    "method": "hydrated official Product JSON-LD"
+  },
+  "jaka-robotics-jaka-ai7": {
+    "sourceUrl": "https://www.jaka.com/profile/upload/2024/01/03/JAKA-Ai-7_20240103112143A175.jpg",
+    "pageUrl": "https://www.jaka.com/en/productDetails/JAKA%20Ai7",
+    "retrievedAt": "2026-08-25T20:19:00.000Z",
+    "title": "Official JAKA Ai7 product image",
+    "altText": "JAKA Ai7 collaborative robot",
+    "attribution": "JAKA Robotics",
+    "method": "hydrated official Product JSON-LD"
+  },
+  "jaka-robotics-jaka-pro12": {
+    "sourceUrl": "https://www.jaka.com/profile/upload/2024/01/03/JAKA-Pro-12_20240103112424A179.jpg",
+    "pageUrl": "https://www.jaka.com/en/productDetails/JAKA%20Pro12",
+    "retrievedAt": "2026-08-25T20:19:00.000Z",
+    "title": "Official JAKA Pro12 product image",
+    "altText": "JAKA Pro12 collaborative robot",
+    "attribution": "JAKA Robotics",
+    "method": "hydrated official Product JSON-LD"
+  },
+  "jaka-robotics-jaka-zu7": {
+    "sourceUrl": "https://www.jaka.com/profile/upload/2025/02/07/20250207154247A095.jpg",
+    "pageUrl": "https://www.jaka.com/en/productDetails/JAKA%20Zu7",
+    "retrievedAt": "2026-08-25T20:19:00.000Z",
+    "title": "Official JAKA Zu7 product image",
+    "altText": "JAKA Zu7 collaborative robot",
+    "attribution": "JAKA Robotics",
+    "method": "hydrated official Product JSON-LD"
+  }
+}

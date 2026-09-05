@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { CatalogPart, SupplierSummary } from "@/shared/catalog";
+import type { ComponentAlternativeRecommendation } from "@/shared/componentAlternatives";
 import { api } from "./client";
 
 export type ComponentListResponse = {
@@ -62,6 +63,23 @@ export function useComponent(idOrSlug: string | undefined) {
     queryKey: ["catalog-component", idOrSlug],
     queryFn: ({ signal }) => api.get<{ item: CatalogPart; dataMode: "demo" | "live" }>(
       `/api/v1/components/${encodeURIComponent(idOrSlug!)}`,
+      { signal },
+    ),
+    enabled: Boolean(idOrSlug),
+    staleTime: 30_000,
+  });
+}
+
+export function componentAlternativesPath(idOrSlug: string, requestedLimit = 5): string {
+  const limit = Math.min(10, Math.max(1, Math.trunc(requestedLimit) || 1));
+  return `/api/v1/components/${encodeURIComponent(idOrSlug)}/alternatives?limit=${limit}`;
+}
+
+export function useComponentAlternatives(idOrSlug: string | undefined, limit = 5) {
+  return useQuery({
+    queryKey: ["catalog-component-alternatives", idOrSlug, limit],
+    queryFn: ({ signal }) => api.get<{ items: ComponentAlternativeRecommendation[]; total: number; compatibilityStatus: "unverified" }>(
+      componentAlternativesPath(idOrSlug!, limit),
       { signal },
     ),
     enabled: Boolean(idOrSlug),

@@ -1,6 +1,6 @@
-export const DEFAULT_PRODUCTION_BASE_URL = "https://robopartpicker-production.ludomi2502.workers.dev";
+export const DEFAULT_PRODUCTION_BASE_URL = "https://robopartpicker.com";
 export const DEFAULT_PREVIEW_BASE_URL = "https://robopartpicker-preview.ludomi2502.workers.dev";
-export const LEGACY_BASE_URL = "https://robopartpicker.com";
+export const LEGACY_BASE_URL = "https://robopartpicker-production.ludomi2502.workers.dev";
 
 export type CanonicalEnv = Record<string, string | undefined>;
 
@@ -24,4 +24,14 @@ export function canonicalBase(env: CanonicalEnv): string {
 
 export function replaceBase(content: string, base: string): string {
   return content.replaceAll(LEGACY_BASE_URL, base).replaceAll(DEFAULT_PRODUCTION_BASE_URL, base).replaceAll(DEFAULT_PREVIEW_BASE_URL, base).replaceAll("http://localhost:5173", base);
+}
+
+export function canonicalRedirectUrl(requestUrl: string, canonicalBaseUrl: string): string | null {
+  const request = new URL(requestUrl);
+  const canonical = new URL(canonicalBaseUrl);
+  if (request.hostname !== `www.${canonical.hostname}`) return null;
+  request.protocol = canonical.protocol;
+  request.hostname = canonical.hostname;
+  request.port = canonical.port;
+  return request.toString();
 }

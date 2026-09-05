@@ -1,5 +1,11 @@
-import type { CatalogOffer, CatalogPart, SupplierSummary } from "../../../src/shared/catalog";
-import { normalizePriceBreaks, shouldAppendHistory, type OfferWriteInput } from "../../../src/shared/offer";
+import type { CatalogPart, SupplierSummary } from "../../../src/shared/catalog";
+import {
+  rankComponentAlternatives,
+  type ComponentAlternativeRecommendation,
+  type RankableComponent,
+} from "../../../src/shared/componentAlternatives";
+import { shouldAppendHistory, type OfferWriteInput } from "../../../src/shared/offer";
+import { fileContentUrl } from "../../services/file-urls";
 
 type ComponentRow = {
   id: string;
@@ -8,50 +14,27 @@ type ComponentRow = {
   category: string;
   manufacturer_part_number: string | null;
   summary: string | null;
+  lifecycle_status: "active" | "limited" | "obsolete" | "prototype" | "unknown";
+  source_url: string | null;
   primary_region: string | null;
   provenance_label: string;
   freshness_at: string | null;
   is_demo: number;
   maker: string | null;
   maker_region: string | null;
+  maker_website: string | null;
+  managed_image_count?: number;
 };
 
 type SpecRow = {
   component_id: string;
   spec_key: string;
+  label: string;
   value_text: string | null;
   value_number: number | null;
+  unit: string | null;
 };
 
-type OfferRow = {
-  id: string;
-  component_id: string;
-  supplier_id: string;
-  supplier_name: string;
-  supplier_region: string | null;
-  supplier_sku: string | null;
-  product_url: string | null;
-  currency: string | null;
-  unit_price_minor: number;
-  stock_quantity: number | null;
-  lead_time_days: number | null;
-  minimum_quantity: number;
-  availability: string | null;
-  condition: string | null;
-  price_breaks: string | null;
-  reliability_score: number | null;
-  risk_label: string | null;
-  freshness_label: string | null;
-  observed_at: string;
-  is_demo: number;
-};
-
-type HistoryRow = {
-  component_id: string;
-  id: string;
-  unit_price_minor: number;
-  observed_at: string;
-};
 
 export type CatalogListOptions = {
   category?: string;
@@ -125,7 +108,7 @@ export class CatalogRepository {
     const count = await this.db.prepare(`SELECT COUNT(*) AS total ${from}`).bind(...values).first<{ total: number }>();
     const rows = await this.db
       .prepare(`SELECT c.id, c.slug, c.name, c.category, c.manufacturer_part_number, c.summary, c.primary_region, c.provenance_label,
-        c.freshness_at, c.is_demo, m.name AS maker, m.headquarters_region AS maker_region
+        c.freshness_at, c.is_demo, c.lifecycle_status, c.source_url, m.name AS maker, m.headquarters_region AS maker_region, m.website_url AS maker_website
         ${from}
         ORDER BY c.name COLLATE NOCASE
         LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`)
@@ -138,13 +121,152 @@ export class CatalogRepository {
   async findComponent(idOrSlug: string): Promise<CatalogPart | null> {
     const row = await this.db
       .prepare(`SELECT c.id, c.slug, c.name, c.category, c.manufacturer_part_number, c.summary, c.primary_region, c.provenance_label,
-        c.freshness_at, c.is_demo, m.name AS maker, m.headquarters_region AS maker_region
+        c.freshness_at, c.is_demo, c.lifecycle_status, c.source_url, m.name AS maker, m.headquarters_region AS maker_region, m.website_url AS maker_website
         FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
         WHERE c.deleted_at IS NULL AND c.is_demo = 0 AND (c.id = ?1 OR c.slug = ?1)`)
       .bind(idOrSlug)
       .first<ComponentRow>();
     if (!row) return null;
-    return (await this.hydrateComponents([row]))[0] ?? null;
+    const part = (await this.hydrateComponents([row]))[0];
+    if (!part) return null;
+    const [fileResult, usageResult, evidenceResult, profileResult] = await this.db.batch([
+      this.db.prepare(`SELECT f.id, f.original_name AS originalName, f.media_type AS mediaType,
+          f.size_bytes AS sizeBytes, cf.purpose
+        FROM component_files cf JOIN files f ON f.id = cf.file_id
+        WHERE cf.component_id = ?1 AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL
+        ORDER BY cf.sort_order, f.original_name`).bind(row.id),
+      this.db.prepare(`SELECT p.id AS projectId, p.slug AS projectSlug, p.name AS projectName,
+          b.id AS bomId, b.slug AS bomSlug, bi.id AS bomItemId, bi.quantity, bi.unit,
+          bi.evidence_locator AS evidenceLocator, bi.notes
+        FROM bom_items bi
+        JOIN boms b ON b.current_version_id = bi.bom_version_id
+        JOIN bom_versions bv ON bv.id = b.current_version_id AND bv.publication_state IN ('verified', 'partial')
+        JOIN projects p ON p.id = b.project_id
+        WHERE bi.component_id = ?1 AND bi.included = 1 AND p.deleted_at IS NULL AND p.is_demo = 0
+          AND p.status = 'published' AND p.visibility IN ('public', 'unlisted')
+        ORDER BY p.github_stars DESC, p.updated_at DESC LIMIT 24`).bind(row.id),
+      this.db.prepare(`SELECT e.id, e.title, e.source_type AS sourceType, e.source_url AS sourceUrl,
+          e.confidence, e.retrieved_at AS retrievedAt
+        FROM evidence_claims ec JOIN evidence e ON e.id = ec.evidence_id
+        WHERE ec.entity_type = 'component' AND ec.entity_id = ?1 AND e.is_demo = 0
+        GROUP BY e.id ORDER BY e.confidence DESC, e.retrieved_at DESC LIMIT 24`).bind(row.id),
+      this.db.prepare(`SELECT COUNT(*) AS technicalSpecCount FROM component_specs cs
+        JOIN component_revisions cr ON cr.id = cs.component_revision_id
+        WHERE cr.component_id = ?1 AND cr.status = 'published'
+          AND cs.spec_key NOT IN ('category', 'manufacturer_slug', 'source')`).bind(row.id),
+    ]);
+    const files = (fileResult.results as Array<{ id: string; originalName: string; mediaType: string; sizeBytes: number; purpose: NonNullable<CatalogPart["files"]>[number]["purpose"] }>).map((file) => ({ ...file, contentUrl: fileContentUrl(file.id) }));
+    const technicalSpecCount = Number((profileResult.results[0] as { technicalSpecCount?: number } | undefined)?.technicalSpecCount ?? 0);
+    const imageCount = files.filter((file) => file.purpose === "image" || file.mediaType.startsWith("image/")).length;
+    const engineeringFileCount = files.filter((file) => file.purpose !== "image").length;
+    const identity = row.maker && row.manufacturer_part_number ? "exact" : row.maker || row.manufacturer_part_number ? "partial" : "unresolved";
+    const missing = [
+      !row.maker ? "manufacturer" : null,
+      !row.manufacturer_part_number ? "manufacturer part number" : null,
+      !row.summary?.trim() ? "source summary" : null,
+      technicalSpecCount === 0 ? "technical specifications" : null,
+      imageCount === 0 ? "source-backed image" : null,
+      engineeringFileCount === 0 ? "engineering files" : null,
+      usageResult.results.length === 0 ? "normalized BOM usage" : null,
+      evidenceResult.results.length === 0 ? "formal source evidence" : null,
+    ].filter((value): value is string => value != null);
+    return {
+      ...part,
+      files,
+      projectUsage: usageResult.results as NonNullable<CatalogPart["projectUsage"]>,
+      evidence: evidenceResult.results as NonNullable<CatalogPart["evidence"]>,
+      profile: { identity, technicalSpecCount, imageCount, engineeringFileCount, projectUsageCount: usageResult.results.length, evidenceCount: evidenceResult.results.length, missing },
+    };
+  }
+
+  async listComponentAlternatives(idOrSlug: string, limit = 5): Promise<ComponentAlternativeRecommendation[] | null> {
+    const target = await this.findComponent(idOrSlug);
+    if (!target) return null;
+    const boundedLimit = Math.min(10, Math.max(1, Math.trunc(limit) || 1));
+    const poolLimit = Math.min(60, Math.max(20, boundedLimit * 12));
+    const rows = await this.db.prepare(`WITH
+      target AS (
+        SELECT id, category, manufacturer_id FROM components
+        WHERE id = ?1 AND deleted_at IS NULL AND is_demo = 0
+      ),
+      target_tags AS (
+        SELECT tag FROM component_compatibility_tags WHERE component_id = ?1
+      ),
+      tag_scores AS (
+        SELECT candidate.component_id, COUNT(DISTINCT candidate.tag) AS shared_tag_count
+        FROM component_compatibility_tags candidate
+        JOIN target_tags target_tag ON target_tag.tag = candidate.tag
+        WHERE candidate.component_id <> ?1
+        GROUP BY candidate.component_id
+      ),
+      target_specs AS (
+        SELECT cs.spec_key, cs.value_text, cs.value_number, lower(COALESCE(cs.unit, '')) AS unit
+        FROM component_specs cs JOIN component_revisions cr ON cr.id = cs.component_revision_id
+        WHERE cr.component_id = ?1 AND cr.status = 'published'
+          AND cs.spec_key NOT IN ('category', 'manufacturer_slug', 'source')
+      ),
+      spec_scores AS (
+        SELECT cr.component_id, COUNT(DISTINCT cs.spec_key || char(0) || COALESCE(cs.unit, '')) AS matching_spec_count
+        FROM component_specs cs
+        JOIN component_revisions cr ON cr.id = cs.component_revision_id AND cr.status = 'published'
+        JOIN target_specs target_spec ON target_spec.spec_key = cs.spec_key
+          AND target_spec.unit = lower(COALESCE(cs.unit, ''))
+          AND ((target_spec.value_number IS NOT NULL AND cs.value_number = target_spec.value_number)
+            OR (target_spec.value_number IS NULL AND cs.value_number IS NULL
+              AND lower(trim(COALESCE(cs.value_text, ''))) = lower(trim(COALESCE(target_spec.value_text, '')))))
+        WHERE cr.component_id <> ?1
+        GROUP BY cr.component_id
+      )
+      SELECT c.id, c.slug, c.name, c.category, c.manufacturer_part_number, c.summary,
+        c.primary_region, c.provenance_label, c.freshness_at, c.is_demo, c.lifecycle_status,
+        c.source_url, m.name AS maker, m.headquarters_region AS maker_region, m.website_url AS maker_website,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM component_files cf JOIN files f ON f.id = cf.file_id
+          WHERE cf.component_id = c.id AND f.status = 'ready' AND f.visibility = 'public'
+            AND f.deleted_at IS NULL AND (cf.purpose = 'image' OR f.media_type LIKE 'image/%')
+        ) THEN 1 ELSE 0 END AS managed_image_count
+      FROM components c
+      JOIN target ON target.category = c.category
+      LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
+      LEFT JOIN tag_scores ON tag_scores.component_id = c.id
+      LEFT JOIN spec_scores ON spec_scores.component_id = c.id
+      WHERE c.id <> target.id AND c.deleted_at IS NULL AND c.is_demo = 0
+      ORDER BY COALESCE(tag_scores.shared_tag_count, 0) DESC,
+        COALESCE(spec_scores.matching_spec_count, 0) DESC,
+        CASE WHEN c.manufacturer_id = target.manufacturer_id THEN 0 ELSE 1 END,
+        CASE WHEN c.lifecycle_status = 'active' THEN 0 ELSE 1 END,
+        managed_image_count DESC, c.name COLLATE NOCASE, c.id
+      LIMIT ?2`).bind(target.id, poolLimit).all<ComponentRow>();
+    const candidates = await this.hydrateComponents(rows.results);
+    const imageCountById = new Map(rows.results.map((row) => [row.id, Number(row.managed_image_count ?? 0)]));
+    const ranked = rankComponentAlternatives(
+      toRankableComponent(target, target.profile?.imageCount ?? 0),
+      candidates.map((candidate) => toRankableComponent(candidate, imageCountById.get(candidate.id) ?? 0)),
+      boundedLimit,
+    );
+    if (!ranked.length) return [];
+    const ids = ranked.map((entry) => entry.candidate.id);
+    const placeholders = ids.map((_, index) => `?${index + 1}`).join(", ");
+    const imageRows = await this.db.prepare(`SELECT cf.component_id, f.id, f.original_name AS originalName,
+        f.media_type AS mediaType, f.size_bytes AS sizeBytes, cf.purpose
+      FROM component_files cf JOIN files f ON f.id = cf.file_id
+      WHERE cf.component_id IN (${placeholders}) AND f.status = 'ready' AND f.visibility = 'public'
+        AND f.deleted_at IS NULL AND (cf.purpose = 'image' OR f.media_type LIKE 'image/%')
+      ORDER BY cf.component_id, cf.sort_order, f.original_name`).bind(...ids).all<{
+        component_id: string; id: string; originalName: string; mediaType: string; sizeBytes: number;
+        purpose: NonNullable<CatalogPart["files"]>[number]["purpose"];
+      }>();
+    const filesByComponent = new Map<string, NonNullable<CatalogPart["files"]>>();
+    for (const row of imageRows.results) filesByComponent.set(row.component_id, [
+      ...(filesByComponent.get(row.component_id) ?? []),
+      { id: row.id, originalName: row.originalName, mediaType: row.mediaType, sizeBytes: row.sizeBytes, purpose: row.purpose, contentUrl: fileContentUrl(row.id) },
+    ]);
+    return ranked.map((entry) => ({
+      item: { ...entry.candidate.part, files: filesByComponent.get(entry.candidate.id) ?? [] },
+      score: entry.score,
+      reasons: entry.reasons,
+      compatibilityStatus: entry.compatibilityStatus,
+    }));
   }
 
   async listSuppliers(): Promise<SupplierSummary[]> {
@@ -368,26 +490,17 @@ export class CatalogRepository {
     if (!rows.length) return [];
     const ids = rows.map((row) => row.id);
     const placeholders = ids.map((_, index) => `?${index + 1}`).join(", ");
-    const [specResult, tagResult, compatibilityResult, offerResult, historyResult] = await this.db.batch([
-      this.db.prepare(`SELECT cr.component_id, cs.spec_key, cs.value_text, cs.value_number
+    const [specResult, tagResult, compatibilityResult] = await this.db.batch([
+      this.db.prepare(`SELECT cr.component_id, cs.spec_key, cs.label, cs.value_text, cs.value_number, cs.unit
         FROM component_specs cs JOIN component_revisions cr ON cr.id = cs.component_revision_id
-        WHERE cr.component_id IN (${placeholders}) AND cr.status = 'published'`).bind(...ids),
+        WHERE cr.component_id IN (${placeholders}) AND cr.status = 'published'
+        ORDER BY cs.sort_order, cs.label`).bind(...ids),
       this.db.prepare(`SELECT component_id, tag FROM component_tags WHERE component_id IN (${placeholders}) ORDER BY tag`).bind(...ids),
       this.db.prepare(`SELECT component_id, tag FROM component_compatibility_tags WHERE component_id IN (${placeholders}) ORDER BY tag`).bind(...ids),
-      this.db.prepare(`SELECT so.id, so.component_id, so.supplier_id, s.name AS supplier_name,
-        MIN(sr.region_code) AS supplier_region, so.supplier_sku, so.product_url, so.currency, so.unit_price_minor, so.stock_quantity,
-        so.lead_time_days, so.minimum_quantity, so.availability, so.condition, so.price_breaks,
-        so.reliability_score, so.risk_label, so.freshness_label, so.observed_at, so.is_demo
-        FROM supplier_offers so JOIN suppliers s ON s.id = so.supplier_id
-        LEFT JOIN supplier_regions sr ON sr.supplier_id = s.id AND sr.ships_from = 1
-        WHERE so.component_id IN (${placeholders}) AND so.is_demo = 0 AND s.is_demo = 0
-        GROUP BY so.id ORDER BY so.unit_price_minor`).bind(...ids),
-      this.db.prepare(`SELECT so.component_id, h.id, h.unit_price_minor, h.observed_at
-        FROM offer_price_history h JOIN supplier_offers so ON so.id = h.supplier_offer_id
-        WHERE so.component_id IN (${placeholders}) AND so.is_demo = 0 ORDER BY h.id`).bind(...ids),
     ]);
 
     const specs = new Map<string, Record<string, unknown>>();
+    const technicalSpecifications = new Map<string, NonNullable<CatalogPart["technicalSpecifications"]>>();
     for (const row of specResult.results as SpecRow[]) {
       const target = specs.get(row.component_id) ?? {};
       let value: unknown = row.value_number ?? row.value_text;
@@ -397,45 +510,16 @@ export class CatalogRepository {
       if (["openSource", "cadAvailable", "tactile"].includes(row.spec_key) && typeof value === "number") value = value === 1;
       target[row.spec_key] = value;
       specs.set(row.component_id, target);
+      if (!["category", "manufacturer_slug", "source"].includes(row.spec_key)) {
+        technicalSpecifications.set(row.component_id, [
+          ...(technicalSpecifications.get(row.component_id) ?? []),
+          { key: row.spec_key, label: row.label, value, unit: row.unit },
+        ]);
+      }
     }
 
     const tags = groupStrings(tagResult.results as Array<{ component_id: string; tag: string }>);
     const compatibility = groupStrings(compatibilityResult.results as Array<{ component_id: string; tag: string }>);
-    const offers = new Map<string, CatalogOffer[]>();
-    for (const row of offerResult.results as OfferRow[]) {
-      const offer: CatalogOffer = {
-        id: row.id,
-        supplierId: row.supplier_id,
-        supplierName: row.supplier_name,
-        supplierRegion: row.supplier_region,
-        price: row.unit_price_minor / 100,
-        stock: row.stock_quantity ?? 0,
-        stockKnown: row.stock_quantity != null,
-        leadDays: row.lead_time_days ?? 0,
-        leadKnown: row.lead_time_days != null,
-        moq: row.minimum_quantity,
-        supplierSku: row.supplier_sku ?? undefined,
-        productUrl: row.product_url ?? undefined,
-        currency: row.currency ?? undefined,
-        condition: (row.condition as CatalogOffer["condition"]) ?? "unknown",
-        availability: (row.availability as CatalogOffer["availability"]) ?? "unknown",
-        priceBreaks: normalizePriceBreaks(row.price_breaks),
-        reliabilityScore: row.reliability_score,
-        riskLabel: (row.risk_label as CatalogOffer["riskLabel"]) ?? "unknown",
-        freshnessLabel: (row.freshness_label as CatalogOffer["freshnessLabel"]) ?? "unknown",
-        observedAt: row.observed_at,
-        isDemo: row.is_demo === 1,
-      };
-      offers.set(row.component_id, [...(offers.get(row.component_id) ?? []), offer]);
-    }
-    const priceHistory = new Map<string, Array<{ date: string; price: number }>>();
-    const seenHistory = new Set<string>();
-    for (const row of historyResult.results as HistoryRow[]) {
-      const key = `${row.component_id}:${row.id}`;
-      if (seenHistory.has(key)) continue;
-      seenHistory.add(key);
-      priceHistory.set(row.component_id, [...(priceHistory.get(row.component_id) ?? []), { date: row.observed_at, price: row.unit_price_minor / 100 }]);
-    }
 
     return rows.map((row) => {
       const dynamic = specs.get(row.id) ?? {};
@@ -450,14 +534,20 @@ export class CatalogRepository {
         makerCountry: row.maker_region ?? "Unknown",
         region: (row.primary_region ?? "Global") as CatalogPart["region"],
         blurb: row.summary ?? "",
+        lifecycleStatus: row.lifecycle_status,
+        sourceUrl: row.source_url ?? undefined,
+        manufacturerUrl: row.maker_website ?? undefined,
+        technicalSpecifications: technicalSpecifications.get(row.id) ?? [],
         tags: tags.get(row.id) ?? [],
         openSource: dynamic.openSource === true,
         datasheetUrl: typeof dynamic.datasheetUrl === "string" ? dynamic.datasheetUrl : undefined,
         cadAvailable: dynamic.cadAvailable === true,
         rosSupport: (dynamic.rosSupport ?? "none") as CatalogPart["rosSupport"],
         warrantyMonths: typeof dynamic.warrantyMonths === "number" ? dynamic.warrantyMonths : 0,
-        priceHistory: priceHistory.get(row.id) ?? [],
-        offers: offers.get(row.id) ?? [],
+        // Supplier identities and commercial observations are private inputs to
+        // server-side completed quotes, not public catalog payloads.
+        priceHistory: [],
+        offers: [],
         failures: typeof dynamic.failures === "number" ? dynamic.failures : 0,
         compatibility: compatibility.get(row.id) ?? [],
         provenanceLabel: row.provenance_label,
@@ -466,6 +556,23 @@ export class CatalogRepository {
       } satisfies CatalogPart;
     });
   }
+}
+
+function toRankableComponent(part: CatalogPart, managedImageCount: number): RankableComponent & { part: CatalogPart } {
+  return {
+    id: part.id,
+    name: part.name,
+    category: part.category,
+    maker: part.maker,
+    mpn: part.mpn,
+    lifecycleStatus: part.lifecycleStatus,
+    compatibility: part.compatibility ?? [],
+    technicalSpecifications: (part.technicalSpecifications ?? []).map((spec) => ({ key: spec.key, value: spec.value, unit: spec.unit })),
+    managedImageCount,
+    hasSource: Boolean(part.sourceUrl),
+    isDemo: part.isDemo,
+    part,
+  };
 }
 
 function groupStrings(rows: Array<{ component_id: string; tag: string }>): Map<string, string[]> {

@@ -13,6 +13,8 @@ import { Github, FileJson, FileArchive, Loader2, Pencil, ChevronDown, ChevronRig
 import { AiNarrativeComposer } from "@/components/ai/AiNarrativeComposer";
 import { SubmissionQualityCard } from "@/components/ai/SubmissionQualityCard";
 import { reviewSubmission, type SubmissionQualityReview } from "@/lib/assistant";
+import { ProductStatusBadge } from "@/components/common/ProductStatusBadge";
+import { PRODUCT_STATUSES } from "@/lib/product-status";
 
 type Mode = "manual" | "github" | "file" | "paste";
 type Difficulty = "beginner" | "intermediate" | "advanced" | "expert" | "";
@@ -297,6 +299,20 @@ export default function ProjectNew() {
       required_skills: toList(requiredSkills),
       fabrication,
     },
+    bom: analysis?.manifest.components.map((component, index) => ({
+      ref: `item-${index + 1}`,
+      name: component.name,
+      manufacturer: component.manufacturer,
+      mpn: component.mpn,
+      qty: component.quantity,
+      unit: component.unit,
+      fabricated: component.fabricated,
+      optional: component.optional,
+      extraction_method: component.extractionMethod,
+      completeness: component.completeness,
+      evidence_locator: component.evidenceLocator,
+      confidence: component.confidence,
+    })),
     cover_image_url: coverImageUrl.trim() || undefined,
   });
 
@@ -399,7 +415,7 @@ export default function ProjectNew() {
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <div className="section-title mb-1">Publish</div>
-          <h1 className="text-[20px] font-bold tracking-tight">New project</h1>
+          <div className="flex flex-wrap items-center gap-2"><h1 className="text-[20px] font-bold tracking-tight">New project</h1><ProductStatusBadge status={PRODUCT_STATUSES.projectImport} /></div>
           <p className="text-[12px] text-muted-foreground">
             Publish a standardized RPPS <span className="mono">v{RPPS_VERSION}</span> project.{" "}
             <Link to="/rpps" className="text-primary hover:underline">Read the spec</Link>.

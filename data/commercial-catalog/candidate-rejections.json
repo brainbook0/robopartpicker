@@ -1,0 +1,35 @@
+[
+  {
+    "sourceRow": 26,
+    "manufacturer": "Agility Robotics, Inc.",
+    "model": "Digit",
+    "officialProductUrl": "https://www.agilityrobotics.com/robots",
+    "reason": "official URL is a manufacturer-wide robots catalog, not a model-specific Digit product page",
+    "disposition": "rejected"
+  },
+  {
+    "sourceRow": 160,
+    "manufacturer": "Franka Emika GmbH",
+    "model": "Franka Emika Panda",
+    "officialProductUrl": "https://www.franka.de/",
+    "reason": "official URL is the manufacturer homepage, not a model-specific Franka Panda product page",
+    "disposition": "rejected"
+  },
+  {
+    "sourceRow": 221,
+    "manufacturer": "KUKA Deutschland GmbH",
+    "model": "KUKA LBR iiwa",
+    "officialProductUrl": "https://www.kuka.com/en-de/products/robot-systems/industrial-robots/lbr-iiwa",
+    "reason": "localized duplicate of the canonical KUKA LBR iiwa record at source row 218",
+    "disposition": "merged",
+    "mergedInto": "kuka-lbr-iiwa"
+  },
+  {
+    "sourceRow": 53,
+    "manufacturer": "Deep Robotics (DEEP Robotics Co., Ltd.)",
+    "model": "Deep Robotics Jueying X30",
+    "officialProductUrl": "https://www.deeprobotics.cn/en/product/x30",
+    "reason": "exact product page remained transport-unverified after bounded GET, extractor, and browser attempts; excluded rather than weakening the official-source gate",
+    "disposition": "rejected"
+  }
+]

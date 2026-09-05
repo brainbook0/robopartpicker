@@ -1,0 +1,9 @@
+{
+  "persona-industrial-humanoid": {
+    "sourceUrl": "https://persona.ai/teleoperation-preceeds-autonomy",
+    "reviewedAt": "2026-08-27T05:04:00.000Z",
+    "reason": "The official Persona AI site returned maintenance mode during collection. The manufacturer-owned page still served the product image, and the official indexed page copy identifies the industrial humanoid and its live-shop deployment.",
+    "description": "Persona AI develops an industrial humanoid for skilled work in shipbuilding, construction, energy infrastructure, and fabrication. The manufacturer has demonstrated the robot performing welding work in a live shop and positions supervised teleoperation as the path toward greater autonomy.",
+    "imageUrl": "https://persona.ai/wp-content/uploads/2025/10/humanoids-at-work-new-copy.webp"
+  }
+}

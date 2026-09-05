@@ -1,25 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  categoryLabel,
-  lowestObservedPrice,
-  type CatalogOffer,
-  type CatalogPart,
-} from "@/shared/catalog";
-import { useComponent, useComponents, useSuppliers, COMPONENTS_PAGE_SIZE } from "@/lib/api/catalog";
+import { categoryLabel, type CatalogPart } from "@/shared/catalog";
+import { useComponent, useComponentAlternatives } from "@/lib/api/catalog";
 import { ExpandableField } from "@/components/common/ExpandableField";
 import { RelatedDiscussionList } from "@/components/community/RelatedDiscussionList";
 import { ComingSoon } from "@/components/common/ComingSoon";
 import { CatalogDataNotice } from "@/components/parts/CatalogDataNotice";
+import { PartVisual } from "@/components/parts/PartVisual";
+import { PartAlternatives } from "@/components/parts/PartAlternatives";
 import { RfqComposer } from "@/components/parts/RfqComposer";
 import {
   isPartSaved,
   toggleSavedPart,
   toggleCompare,
   readCompare,
-  priceAlertForPart,
-  upsertPriceAlert,
-  removePriceAlert,
 } from "@/lib/catalogWorkspace";
 import { fmtList, fmtNumber, fmtText, MISSING } from "@/lib/partsFormat";
 import {
@@ -28,18 +22,25 @@ import {
   ChevronDown,
   ExternalLink,
   GitCompareArrows,
-  ImageOff,
+  FileBox,
+  FileText,
+
+  Images,
+  Link2,
+  PackageCheck,
   Plus,
   Star,
   StarOff,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { PageMeta } from "@/components/PageMeta";
+import { normalizeCatalogText } from "@/lib/catalogText";
+import { selectPartPreview } from "@/lib/partPreview";
+import { PriceHistoryPlaceholder } from "@/components/pricing/PriceHistoryPlaceholder";
 
-const CORE_FIELDS = new Set([
-  "id", "slug", "category", "name", "mpn", "maker", "makerCountry", "region", "blurb", "tags",
-  "openSource", "datasheetUrl", "cadAvailable", "rosSupport", "warrantyMonths", "priceHistory", "offers",
-  "failures", "compatibility", "provenanceLabel", "freshnessAt", "isDemo",
-]);
+const StlModelViewer = lazy(() => import("@/components/projects/StlModelViewer"));
+const StepModelViewer = lazy(() => import("@/components/projects/StepModelViewer"));
+const ObjModelViewer = lazy(() => import("@/components/projects/ObjModelViewer"));
 
 const SPEC_LABELS: Record<string, string> = {
   peakNm: "Peak torque",
@@ -93,18 +94,6 @@ const titleCase = (value: string) => value
 
 const categoryTitle = (category: string) => categoryLabel[category] ?? titleCase(category);
 
-const hostname = (url: string) => {
-  try { return new URL(url).hostname.replace(/^www\./, ""); }
-  catch { return url; }
-};
-
-const currency = (amount: number, code = "USD") => {
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: code, maximumFractionDigits: 2 }).format(amount);
-  } catch {
-    return `${code} ${amount.toLocaleString()}`;
-  }
-};
 
 function Panel({ title, count, defaultOpen = true, right, id, children }: {
   title: string;
@@ -134,10 +123,10 @@ const Row = ({ k, v, source }: { k: string; v: React.ReactNode; source?: string 
   <ExpandableField k={k} v={v} source={source} />
 );
 
-function renderSpecValue(key: string, value: unknown): string {
+function renderSpecValue(key: string, value: unknown, unit?: string | null): string {
   if (typeof value === "number") {
     const text = fmtNumber(value, { digits: Number.isInteger(value) ? undefined : 2 });
-    return text === MISSING ? text : `${text}${SPEC_UNITS[key] ?? ""}`;
+    return text === MISSING ? text : `${text}${unit ? ` ${unit}` : SPEC_UNITS[key] ?? ""}`;
   }
   if (typeof value === "boolean") return value ? "yes" : "no";
   if (Array.isArray(value)) return fmtList(value);
@@ -145,47 +134,24 @@ function renderSpecValue(key: string, value: unknown): string {
 }
 
 function SourceSpecifications({ part }: { part: CatalogPart }) {
-  const rows = Object.entries(part)
-    .filter(([key, value]) => !CORE_FIELDS.has(key) && value != null && renderSpecValue(key, value) !== MISSING)
-    .slice(0, 30);
+  const rows = part.technicalSpecifications ?? [];
 
   if (!rows.length) {
     return <div className="p-4 text-[12px] text-muted-foreground">No structured source specifications have been published for this component yet.</div>;
   }
 
-  return <div className="p-3">{rows.map(([key, value]) => (
-    <Row key={key} k={SPEC_LABELS[key] ?? titleCase(key)} v={renderSpecValue(key, value)} />
+  return <div className="p-3">{rows.map((spec) => (
+    <Row key={spec.key} k={spec.label || SPEC_LABELS[spec.key] || titleCase(spec.key)} v={renderSpecValue(spec.key, spec.value, spec.unit)} source={part.sourceUrl} />
   ))}</div>;
-}
-
-function liveOffers(part: CatalogPart): CatalogOffer[] {
-  return part.offers.filter((offer) => !offer.isDemo);
 }
 
 export default function PartDetail() {
   const { category, slug } = useParams();
   const componentQuery = useComponent(slug);
   const part = componentQuery.data?.item;
-  const alternativesQuery = useComponents(
-    { category: part?.category ?? category, limit: COMPONENTS_PAGE_SIZE },
-    Boolean(part && !part.isDemo),
-  );
-  const suppliersQuery = useSuppliers();
-  const suppliers = (suppliersQuery.data?.items ?? []).filter((supplier) => !supplier.isDemo);
+  const alternativesQuery = useComponentAlternatives(part?.id, 5);
+
   const [tick, setTick] = useState(0);
-  const [alertPrice, setAlertPrice] = useState("");
-
-  useEffect(() => {
-    if (!part) return;
-    const alert = priceAlertForPart(part.id);
-    setAlertPrice(alert?.targetPrice != null ? String(alert.targetPrice) : "");
-  }, [part]);
-
-  const alternatives = useMemo(() => (
-    (alternativesQuery.data?.items ?? [])
-      .filter((candidate) => !candidate.isDemo && candidate.id !== part?.id && candidate.category === part?.category)
-      .slice(0, 5)
-  ), [alternativesQuery.data?.items, part?.category, part?.id]);
 
   if (componentQuery.isPending) {
     return <div className="p-8 text-[13px]" role="status">Loading component from the API…</div>;
@@ -202,7 +168,7 @@ export default function PartDetail() {
           icon={Boxes}
           kicker="Unavailable"
           title={`${part.name} is not a published catalog record`}
-          body="This component is a demonstration fixture and is withheld from production. No fixture pricing, stock, lead times, specifications, imagery, or supplier claims are shown."
+          body="This component is a demonstration fixture and is withheld from production. No fixture identity, specifications, imagery, files, or compatibility claims are shown."
           actionLabel="Back to component catalog"
           actionTo={`/parts/${part.category}`}
         />
@@ -214,11 +180,11 @@ export default function PartDetail() {
   const compare = readCompare();
   const inCompare = compare.ids.includes(part.id);
   const saved = isPartSaved(part.id);
-  const existingAlert = priceAlertForPart(part.id);
-  const offers = liveOffers(part);
-  const pricedOffers = offers.filter((offer) => offer.price > 0);
-  const low = lowestObservedPrice(part);
-  const supplierById = new Map(suppliers.map((supplier) => [supplier.id, supplier]));
+  const files = part.files ?? [];
+  const imageFiles = files.filter((file) => file.purpose === "image" || file.mediaType.startsWith("image/"));
+  const partPreview = selectPartPreview(files);
+  const projectUsage = part.projectUsage ?? [];
+  const sourceEvidence = part.evidence ?? [];
 
   const doSave = () => {
     const nowSaved = toggleSavedPart(part.id);
@@ -242,46 +208,32 @@ export default function PartDetail() {
     setTick((value) => value + 1);
   };
 
-  const savePriceAlert = () => {
-    const value = alertPrice === "" ? null : Number(alertPrice);
-    if (value != null && (!Number.isFinite(value) || value <= 0)) {
-      toast({ title: "Enter a valid target price greater than 0", variant: "destructive" });
-      return;
-    }
-    upsertPriceAlert(part.id, value);
-    setTick((current) => current + 1);
-    toast({ title: "Local price alert draft saved", description: "Stored in this browser only. Supplier prices are not actively monitored." });
-  };
-
-  const clearAlert = () => {
-    removePriceAlert(part.id);
-    setAlertPrice("");
-    setTick((value) => value + 1);
-    toast({ title: "Local price alert removed" });
-  };
-
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6">
+      <PageMeta title={`${part.name}${part.maker ? ` by ${part.maker}` : ""} | RoboPartPicker`} description={normalizeCatalogText(part.blurb) || `Review source-backed identity, specifications, files and robotics project usage for ${part.name}.`} path={`/parts/${part.category}/${part.slug}`} />
       <div className="mb-2 text-[12px] text-muted-foreground">
         <Link to={`/parts/${part.category}`} className="hover:text-primary">{categoryTitle(part.category)}</Link> / <span className="text-foreground">{part.name}</span>
       </div>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] font-bold tracking-tight">{part.name}</h1>
+      <div className="grid min-w-0 gap-4 sm:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-start">
+        <PartVisual part={part} className="h-44 w-full" />
+        <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+          <h1 className="text-[22px] font-bold tracking-tight break-words">{part.name}</h1>
           <div className="mt-1 text-[13px] text-muted-foreground">
             {part.maker || "Unknown manufacturer"}
             {part.mpn ? <> · MPN <span className="mono text-foreground">{part.mpn}</span></> : null}
             {part.region ? ` · ${part.region}` : ""}
           </div>
-          {part.blurb ? <p className="mt-2 max-w-3xl text-[14px]">{part.blurb}</p> : <p className="mt-2 text-[13px] text-muted-foreground">No source summary has been published for this component yet.</p>}
+          {part.blurb ? <p className="mt-2 max-w-3xl whitespace-pre-line text-[14px]">{normalizeCatalogText(part.blurb)}</p> : <p className="mt-2 text-[13px] text-muted-foreground">No source summary has been published for this component yet.</p>}
           <div className="mt-2 flex flex-wrap gap-1">
             {part.tags.map((tag) => <span key={tag} className="pill">{tag}</span>)}
             {part.openSource && <span className="pill pill-good">open source</span>}
             <span className="pill">{categoryTitle(part.category)}</span>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full min-w-0 flex-wrap gap-2 sm:col-span-2 lg:col-span-1 lg:w-auto lg:justify-end">
+          {part.sourceUrl && <a href={part.sourceUrl} target="_blank" rel="noopener noreferrer" className="btn-primary"><ExternalLink className="h-3.5 w-3.5" /> Product source</a>}
+          {part.manufacturerUrl && part.manufacturerUrl !== part.sourceUrl && <a href={part.manufacturerUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost"><ExternalLink className="h-3.5 w-3.5" /> Manufacturer</a>}
           <Link to={`/builder?add=${encodeURIComponent(part.id)}`} className="btn-primary"><Plus className="h-3.5 w-3.5" /> Add to BOM</Link>
           <button onClick={doSave} className="btn-ghost inline-flex items-center gap-1" aria-pressed={saved}>
             {saved ? <Star className="h-3.5 w-3.5 fill-primary text-primary" /> : <StarOff className="h-3.5 w-3.5" />} {saved ? "Saved" : "Save"}
@@ -294,88 +246,73 @@ export default function PartDetail() {
 
       <CatalogDataNotice className="mt-4" />
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
-        <section className="space-y-4">
-          <Panel title="Source image">
-            <div className="grid place-items-center gap-2 px-4 py-10 text-center text-muted-foreground">
-              <ImageOff className="h-8 w-8 opacity-60" />
-              <div className="text-[12px]">No curated, source-backed component photo is available for this record.</div>
-            </div>
+      {partPreview && (
+        <div className="mt-4">
+          <Suspense fallback={<div className="surface-card grid h-[360px] place-items-center text-[11px] text-muted-foreground">Loading exact component geometry…</div>}>
+            {partPreview.kind === "step" ? (
+              <StepModelViewer files={[{ contentUrl: partPreview.file.contentUrl, name: partPreview.file.originalName }]} sourceUrl={part.sourceUrl} title={`${part.name} · exact component geometry`} />
+            ) : partPreview.kind === "stl" ? (
+              <StlModelViewer files={[{ contentUrl: partPreview.file.contentUrl, name: partPreview.file.originalName }]} sourceUrl={part.sourceUrl} title={`${part.name} · exact component geometry`} />
+            ) : partPreview.kind === "obj" ? (
+              <ObjModelViewer file={{ contentUrl: partPreview.file.contentUrl, name: partPreview.file.originalName }} sourceUrl={part.sourceUrl} title={`${part.name} · exact component geometry`} />
+            ) : null}
+          </Suspense>
+        </div>
+      )}
+
+      <div className="mt-4"><PriceHistoryPlaceholder entityName={part.name} kind="part" /></div>
+
+      {part.profile && <div className="surface-card mt-4 overflow-hidden"><div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0"><ProfileMetric label="Identity" value={part.profile.identity} /><ProfileMetric label="Technical specs" value={part.profile.technicalSpecCount} /><ProfileMetric label="Images" value={part.profile.imageCount} /><ProfileMetric label="Engineering files" value={part.profile.engineeringFileCount} /><ProfileMetric label="BOM usages" value={part.profile.projectUsageCount} /><ProfileMetric label="Evidence records" value={part.profile.evidenceCount} /></div>{part.profile.missing.length > 0 && <div className="border-t border-border px-3 py-2 text-[10.5px] text-muted-foreground"><span className="mr-2 font-semibold uppercase tracking-wide text-foreground">Explicit unknowns</span>{part.profile.missing.join(" · ")}</div>}</div>}
+
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="min-w-0 space-y-4">
+          <Panel title="Images and source links" count={imageFiles.length}>
+            {imageFiles.length > 0 ? (
+              <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
+                {imageFiles.map((file) => <a key={file.id} href={file.contentUrl} target="_blank" rel="noreferrer" className="group overflow-hidden rounded border border-border bg-muted/20 hover:border-primary/60"><img src={file.contentUrl} alt={`${part.name} - ${file.originalName}`} className="aspect-[4/3] w-full object-contain p-2" loading="lazy" /><div className="truncate border-t border-border px-2 py-1.5 text-[10.5px] group-hover:text-primary">{file.originalName}</div></a>)}
+              </div>
+            ) : (
+              <div className="grid gap-4 p-4 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
+                <div><PartVisual part={part} className="h-40 w-full" /><div className="mt-1 text-center text-[9px] uppercase tracking-wide text-muted-foreground">Identity illustration, not a product photograph</div></div>
+                <div><div className="text-[12px] font-medium">No exact source-backed product photograph is attached yet</div><p className="mt-1 max-w-2xl text-[11px] leading-5 text-muted-foreground">The identity illustration keeps this record visually recognizable without inventing its physical appearance. Use the authoritative product or manufacturer source to inspect current photographs, drawings and dimensions.</p><div className="mt-3 flex flex-wrap gap-2">{part.sourceUrl && <a href={part.sourceUrl} target="_blank" rel="noreferrer" className="btn-primary btn-sm">Product source <ExternalLink className="h-3 w-3" /></a>}{part.datasheetUrl && <a href={part.datasheetUrl} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Datasheet <ExternalLink className="h-3 w-3" /></a>}</div></div>
+              </div>
+            )}
           </Panel>
+
+          <Panel title="Files and engineering artifacts" count={files.length}>
+            <PartFiles files={files} />
+          </Panel>
+
+          <Panel title="Used in project BOMs" count={projectUsage.length}>
+            <ProjectUsage items={projectUsage} />
+          </Panel>
+
+          {sourceEvidence.length > 0 && <Panel title="Source evidence" count={sourceEvidence.length}><PartEvidence items={sourceEvidence} /></Panel>}
 
           <Panel title="Specifications"><SourceSpecifications part={part} /></Panel>
 
-          <Panel title="Supplier offers" count={offers.length} right={low != null ? <span className="text-[12px]">From <span className="mono font-semibold">{currency(low, pricedOffers[0]?.currency ?? "USD")}</span></span> : undefined}>
-            <div className="overflow-x-auto"><table className="data-table">
-              <thead><tr><th>Supplier</th><th>Supplier SKU</th><th>Region</th><th>Stock</th><th>Lead</th><th>MOQ</th><th>Observed price</th><th>Source</th></tr></thead>
-              <tbody>
-                {offers.map((offer) => {
-                  const supplier = supplierById.get(offer.supplierId);
-                  return <tr key={offer.id}>
-                    <td>{supplier ? <Link to={`/suppliers/${supplier.slug}`} className="font-medium hover:text-primary">{supplier.name}</Link> : <span className="font-medium">{offer.supplierName}</span>}</td>
-                    <td className="mono text-[11px]">{offer.supplierSku || <span className="text-muted-foreground">Unknown</span>}</td>
-                    <td>{offer.supplierRegion || supplier?.region || <span className="text-muted-foreground">Unknown</span>}</td>
-                    <td className="mono">{offer.stockKnown ? offer.stock.toLocaleString() : <span className="text-muted-foreground">Unknown</span>}</td>
-                    <td className="mono">{offer.leadKnown ? `${offer.leadDays}d` : <span className="text-muted-foreground">Unknown</span>}</td>
-                    <td className="mono">{offer.moq > 0 ? offer.moq : <span className="text-muted-foreground">Unknown</span>}</td>
-                    <td className="mono font-semibold">{offer.price > 0 ? currency(offer.price, offer.currency ?? "USD") : <span className="text-muted-foreground">Quote required</span>}</td>
-                    <td>{offer.productUrl ? <a href={offer.productUrl} target="_blank" rel="noopener noreferrer" className="btn-primary btn-sm inline-flex items-center gap-1"><ExternalLink className="h-3 w-3" /> Buy / verify</a> : supplier?.website ? <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] text-muted-foreground hover:text-primary">{hostname(supplier.website)} <ExternalLink className="h-3 w-3" /></a> : <span className="text-muted-foreground">Unavailable</span>}</td>
-                  </tr>;
-                })}
-                {!offers.length && <tr><td colSpan={8} className="p-4 text-center text-[12px] text-muted-foreground">No authentic supplier offers have been linked to this component yet.</td></tr>}
-              </tbody>
-            </table></div>
-          </Panel>
 
-          <Panel id="price-alert" title="Price alert draft" defaultOpen={false} right={<span className="text-[10.5px] uppercase tracking-wide text-warning">Local only · not monitored</span>}>
-            <div className="space-y-2 p-3">
-              <div className="text-[11.5px] text-muted-foreground">Remember a target price in this browser. Nothing is monitored or emailed.</div>
-              <div className="flex flex-wrap items-end gap-2">
-                <label className="text-[11px] text-muted-foreground">Target price (USD)
-                  <input type="number" min={0.01} step="0.01" className="input-bare mt-1 w-40 mono" value={alertPrice} onChange={(event) => setAlertPrice(event.target.value)} placeholder={low != null ? String(low) : "e.g. 25.00"} />
-                </label>
-                <button onClick={savePriceAlert} className="btn-primary btn-sm">Save draft</button>
-                {existingAlert && <button onClick={clearAlert} className="btn-ghost btn-sm text-negative">Remove</button>}
-              </div>
-            </div>
-          </Panel>
-
-          <Panel id="rfq" title="Draft RFQ" defaultOpen={false} right={<span className="text-[10.5px] uppercase tracking-wide text-warning">Local only · not sent</span>}>
+          <Panel id="rfq" title="Draft RFQ" defaultOpen={false} right={<span className="text-[10.5px] font-medium uppercase tracking-wide text-foreground">Local only · not sent</span>}>
             <div className="p-3"><RfqComposer key={part.id} prefill={{ partId: part.id, manualPartName: part.mpn ?? part.name, quantity: 1 }} /></div>
           </Panel>
 
-          <Panel title="Same-category candidates" count={alternatives.length} defaultOpen={false} right={<span className="text-[10.5px] uppercase tracking-wide text-warning">Verify actual fit</span>}>
-            {alternativesQuery.isPending ? <div className="p-4 text-[12px] text-muted-foreground">Loading candidates…</div> : alternativesQuery.isError ? <div className="p-4 text-[12px] text-muted-foreground">Candidate data is temporarily unavailable.</div> : (
-              <div className="overflow-x-auto"><table className="data-table">
-                <thead><tr><th>Candidate</th><th>Maker</th><th>MPN</th><th>Observed price</th><th>Offers</th><th></th></tr></thead>
-                <tbody>
-                  {alternatives.map((candidate) => {
-                    const candidatePrice = lowestObservedPrice(candidate);
-                    const candidateOffers = liveOffers(candidate);
-                    return <tr key={candidate.id}>
-                      <td><Link to={`/parts/${candidate.category}/${candidate.slug}`} className="hover:text-primary">{candidate.name}</Link></td>
-                      <td>{candidate.maker}</td>
-                      <td className="mono text-[11px]">{candidate.mpn || <span className="text-muted-foreground">Unknown</span>}</td>
-                      <td className="mono">{candidatePrice != null ? currency(candidatePrice, candidateOffers[0]?.currency ?? "USD") : <span className="text-muted-foreground">Unpriced</span>}</td>
-                      <td className="mono">{candidateOffers.length}</td>
-                      <td><Link to={`/parts/compare?ids=${part.id},${candidate.id}`} className="btn-ghost btn-sm">Compare</Link></td>
-                    </tr>;
-                  })}
-                  {!alternatives.length && <tr><td colSpan={6} className="p-4 text-center text-[12px] text-muted-foreground">No other published components in this category are available on this page.</td></tr>}
-                </tbody>
-              </table></div>
-            )}
-          </Panel>
+          <PartAlternatives
+            current={part}
+            items={alternativesQuery.data?.items ?? []}
+            loading={alternativesQuery.isPending}
+            error={alternativesQuery.isError}
+          />
 
           <RelatedDiscussionList relatedType="component" relatedId={part.id} title="Community discussions about this component" />
         </section>
 
-        <aside className="space-y-4">
+        <aside className="min-w-0 space-y-4">
           <div className="surface-card p-4">
             <div className="section-title mb-2">Record</div>
             <Row k="Manufacturer" v={part.maker || "Unknown"} />
             <Row k="MPN" v={part.mpn || "Unknown"} />
             <Row k="Category" v={categoryTitle(part.category)} />
+            <Row k="Lifecycle" v={part.lifecycleStatus || "Unknown"} source={part.sourceUrl} />
             <Row k="Primary region" v={part.region || "Unknown"} />
             <Row k="Provenance" v={part.provenanceLabel || "Unknown"} />
             <Row k="Last source refresh" v={part.freshnessAt ? new Date(part.freshnessAt).toLocaleDateString() : "Unknown"} />
@@ -383,14 +320,38 @@ export default function PartDetail() {
           </div>
 
           <div className="surface-card p-4">
-            <div className="section-title mb-2">Observed sourcing</div>
-            <Row k="Authentic offers" v={offers.length} />
-            <Row k="Priced offers" v={pricedOffers.length} />
-            <Row k="Lowest observed" v={low != null ? currency(low, pricedOffers[0]?.currency ?? "USD") : "Unpriced"} />
-            <Row k="Direct product links" v={offers.filter((offer) => Boolean(offer.productUrl)).length} />
+            <div className="section-title mb-2">Technical coverage</div>
+            <Row k="Specifications" v={part.profile?.technicalSpecCount ?? part.technicalSpecifications?.length ?? 0} />
+            <Row k="Images" v={part.profile?.imageCount ?? imageFiles.length} />
+            <Row k="Engineering files" v={part.profile?.engineeringFileCount ?? files.length - imageFiles.length} />
+            <Row k="BOM usages" v={part.profile?.projectUsageCount ?? projectUsage.length} />
           </div>
         </aside>
       </div>
     </div>
   );
+}
+
+function PartFiles({ files }: { files: NonNullable<CatalogPart["files"]> }) {
+  if (!files.length) return <div className="flex items-start gap-3 p-4 text-[11px] leading-5 text-muted-foreground"><FileBox className="mt-0.5 h-5 w-5 shrink-0" /><div><div className="font-medium text-foreground">No component files attached</div><p>Datasheets, drawings, CAD, firmware, and verified photos will appear here without changing the part URL when source-backed files are added.</p></div></div>;
+  return <div className="grid gap-2 p-3 sm:grid-cols-2">{files.map((file) => <a key={file.id} href={file.contentUrl} target="_blank" rel="noreferrer" className="flex min-w-0 items-center gap-3 rounded border border-border p-3 hover:border-primary/60 hover:bg-muted/30"><FileText className="h-5 w-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><div className="truncate text-[12px] font-medium">{file.originalName}</div><div className="mt-0.5 font-mono text-[9.5px] uppercase text-muted-foreground">{file.purpose} · {formatBytes(file.sizeBytes)} · {file.mediaType}</div></div><ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /></a>)}</div>;
+}
+
+function ProfileMetric({ label, value }: { label: string; value: string | number }) {
+  return <div className="px-3 py-2"><div className="text-[9.5px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="mt-0.5 font-mono text-[13px] font-semibold">{typeof value === "number" ? value.toLocaleString() : value}</div></div>;
+}
+
+function ProjectUsage({ items }: { items: NonNullable<CatalogPart["projectUsage"]> }) {
+  if (!items.length) return <div className="flex items-start gap-3 p-4 text-[11px] leading-5 text-muted-foreground"><PackageCheck className="mt-0.5 h-5 w-5 shrink-0" /><div><div className="font-medium text-foreground">No published project usage linked yet</div><p>This component is not currently referenced by a public normalized BOM.</p></div></div>;
+  return <div className="divide-y divide-border/70">{items.map((item) => <div key={item.bomItemId} className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center"><div className="min-w-0"><Link to={`/projects/${item.projectSlug}`} className="inline-flex items-center gap-1 text-[12px] font-semibold hover:text-primary hover:underline">{item.projectName}<ExternalLink className="h-3 w-3" /></Link><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-muted-foreground"><span className="font-mono">{item.quantity} {item.unit}</span>{item.evidenceLocator && <span className="inline-flex items-center gap-1"><Link2 className="h-3 w-3" /> {item.evidenceLocator}</span>}</div>{item.notes && <p className="mt-1 text-[10.5px] leading-4 text-muted-foreground">{item.notes}</p>}</div><Link to={`/boms/${encodeURIComponent(item.bomSlug ?? item.bomId)}`} className="btn-ghost btn-sm">Open BOM</Link></div>)}</div>;
+}
+
+function PartEvidence({ items }: { items: NonNullable<CatalogPart["evidence"]> }) {
+  return <div className="divide-y divide-border/70">{items.map((item) => <div key={item.id} className="flex items-start gap-3 px-4 py-3"><Images className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-[12px] font-medium">{item.title}</span><span className="pill">{item.sourceType} · {Math.round(item.confidence * 100)}%</span></div><div className="mt-1 text-[10px] text-muted-foreground">Retrieved {new Date(item.retrievedAt).toLocaleDateString()}</div>{item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline">Open source <ExternalLink className="h-3 w-3" /></a>}</div></div>)}</div>;
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KiB`;
+  return `${(value / 1024 / 1024).toFixed(1)} MiB`;
 }

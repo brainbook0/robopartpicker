@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://robopartpicker-production.ludomi2502.workers.dev/sitemap.xml
+Sitemap: https://robopartpicker.com/sitemap.xml

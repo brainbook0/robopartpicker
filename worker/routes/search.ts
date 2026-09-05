@@ -3,7 +3,7 @@ import type { AppBindings } from "../env";
 import { AppError, parsePositiveInt } from "../http";
 import { loadAuthSession } from "../middleware/authentication";
 
-const categories = new Set(["component", "project", "manufacturer", "supplier", "offer", "build", "marketplace", "community"]);
+const categories = new Set(["component", "project", "manufacturer", "build", "marketplace", "community"]);
 
 export const searchRoutes = new Hono<AppBindings>();
 
@@ -24,8 +24,7 @@ searchRoutes.get("/search", loadAuthSession, async (c) => {
       WHEN 'component' THEN '/parts/' || (SELECT category FROM components WHERE id = si.entity_id) || '/' || (SELECT slug FROM components WHERE id = si.entity_id)
       WHEN 'project' THEN '/projects/' || (SELECT slug FROM projects WHERE id = si.entity_id)
       WHEN 'manufacturer' THEN '/parts/actuator?manufacturer=' || si.entity_id
-      WHEN 'supplier' THEN '/suppliers/' || (SELECT slug FROM suppliers WHERE id = si.entity_id)
-      WHEN 'offer' THEN '/parts/' || (SELECT c.category FROM supplier_offers so JOIN components c ON c.id = so.component_id WHERE so.id = si.entity_id) || '/' || (SELECT c.slug FROM supplier_offers so JOIN components c ON c.id = so.component_id WHERE so.id = si.entity_id)
+
       WHEN 'build' THEN '/builder?build=' || si.entity_id
       WHEN 'marketplace' THEN '/marketplace/' || si.entity_id
       WHEN 'community' THEN '/community/t/' || si.entity_id
@@ -33,9 +32,7 @@ searchRoutes.get("/search", loadAuthSession, async (c) => {
     FROM search_index si WHERE search_index MATCH ?1 AND si.entity_type IN (${categoryPlaceholders}) AND (
       (si.entity_type = 'component' AND EXISTS (SELECT 1 FROM components c WHERE c.id = si.entity_id AND c.deleted_at IS NULL AND c.is_demo = 0))
       OR (si.entity_type = 'manufacturer' AND EXISTS (SELECT 1 FROM manufacturers m WHERE m.id = si.entity_id AND m.is_demo = 0))
-      OR (si.entity_type = 'supplier' AND EXISTS (SELECT 1 FROM suppliers s WHERE s.id = si.entity_id AND s.is_demo = 0))
-      OR (si.entity_type = 'offer' AND EXISTS (SELECT 1 FROM supplier_offers so JOIN components c ON c.id = so.component_id JOIN suppliers s ON s.id = so.supplier_id
-        WHERE so.id = si.entity_id AND so.is_demo = 0 AND c.is_demo = 0 AND c.deleted_at IS NULL AND s.is_demo = 0))
+
       OR si.entity_type = 'community'
       OR (si.entity_type = 'project' AND EXISTS (SELECT 1 FROM projects p WHERE p.id = si.entity_id AND p.deleted_at IS NULL AND p.is_demo = 0 AND
         (p.visibility IN ('public', 'unlisted') OR p.owner_user_id = ?2 OR EXISTS (SELECT 1 FROM organization_members om WHERE om.organization_id = p.organization_id AND om.user_id = ?2 AND om.status = 'active'))))

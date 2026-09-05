@@ -1,16 +1,11 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useQueries } from "@tanstack/react-query";
-import { categoryLabel, lowestObservedPrice, type CatalogPart } from "@/shared/catalog";
+import { categoryLabel, type CatalogPart } from "@/shared/catalog";
 import { api } from "@/lib/api/client";
 import { COMPARE_CAP, removeFromCompare, clearCompare, copyText } from "@/lib/catalogWorkspace";
 import { toast } from "@/hooks/use-toast";
 import { Copy, Trash2, X, ExternalLink, Plus, ChevronLeft } from "lucide-react";
 
-const CORE_FIELDS = new Set([
-  "id", "slug", "category", "name", "mpn", "maker", "makerCountry", "region", "blurb", "tags",
-  "openSource", "datasheetUrl", "cadAvailable", "rosSupport", "warrantyMonths", "priceHistory", "offers",
-  "failures", "compatibility", "provenanceLabel", "freshnessAt", "isDemo",
-]);
 
 const SPEC_LABELS: Record<string, string> = {
   peakNm: "Peak torque (Nm)", contNm: "Continuous torque (Nm)", speedRpm: "Maximum speed (RPM)",
@@ -31,17 +26,6 @@ const titleCase = (value: string) => value
   .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const categoryTitle = (category: string) => categoryLabel[category] ?? titleCase(category);
-const liveOffers = (part: CatalogPart) => part.offers.filter((offer) => !offer.isDemo);
-
-const minKnownLead = (part: CatalogPart): number | null => {
-  const values = liveOffers(part).filter((offer) => offer.leadKnown).map((offer) => offer.leadDays);
-  return values.length ? Math.min(...values) : null;
-};
-
-const totalKnownStock = (part: CatalogPart): number | null => {
-  const values = liveOffers(part).filter((offer) => offer.stockKnown).map((offer) => offer.stock);
-  return values.length ? values.reduce((sum, value) => sum + value, 0) : null;
-};
 
 type Row = {
   key: string;
@@ -64,15 +48,15 @@ function normalizeSpecValue(value: unknown): string | number | null {
 }
 
 function sourceSpecRows(parts: CatalogPart[]): Row[] {
-  const keys = new Set<string>();
-  parts.forEach((part) => Object.entries(part).forEach(([key, value]) => {
-    if (!CORE_FIELDS.has(key) && normalizeSpecValue(value) != null) keys.add(key);
-  }));
+  const keys = new Set(parts.flatMap((part) => (part.technicalSpecifications ?? []).map((spec) => spec.key)));
   return [...keys].sort().slice(0, 30).map((key) => ({
     key: `spec:${key}`,
-    label: SPEC_LABELS[key] ?? titleCase(key),
-    values: parts.map((part) => normalizeSpecValue(part[key])),
-    mono: parts.every((part) => normalizeSpecValue(part[key]) == null || typeof normalizeSpecValue(part[key]) === "number"),
+    label: parts.flatMap((part) => part.technicalSpecifications ?? []).find((spec) => spec.key === key)?.label ?? SPEC_LABELS[key] ?? titleCase(key),
+    values: parts.map((part) => {
+      const spec = (part.technicalSpecifications ?? []).find((candidate) => candidate.key === key);
+      const value = normalizeSpecValue(spec?.value);
+      return value == null ? null : spec?.unit ? `${value} ${spec.unit}` : value;
+    }),
   }));
 }
 
@@ -81,12 +65,12 @@ function baseRows(parts: CatalogPart[]): Row[] {
     { key: "mpn", label: "Manufacturer part number", values: parts.map((part) => part.mpn ?? null), mono: true },
     { key: "maker", label: "Manufacturer", values: parts.map((part) => part.maker || null) },
     { key: "region", label: "Primary region", values: parts.map((part) => part.region || null) },
-    { key: "price", label: "Lowest observed price", values: parts.map(lowestObservedPrice), best: "lower", mono: true, hint: "Authentic, non-demo positive-priced offers only." },
-    { key: "lead", label: "Shortest known lead (days)", values: parts.map(minKnownLead), best: "lower", mono: true },
-    { key: "stock", label: "Known stock across offers", values: parts.map(totalKnownStock), best: "higher", mono: true },
-    { key: "offers", label: "Authentic offers", values: parts.map((part) => liveOffers(part).length), best: "higher", mono: true },
-    { key: "links", label: "Direct product links", values: parts.map((part) => liveOffers(part).filter((offer) => Boolean(offer.productUrl)).length), best: "higher", mono: true },
-    { key: "suppliers", label: "Suppliers", values: parts.map((part) => [...new Set(liveOffers(part).map((offer) => offer.supplierName))].join(", ") || null) },
+    { key: "lifecycle", label: "Lifecycle", values: parts.map((part) => part.lifecycleStatus ?? null) },
+    { key: "source", label: "Canonical product source", values: parts.map((part) => part.sourceUrl ?? null) },
+    { key: "spec-count", label: "Structured technical specifications", values: parts.map((part) => part.profile?.technicalSpecCount ?? part.technicalSpecifications?.length ?? 0), best: "higher", mono: true },
+    { key: "files", label: "Engineering files", values: parts.map((part) => part.profile?.engineeringFileCount ?? 0), best: "higher", mono: true },
+    { key: "usage", label: "Normalized BOM usages", values: parts.map((part) => part.profile?.projectUsageCount ?? 0), best: "higher", mono: true },
+    { key: "evidence", label: "Evidence records", values: parts.map((part) => part.profile?.evidenceCount ?? 0), best: "higher", mono: true },
     { key: "compat", label: "Usage and integration tags", values: parts.map((part) => part.compatibility.join(", ") || null), hint: "Tags are not a drop-in compatibility guarantee." },
     { key: "provenance", label: "Provenance", values: parts.map((part) => part.provenanceLabel || null) },
   ];
@@ -177,7 +161,7 @@ export default function PartCompare() {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-bold tracking-tight">Component comparison</h1>
-          <p className="mt-0.5 text-[12px] text-muted-foreground">Same-category source observations · up to {COMPARE_CAP} components{primaryCategory ? ` · ${categoryTitle(primaryCategory)}` : ""}</p>
+          <p className="mt-0.5 text-[12px] text-muted-foreground">Same-category technical profiles · up to {COMPARE_CAP} components{primaryCategory ? ` · ${categoryTitle(primaryCategory)}` : ""}</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
           <button onClick={share} disabled={!compatible.length} className="btn-ghost btn-sm inline-flex items-center gap-1"><Copy className="h-3.5 w-3.5" /> Copy share URL</button>
@@ -187,7 +171,7 @@ export default function PartCompare() {
       </div>
 
       <div className="surface-card mt-3 px-3 py-2 text-[11.5px] text-muted-foreground">
-        <span className="font-medium text-foreground">Authentic records only.</span> Demo fixtures are excluded. Unknown specifications, prices, stock, and lead times stay blank. Comparison does not prove mechanical fit, electrical compatibility, firmware readiness, or supplier availability.
+        <span className="font-medium text-foreground">Published technical records only.</span> Demo fixtures and private commercial observations are excluded. Unknown identity, specifications, files, and compatibility stay explicit. Comparison does not prove mechanical fit, electrical compatibility, or firmware readiness.
       </div>
 
       {mixed && <div className="surface-card mt-2 border-warning/40 bg-warning/5 px-3 py-2 text-[11.5px] text-warning">Components outside {primaryCategory ? categoryTitle(primaryCategory) : "the first selected category"} were excluded because comparison is same-category only.</div>}

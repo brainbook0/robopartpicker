@@ -35,5 +35,7 @@ export const bomsApi = {
   list: (signal?: AbortSignal) => api.get<{ items: BomSummary[]; total: number; dataMode: "demo" | "mixed" }>("/api/v1/boms", { signal }),
   get: (id: string, signal?: AbortSignal) => api.get<{ item: BomDetail }>(`/api/v1/boms/${encodeURIComponent(id)}`, { signal }),
   create: (input: { name: string; visibility?: ResourceVisibility; notes?: string; items?: unknown[] }) => api.post<{ item: BomDetail }>("/api/v1/boms", input),
+  createVersion: (id: string, input: { expectedVersionId: string; notes?: string | null; currency: string; items: unknown[] }) => api.post<{ item: BomDetail }>(`/api/v1/boms/${encodeURIComponent(id)}/versions`, input),
+  confirm: (id: string, expectedVersionId: string) => api.post<{ item: BomDetail }>(`/api/v1/boms/${encodeURIComponent(id)}/confirm`, { expectedVersionId }),
   forkToBuild: (id: string, input: { name?: string; visibility?: ResourceVisibility } = {}) => api.post<{ item: BuildDetail }>(`/api/v1/boms/${encodeURIComponent(id)}/builds`, input),
 };

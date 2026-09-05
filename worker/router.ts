@@ -14,6 +14,11 @@ import { projectRoutes } from "./routes/projects";
 import { lineageRoutes } from "./routes/lineage";
 import { sourcingRoutes } from "./routes/sourcing";
 import { rfqRoutes } from "./routes/rfq";
+import { completedQuoteRoutes } from "./routes/completed-quotes";
+import { customerQuoteRoutes } from "./routes/customer-quotes";
+import { projectProposalRoutes } from "./routes/project-proposals";
+import { projectSocialRoutes } from "./routes/project-social";
+import { projectClaimRoutes } from "./routes/project-claims";
 import { communityRoutes } from "./routes/community";
 import { marketplaceRoutes } from "./routes/marketplace";
 import { buildRoutes } from "./routes/builds";
@@ -28,11 +33,20 @@ import { notificationRoutes } from "./routes/notifications";
 import { partnerInterestRoutes } from "./routes/partner-interest";
 import { supplierRelationshipRoutes } from "./routes/supplier-relationships";
 import { adminRoutes } from "./routes/admin";
+import { analyticsRoutes } from "./routes/analytics";
 import { apiRateLimit } from "./middleware/rate-limit";
 import { handleMcpRequest } from "./mcp";
 import { handlePrivateMcpRequest, privateMcpResourceMetadata } from "./mcp-private";
+import { serveLlmsText, serveProjectBadge, serveProjectFeed, serveQueryIndex, serveQueryPage, serveRobots, serveSeoAsset, serveSitemap, serveGlossaryIndex, serveComparisonIndex, serveComparisonPage, servePriceIndex } from "./services/seo";
+import { canonicalRedirectUrl, DEFAULT_PRODUCTION_BASE_URL } from "../src/lib/public-seo";
 
 export const app = new Hono<AppBindings>();
+
+app.use("*", async (c, next) => {
+  const redirect = canonicalRedirectUrl(c.req.url, c.env.PUBLIC_BASE_URL ?? DEFAULT_PRODUCTION_BASE_URL);
+  if (redirect) return c.redirect(redirect, 308);
+  await next();
+});
 
 app.use("/api/*", requestId);
 app.use("/api/*", apiSecurityHeaders);
@@ -55,12 +69,12 @@ app.on(["GET", "HEAD"], "/.well-known/mcp.json", (c) => {
   const origin = new URL(c.req.url).origin;
   const metadata = {
     name: "RoboPartPicker",
-    description: "Public read-only robotics project, component, and supplier data.",
+    description: "Public read-only robotics project and technical component data.",
     transport: "streamable-http",
     endpoint: `${origin}/mcp`,
     documentation: `${origin}/developers`,
     authentication: { public: "none", privateEndpoint: `${origin}/mcp/private`, private: "oauth2" },
-    capabilities: ["search_projects", "get_project", "search_components", "compare_components", "search_suppliers", "validate_rpps"],
+    capabilities: ["search_projects", "get_project", "search_components", "compare_components", "validate_rpps"],
   };
   return new Response(c.req.method === "HEAD" ? null : JSON.stringify(metadata), {
     headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300, stale-while-revalidate=300" },
@@ -77,6 +91,17 @@ app.on(["GET", "HEAD"], ["/.well-known/oauth-protected-resource", "/.well-known/
   });
 });
 app.on(["GET", "HEAD"], "/.well-known/oauth-authorization-server/api/auth", (c) => createAuth(c.env).handler(c.req.raw));
+app.on(["GET", "HEAD"], "/robots.txt", serveRobots);
+app.on(["GET", "HEAD"], "/sitemap.xml", serveSitemap);
+app.on(["GET", "HEAD"], "/feed.xml", serveProjectFeed);
+app.on(["GET", "HEAD"], "/llms.txt", serveLlmsText);
+app.on(["GET", "HEAD"], "/badges/project/:slug.svg", serveProjectBadge);
+app.on(["GET", "HEAD"], "/queries", serveQueryIndex);
+app.on(["GET", "HEAD"], "/queries/:slug", serveQueryPage);
+app.on(["GET", "HEAD"], "/glossary", serveGlossaryIndex);
+app.on(["GET", "HEAD"], "/compared-to", serveComparisonIndex);
+app.on(["GET", "HEAD"], "/compared-to/:slug", serveComparisonPage);
+app.on(["GET", "HEAD"], "/price-index", servePriceIndex);
 
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
 app.route("/api", healthRoutes);
@@ -86,6 +111,11 @@ app.route("/api/v1", projectRoutes);
 app.route("/api/v1", lineageRoutes);
 app.route("/api/v1", sourcingRoutes);
 app.route("/api/v1", rfqRoutes);
+app.route("/api/v1", completedQuoteRoutes);
+app.route("/api/v1", customerQuoteRoutes);
+app.route("/api/v1", projectProposalRoutes);
+app.route("/api/v1", projectSocialRoutes);
+app.route("/api/v1", projectClaimRoutes);
 app.route("/api/v1", communityRoutes);
 app.route("/api/v1", marketplaceRoutes);
 app.route("/api/v1", buildRoutes);
@@ -100,13 +130,14 @@ app.route("/api/v1", notificationRoutes);
 app.route("/api/v1", partnerInterestRoutes);
 app.route("/api/v1", supplierRelationshipRoutes);
 app.route("/api/v1", adminRoutes);
+app.route("/api/v1", analyticsRoutes);
 app.route("/api/v1", catalogRoutes);
 
 app.notFound((c) => {
   if (c.req.path.startsWith("/api/")) {
     return jsonError(c, new AppError(404, "NOT_FOUND", "The requested API resource does not exist."));
   }
-  return c.env.ASSETS.fetch(c.req.raw);
+  return serveSeoAsset(c);
 });
 
 app.onError((error, c) => {

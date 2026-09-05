@@ -83,17 +83,6 @@ function createMcpServer(env: Env): McpServer {
     return jsonResult({ project: project.item, artifacts });
   });
 
-  server.registerTool("search_suppliers", {
-    title: "Search robotics suppliers",
-    description: "Search public supplier records. No result is a live price, stock, fulfillment, or endorsement claim.",
-    inputSchema: { query: z.string().trim().max(100).default(""), limit: z.number().int().min(1).max(20).default(10) },
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-  }, async ({ query, limit }) => {
-    const rows = await env.DB.prepare(`SELECT s.id, s.slug, s.name, s.status, s.freshness_at AS freshnessAt,
-      s.is_demo AS isDemo FROM suppliers s WHERE s.is_demo = 0 AND lower(s.name) LIKE ?1 ORDER BY s.name LIMIT ?2`)
-      .bind(`%${query.toLowerCase()}%`, limit).all();
-    return jsonResult({ items: rows.results });
-  });
 
   server.registerTool("validate_rpps", {
     title: "Validate an RPPS package",

@@ -27,12 +27,17 @@ export const RppsBomItem = z.object({
   manufacturer: z.string().max(120).optional(),
   mpn: z.string().max(120).optional(),                // manufacturer part number
   category: z.string().max(60).optional(),            // e.g. "actuator"
-  qty: z.number().int().positive().max(100000),
+  qty: z.number().positive().max(1000000),
+  unit: z.string().trim().min(1).max(40).optional(),
   unit_cost_usd: z.number().nonnegative().optional(),
   supplier_url: Url.optional(),
   fabricated: z.boolean().optional(),
   optional: z.boolean().optional(),
   notes: z.string().max(1000).optional(),
+  extraction_method: z.string().max(60).optional(),
+  completeness: z.string().max(60).optional(),
+  evidence_locator: z.string().max(1024).optional(),
+  confidence: z.number().min(0).max(1).optional(),
 });
 
 export const RppsAssemblyStep = z.object({

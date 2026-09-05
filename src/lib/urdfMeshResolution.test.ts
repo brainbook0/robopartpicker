@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeUrdfAssetPath, resolveManagedUrdfMeshUrl, rewriteManagedUrdfMeshUrls } from "./urdfMeshResolution";
+import { analyzeManagedUrdfMeshUrls, normalizeUrdfAssetPath, resolveCompleteManagedUrdf, resolveManagedUrdfMeshUrl, rewriteManagedUrdfMeshUrls } from "./urdfMeshResolution";
 
 const files = [
   {
@@ -54,6 +54,15 @@ describe("resolveManagedUrdfMeshUrl", () => {
   it("leaves an unresolved mesh untouched", () => {
     expect(resolveManagedUrdfMeshUrl("package://robot/meshes/missing.STL", "robots/model.urdf", files)).toBeNull();
   });
+
+  it("does not guess when duplicate mesh basenames exist at different package paths", () => {
+    const ambiguous = [
+      { relativePath: "left/meshes/link.stl", contentUrl: "/left", originalName: "link.stl" },
+      { relativePath: "right/meshes/link.stl", contentUrl: "/right", originalName: "link.stl" },
+    ];
+
+    expect(resolveManagedUrdfMeshUrl("package://robot/meshes/link.stl", "robot.urdf", ambiguous)).toBeNull();
+  });
 });
 
 describe("rewriteManagedUrdfMeshUrls", () => {
@@ -63,5 +72,22 @@ describe("rewriteManagedUrdfMeshUrls", () => {
     expect(rewriteManagedUrdfMeshUrls(urdf, "robots/robot.urdf", files, "https://example.com/projects/robot")).toBe(
       '<robot><mesh filename="https://example.com/api/v1/files/content?id=fine#robotiq_85_base_link_fine.STL" scale="1 1 1" /></robot>',
     );
+  });
+
+  it("reports unresolved mesh dependencies instead of hiding a partial robot", () => {
+    const urdf = `<robot><mesh filename="package://robotiq/meshes/robotiq_85_base_link_fine.STL"/><mesh filename="package://robotiq/meshes/missing.STL"/></robot>`;
+
+    expect(analyzeManagedUrdfMeshUrls(urdf, "robots/robot.urdf", files, "https://example.com")).toMatchObject({
+      meshCount: 2,
+      resolvedCount: 1,
+      unresolved: ["package://robotiq/meshes/missing.STL"],
+    });
+  });
+
+  it("rejects an incomplete URDF before the renderer creates a partial scene", () => {
+    const urdf = `<robot><mesh filename="package://robotiq/meshes/robotiq_85_base_link_fine.STL"/><mesh filename="package://robotiq/meshes/missing.STL"/></robot>`;
+
+    expect(() => resolveCompleteManagedUrdf(urdf, "robots/robot.urdf", files, "https://example.com"))
+      .toThrow("1 of 2 URDF mesh dependencies are unavailable");
   });
 });

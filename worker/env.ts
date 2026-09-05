@@ -6,10 +6,13 @@ export interface Env {
   APP_NAME: string;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
   INGESTION_SECRET: string;
   EMAIL_PROVIDER_URL?: string;
   EMAIL_PROVIDER_TOKEN?: string;
   EMAIL_FROM?: string;
+  PUBLIC_BASE_URL?: string;
   GITHUB_TOKEN?: string;
   AI_PROVIDER_URL?: string;
   AI_PROVIDER_KEY?: string;

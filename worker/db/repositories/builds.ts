@@ -215,7 +215,9 @@ export class BuildsRepository {
     } else if (input.sourceProjectId) {
       const bomItems = await this.db.prepare(`SELECT bi.component_id, bi.description, bi.quantity, bi.unit,
         bi.selected_supplier_offer_id, bi.target_unit_price_minor, bi.notes
-        FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+        FROM boms b
+        JOIN bom_versions bv ON bv.id = b.current_version_id AND bv.publication_state IN ('verified', 'partial')
+        JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
         WHERE b.project_id = ?1`).bind(input.sourceProjectId).all<{ component_id: string | null; description: string; quantity: number; unit: string; selected_supplier_offer_id: string | null; target_unit_price_minor: number | null; notes: string | null }>();
       bomItems.results.forEach((item) => statements.push(this.db.prepare(`INSERT INTO build_items
         (id, build_id, component_id, selected_supplier_offer_id, description, quantity, unit, unit_cost_minor, status, notes, created_at, updated_at)

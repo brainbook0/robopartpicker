@@ -6,7 +6,7 @@ import { SourcingOptimizerService } from "../services/sourcing-optimizer";
 import { isRfqAction, type RfqAction } from "../../src/shared/rfq";
 import { AppError } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
-import { assertScopedRead, authenticatedUserId } from "../middleware/authorization";
+import { assertScopedRead, authenticatedUserId, organizationRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
 import { BomsRepository } from "../db/repositories/boms";
 import { ProjectsRepository } from "../db/repositories/projects";
@@ -37,21 +37,24 @@ rfqRoutes.post("/rfq", loadAuthSession, requireAuth, async (c) => {
   const body = await parseJson(c, createSchema);
   let bomId: string | null = null;
   let projectId: string | null = null;
+  let allowUnpublished = false;
   if (body.bomId) {
     const bom = await new BomsRepository(c.env.DB).find(body.bomId);
     if (!bom) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
     await assertScopedRead(c.env.DB, userId, bom);
     bomId = bom.id;
+    allowUnpublished = bom.owner_user_id === userId || Boolean(bom.organization_id && await organizationRole(c.env.DB, userId, bom.organization_id));
   } else {
     const project = await new ProjectsRepository(c.env.DB).find(body.projectId!);
     if (!project) throw new AppError(404, "PROJECT_NOT_FOUND", "Project not found.");
     await assertScopedRead(c.env.DB, userId, project.row);
     projectId = project.row.id;
+    allowUnpublished = project.row.owner_user_id === userId || Boolean(project.row.organization_id && await organizationRole(c.env.DB, userId, project.row.organization_id));
   }
   const service = new SourcingOptimizerService(c.env.DB);
   const estimate = bomId
-    ? await service.estimateForBom(bomId)
-    : await service.estimateForProject(projectId!);
+    ? await service.estimateForBom(bomId, {}, allowUnpublished)
+    : await service.estimateForProject(projectId!, {}, allowUnpublished);
   const expiresAt = body.expiresInDays
     ? new Date(Date.now() + body.expiresInDays * 86_400_000).toISOString()
     : null;

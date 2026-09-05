@@ -110,6 +110,7 @@ export type BomSummary = {
   line_count: number;
   known_cost_minor: number;
   unpriced_lines: number;
+  publication_state?: import("./bomPublication").BomPublicationState;
 };
 
 export type BomItem = {
@@ -118,6 +119,7 @@ export type BomItem = {
   componentSlug: string | null;
   componentName: string | null;
   componentCategory: string | null;
+  componentImageUrl: string | null;
   manufacturerPartNumber: string | null;
   manufacturerName: string | null;
   slotKey: string;
@@ -135,10 +137,32 @@ export type BomItem = {
   completeness: string;
   evidenceLocator: string | null;
   confidence: number | null;
+  lineClassification: "purchased" | "fabricated" | "optional" | "non-procurement" | "unresolved";
+  included: number;
+  optional: number;
+  rawFields: string;
+  aggregatedLocators: string;
 };
 
 export type BomDetail = BomSummary & {
-  version: { id: string; label: string; notes: string | null; currency: string; createdAt: string } | null;
+  version: {
+    id: string;
+    label: string;
+    notes: string | null;
+    currency: string;
+    generationRunId: string | null;
+    sourceFingerprint: string | null;
+    validationReport: { blockers?: Array<{ lineId: string; description: string }> };
+    publicationState: import("./bomPublication").BomPublicationState;
+    coverageNote: string | null;
+    omissionReport: Array<Record<string, unknown>>;
+    compilerVersion: string;
+    policyVersion: string;
+    quoteReady: number;
+    confirmedAt: string | null;
+    createdAt: string;
+  } | null;
   items: BomItem[];
   totals: { lines: number; units: number; knownCostMinor: number; unpricedLines: number };
+  publicLinesHidden?: boolean;
 };

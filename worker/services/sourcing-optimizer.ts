@@ -2,6 +2,7 @@ import { normalizePriceBreaks, type SourcingOffer } from "../../src/shared/offer
 import { optimizeSourcing, type SourcingConstraints, type SourcingEstimate, type SourcingLineInput } from "../../src/shared/sourcing";
 import { BomsRepository } from "../db/repositories/boms";
 import { AppError } from "../http";
+import { publicBomLinesAllowed } from "../../src/shared/bomPublication";
 
 type OfferRow = {
   id: string;
@@ -28,14 +29,17 @@ export class SourcingOptimizerService {
   constructor(private readonly db: D1Database) {}
 
   /** Produce a whole-BOM estimate from a materialized BOM. */
-  async estimateForBom(bomId: string, constraints: SourcingConstraints = {}): Promise<SourcingEstimate> {
+  async estimateForBom(bomId: string, constraints: SourcingConstraints = {}, allowUnpublished = false): Promise<SourcingEstimate> {
     const bom = await new BomsRepository(this.db).detail(bomId);
     if (!bom || bom.is_demo === 1) throw new AppError(404, "BOM_NOT_FOUND", "BOM not found.");
-    const lines: SourcingLineInput[] = bom.items.map((item, index) => ({
+    if (!allowUnpublished && (!bom.version || !publicBomLinesAllowed(bom.version.publicationState))) {
+      throw new AppError(409, "BOM_NOT_PUBLISHED", "This BOM has no source-validated public lines to estimate.");
+    }
+    const lines: SourcingLineInput[] = bom.items.filter((item) => Number(item.quantity) > 0).map((item, index) => ({
       id: String(item.slotKey ?? item.id ?? `line-${index + 1}`),
       componentId: typeof item.componentId === "string" ? item.componentId : null,
       name: String(item.description ?? `Line ${index + 1}`),
-      quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
+      quantity: Number(item.quantity),
       fabricated: item.completeness === "custom-fabricated",
       optional: false,
     }));
@@ -44,11 +48,11 @@ export class SourcingOptimizerService {
     return optimizeSourcing(lines, offers, constraints);
   }
 
-  async estimateForProject(projectId: string, constraints: SourcingConstraints = {}): Promise<SourcingEstimate> {
+  async estimateForProject(projectId: string, constraints: SourcingConstraints = {}, allowUnpublished = false): Promise<SourcingEstimate> {
     const bom = await this.db.prepare(`SELECT id FROM boms WHERE project_id = ?1 AND is_demo = 0 ORDER BY updated_at DESC LIMIT 1`)
       .bind(projectId).first<{ id: string }>();
     if (!bom) throw new AppError(404, "PROJECT_BOM_NOT_FOUND", "This project has no BOM to estimate.");
-    return this.estimateForBom(bom.id, constraints);
+    return this.estimateForBom(bom.id, constraints, allowUnpublished);
   }
 
   private async loadOffers(componentIds: string[]): Promise<SourcingOffer[]> {
