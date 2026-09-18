@@ -237,15 +237,68 @@ fileRoutes.delete("/files/:id", loadAuthSession, requireAuth, async (c) => {
 async function serveFileContent(c: Context<AppBindings>, id: string) {
   const file = await authorizedFile(c.env.DB, c.get("authSession")?.user?.id ?? null, id);
   if (file.status !== "ready") throw new AppError(423, "FILE_NOT_READY", "The file is not available while safety review is pending.");
-  const object = await c.env.FILES.get(file.object_key, { onlyIf: c.req.raw.headers, range: c.req.raw.headers });
-  if (!object) throw new AppError(404, "FILE_OBJECT_NOT_FOUND", "The file object is missing from storage.");
+  // Card previews request ?v=thumb, which serves a pre-generated downscaled
+  // JPEG variant (~90% smaller) stored under the thumb/ R2 prefix. Falls back
+  // to the original when no thumbnail has been generated yet.
+  const variant = c.req.query("v") === "thumb" ? "thumb" : null;
+  let stem = "";
+  const lastSlash = file.object_key.lastIndexOf("/");
+  if (lastSlash >= 0) {
+    stem = file.object_key.substring(0, lastSlash);
+  }
+  const objectKeyParts = file.object_key.split("/");
+  const originalName = objectKeyParts[objectKeyParts.length - 1];
+  const thumbName = originalName.replace(/\.(jpe?g|png|webp)$/iu, ".jpg");
+  const thumbObjectKey = variant
+    ? (stem ? `thumb/${stem}/t-${thumbName}` : `thumb/t-${thumbName}`)
+    : file.object_key;
+  // Public files are effectively immutable (a new upload gets a new id), so serve
+  // them from the Cloudflare edge cache when possible. This avoids a DB lookup +
+  // R2 fetch per image request, which is what made repeated page loads slow.
+  const cache = (caches as CacheStorage & { default: Cache }).default;
+  const cacheKey = new Request(c.req.url);
+  if (file.visibility === "public") {
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+  }
+  const object = await c.env.FILES.get(thumbObjectKey, { onlyIf: c.req.raw.headers, range: c.req.raw.headers });
+  if (!object) {
+    // No thumbnail variant exists yet; fall back to the original.
+    if (variant) {
+      const original = await c.env.FILES.get(file.object_key, { onlyIf: c.req.raw.headers, range: c.req.raw.headers });
+      if (!original) throw new AppError(404, "FILE_OBJECT_NOT_FOUND", "The file object is missing from storage.");
+      const fallback = buildFileResponse(c, original, file.visibility);
+      if (file.visibility === "public") {
+        try { await cache.put(cacheKey, fallback.clone()); } catch { /* best-effort */ }
+      }
+      return fallback;
+    }
+    throw new AppError(404, "FILE_OBJECT_NOT_FOUND", "The file object is missing from storage.");
+  }
+  const response = buildFileResponse(c, object, file.visibility);
+  if (file.visibility === "public") {
+    try { await cache.put(cacheKey, response.clone()); } catch { /* best-effort */ }
+  }
+  return response;
+}
+
+function buildFileResponse(c: Context<AppBindings>, object: R2Object | R2ObjectBody, visibility: string): Response {
   const headers = new Headers();
-  object.writeHttpMetadata(headers);
+  headers.set("content-type", object.httpMetadata?.contentType ?? "application/octet-stream");
   headers.set("etag", object.httpEtag);
+  headers.set("accept-ranges", "bytes");
   headers.set("x-content-type-options", "nosniff");
   headers.set("content-security-policy", "default-src 'none'; sandbox");
-  headers.set("cache-control", file.visibility === "public" ? "public, max-age=3600" : "private, no-store");
-  return new Response("body" in object ? object.body : undefined, { status: "body" in object ? 200 : 412, headers });
+  if (visibility === "public") {
+    headers.set("cache-control", "public, max-age=86400, stale-while-revalidate=604800");
+    headers.set("CDN-Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+  } else {
+    headers.set("cache-control", "private, no-store");
+  }
+  type FileObjectWithBody = R2ObjectBody & { body: ReadableStream<Uint8Array> };
+  const objectWithBody = object as FileObjectWithBody;
+  const hasBody = typeof objectWithBody.body !== "undefined";
+  return new Response(hasBody ? objectWithBody.body : undefined, { status: hasBody ? 200 : 412, headers });
 }
 
 async function authorizedFile(db: D1Database, userId: string | null, id: string) {

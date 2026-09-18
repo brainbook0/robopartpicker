@@ -8,6 +8,7 @@ import type { AppBindings, Env } from "../env";
 import { fileContentUrl } from "./file-urls";
 
 const SOCIAL_IMAGE_PATH = "/robopartpicker-social.png";
+const LOGO_PATH = "/robopartpicker-logo.png";
 const INDEX_ROBOTS = "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1";
 
 export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> {
@@ -74,7 +75,8 @@ export async function serveLlmsText(c: Context<AppBindings>): Promise<Response> 
 }
 
 export async function serveProjectBadge(c: Context<AppBindings>): Promise<Response> {
-  const slug = safeDecode(c.req.param("slug") ?? "");
+  // Hono captures the whole ":slug.svg" segment, so strip the extension here.
+  const slug = safeDecode(c.req.param("slug") ?? "").replace(/\.svg$/iu, "");
   const row = await c.env.DB.prepare(`SELECT p.name,
       (SELECT COUNT(*) FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id WHERE b.project_id = p.id AND b.is_demo = 0) AS bom_lines
     FROM projects p WHERE p.slug = ?1 AND p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'`)
@@ -86,6 +88,10 @@ export async function serveProjectBadge(c: Context<AppBindings>): Promise<Respon
   const total = leftWidth + rightWidth;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${total}" height="28" role="img" aria-label="RoboPartPicker: ${xml(value)}"><title>${xml(row.name)} on RoboPartPicker</title><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-opacity=".08"/></linearGradient><clipPath id="r"><rect width="${total}" height="28" rx="4"/></clipPath><g clip-path="url(#r)"><rect width="${leftWidth}" height="28" fill="#20242a"/><rect x="${leftWidth}" width="${rightWidth}" height="28" fill="#ffd000"/><rect width="${total}" height="28" fill="url(#s)"/></g><g fill="#fff" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11"><text x="9" y="18">RoboPartPicker</text></g><g fill="#111" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11" font-weight="600"><text x="${leftWidth + 9}" y="18">${xml(value)}</text></g></svg>`;
   return new Response(c.req.method === "HEAD" ? null : svg, { headers: { "content-type": "image/svg+xml; charset=utf-8", "cache-control": "public, max-age=3600, stale-while-revalidate=86400", "x-content-type-options": "nosniff" } });
+}
+
+function esc(value: string): string {
+  return String(value).replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/"/gu, "&quot;").replace(/'/gu, "&#39;");
 }
 
 async function resolveSeoDocument(db: D1Database, path: string, base: string): Promise<SeoDocument> {
@@ -107,6 +113,32 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
     if (row) {
       const description = concise(row.summary || row.description || `Explore ${row.name}, its source repository, technical files, parts, and bill of materials on RoboPartPicker.`);
       const canonicalUrl = `${base}/projects/${encodeURIComponent(slug)}`;
+      const facts = [
+        row.robot_category ? `<li>Category: ${esc(row.robot_category)}</li>` : "",
+        row.project_kind ? `<li>Kind: ${esc(row.project_kind.replace(/_/gu, " "))}</li>` : "",
+        row.license_spdx ? `<li>License: ${esc(row.license_spdx)}</li>` : "",
+        `<li>GitHub stars: ${Number(row.github_stars || 0).toLocaleString()}</li>`,
+        `<li>BOM lines indexed: ${Number(row.bom_lines || 0).toLocaleString()}</li>`,
+        `<li>Last updated: ${esc(String(row.updated_at).slice(0, 10))}</li>`,
+      ].filter(Boolean).join("");
+      const repoLink = row.repository_url ? `<p>Source repository: <a href="${esc(row.repository_url)}">${esc(row.repository_url)}</a></p>` : "";
+      const bomLines = await db.prepare(`SELECT bi.description, bi.quantity, bi.unit, bi.line_classification,
+          bi.completeness, c.name AS component_name, c.slug AS component_slug, c.category AS component_category
+        FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
+        LEFT JOIN components c ON c.id = bi.component_id
+        WHERE b.project_id = ?1 AND b.is_demo = 0 ORDER BY bi.sort_order LIMIT 60`).bind(row.id).all<{
+          description: string; quantity: number; unit: string; line_classification: string; completeness: string;
+          component_name: string | null; component_slug: string | null; component_category: string | null;
+        }>();
+      const lineItems = bomLines.results.map((l) => {
+        const label = l.component_name && l.component_slug && l.component_category
+          ? `<a href="${base}/parts/${encodeURIComponent(l.component_category)}/${encodeURIComponent(l.component_slug)}">${esc(l.component_name)}</a>`
+          : esc(l.description);
+        return `<li>${label} — ${Number(l.quantity)} ${esc(l.unit)}${l.line_classification ? ` (${esc(l.line_classification)}, ${esc(l.completeness)})` : ""}</li>`;
+      }).join("");
+      const bomSection = lineItems
+        ? `<h2>Bill of materials (${Number(row.bom_lines).toLocaleString()} lines)</h2><ul>${lineItems}</ul>`
+        : "<h2>Bill of materials</h2><p>No BOM lines have been resolved for this project yet.</p>";
       return {
         title: conciseTitle(`${row.name}: BOM, files and build data | RoboPartPicker`),
         description,
@@ -114,6 +146,7 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "article",
         robots: INDEX_ROBOTS,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}<h2>Project facts</h2><ul>${facts}</ul>${bomSection}<p><a href="${base}/projects">Browse all robotics projects</a> · <a href="${base}/boms/${encodeURIComponent(slug)}-bom">Full bill of materials</a> · <a href="${base}/community">Community evidence</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "SoftwareSourceCode", name: row.name, description, url: canonicalUrl, codeRepository: row.repository_url, license: row.license_spdx, programmingLanguage: "Robotics", interactionStatistic: row.github_stars ? { "@type": "InteractionCounter", interactionType: "https://schema.org/LikeAction", userInteractionCount: row.github_stars } : undefined, additionalProperty: { "@type": "PropertyValue", name: "BOM lines", value: Number(row.bom_lines) } }),
       };
     }
@@ -140,6 +173,23 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
       const description = concise(row.summary || `${row.name}${identity ? ` by ${identity}` : ""}. Compare source-backed specifications, prices, project usage, files and product links.`);
       const canonicalUrl = `${base}/parts/${encodeURIComponent(row.category)}/${encodeURIComponent(slug)}`;
       const offer = row.price_minor != null ? { "@type": "Offer", price: (Number(row.price_minor) / 100).toFixed(2), priceCurrency: row.currency ?? "USD", availability: "https://schema.org/InStock" } : undefined;
+      const partFacts = [
+        `<li>Category: ${esc(row.category)}</li>`,
+        row.maker ? `<li>Manufacturer: ${esc(row.maker)}</li>` : "",
+        row.manufacturer_part_number ? `<li>Manufacturer part number: ${esc(row.manufacturer_part_number)}</li>` : "",
+        row.price_minor != null ? `<li>Observed catalog price: ${esc(row.currency ?? "USD")} ${(Number(row.price_minor) / 100).toFixed(2)} (observed estimate, not a binding quote)</li>` : "<li>Observed price: not available</li>",
+        `<li>Last updated: ${esc(String(row.updated_at).slice(0, 10))}</li>`,
+      ].filter(Boolean).join("");
+      const sourceLink = row.source_url ? `<p>Product source: <a href="${esc(row.source_url)}">${esc(row.source_url)}</a></p>` : "";
+      const usage = await db.prepare(`SELECT DISTINCT p.slug, p.name FROM bom_items bi
+        JOIN bom_versions bv ON bv.id = bi.bom_version_id
+        JOIN boms b ON b.id = bv.bom_id
+        JOIN projects p ON p.id = b.project_id
+        WHERE bi.component_id = ?1 AND b.is_demo = 0 AND p.deleted_at IS NULL AND p.is_demo = 0
+          AND p.status = 'published' AND p.visibility = 'public' LIMIT 12`).bind(row.id).all<{ slug: string; name: string }>();
+      const usageSection = usage.results.length
+        ? `<h2>Used in these robotics projects</h2><ul>${usage.results.map((p) => `<li><a href="${base}/projects/${encodeURIComponent(p.slug)}">${esc(p.name)}</a></li>`).join("")}</ul>`
+        : "";
       return {
         title: conciseTitle(`${row.name}${row.maker ? ` by ${row.maker}` : ""} | RoboPartPicker`),
         description,
@@ -147,6 +197,7 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "product",
         robots: INDEX_ROBOTS,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${usageSection}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "Product", name: row.name, description, url: canonicalUrl, mpn: row.manufacturer_part_number, manufacturer: row.maker ? { "@type": "Organization", name: row.maker } : undefined, category: row.category, offers: offer }),
       };
     }
@@ -155,20 +206,42 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
   const bomMatch = path.match(/^\/boms\/([^/]+)$/u);
   if (bomMatch) {
     const routeKey = safeDecode(bomMatch[1]);
-    const row = await db.prepare(`SELECT b.id, b.slug, b.name, b.updated_at, p.name AS project_name,
+    const row = await db.prepare(`SELECT b.id, b.slug, b.name, b.updated_at, b.current_version_id, p.name AS project_name,
         bv.currency, bv.confirmed_at,
         COUNT(bi.id) AS line_count, COALESCE(SUM(bi.quantity), 0) AS unit_count,
         COALESCE(SUM(CASE WHEN bi.evidence_locator IS NOT NULL THEN 1 ELSE 0 END), 0) AS evidence_lines
       FROM boms b LEFT JOIN projects p ON p.id = b.project_id LEFT JOIN bom_versions bv ON bv.id = b.current_version_id
       LEFT JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
       WHERE (b.id = ?1 OR b.slug = ?1) AND b.is_demo = 0 AND b.visibility = 'public' GROUP BY b.id`).bind(routeKey).first<{
-        id: string; slug: string | null; name: string; updated_at: string; project_name: string | null; currency: string | null; confirmed_at: string | null;
+        id: string; slug: string | null; name: string; updated_at: string; current_version_id: string | null; project_name: string | null; currency: string | null; confirmed_at: string | null;
         line_count: number; unit_count: number; evidence_lines: number;
       }>();
     if (row) {
       const canonicalKey = row.slug ?? row.id;
       const canonicalUrl = `${base}/boms/${encodeURIComponent(canonicalKey)}`;
       const description = concise(`${row.name} contains ${Number(row.line_count).toLocaleString()} line items and ${Number(row.unit_count).toLocaleString()} total units${row.project_name ? ` for ${row.project_name}` : ""}. Inspect identities, quantities, evidence and observed pricing.`);
+      const bomFacts = [
+        `<li>Line items: ${Number(row.line_count).toLocaleString()}</li>`,
+        `<li>Total units: ${Number(row.unit_count).toLocaleString()}</li>`,
+        `<li>Lines with source evidence: ${Number(row.evidence_lines).toLocaleString()}</li>`,
+        row.project_name ? `<li>Project: ${esc(row.project_name)}</li>` : "",
+        row.currency ? `<li>Currency: ${esc(row.currency)}</li>` : "",
+        row.confirmed_at ? `<li>Confirmed: ${esc(String(row.confirmed_at).slice(0, 10))}</li>` : "<li>Not yet confirmed by a maintainer</li>",
+      ].filter(Boolean).join("");
+      const bomItemRows = await db.prepare(`SELECT bi.description, bi.quantity, bi.unit, bi.line_classification,
+          bi.completeness, bi.evidence_locator, c.name AS component_name, c.slug AS component_slug, c.category AS component_category
+        FROM bom_items bi LEFT JOIN components c ON c.id = bi.component_id
+        WHERE bi.bom_version_id = ?1 ORDER BY bi.sort_order LIMIT 100`).bind(row.current_version_id ?? "").all<{
+          description: string; quantity: number; unit: string; line_classification: string; completeness: string;
+          evidence_locator: string | null; component_name: string | null; component_slug: string | null; component_category: string | null;
+        }>();
+      const bomItemHtml = bomItemRows.results.map((l) => {
+        const label = l.component_name && l.component_slug && l.component_category
+          ? `<a href="${base}/parts/${encodeURIComponent(l.component_category)}/${encodeURIComponent(l.component_slug)}">${esc(l.component_name)}</a>`
+          : esc(l.description);
+        return `<li>${label} — ${Number(l.quantity)} ${esc(l.unit)} (${esc(l.line_classification)}, ${esc(l.completeness)})${l.evidence_locator ? ` — evidence: ${esc(l.evidence_locator)}` : ""}</li>`;
+      }).join("");
+      const bomItemSection = bomItemHtml ? `<h2>Line items</h2><ul>${bomItemHtml}</ul>` : "";
       return {
         title: conciseTitle(`${row.name}: ${row.line_count} line bill of materials | RoboPartPicker`),
         description,
@@ -176,14 +249,206 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         imageUrl: fallbackImage,
         type: "article",
         robots: INDEX_ROBOTS,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p><h2>Bill of materials facts</h2><ul>${bomFacts}</ul>${bomItemSection}<p><a href="${base}/boms">Browse all bills of materials</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "Dataset", name: row.name, description, url: canonicalUrl, dateModified: row.updated_at, variableMeasured: ["Part identity", "Quantity", "Source evidence", "Observed price"], size: Number(row.line_count), isBasedOn: row.project_name || undefined }),
       };
     }
   }
 
+  const listingDocument = await listingSeo(db, path, base, fallbackImage);
+  if (listingDocument) return listingDocument;
+
   const staticDocument = staticSeo(path, base, fallbackImage);
   if (staticDocument) return staticDocument;
   return { title: "Page not found | RoboPartPicker", description: "The requested RoboPartPicker page could not be found.", canonicalUrl: `${base}${path}`, imageUrl: fallbackImage, type: "website", robots: "noindex,follow" };
+}
+
+/** Server-rendered content for catalog listing pages (home, projects, parts, boms). */
+async function listingSeo(db: D1Database, path: string, base: string, fallbackImage: string): Promise<SeoDocument | null> {
+  const categoryMatch = path.match(/^\/parts\/([^/]+)$/u);
+  if (path === "/" || path === "/projects") {
+    const [stats, rows] = await Promise.all([
+      db.prepare(`SELECT COUNT(*) AS total FROM projects WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'`).first<{ total: number }>(),
+      db.prepare(`SELECT p.slug, p.name, p.summary, p.robot_category FROM projects p
+        WHERE p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'
+        ORDER BY p.github_stars DESC LIMIT 24`).all<{ slug: string; name: string; summary: string | null; robot_category: string | null }>(),
+    ]);
+    const items = rows.results.map((r) => `<li><a href="${base}/projects/${encodeURIComponent(r.slug)}">${esc(r.name)}</a>${r.robot_category ? ` — ${esc(r.robot_category)}` : ""}${r.summary ? `: ${esc(concise(r.summary))}` : ""}</li>`).join("");
+    const total = Number(stats?.total ?? 0).toLocaleString();
+    const isHome = path === "/";
+    const description = isHome
+      ? `Discover ${total} source-linked robotics projects, compile their bills of materials, compare parts and suppliers, and plan reproducible builds.`
+      : `Browse ${total} source-linked open robotics projects with bills of materials, files, licenses and evidence state kept explicit.`;
+    return {
+      title: isHome ? "RoboPartPicker | Build real robots from proven designs" : "Discover robotics projects | RoboPartPicker",
+      description,
+      canonicalUrl: `${base}${path}`,
+      imageUrl: fallbackImage,
+      type: "website",
+      robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
+      structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: isHome ? "RoboPartPicker" : "Robotics projects", description, url: `${base}${path}`, isPartOf: { "@type": "WebSite", name: "RoboPartPicker", url: base } }),
+    };
+  }
+  if (categoryMatch) {
+    const category = safeDecode(categoryMatch[1]);
+    const stats = await db.prepare(`SELECT COUNT(*) AS total FROM components WHERE category = ?1 AND deleted_at IS NULL AND is_demo = 0`).bind(category).first<{ total: number }>();
+    const rows = await db.prepare(`SELECT c.slug, c.name, c.summary FROM components c
+      WHERE c.category = ?1 AND c.deleted_at IS NULL AND c.is_demo = 0 ORDER BY c.name COLLATE NOCASE LIMIT 24`).bind(category).all<{ slug: string; name: string; summary: string | null }>();
+    if (Number(stats?.total ?? 0) > 0) {
+      const items = rows.results.map((r) => `<li><a href="${base}/parts/${encodeURIComponent(category)}/${encodeURIComponent(r.slug)}">${esc(r.name)}</a>${r.summary ? `: ${esc(concise(r.summary))}` : ""}</li>`).join("");
+      const total = Number(stats?.total ?? 0).toLocaleString();
+      const description = `${total} ${category} components with source-backed identity, technical profiles, engineering files, project usage and explicit unknowns.`;
+      return {
+        title: `${category.charAt(0).toUpperCase()}${category.slice(1)} components | RoboPartPicker`,
+        description,
+        canonicalUrl: `${base}/parts/${encodeURIComponent(category)}`,
+        imageUrl: fallbackImage,
+        type: "website",
+        robots: INDEX_ROBOTS,
+        bodyHtml: `<article><h1>${esc(category)} components</h1><p>${esc(description)}</p><h2>Components in this category</h2><ul>${items}</ul><p><a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
+        structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: `${category} components`, description, url: `${base}/parts/${encodeURIComponent(category)}` }),
+      };
+    }
+  }
+  if (path === "/boms") {
+    const stats = await db.prepare(`SELECT COUNT(*) AS total FROM boms WHERE is_demo = 0 AND visibility = 'public'`).first<{ total: number }>();
+    const rows = await db.prepare(`SELECT COALESCE(b.slug, b.id) AS k, b.name, (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) AS lines
+      FROM boms b WHERE b.is_demo = 0 AND b.visibility = 'public' ORDER BY b.updated_at DESC LIMIT 24`).all<{ k: string; name: string; lines: number }>();
+    const items = rows.results.map((r) => `<li><a href="${base}/boms/${encodeURIComponent(r.k)}">${esc(r.name)}</a> — ${Number(r.lines).toLocaleString()} lines</li>`).join("");
+    const total = Number(stats?.total ?? 0).toLocaleString();
+    const description = `${total} public bills of materials for open robotics projects, with per-line identity, quantity, source evidence and observed pricing.`;
+    return {
+      title: "Versioned bills of materials | RoboPartPicker",
+      description,
+      canonicalUrl: `${base}/boms`,
+      imageUrl: fallbackImage,
+      type: "website",
+      robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>Versioned bills of materials</h1><p>${esc(description)}</p><h2>Recently updated BOMs</h2><ul>${items}</ul><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalog</a></p></article>`,
+      structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Bills of materials", description, url: `${base}/boms` }),
+    };
+  }
+  const threadMatch = path.match(/^\/community\/t\/([^/]+)$/u);
+  if (path === "/community" || threadMatch) {
+    if (threadMatch) {
+      const threadId = safeDecode(threadMatch[1]);
+      const row = await db.prepare(`SELECT t.id, t.title, t.body, t.thread_type, t.status, t.tags_json,
+          t.reply_count, t.created_at, p.display_name AS author_name
+        FROM forum_threads t LEFT JOIN profiles p ON p.id = t.user_id WHERE t.id = ?1`).bind(threadId).first<{
+          id: string; title: string; body: string; thread_type: string; status: string; tags_json: string;
+          reply_count: number; created_at: string; author_name: string | null;
+        }>();
+      if (row) {
+        let tags: string[] = [];
+        try { tags = JSON.parse(row.tags_json) as string[]; } catch { tags = []; }
+        const description = concise(row.body.replace(/[#*_>`]/gu, " ").replace(/\s+/gu, " ").trim());
+        const replies = await db.prepare(`SELECT p.body, pr.display_name AS author_name FROM forum_posts p
+          LEFT JOIN profiles pr ON pr.id = p.user_id WHERE p.thread_id = ?1 AND p.deleted_at IS NULL
+          ORDER BY p.created_at LIMIT 20`).bind(row.id).all<{ body: string; author_name: string | null }>();
+        const replyHtml = replies.results.map((r) => `<li>${esc(concise(r.body))}${r.author_name ? ` — ${esc(r.author_name)}` : ""}</li>`).join("");
+        return {
+          title: conciseTitle(`${row.title} | RoboPartPicker community`),
+          description,
+          canonicalUrl: `${base}/community/t/${encodeURIComponent(row.id)}`,
+          imageUrl: fallbackImage,
+          type: "article",
+          robots: INDEX_ROBOTS,
+          bodyHtml: `<article><h1>${esc(row.title)}</h1><p>${esc(row.thread_type.replace(/_/gu, " "))} · ${esc(row.status)} · ${Number(row.reply_count).toLocaleString()} replies · ${esc(String(row.created_at).slice(0, 10))}${row.author_name ? ` · ${esc(row.author_name)}` : ""}</p><div>${esc(row.body).replace(/\n/gu, "<br />")}</div>${tags.length ? `<p>Tags: ${tags.map((t) => esc(t)).join(", ")}</p>` : ""}${replyHtml ? `<h2>Replies</h2><ul>${replyHtml}</ul>` : ""}<p><a href="${base}/community">All community discussions</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
+          structuredData: compact({ "@context": "https://schema.org", "@type": "DiscussionForumPosting", headline: row.title, text: description, url: `${base}/community/t/${encodeURIComponent(row.id)}`, datePublished: row.created_at, interactionStatistic: { "@type": "InteractionCounter", interactionType: "https://schema.org/CommentAction", userInteractionCount: Number(row.reply_count) } }),
+        };
+      }
+    } else {
+      const rows = await db.prepare(`SELECT t.id, t.title, t.thread_type, t.reply_count FROM forum_threads t
+        ORDER BY t.pinned DESC, t.last_activity_at DESC LIMIT 30`).all<{ id: string; title: string; thread_type: string; reply_count: number }>();
+      const items = rows.results.map((r) => `<li><a href="${base}/community/t/${encodeURIComponent(r.id)}">${esc(r.title)}</a> — ${esc(r.thread_type.replace(/_/gu, " "))}, ${Number(r.reply_count)} replies</li>`).join("");
+      const description = "Source-linked robotics discussions: build logs, integration reports, teardowns, BOM corrections and supplier reports.";
+      return {
+        title: "Robotics community | RoboPartPicker",
+        description,
+        canonicalUrl: `${base}/community`,
+        imageUrl: fallbackImage,
+        type: "website",
+        robots: INDEX_ROBOTS,
+        bodyHtml: `<article><h1>Robotics community</h1><p>${esc(description)}</p><h2>Recent discussions</h2><ul>${items}</ul><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a></p></article>`,
+        structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Robotics community", description, url: `${base}/community` }),
+      };
+    }
+  }
+  if (path === "/glossary") {
+    const items = GLOSSARY_TERMS.map((g) => `<li><strong>${esc(g.term)}</strong> — ${esc(g.definition)}</li>`).join("");
+    const description = `${GLOSSARY_TERMS.length} plain-language definitions of robotics, BOM and sourcing terms, with links to live RoboPartPicker data.`;
+    return {
+      title: "AI and robotics pricing glossary | RoboPartPicker",
+      description,
+      canonicalUrl: `${base}/glossary`,
+      imageUrl: fallbackImage,
+      type: "website",
+      robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>Robotics and sourcing glossary</h1><p>${esc(description)}</p><ul>${items}</ul><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/queries">Sourcing questions</a></p></article>`,
+      structuredData: compact({ "@context": "https://schema.org", "@type": "DefinedTermSet", name: "Robotics and sourcing glossary", url: `${base}/glossary`, hasDefinedTerm: GLOSSARY_TERMS.slice(0, 40).map((g) => ({ "@type": "DefinedTerm", name: g.term, description: g.definition })) }),
+    };
+  }
+  if (path === "/compared-to") {
+    const items = COMPARISONS.map((c) => `<li><a href="${base}/compared-to/${encodeURIComponent(c.slug)}">${esc(c.title)}</a> — ${esc(c.desc)}</li>`).join("");
+    const description = `Source-backed comparisons of RoboPartPicker with ${COMPARISONS.length} alternative robotics and component sourcing tools.`;
+    return {
+      title: "Compare robotics sourcing tools | RoboPartPicker",
+      description,
+      canonicalUrl: `${base}/compared-to`,
+      imageUrl: fallbackImage,
+      type: "website",
+      robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>Compare robotics sourcing tools</h1><p>${esc(description)}</p><ul>${items}</ul><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalog</a></p></article>`,
+      structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Robotics sourcing comparisons", description, url: `${base}/compared-to` }),
+    };
+  }
+  const compMatch = path.match(/^\/compared-to\/([^/]+)$/u);
+  if (compMatch) {
+    const slug = safeDecode(compMatch[1]);
+    const comp = COMPARISONS.find((c) => c.slug === slug);
+    if (comp) {
+      const rows = comp.rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("");
+      return {
+        title: conciseTitle(comp.title),
+        description: comp.desc,
+        canonicalUrl: `${base}/compared-to/${encodeURIComponent(comp.slug)}`,
+        imageUrl: fallbackImage,
+        type: "article",
+        robots: INDEX_ROBOTS,
+        bodyHtml: `<article><h1>${esc(comp.title)}</h1><p>${esc(comp.desc)}</p><p><strong>Verdict:</strong> ${esc(comp.verdict)}</p><table><thead><tr><th>Dimension</th><th>RoboPartPicker</th><th>${esc(comp.subject)}</th></tr></thead><tbody>${rows}</tbody></table><p><a href="${base}/compared-to">All comparisons</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
+        structuredData: compact({ "@context": "https://schema.org", "@type": "Article", headline: comp.title, description: comp.desc, url: `${base}/compared-to/${encodeURIComponent(comp.slug)}` }),
+      };
+    }
+  }
+  if (path === "/robots") {
+    const rows = await db.prepare(`SELECT slug, name, robot_category FROM projects
+      WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'
+      ORDER BY github_stars DESC LIMIT 40`).all<{ slug: string; name: string; robot_category: string | null }>();
+    const items = rows.results.map((r) => `<li><a href="${base}/projects/${encodeURIComponent(r.slug)}">${esc(r.name)}</a>${r.robot_category ? ` — ${esc(r.robot_category)}` : ""}</li>`).join("");
+    const description = "Robots catalogued from source-linked open robotics projects, with parts, BOMs and build evidence.";
+    return {
+      title: "Robots | RoboPartPicker",
+      description, canonicalUrl: `${base}/robots`, imageUrl: fallbackImage, type: "website", robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>Robots</h1><p>${esc(description)}</p><ul>${items}</ul><p><a href="${base}/projects">All robotics projects</a></p></article>`,
+      structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Robots", description, url: `${base}/robots` }),
+    };
+  }
+  if (path === "/price-index") {
+    const rows = await db.prepare(`SELECT c.name, c.slug, c.category, MIN(so.unit_price_minor) AS price, so.currency
+      FROM supplier_offers so JOIN components c ON c.id = so.component_id
+      WHERE so.is_demo = 0 AND so.unit_price_minor > 0 AND c.deleted_at IS NULL AND c.is_demo = 0
+      GROUP BY c.id ORDER BY price LIMIT 40`).all<{ name: string; slug: string; category: string; price: number; currency: string | null }>();
+    const items = rows.results.map((r) => `<li><a href="${base}/parts/${encodeURIComponent(r.category)}/${encodeURIComponent(r.slug)}">${esc(r.name)}</a> — ${esc(r.currency ?? "USD")} ${(Number(r.price) / 100).toFixed(2)} (observed estimate)</li>`).join("");
+    const description = "Observed catalog prices for robotics components from source-backed supplier records. Prices are estimates, not binding quotes.";
+    return {
+      title: "Component price index | RoboPartPicker",
+      description, canonicalUrl: `${base}/price-index`, imageUrl: fallbackImage, type: "website", robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>Component price index</h1><p>${esc(description)}</p>${items ? `<ul>${items}</ul>` : "<p>No priced components are indexed yet.</p>"}<p><a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
+      structuredData: compact({ "@context": "https://schema.org", "@type": "Dataset", name: "RoboPartPicker component price index", description, url: `${base}/price-index` }),
+    };
+  }
+  return null;
 }
 
 export function staticSeo(path: string, base: string, imageUrl: string): SeoDocument | null {
@@ -196,6 +461,7 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
       imageUrl,
       type: "website",
       robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>${esc(legalDocument.title)}</h1><p>${esc(legalDocument.description)}</p>${(legalDocument.sections ?? []).map((s) => `<h2>${esc(s.title)}</h2>${(s.paragraphs ?? []).map((p) => `<p>${esc(p)}</p>`).join("")}${s.bullets?.length ? `<ul>${s.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}`).join("")}<p><a href="${base}/legal">Legal center</a> · <a href="${base}/contact">Contact</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
       structuredData: { "@context": "https://schema.org", "@type": "WebPage", name: legalDocument.title, description: legalDocument.description, url: `${base}${legalDocument.path}` },
     };
   }
@@ -232,7 +498,22 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
     "/rpps": ["Robotics Project Package Specification (RPPS)", "Validate and publish portable robotics project packages with identity, files, BOMs, build procedures and evidence."],
   };
   const exact = pages[path];
-  if (exact) return { title: exact[0], description: exact[1], canonicalUrl: `${base}${path}`, imageUrl, type: "website", robots: INDEX_ROBOTS, structuredData: { "@context": "https://schema.org", "@type": "WebPage", name: exact[0], description: exact[1], url: `${base}${path}` } };
+  if (exact) {
+    const logoUrl = `${base}${LOGO_PATH}`;
+    const structuredData: Record<string, unknown> = {
+      "@context": "https://schema.org", "@type": "WebPage", name: exact[0], description: exact[1], url: `${base}${path}`,
+    };
+    if (path === "/") {
+      structuredData["potentialAction"] = { "@type": "SearchAction", target: `${base}/projects?q={search_term_string}`, "query-input": "required name=search_term_string" };
+    }
+    return { title: exact[0], description: exact[1], canonicalUrl: `${base}${path}`, imageUrl, type: "website", robots: INDEX_ROBOTS,
+      bodyHtml: `<article><h1>${esc(exact[0].split(" | ")[0])}</h1><p>${esc(exact[1])}</p><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a> · <a href="${base}/contact">Contact</a></p></article>`,
+      structuredData: [
+      structuredData,
+      { "@context": "https://schema.org", "@type": "WebSite", name: "RoboPartPicker", url: `${base}`, image: logoUrl },
+      { "@context": "https://schema.org", "@type": "Organization", name: "RoboPartPicker", url: `${base}`, logo: logoUrl, image: logoUrl, description: "Open robotics project discovery, BOM generation and parts sourcing." },
+    ] };
+  }
   const categoryMatch = path.match(/^\/parts\/([^/]+)$/u);
   if (categoryMatch && categoryMatch[1] !== "compare") {
     const category = safeDecode(categoryMatch[1]);

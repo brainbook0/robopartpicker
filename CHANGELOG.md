@@ -2,7 +2,22 @@
 
 ## Unreleased
 
+### Tooling
+
+- Repaired the local build and test toolchain. `NODE_ENV=production` in the shell made npm omit devDependencies, which had pruned `wrangler`, `vitest`, `cross-env` and the Cloudflare/Vite plugins out of `node_modules` and stripped the `dev` flags from `package-lock.json`. Restored the lockfile from git and reinstalled with `npm ci --include=dev`. `tsc -b` is clean, all 677 unit tests and all 72 worker tests pass, and `vite build` produces the real `dist/client` + `dist/robopartpicker` pair again instead of relying on a hand-rolled esbuild bundle.
+
+### Operator / SEO
+
+- Restored the daily Cloudflare traffic snapshot: the script's auth header had been mangled to a literal `Bearer ***` and the credentials file was unreadable by the job user; both are fixed (creds readable by `hermes` group only; header now sends the loaded token).
+- Purged the zone edge cache to clear any stale sitemap/robots objects; re-verified live `sitemap.xml` (42,231 URLs, all `robopartpicker.com`), `robots.txt` (correct Sitemap directive), and the IndexNow key file (200).
+- Re-submitted the full public URL set to IndexNow: Yandex accepted 60/60 batches; Bing and api.indexnow.org reject this datacenter IP (403) — same as prior runs; payload/key validity confirmed by Yandex acceptance. Google and Bing public `ping?sitemap=` endpoints are deprecated (404/410) — dead ends; Search Console remains OAuth-gated.
+- Confirmed the client-IP rate-limit rule (60 GET/10s) explicitly exempts `cf.client.bot` — verified-bot crawlers pass (spoofed UAs are correctly throttled); calm-rate crawl of 60 sampled sitemap URLs all return 200. No WAF change needed.
+- Submitted a free directory listing for robopartpicker.com on robotics-startups.com (category: Robotics software and AI) — pending manual review (~90 days max), first real external listing.
+- Removed the stale static `public/sitemap.xml` (33,471 URLs, Aug 25) and `public/robots.txt`, and stopped `scripts/sync-public-seo.ts` from rewriting them. `robots.txt` and `sitemap.xml` are served dynamically by the Worker, so the static copies were dead weight that could silently shadow live crawl directives if a route ever changed. Verified after deploy: `/sitemap.xml` still returns all 42,231 URLs and `/robots.txt` the Worker's 202-byte policy.
+
 ### Fixed
+
+- Card project previews no longer keep the "Identity illustration" overlay on top of a real photo. Loaded-state was recorded against the absolutised thumbnail `src` but read back against the relative candidate URL, so `hasLoadedImage` never became true on cards and the placeholder stayed visible over every preview image. Both sides now key on the same value, with regression tests for the card thumbnail request and the overlay hand-off.
 
 - Added a public legal center with separate Privacy, Terms, Cookies and Storage, Acceptable Use, Marketplace Terms, AI Notice, Intellectual Property and Takedown, Accessibility, and Contact pages. Policies describe the deployed Cloudflare, Google OAuth, AI, analytics, robotics, quote, and marketplace boundaries; publish `support@robopartpicker.com`; and avoid inventing a legal entity, business address, jurisdiction, payment protections, or complete-compliance claim.
 

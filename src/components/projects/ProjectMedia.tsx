@@ -21,11 +21,27 @@ export function ProjectMedia({
   className,
   imageClassName = "",
 }: ProjectMediaProps) {
-  const candidates = selectProjectMediaCandidates(project, maxItems);
+  // Cards render a single primary image to avoid loading 4 multi-megabyte
+  // originals per preview card; detail pages show the full gallery.
+  const limit = mode === "card" ? 1 : maxItems;
+  const candidates = selectProjectMediaCandidates(project, limit);
   const [failedUrls, setFailedUrls] = useState<Set<string>>(() => new Set());
   const [loadedUrls, setLoadedUrls] = useState<Set<string>>(() => new Set());
   const active = candidates.filter((candidate) => !failedUrls.has(candidate.url));
-  const hasLoadedImage = active.some((candidate) => loadedUrls.has(candidate.url));
+  // Cards request the pre-generated downscaled thumbnail variant (?v=thumb)
+  // so previews download ~90% less instead of full-resolution originals.
+  const candidateSrc = (candidate: { url: string }) => {
+    if (mode !== "card") return candidate.url;
+    const url = new URL(candidate.url, window.location.origin);
+    if (url.pathname === "/api/v1/files/content") {
+      url.searchParams.set("v", "thumb");
+    }
+    return url.toString();
+  };
+  // Must compare against the same value the <img> actually loaded, otherwise
+  // card previews (whose src is absolutised above) never report a painted
+  // image and the identity illustration stays on top of the real photo.
+  const hasLoadedImage = active.some((candidate) => loadedUrls.has(candidateSrc(candidate)));
   const categoryLabel = project.robot_category
     ? ROBOT_CATEGORY_LABELS[project.robot_category]
     : "Robotics project";
@@ -60,23 +76,25 @@ export function ProjectMedia({
               : candidate.altText?.trim()
                 || (candidate.caption?.trim() ? `${project.name}: ${candidate.caption.trim()}` : null)
                 || `${project.name} source-backed project image`;
+            const src = candidateSrc(candidate);
             return (
               <img
-                key={`${candidate.id}:${candidate.url}`}
-                src={candidate.url}
+                key={`${candidate.id}:${src}`}
+                src={src}
                 alt={alt}
                 loading={mode === "detail" ? "eager" : "lazy"}
+                decoding="async"
                 fetchPriority={mode === "detail" && index === 0 ? "high" : "auto"}
                 className={`${layoutClass} h-full min-h-0 w-full object-cover transition-transform ${imageClassName}`}
                 onLoad={() => setLoadedUrls((current) => {
                   const next = new Set(current);
-                  next.add(candidate.url);
+                  next.add(src);
                   return next;
                 })}
                 onError={() => {
                   setLoadedUrls((loaded) => {
                     const next = new Set(loaded);
-                    next.delete(candidate.url);
+                    next.delete(src);
                     return next;
                   });
                   setFailedUrls((current) => {

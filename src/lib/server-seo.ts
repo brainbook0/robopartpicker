@@ -6,6 +6,12 @@ export type SeoDocument = {
   type: "website" | "article" | "product";
   robots: string;
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
+  /**
+   * Server-rendered HTML injected at the top of <body> so crawlers that do not
+   * execute JavaScript still see real page content (the app is a client-side
+   * SPA shell otherwise). React mounts over it for human visitors.
+   */
+  bodyHtml?: string;
 };
 
 export type SitemapEntry = { url: string; lastModified?: string | null };
@@ -29,6 +35,15 @@ export function injectSeoHtml(source: string, document: SeoDocument): string {
   if (document.structuredData) {
     const json = JSON.stringify(document.structuredData).replace(/</gu, "\\u003c");
     html = html.replace(/<\/head>/iu, `<script id="seo-structured-data" type="application/ld+json">${json}</script></head>`);
+  }
+  // Server-rendered body content for crawlers (no-JS). Injected immediately
+  // after <body> so it precedes the SPA root. A small inline script removes it
+  // as soon as the app has mounted, so human visitors only ever see the app
+  // while non-executing crawlers still get real indexable content.
+  html = html.replace(/<div\s+id=["']seo-prerender["'][\s\S]*?<\/div>\s*(?:<script\s+id=["']seo-prerender-cleanup["'][^>]*>[\s\S]*?<\/script>)?/giu, "");
+  if (document.bodyHtml) {
+    const cleanup = "<script id=\"seo-prerender-cleanup\">(function(){var p=document.getElementById('seo-prerender');if(!p)return;var n=0;var t=setInterval(function(){n++;var r=document.getElementById('root');if((r&&r.children.length>0)||n>100){clearInterval(t);if(p&&p.parentNode){p.parentNode.removeChild(p);}}},50);})();</script>";
+    html = html.replace(/<body([^>]*)>/iu, `<body$1><div id="seo-prerender">${document.bodyHtml}</div>${cleanup}`);
   }
   return html;
 }

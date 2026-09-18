@@ -2,7 +2,11 @@ import { canonicalBase, replaceBase } from "../src/lib/public-seo";
 
 async function syncPublicSeo(): Promise<string> {
   const base = canonicalBase(process.env);
-  const files = ["index.html", "public/robots.txt", "public/sitemap.xml"];
+  // Only the SPA shell is rewritten here. `robots.txt` and `sitemap.xml` are
+  // served dynamically by the Worker (worker/router.ts -> serveRobots /
+  // serveSitemap), so a static copy in public/ would be uploaded as a shadowing
+  // asset and could silently serve stale crawl directives if a route changes.
+  const files = ["index.html"];
   const { readFile, writeFile } = await import("node:fs/promises");
 
   for (const file of files) {

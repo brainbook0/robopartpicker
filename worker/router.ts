@@ -81,7 +81,39 @@ app.on(["GET", "HEAD"], "/.well-known/mcp.json", (c) => {
   });
 });
 
-app.on(["GET", "HEAD"], ["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp/private"], (c) => {
+app.on(["GET", "HEAD"], "/.well-known/mcp/server-card.json", (c) => {
+  const origin = new URL(c.req.url).origin;
+  const card = {
+    $schema: "https://smithery.ai/schemas/server-card.json",
+    name: "robopartpicker",
+    displayName: "RoboPartPicker",
+    description: "Public read-only robotics project, component and bill-of-materials data for AI agents. Search 2,445 source-linked robotics projects, inspect BOMs, compare components, and validate RPPS documents.",
+    version: "1.0.0",
+    homepage: `${origin}`,
+    documentation: `${origin}/developers`,
+    repository: `${origin}/developers`,
+    transport: { type: "streamable-http", url: `${origin}/mcp` },
+    endpoint: `${origin}/mcp`,
+    authentication: { type: "none", required: false },
+    capabilities: {
+      tools: [
+        { name: "search_projects", description: "Search open robotics projects by keyword, category or kind." },
+        { name: "get_project", description: "Fetch a robotics project with source, license, files and BOM summary." },
+        { name: "search_components", description: "Search the technical component catalog by name, category or maker." },
+        { name: "compare_components", description: "Compare two to four components; same category never implies verified drop-in compatibility." },
+        { name: "validate_rpps", description: "Validate a Robotics Project Package Specification (RPPS) document." },
+      ],
+    },
+    categories: ["robotics", "engineering", "hardware", "data", "developer-tools"],
+    license: "Public read-only data; project sources retain their own licenses.",
+    contact: "support@robopartpicker.com",
+  };
+  return new Response(c.req.method === "HEAD" ? null : JSON.stringify(card, null, 2), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300, stale-while-revalidate=300" },
+  });
+});
+
+app.on(["GET", "HEAD"], [".well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp/private"], (c) => {
   const body = c.req.method === "HEAD" ? null : JSON.stringify(privateMcpResourceMetadata(c.env));
   return new Response(body, {
     headers: {
@@ -95,7 +127,56 @@ app.on(["GET", "HEAD"], "/robots.txt", serveRobots);
 app.on(["GET", "HEAD"], "/sitemap.xml", serveSitemap);
 app.on(["GET", "HEAD"], "/feed.xml", serveProjectFeed);
 app.on(["GET", "HEAD"], "/llms.txt", serveLlmsText);
-app.on(["GET", "HEAD"], "/badges/project/:slug.svg", serveProjectBadge);
+app.on(["GET", "HEAD"], ["/openapi.json", "/.well-known/api-catalog"], (c) => {
+  const origin = new URL(c.req.url).origin;
+  const isCatalog = c.req.path.endsWith("api-catalog");
+  const body = isCatalog
+    ? {
+        linkset: [
+          {
+            anchor: `${origin}/api/v1`,
+            "service-desc": [{ href: `${origin}/openapi.json`, type: "application/vnd.oai.openapi+json" }],
+            "service-doc": [{ href: `${origin}/developers`, type: "text/html" }],
+            "service-meta": [{ href: `${origin}/.well-known/mcp.json`, type: "application/json" }],
+            status: [{ href: `${origin}/api/health`, type: "application/json" }],
+          },
+        ],
+      }
+    : {
+        openapi: "3.1.0",
+        info: {
+          title: "RoboPartPicker public API",
+          version: "1.0.0",
+          description: "Public read-only robotics project, component and bill-of-materials data. Observed prices are catalog estimates, not binding quotes.",
+          contact: { name: "RoboPartPicker", email: "support@robopartpicker.com" },
+          license: { name: "Public read-only data; upstream projects retain their own licenses." },
+        },
+        servers: [{ url: `${origin}/api` }],
+        paths: {
+          "/health": { get: { operationId: "health", summary: "Service health and enabled capabilities.", responses: { "200": { description: "Service status" } } } },
+          "/v1/projects": { get: { operationId: "listProjects", summary: "List or search robotics projects.", parameters: [
+            { name: "q", in: "query", schema: { type: "string" } }, { name: "limit", in: "query", schema: { type: "integer", maximum: 100 } },
+            { name: "page", in: "query", schema: { type: "integer" } }, { name: "kind", in: "query", schema: { type: "string", enum: ["physical_design", "commercial_showcase", "robotics_software"] } },
+            { name: "category", in: "query", schema: { type: "string" } }, { name: "sort", in: "query", schema: { type: "string" } } ],
+            responses: { "200": { description: "Project list with total and catalog stats" } } } },
+          "/v1/components": { get: { operationId: "listComponents", summary: "List or search technical components.", parameters: [
+            { name: "q", in: "query", schema: { type: "string" } }, { name: "category", in: "query", schema: { type: "string" } },
+            { name: "limit", in: "query", schema: { type: "integer", maximum: 100 } }, { name: "page", in: "query", schema: { type: "integer" } } ],
+            responses: { "200": { description: "Component list with total" } } } },
+          "/v1/boms": { get: { operationId: "listBoms", summary: "List public bills of materials.", responses: { "200": { description: "BOM list with line counts" } } } },
+          "/v1/marketplace": { get: { operationId: "listMarketplace", summary: "List public marketplace listings.", responses: { "200": { description: "Listing list" } } } },
+        },
+        "x-mcp": { endpoint: `${origin}/mcp`, discovery: `${origin}/.well-known/mcp.json`, serverCard: `${origin}/.well-known/mcp/server-card.json` },
+      };
+  return new Response(c.req.method === "HEAD" ? null : JSON.stringify(body, null, 2), {
+    headers: {
+      "Content-Type": isCatalog ? "application/linkset+json" : "application/json",
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+    },
+  });
+});
+
+app.on(["GET", "HEAD"], "/badges/project/:slug", serveProjectBadge);
 app.on(["GET", "HEAD"], "/queries", serveQueryIndex);
 app.on(["GET", "HEAD"], "/queries/:slug", serveQueryPage);
 app.on(["GET", "HEAD"], "/glossary", serveGlossaryIndex);

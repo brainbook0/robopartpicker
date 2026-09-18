@@ -88,6 +88,20 @@ projectRoutes.get("/projects", loadAuthSession, async (c) => {
   if (filters.priceMinMinor != null && filters.priceMaxMinor != null && filters.priceMinMinor > filters.priceMaxMinor) {
     throw new AppError(422, "VALIDATION_ERROR", "priceMin must not exceed priceMax.");
   }
+  // Public catalog lists are hot and expensive (a query over thousands of
+  // projects with per-row subqueries). Anonymous responses are cached in the
+  // edge cache namespace so repeat requests skip the D1 scan entirely.
+  // Authenticated responses are user-scoped and are never cached.
+  const edgeCache = (caches as CacheStorage & { default: Cache }).default;
+  const edgeCacheKey = new Request(c.req.url, { method: "GET" });
+  if (!userId) {
+    const cached = await edgeCache.match(edgeCacheKey);
+    if (cached) {
+      const hit = new Response(cached.body, cached);
+      hit.headers.set("x-rpp-cache", "HIT");
+      return hit;
+    }
+  }
   const result = await new ProjectsRepository(c.env.DB).listVisible(userId, {
     q: c.req.query("q")?.trim().slice(0, 100) || undefined,
     mine: c.req.query("mine") === "true",
@@ -99,7 +113,20 @@ projectRoutes.get("/projects", loadAuthSession, async (c) => {
     limit,
     offset: (page - 1) * limit,
   });
-  return c.json({ ...result, page, limit, pages: Math.max(1, Math.ceil(result.total / limit)) });
+  const payload = JSON.stringify({ ...result, page, limit, pages: Math.max(1, Math.ceil(result.total / limit)) });
+  if (!userId) {
+    const response = new Response(payload, {
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "public, max-age=300, stale-while-revalidate=3600",
+        "CDN-Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
+      },
+    });
+    try { await edgeCache.put(edgeCacheKey, response.clone()); } catch { /* best-effort */ }
+    return response;
+  }
+  c.header("cache-control", "private, no-store");
+  return c.body(payload, 200, { "content-type": "application/json; charset=utf-8" });
 });
 
 projectRoutes.post("/projects/import/analyze", loadAuthSession, async (c) => {

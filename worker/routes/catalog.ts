@@ -27,6 +27,10 @@ catalogRoutes.get("/components", async (c) => {
     limit,
     offset: (page - 1) * limit,
   });
+  // Public component lists are hot and near-static; cache at the edge so
+  // repeat visitors don't wait on a D1 scan per request.
+  c.header("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+  c.header("CDN-Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
   return c.json({
     ...result,
     page,

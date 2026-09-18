@@ -53,6 +53,12 @@ marketplaceRoutes.get("/marketplace", loadAuthSession, async (c) => {
     sort: sort as typeof listingSorts[number],
     status: c.req.query("status"), mine: c.req.query("mine") === "true", minPrice, maxPrice, limit, offset: (page - 1) * limit,
   });
+  // Public marketplace listings are hot and near-static. Cache anonymous,
+  // non-user-scoped list responses at the edge for 5 minutes.
+  if (!userId && c.req.query("mine") !== "true") {
+    c.header("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+    c.header("CDN-Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
+  }
   return c.json({ ...result, page, limit, pages: Math.max(1, Math.ceil(result.total / limit)), dataMode: result.items.some((item) => item.isDemo) ? "demo" : "live" });
 });
 
