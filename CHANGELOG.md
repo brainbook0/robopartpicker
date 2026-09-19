@@ -17,6 +17,7 @@
 
 ### Fixed
 
+- Component pages now carry their source-recorded specifications and published files in the server-rendered HTML. They were only 57 words of body text because the prerender emitted the component's identity but not the specifications it has on record (60,458 spec rows across 33,344 components) or its published files (6,534 components). Catalog bookkeeping keys (`category`, `measurement_units`, `manufacturer_slug`, `source`) are excluded rather than padded in, so the table holds specifications a reader can use. The human-facing page already showed this data; only the crawler view was thin.
 - Replaced the dead Discord invite. `discord.gg/robopartpicker` returned Discord's "Unknown Invite" (code 10006) while three live surfaces advertised it: the site-wide footer, the homepage "Join the Discord to shape what the platform becomes" call to action, and the community page button. The real server invite now backs all three, verified against Discord's API before shipping (guild `Robopartpicker`, channel `#general`, non-expiring), and `src/lib/site-config.ts` documents that check for future changes. The footer's GitHub link also pointed at a 404ing organisation; it now points at the published repository.
 - A supplier-relationship record carried a third-party personal email address as its contact channel. It is now the project's public page, so no personal address is published and the record still passes the pipeline validator.
 

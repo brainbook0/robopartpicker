@@ -195,6 +195,29 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
       const usageSection = usage.results.length
         ? `<h2>Used in these robotics projects</h2><ul>${usage.results.map((p) => `<li><a href="${base}/projects/${encodeURIComponent(p.slug)}">${esc(p.name)}</a></li>`).join("")}</ul>`
         : "";
+      // Source-recorded specifications. Catalog bookkeeping keys (category, units, provenance) are not
+      // specifications a reader can use, so they are excluded rather than padded into the table.
+      const specRows = await db.prepare(`SELECT DISTINCT s.spec_key, s.label, s.value_text, s.value_number, s.unit
+        FROM component_specs s JOIN component_revisions r ON r.id = s.component_revision_id
+        WHERE r.component_id = ?1 AND s.spec_key NOT IN ('category', 'measurement_units', 'manufacturer_slug', 'source')
+          AND (s.value_text IS NOT NULL AND TRIM(s.value_text) <> '')
+        ORDER BY s.spec_key LIMIT 40`).bind(row.id).all<{
+          spec_key: string; label: string | null; value_text: string | null; value_number: number | null; unit: string | null;
+        }>();
+      const specSection = specRows.results.length
+        ? `<h2>Source specifications (${specRows.results.length})</h2><table><tbody>${specRows.results.map((s) => {
+            const label = s.label || titleCase(s.spec_key);
+            const value = `${esc(String(s.value_text ?? ""))}${s.unit ? ` ${esc(s.unit)}` : ""}`.trim();
+            return `<tr><th>${esc(label)}</th><td>${value}</td></tr>`;
+          }).join("")}</tbody></table>`
+        : "<h2>Source specifications</h2><p>No structured source specifications have been published for this component yet.</p>";
+      const fileRows = await db.prepare(`SELECT f.id, f.original_name, cf.purpose FROM component_files cf JOIN files f ON f.id = cf.file_id
+        WHERE cf.component_id = ?1 AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL
+        ORDER BY cf.sort_order LIMIT 20`).bind(row.id).all<{ id: string; original_name: string | null; purpose: string | null }>();
+      const fileSection = fileRows.results.length
+        ? `<h2>Published files (${fileRows.results.length})</h2><ul>${fileRows.results.map((f) => `<li><a href="${base}${fileContentUrl(f.id)}">${esc(f.original_name || `${row.name} file`)}</a>${f.purpose ? ` (${esc(f.purpose)})` : ""}</li>`).join("")}</ul>`
+        : "";
+      const bodyHtml = `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
       return {
         title: conciseTitle(`${row.name}${row.maker ? ` by ${row.maker}` : ""} | RoboPartPicker`),
         description,
@@ -202,8 +225,8 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "product",
         robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${usageSection}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
-        structuredData: compact({ "@context": "https://schema.org", "@type": "Product", name: row.name, description, url: canonicalUrl, mpn: row.manufacturer_part_number, manufacturer: row.maker ? { "@type": "Organization", name: row.maker } : undefined, category: row.category, offers: offer }),
+        bodyHtml,
+        structuredData: compact({ "@context": "https://schema.org", "@type": "Product", name: row.name, description, url: canonicalUrl, mpn: row.manufacturer_part_number, manufacturer: row.maker ? { "@type": "Organization", name: row.maker } : undefined, category: row.category, offers: offer, additionalProperty: specRows.results.slice(0, 12).map((s) => ({ "@type": "PropertyValue", name: s.label || titleCase(s.spec_key), value: `${s.value_text ?? ""}${s.unit ? ` ${s.unit}` : ""}`.trim() })) }),
       };
     }
   }
