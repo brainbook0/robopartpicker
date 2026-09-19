@@ -144,6 +144,16 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
       const bomSection = lineItems
         ? `<h2>Bill of materials (${Number(row.bom_lines).toLocaleString()} lines)</h2><ul>${lineItems}</ul>`
         : "<h2>Bill of materials</h2><p>No BOM lines have been resolved for this project yet.</p>";
+      // Mirrors the "Related robotics projects" list the client renders (same kind and category), so the
+      // crawler sees the same internal links a visitor does instead of a page that links nowhere.
+      const related = await db.prepare(`SELECT p.slug, p.name FROM projects p
+        WHERE p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'
+          AND p.id != ?1 AND p.project_kind = ?2 AND (?3 = '' OR p.robot_category = ?3)
+        ORDER BY p.github_stars DESC, p.updated_at DESC LIMIT 6`)
+        .bind(row.id, row.project_kind, row.robot_category ?? "").all<{ slug: string; name: string }>();
+      const relatedSection = related.results.length
+        ? `<h2>Related robotics projects</h2><ul>${related.results.map((p) => `<li><a href="${base}/projects/${encodeURIComponent(p.slug)}">${esc(p.name)}</a></li>`).join("")}</ul>`
+        : "";
       return {
         title: conciseTitle(`${row.name}: BOM, files and build data | RoboPartPicker`),
         description,
@@ -151,7 +161,7 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "article",
         robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}<h2>Project facts</h2><ul>${facts}</ul>${bomSection}<p><a href="${base}/projects">Browse all robotics projects</a> · <a href="${base}/boms/${encodeURIComponent(slug)}-bom">Full bill of materials</a> · <a href="${base}/community">Community evidence</a></p></article>`,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}<h2>Project facts</h2><ul>${facts}</ul>${bomSection}${relatedSection}<p><a href="${base}/projects">Browse all robotics projects</a> · <a href="${base}/boms/${encodeURIComponent(slug)}-bom">Full bill of materials</a> · <a href="${base}/community">Community evidence</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "SoftwareSourceCode", name: row.name, description, url: canonicalUrl, codeRepository: row.repository_url, license: row.license_spdx, programmingLanguage: "Robotics", interactionStatistic: row.github_stars ? { "@type": "InteractionCounter", interactionType: "https://schema.org/LikeAction", userInteractionCount: row.github_stars } : undefined, additionalProperty: { "@type": "PropertyValue", name: "BOM lines", value: Number(row.bom_lines) } }),
       };
     }
