@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { buildSitemapXml, injectSeoHtml, type SeoDocument, type SitemapEntry } from "../../src/lib/server-seo";
 import { LEGAL_DOCUMENT_IDS, LEGAL_DOCUMENTS } from "../../src/lib/legal-documents";
 import { QUERIES, QUERIES_BY_VOLUME } from "../../src/lib/queries-data";
+import { QUERY_COVERAGE, QUERY_INDEXABLE_SLUGS } from "../../src/lib/query-coverage";
 import { GLOSSARY_TERMS } from "../../src/lib/glossary-data";
 import { COMPARISONS } from "../../src/lib/comparisons-data";
 import type { AppBindings, Env } from "../env";
@@ -35,7 +36,11 @@ export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
     "", "/projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/finder/actuator", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index",
     ...LEGAL_DOCUMENT_IDS.map((id) => LEGAL_DOCUMENTS[id].path),
   ].map((path) => ({ url: `${base}${path}` }));
-  entries.push(...QUERIES.map((query) => ({ url: `${base}/queries/${query.slug}` })));
+  // Only the query pages the catalog can actually answer are advertised. The rest
+  // are served noindex, so listing them here would just be a duplicate-content
+  // invitation with no unique value behind it.
+  const indexable = new Set(QUERY_INDEXABLE_SLUGS);
+  entries.push(...QUERIES.filter((query) => indexable.has(query.slug)).map((query) => ({ url: `${base}/queries/${query.slug}` })));
   entries.push(...COMPARISONS.map((comp) => ({ url: `${base}/compared-to/${comp.slug}` })));
   entries.push(...categories.map((row) => ({ url: `${base}/parts/${encodeURIComponent(row.category)}`, lastModified: row.updated_at })));
   entries.push(...projects.map((row) => ({ url: `${base}/projects/${encodeURIComponent(row.slug)}`, lastModified: row.updated_at })));
@@ -581,10 +586,10 @@ function htmlAttribute(value: string): string {
   return value.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/"/gu, "&quot;").replace(/'/gu, "&#39;");
 }
 
-function queryShell(title: string, description: string, canonical: string, body: string, structuredJson: string): string {
+function queryShell(title: string, description: string, canonical: string, body: string, structuredJson: string, robots = "index,follow,max-image-preview:large"): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${htmlAttribute(title)}</title><meta name="description" content="${htmlAttribute(description)}" />
-<meta name="robots" content="index,follow,max-image-preview:large" />
+<meta name="robots" content="${htmlAttribute(robots)}" />
 <link rel="canonical" href="${htmlAttribute(canonical)}" />
 <meta property="og:type" content="article" /><meta property="og:title" content="${htmlAttribute(title)}" />
 <meta property="og:description" content="${htmlAttribute(description)}" /><meta property="og:url" content="${htmlAttribute(canonical)}" />
@@ -596,7 +601,9 @@ function queryShell(title: string, description: string, canonical: string, body:
 
 export function serveQueryIndex(c: Context<AppBindings>): Response {
   const base = publicBase(c.env, c.req.url);
-  const cards = QUERIES_BY_VOLUME.slice(0, 250).map((q) =>
+  // Only list queries the catalog can actually answer; the rest are served
+  // noindex and would be a dead end for a human visitor too.
+  const cards = QUERIES_BY_VOLUME.filter((q) => QUERY_COVERAGE[q.slug]?.ix).slice(0, 300).map((q) =>
     `<li><a href="/queries/${q.slug}">${htmlAttribute(q.kw)}</a></li>`).join("");
   const body = `<h1>How to source and build open robotics projects</h1>
 <p class="meta">Answers to common robotics sourcing and BOM questions, generated from live search data. Compare parts, plan builds and see what actually blocks a build.</p>
@@ -616,6 +623,11 @@ export function serveQueryPage(c: Context<AppBindings>): Response {
   if (!query) return new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
   const base = publicBase(c.env, c.req.url);
   const canonical = `${base}/queries/${encodeURIComponent(query.slug)}`;
+  const coverage = QUERY_COVERAGE[query.slug];
+  // A page is only worth indexing when the catalog can actually answer it.
+  // Without backing the body would be the same template for every keyword, which
+  // is scaled content rather than a useful page, so it is served noindex.
+  const indexable = Boolean(coverage?.ix);
   const faq = query.faqs.map(([question, answer]) => ({
     "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer },
   }));
@@ -625,11 +637,30 @@ export function serveQueryPage(c: Context<AppBindings>): Response {
   };
   const faqHtml = query.faqs.map(([question, answer]) =>
     `<h2>${htmlAttribute(question)}</h2><p>${htmlAttribute(answer)}</p>`).join("");
+
+  const components = coverage?.ex ?? [];
+  const projects = coverage?.px ?? [];
+  const matchesHtml = indexable
+    ? `<h2>What the catalog actually has for this query</h2>
+<p>${Number(coverage?.c ?? 0).toLocaleString()} component${(coverage?.c ?? 0) === 1 ? "" : "s"} and ${Number(coverage?.p ?? 0).toLocaleString()} published project${(coverage?.p ?? 0) === 1 ? "" : "s"} in the live catalog match it.</p>
+${components.length ? `<ul>${components.map((e) => `<li><a href="/parts/${encodeURIComponent(e.t ?? "unknown")}/${encodeURIComponent(e.s)}">${htmlAttribute(e.n)}</a></li>`).join("")}</ul>` : ""}
+${projects.length ? `<h3>Projects that use matching parts</h3><ul>${projects.map((p) => `<li><a href="/projects/${encodeURIComponent(p.s)}">${htmlAttribute(p.n)}</a></li>`).join("")}</ul>` : ""}
+<p class="meta">Counts come from the live catalog and change as projects are indexed. Prices shown elsewhere on RoboPartPicker are observed catalog data, not quotes.</p>`
+    : `<p class="meta">The catalog does not have parts that match this query yet, so this page is not offered to search engines. <a href="/projects">Browse robotics projects</a> \u00b7 <a href="/queries">queries the catalog can answer</a>.</p>`;
+
   const body = `<h1>${htmlAttribute(query.kw)}</h1>
 <p class="meta">Robotics sourcing guide \u00b7 search volume ${Number(query.vol).toLocaleString()} \u00b7 <a href="/queries">more sourcing queries</a></p>
+${matchesHtml}
 ${query.body}
 <div class="body"><h2>Related questions</h2>${faqHtml}</div>`;
-  const html = queryShell(query.title, query.desc, canonical, body, JSON.stringify(faqSchema));
+  const html = queryShell(
+    query.title,
+    query.desc,
+    canonical,
+    body,
+    JSON.stringify(indexable ? faqSchema : { "@context": "https://schema.org", "@type": "WebPage", name: query.kw, url: canonical }),
+    indexable ? "index,follow,max-image-preview:large" : "noindex,follow",
+  );
   return new Response(c.req.method === "HEAD" ? null : html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": QUERY_CACHE_TTL } });
 }
 
