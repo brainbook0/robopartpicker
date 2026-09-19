@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, Bot, Boxes, GitFork, Layers3, MessageCircle, MessageSquare, Package, PlugZap, ShoppingBag, Truck } from "lucide-react";
+import { ArrowRight, Bot, Boxes, GitFork, Github, Layers3, MessageSquare, Package, PlugZap, ShoppingBag, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useComponents } from "@/lib/api/catalog";
 import { useMarketplace } from "@/lib/api/marketplace";
@@ -11,7 +11,7 @@ import { BuildWorkspacePreview } from "@/components/home/BuildWorkspacePreview";
 import { FeaturedProjectScroller } from "@/components/home/FeaturedProjectScroller";
 import { ProductStatusBadge } from "@/components/common/ProductStatusBadge";
 import { PRODUCT_STATUSES, type ProductStatus } from "@/lib/product-status";
-import { DISCORD_INVITE_URL, SOCIAL_LINKS } from "@/lib/site-config";
+import { COMMUNITY_URL, SOCIAL_LINKS } from "@/lib/site-config";
 
 const workflow = [
   { to: "/projects", icon: Package, title: "1. Discover a design", text: "Browse source-linked open robotics projects and clearly labeled commercial showcases." },
@@ -138,11 +138,11 @@ function CommunityCTA() {
           <p className="mt-3 text-xs leading-6 text-muted-foreground">
             RoboPartPicker is early. Supplier lists and quotes are still being verified. If you build robots,
             maintain an open-source design, or want to help source and validate BOMs, this is the ground floor.
-            Join the Discord to shape what the platform becomes.
+            Corrections and issues are what shape what the platform becomes.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className="btn-primary inline-flex items-center gap-1.5">
-              <MessageCircle className="h-3.5 w-3.5" /> Join the Discord
+            <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="btn-primary inline-flex items-center gap-1.5">
+              <Github className="h-3.5 w-3.5" /> Contribute on GitHub
             </a>
             <Link to="/community" className="btn-ghost inline-flex items-center gap-1.5">
               <MessageSquare className="h-3.5 w-3.5" /> Community forum

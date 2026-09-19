@@ -107,8 +107,8 @@
       "approval_state": "not_requested",
       "do_not_send": true,
       "contact_channel": {
-        "type": "business-email",
-        "value": "[redacted-personal-email]",
+        "type": "product-page",
+        "value": "https://github.com/liyiteng/alohamini",
         "public_source_url": "https://github.com/liyiteng/alohamini/blob/17c6a98d79881a45ab869c1f392ed89c0723a298/README.md"
       },
       "evidence": [

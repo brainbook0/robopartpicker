@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { MessageCircle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import { SUPPORT_EMAIL } from "@/lib/legal-documents";
-import { DISCORD_INVITE_URL, SOCIAL_LINKS } from "@/lib/site-config";
+import { SOCIAL_LINKS } from "@/lib/site-config";
 
 export const SiteFooter = () => (
   <footer className="mt-16 border-t border-border bg-surface">
@@ -16,10 +15,6 @@ export const SiteFooter = () => (
           Discover robotics designs, compile their BOMs, source complete builds, and publish reproducible derivatives.
         </p>
         <div className="mt-3 flex items-center gap-3">
-          <a href={SOCIAL_LINKS.discord} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary" aria-label="Join the RoboPartPicker Discord">
-            <MessageCircle className="h-3.5 w-3.5" /> Discord
-          </a>
-          <span className="text-border" aria-hidden="true">·</span>
           <a href={SOCIAL_LINKS.github} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary" aria-label="RoboPartPicker on GitHub">
             GitHub
           </a>
