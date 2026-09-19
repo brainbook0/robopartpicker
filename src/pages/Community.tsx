@@ -17,7 +17,7 @@ import {
   filterThreads, sortThreads, hasStructured, hasLinked,
   THREAD_SORTS, type ThreadSort,
 } from "@/components/community/threadFilters";
-import { COMMUNITY_URL } from "@/lib/site-config";
+import { DISCORD_INVITE_URL } from "@/lib/site-config";
 
 export default function Community() {
   const { user } = useAuth();
@@ -255,7 +255,7 @@ function CommunityBetaGuide() {
     { icon: Wrench, title: "Integration note", text: "Document the exact components, interfaces, firmware revision, failure mode, and verified workaround." },
     { icon: BookOpen, title: "BOM correction", text: "Link the source row or CAD object, explain the incorrect line, and propose a quantity or identity correction." },
   ];
-  return <div className="p-5"><div className="flex items-center gap-2"><span className="pill pill-yellow">beta</span><h2 className="font-semibold">No authentic discussions have been published yet</h2></div><p className="mt-2 text-xs leading-5 text-muted-foreground">The community is reserved for source-linked engineering evidence. RoboPartPicker will not seed fake posts or contributor counts.</p><div className="mt-4 grid gap-2 md:grid-cols-3">{cards.map(({ icon: Icon, title, text }) => <div key={title} className="rounded border border-border bg-background p-3"><Icon className="h-4 w-4 text-primary" /><div className="mt-2 text-xs font-semibold">{title}</div><p className="mt-1 text-[11px] leading-5 text-muted-foreground">{text}</p></div>)}</div><div className="mt-4 flex flex-wrap gap-2"><Link to="/community/new" className="btn-primary inline-flex"><Plus className="h-3.5 w-3.5" /> Publish the first evidence-backed thread</Link><a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost inline-flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Report a correction</a></div></div>;
+  return <div className="p-5"><div className="flex items-center gap-2"><span className="pill pill-yellow">beta</span><h2 className="font-semibold">No authentic discussions have been published yet</h2></div><p className="mt-2 text-xs leading-5 text-muted-foreground">The community is reserved for source-linked engineering evidence. RoboPartPicker will not seed fake posts or contributor counts.</p><div className="mt-4 grid gap-2 md:grid-cols-3">{cards.map(({ icon: Icon, title, text }) => <div key={title} className="rounded border border-border bg-background p-3"><Icon className="h-4 w-4 text-primary" /><div className="mt-2 text-xs font-semibold">{title}</div><p className="mt-1 text-[11px] leading-5 text-muted-foreground">{text}</p></div>)}</div><div className="mt-4 flex flex-wrap gap-2"><Link to="/community/new" className="btn-primary inline-flex"><Plus className="h-3.5 w-3.5" /> Publish the first evidence-backed thread</Link><a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost inline-flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Join the Discord</a></div></div>;
 }
 
 function Stat({ label, v, sub }: { label: string; v: number; sub?: string }) {

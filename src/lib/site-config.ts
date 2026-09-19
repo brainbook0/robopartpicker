@@ -1,16 +1,20 @@
 /**
  * Centralized site configuration for external links and social presence.
  *
- * There is no Discord server. The old `discord.gg/robopartpicker` invite returned
- * "Unknown Invite" from Discord's API while three live surfaces advertised it, so it
- * was removed rather than left pointing at a community that does not exist. When a
- * real server exists, add its invite here and point the community call to actions at it.
+ * DISCORD_INVITE_URL points at the real RoboPartPicker server. It was previously
+ * `discord.gg/robopartpicker`, which Discord's API rejected as an unknown invite while
+ * three live surfaces advertised it. Verify any replacement resolves before shipping it:
+ * https://discord.com/api/v10/invites/<code>
  */
+export const DISCORD_INVITE_URL = "https://discord.gg/b3HkNUFMzW";
+
+/** Public issue tracker, for corrections and catalog fixes. */
 export const COMMUNITY_URL = "https://github.com/brainbook0/robopartpicker/issues";
 
 export const SUPPORT_EMAIL = "support@robopartpicker.com";
 
 export const SOCIAL_LINKS = {
+  discord: DISCORD_INVITE_URL,
   github: "https://github.com/brainbook0/robopartpicker",
   rss: "/feed.xml",
 } as const;
