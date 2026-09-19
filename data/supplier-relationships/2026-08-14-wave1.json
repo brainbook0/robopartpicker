@@ -13,9 +13,19 @@
       "organization_name": "Shenzhen Feetech RC Model Co., Ltd.",
       "relationship_type": "manufacturer",
       "priority": "high",
-      "regions": ["global", "China"],
-      "products": ["STS-3215-C018 serial bus servo", "STS-3095-C002 high-torque servo", "3-pin servo extension cables"],
-      "project_slugs": ["alohamini", "therobotstudio-so-arm100"],
+      "regions": [
+        "global",
+        "China"
+      ],
+      "products": [
+        "STS-3215-C018 serial bus servo",
+        "STS-3095-C002 high-torque servo",
+        "3-pin servo extension cables"
+      ],
+      "project_slugs": [
+        "alohamini",
+        "therobotstudio-so-arm100"
+      ],
       "status": "research_ready",
       "approval_state": "not_requested",
       "do_not_send": true,
@@ -44,9 +54,17 @@
       "organization_name": "Waveshare",
       "relationship_type": "manufacturer",
       "priority": "high",
-      "regions": ["global", "China"],
-      "products": ["Bus Servo Adapter (A)"],
-      "project_slugs": ["alohamini", "therobotstudio-so-arm100"],
+      "regions": [
+        "global",
+        "China"
+      ],
+      "products": [
+        "Bus Servo Adapter (A)"
+      ],
+      "project_slugs": [
+        "alohamini",
+        "therobotstudio-so-arm100"
+      ],
       "status": "research_ready",
       "approval_state": "not_requested",
       "do_not_send": true,
@@ -74,15 +92,23 @@
       "organization_name": "AlohaMini official project store",
       "relationship_type": "project-vendor",
       "priority": "high",
-      "regions": ["China", "global-community"],
-      "products": ["AlohaMini2", "AlohaMini2 Pro"],
-      "project_slugs": ["alohamini"],
+      "regions": [
+        "China",
+        "global-community"
+      ],
+      "products": [
+        "AlohaMini2",
+        "AlohaMini2 Pro"
+      ],
+      "project_slugs": [
+        "alohamini"
+      ],
       "status": "research_ready",
       "approval_state": "not_requested",
       "do_not_send": true,
       "contact_channel": {
         "type": "business-email",
-        "value": "liyiteng+github@gmail.com",
+        "value": "[redacted-personal-email]",
         "public_source_url": "https://github.com/liyiteng/alohamini/blob/17c6a98d79881a45ab869c1f392ed89c0723a298/README.md"
       },
       "evidence": [
@@ -100,9 +126,17 @@
       "organization_name": "Robonine",
       "relationship_type": "kit-vendor",
       "priority": "high",
-      "regions": ["international"],
-      "products": ["SO-ARM101 parts kit", "SO-ARM101 complete kit", "SO-ARM101 learning bundle"],
-      "project_slugs": ["therobotstudio-so-arm100"],
+      "regions": [
+        "international"
+      ],
+      "products": [
+        "SO-ARM101 parts kit",
+        "SO-ARM101 complete kit",
+        "SO-ARM101 learning bundle"
+      ],
+      "project_slugs": [
+        "therobotstudio-so-arm100"
+      ],
       "status": "research_ready",
       "approval_state": "not_requested",
       "do_not_send": true,
@@ -130,9 +164,18 @@
       "organization_name": "Seeed Studio",
       "relationship_type": "kit-vendor",
       "priority": "high",
-      "regions": ["international", "China", "Japan"],
-      "products": ["SO-ARM100 low-cost AI arm kit", "SO-ARM101-compatible printed kit"],
-      "project_slugs": ["therobotstudio-so-arm100"],
+      "regions": [
+        "international",
+        "China",
+        "Japan"
+      ],
+      "products": [
+        "SO-ARM100 low-cost AI arm kit",
+        "SO-ARM101-compatible printed kit"
+      ],
+      "project_slugs": [
+        "therobotstudio-so-arm100"
+      ],
       "status": "research_ready",
       "approval_state": "not_requested",
       "do_not_send": true,
@@ -156,9 +199,17 @@
       "organization_name": "ForgeMotion Labs",
       "relationship_type": "kit-vendor",
       "priority": "medium",
-      "regions": ["United States"],
-      "products": ["SO-ARM101 printed frame kit", "SO-ARM101 electronics kit", "SO-ARM101 complete arm kit"],
-      "project_slugs": ["therobotstudio-so-arm100"],
+      "regions": [
+        "United States"
+      ],
+      "products": [
+        "SO-ARM101 printed frame kit",
+        "SO-ARM101 electronics kit",
+        "SO-ARM101 complete arm kit"
+      ],
+      "project_slugs": [
+        "therobotstudio-so-arm100"
+      ],
       "status": "research_ready",
       "approval_state": "not_requested",
       "do_not_send": true,
@@ -182,9 +233,17 @@
       "organization_name": "PartaBot",
       "relationship_type": "kit-vendor",
       "priority": "medium",
-      "regions": ["United States"],
-      "products": ["assembled SO-ARM100/SO-ARM101 systems", "LeKiwi", "Koch robots"],
-      "project_slugs": ["therobotstudio-so-arm100"],
+      "regions": [
+        "United States"
+      ],
+      "products": [
+        "assembled SO-ARM100/SO-ARM101 systems",
+        "LeKiwi",
+        "Koch robots"
+      ],
+      "project_slugs": [
+        "therobotstudio-so-arm100"
+      ],
       "status": "research_ready",
       "approval_state": "not_requested",
       "do_not_send": true,

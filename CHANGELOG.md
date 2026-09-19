@@ -53,7 +53,7 @@
 
 - Rebuilt the project header so identity and actions occupy a full-width row above the media. The second row pairs a stable 4:3 source image with a height-filling evidence summary, preventing short descriptions and portrait assets from leaving a blank column beside each other. The surface stacks full-width on mobile.
 
-- Added source-cited AI description generation with immutable model, prompt, voice-profile and source fingerprints. Generated prose is third-person and evidence-only, follows Luca's direct builder cadence, and is rejected for unknown citations, unsupported numbers, first-person review claims, em/en dashes, semicolons and common AI filler before publication.
+- Added source-cited AI description generation with immutable model, prompt, voice-profile and source fingerprints. Generated prose is third-person and evidence-only, follows the project's direct builder cadence, and is rejected for unknown citations, unsupported numbers, first-person review claims, em/en dashes, semicolons and common AI filler before publication.
 
 - Added private-evidence open-source project claims with moderator-only evidence streaming, self-review denial, stale-project protection, audited decisions and atomic edit-ownership transfer. Evidence files, references and moderator notes remain outside public DTOs.
 
