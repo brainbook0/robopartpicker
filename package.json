@@ -3,6 +3,25 @@
   "private": true,
   "version": "0.7.0",
   "type": "module",
+  "description": "Open robotics project discovery, bill-of-materials compilation and parts sourcing. Live at robopartpicker.com.",
+  "homepage": "https://robopartpicker.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brainbook0/robopartpicker.git"
+  },
+  "keywords": [
+    "robotics",
+    "bill-of-materials",
+    "bom",
+    "open-source-hardware",
+    "parts-catalog",
+    "mcp",
+    "model-context-protocol",
+    "cloudflare-workers",
+    "d1",
+    "typescript",
+    "react"
+  ],
   "scripts": {
     "dev": "tsx scripts/sync-public-seo.ts && vite dev",
     "build": "cross-env CLOUDFLARE_ENV=production sh -c 'tsx scripts/sync-public-seo.ts && vite build'",

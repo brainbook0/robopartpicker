@@ -49,5 +49,12 @@ REPORT_*.md
 data/offer-source/
 .hermes-handoff.md
 
+# Local pipeline corpora and QA artifacts. Deliberately untracked: the ingestion
+# harvests contain third-party page text and large generated JSONL, and the QA
+# output is regenerable. Kept on disk for the operator scripts that read them.
+.ingest/
+dogfood-output/
+archive/
+
 __pycache__/
 *.pyc
