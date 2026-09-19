@@ -171,7 +171,7 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
   if (partMatch && partMatch[1] !== "compare") {
     const category = safeDecode(partMatch[1]);
     const slug = safeDecode(partMatch[2]);
-    const row = await db.prepare(`SELECT c.id, c.name, c.summary, c.category, c.manufacturer_part_number, c.source_url,
+    const row = await db.prepare(`SELECT c.id, c.name, c.summary, c.category, c.manufacturer_id, c.manufacturer_part_number, c.source_url,
         c.updated_at, m.name AS maker,
         (SELECT f.id FROM component_files cf JOIN files f ON f.id = cf.file_id
           WHERE cf.component_id = c.id AND cf.purpose = 'image' AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL
@@ -180,7 +180,7 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         (SELECT so.currency FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0 ORDER BY so.unit_price_minor LIMIT 1) AS currency
       FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
       WHERE c.slug = ?1 AND c.category = ?2 AND c.deleted_at IS NULL AND c.is_demo = 0`).bind(slug, category).first<{
-        id: string; name: string; summary: string | null; category: string; manufacturer_part_number: string | null; source_url: string | null;
+        id: string; name: string; summary: string | null; category: string; manufacturer_id: string | null; manufacturer_part_number: string | null; source_url: string | null;
         updated_at: string; maker: string | null; image_file_id: string | null; price_minor: number | null; currency: string | null;
       }>();
     if (row) {
@@ -227,7 +227,18 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
       const fileSection = fileRows.results.length
         ? `<h2>Published files (${fileRows.results.length})</h2><ul>${fileRows.results.map((f) => `<li><a href="${base}${fileContentUrl(f.id)}">${esc(f.original_name || `${row.name} file`)}</a>${f.purpose ? ` (${esc(f.purpose)})` : ""}</li>`).join("")}</ul>`
         : "";
-      const bodyHtml = `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
+      // Crawlable sibling links. Deliberately the cheap same-category lookup rather than the client's
+      // scored alternatives CTE: this runs for every one of the 34,760 component pages a crawler may
+      // request, and the expensive query would multiply D1 work on the busiest prerender path.
+      const siblingRows = await db.prepare(`SELECT c.slug, c.name, c.category, m.name AS maker
+        FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
+        WHERE c.category = ?1 AND c.id != ?2 AND c.deleted_at IS NULL AND c.is_demo = 0
+        ORDER BY CASE WHEN c.manufacturer_id = ?3 THEN 0 ELSE 1 END, c.name COLLATE NOCASE LIMIT 6`)
+        .bind(row.category, row.id, row.manufacturer_id ?? "").all<{ slug: string; name: string; category: string; maker: string | null }>();
+      const siblingSection = siblingRows.results.length
+        ? `<h2>Related components in ${esc(row.category)}</h2><ul>${siblingRows.results.map((c) => `<li><a href="${base}/parts/${encodeURIComponent(c.category)}/${encodeURIComponent(c.slug)}">${esc(c.name)}</a>${c.maker ? ` — ${esc(c.maker)}` : ""}</li>`).join("")}</ul>`
+        : "";
+      const bodyHtml = `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}${siblingSection}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
       return {
         title: conciseTitle(`${row.name}${row.maker ? ` by ${row.maker}` : ""} | RoboPartPicker`),
         description,
