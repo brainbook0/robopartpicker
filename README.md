@@ -10,7 +10,6 @@ Source-linked robotics project discovery, bill-of-materials compilation and part
 with missing evidence kept visible instead of guessed.
 
 [![Live site](https://img.shields.io/badge/live-robopartpicker.com-ffd000?style=flat-square)](https://robopartpicker.com)
-[![CI](https://github.com/brainbook0/robopartpicker/actions/workflows/ci.yml/badge.svg)](https://github.com/brainbook0/robopartpicker/actions/workflows/ci.yml)
 [![MCP registry](https://img.shields.io/badge/MCP-com.robopartpicker%2Frobopartpicker-4a5568?style=flat-square)](https://registry.modelcontextprotocol.io/v0/servers?search=com.robopartpicker)
 [![Runtime](https://img.shields.io/badge/runtime-Cloudflare%20Workers%20%C2%B7%20D1%20%C2%B7%20R2-f38020?style=flat-square)](https://workers.cloudflare.com/)
 
