@@ -29,7 +29,9 @@ export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
   const [projects, components, boms, categories] = await Promise.all([
     collectRows<{ slug: string; updated_at: string }>(c.env.DB, `SELECT slug, updated_at FROM projects WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public' ORDER BY id`),
     collectRows<{ slug: string; category: string; updated_at: string }>(c.env.DB, `SELECT slug, category, updated_at FROM components WHERE deleted_at IS NULL AND is_demo = 0 ORDER BY id`),
-    collectRows<{ route_key: string; updated_at: string }>(c.env.DB, `SELECT COALESCE(slug, id) AS route_key, updated_at FROM boms WHERE is_demo = 0 AND visibility = 'public' ORDER BY id`),
+    collectRows<{ route_key: string; updated_at: string; lines: number }>(c.env.DB, `SELECT COALESCE(b.slug, b.id) AS route_key, b.updated_at,
+        (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) AS lines
+      FROM boms b WHERE b.is_demo = 0 AND b.visibility = 'public' ORDER BY b.id`),
     collectRows<{ category: string; updated_at: string }>(c.env.DB, `SELECT category, MAX(updated_at) AS updated_at FROM components WHERE deleted_at IS NULL AND is_demo = 0 GROUP BY category ORDER BY category`),
   ]);
   const entries: SitemapEntry[] = [
@@ -45,7 +47,11 @@ export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
   entries.push(...categories.map((row) => ({ url: `${base}/parts/${encodeURIComponent(row.category)}`, lastModified: row.updated_at })));
   entries.push(...projects.map((row) => ({ url: `${base}/projects/${encodeURIComponent(row.slug)}`, lastModified: row.updated_at })));
   entries.push(...components.map((row) => ({ url: `${base}/parts/${encodeURIComponent(row.category)}/${encodeURIComponent(row.slug)}`, lastModified: row.updated_at })));
-  entries.push(...boms.map((row) => ({ url: `${base}/boms/${encodeURIComponent(row.route_key)}`, lastModified: row.updated_at })));
+  // Only BOMs that actually resolved line items are advertised. 2,370 of the 2,408 public
+  // BOMs have zero lines, and a page whose whole purpose is a bill of materials that is empty
+  // is thin content at scale — the same liability the /queries pages had. Those pages are
+  // served noindex,follow instead, and go back into the sitemap as their BOMs get populated.
+  entries.push(...boms.filter((row) => Number(row.lines) > 0).map((row) => ({ url: `${base}/boms/${encodeURIComponent(row.route_key)}`, lastModified: row.updated_at })));
   const body = c.req.method === "HEAD" ? null : buildSitemapXml(entries);
   return new Response(body, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600, stale-while-revalidate=86400", "x-sitemap-entry-count": String(entries.length) } });
 }
@@ -291,14 +297,18 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         return `<li>${label} — ${Number(l.quantity)} ${esc(l.unit)} (${esc(l.line_classification)}, ${esc(l.completeness)})${l.evidence_locator ? ` — evidence: ${esc(l.evidence_locator)}` : ""}</li>`;
       }).join("");
       const bomItemSection = bomItemHtml ? `<h2>Line items</h2><ul>${bomItemHtml}</ul>` : "";
+      // An empty BOM page exists only to show a bill of materials that has not been resolved. It is
+      // served noindex,follow rather than dropped: the URL stays valid and linked, and it re-enters
+      // the index on its own the moment line items land. Same reasoning as the empty /queries pages.
+      const emptyBom = Number(row.line_count) === 0;
       return {
         title: conciseTitle(`${row.name}: ${row.line_count} line bill of materials | RoboPartPicker`),
         description,
         canonicalUrl,
         imageUrl: fallbackImage,
         type: "article",
-        robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p><h2>Bill of materials facts</h2><ul>${bomFacts}</ul>${bomItemSection}<p><a href="${base}/boms">Browse all bills of materials</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
+        robots: emptyBom ? "noindex,follow" : INDEX_ROBOTS,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${emptyBom ? `<p>No line items have been resolved for this bill of materials yet, so this page is not offered to search engines. The catalog only indexes BOMs once real lines exist.</p>` : ""}<h2>Bill of materials facts</h2><ul>${bomFacts}</ul>${bomItemSection}<p><a href="${base}/boms">Browse all bills of materials</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "Dataset", name: row.name, description, url: canonicalUrl, dateModified: row.updated_at, variableMeasured: ["Part identity", "Quantity", "Source evidence", "Observed price"], size: Number(row.line_count), isBasedOn: row.project_name || undefined }),
       };
     }
@@ -361,12 +371,20 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
     }
   }
   if (path === "/boms") {
-    const stats = await db.prepare(`SELECT COUNT(*) AS total FROM boms WHERE is_demo = 0 AND visibility = 'public'`).first<{ total: number }>();
+    const stats = await db.prepare(`SELECT
+        (SELECT COUNT(*) FROM boms WHERE is_demo = 0 AND visibility = 'public') AS total,
+        (SELECT COUNT(*) FROM boms b WHERE b.is_demo = 0 AND b.visibility = 'public'
+          AND (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) > 0) AS resolved`).first<{ total: number; resolved: number }>();
+    // Only BOMs with real line items are listed. Most records are referenced archives that have not
+    // been resolved yet, and presenting those as complete bills of materials would overstate the data.
     const rows = await db.prepare(`SELECT COALESCE(b.slug, b.id) AS k, b.name, (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) AS lines
-      FROM boms b WHERE b.is_demo = 0 AND b.visibility = 'public' ORDER BY b.updated_at DESC LIMIT 24`).all<{ k: string; name: string; lines: number }>();
+      FROM boms b WHERE b.is_demo = 0 AND b.visibility = 'public'
+        AND (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) > 0
+      ORDER BY b.updated_at DESC LIMIT 24`).all<{ k: string; name: string; lines: number }>();
     const items = rows.results.map((r) => `<li><a href="${base}/boms/${encodeURIComponent(r.k)}">${esc(r.name)}</a> — ${Number(r.lines).toLocaleString()} lines</li>`).join("");
+    const resolved = Number(stats?.resolved ?? 0).toLocaleString();
     const total = Number(stats?.total ?? 0).toLocaleString();
-    const description = `${total} public bills of materials for open robotics projects, with per-line identity, quantity, source evidence and observed pricing.`;
+    const description = `${resolved} bills of materials with resolved line items and per-line identity, quantity, source evidence and observed pricing. ${total} further BOM records are archived in the catalog; those are published with noindex until their lines are resolved.`;
     return {
       title: "Versioned bills of materials | RoboPartPicker",
       description,
