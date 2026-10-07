@@ -52,4 +52,22 @@ describe("queryGuideSection (crawler internal links to /queries)", () => {
     const c = queryGuideSection("cable", BASE, "another-part-slug");
     expect(c.length).toBeGreaterThan(0);
   });
+
+  it("never emits an empty guide window for any seed (regression: signed-hash modulo)", () => {
+    // hashSeed could return a negative int; modulo then produced a negative
+    // offset and slice() returned nothing, leaving <ul></ul> on some part pages.
+    const failingSlug = "adafruit-micro-servo-mg90d-high-torque-metal-gear-14e9d91f";
+    const html = queryGuideSection("actuator", BASE, failingSlug);
+    expect(html).toContain("RPPGUIDE-V2-MARKER");
+    expect(html).toMatch(/<ul><li>/u); // at least one actual link
+
+    // sweep many seeds across a category with > 6 queries
+    for (let i = 0; i < 60; i++) {
+      const out = queryGuideSection("actuator", BASE, `seed-${i}`);
+      expect(out).toContain("RPPGUIDE-V2-MARKER");
+      const hrefs = [...out.matchAll(/href="([^"]+)"/gu)].map((m) => m[1]);
+      expect(hrefs.length).toBeGreaterThan(0);
+      expect(hrefs.length).toBeLessThanOrEqual(6);
+    }
+  });
 });

@@ -50,7 +50,9 @@ function hashSeed(value: string): number {
     h ^= value.charCodeAt(i);
     h = (h * 0x01000193) & 0xffffffff;
   }
-  return h;
+  // & on a negative accumulator yields a signed int; force unsigned so the
+  // caller's modulo always lands in [0, n) and never produces an empty window.
+  return h >>> 0;
 }
 
 export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> {
