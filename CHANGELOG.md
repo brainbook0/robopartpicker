@@ -4,6 +4,8 @@
 
 ### Operator / SEO
 
+- Deployed internal crawl links from part and category pages into the programmatic `/queries` inventory (the 382-URL keyword index gap). Part pages and category listings now render up to 6 rotating links to indexable (`ix`) query pages, so Googlebot — which fetches part pages heavily — can discover the `/queries` pages instead of relying solely on the sitemap. Only queries whose coverage is indexable are ever linked, so no noindex page is advertised internally. Fixed the FNV-1a seed hash returning a signed int, which made the modulo negative and left an empty link window on some part pages (caught in live verification, pinned with a 60-seed regression test). Verified live with a Googlebot UA: category and part pages emit 6 links each, all `/queries/*` targets return 200 and are indexable, humans still receive the cleanup script so the prerender block never shows in the app. Commits `3a911f8`, `9c92309`.
+
 - Enabled HSTS at the Cloudflare zone (`strict-transport-security: max-age=15552000`; subdomains and preload intentionally not enabled). The site already redirected all plaintext traffic to HTTPS, but responses carried no HSTS header, a security gap for humans and a failed check in the VerifyMCP directory scan (which auto-listed the public MCP server from the official registry, trust score 65/100). Verified live after the change: header present on apex, `www`, and `/mcp`. Reversible via the same zone setting.
 
 ### Tooling
