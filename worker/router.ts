@@ -37,7 +37,7 @@ import { analyticsRoutes } from "./routes/analytics";
 import { apiRateLimit } from "./middleware/rate-limit";
 import { handleMcpRequest } from "./mcp";
 import { handlePrivateMcpRequest, privateMcpResourceMetadata } from "./mcp-private";
-import { serveLlmsText, serveProjectBadge, serveProjectFeed, serveQueryIndex, serveQueryPage, serveRobots, serveSeoAsset, serveSitemap, serveGlossaryIndex, serveComparisonIndex, serveComparisonPage, servePriceIndex } from "./services/seo";
+import { serveLlmsText, serveProjectBadge, serveProjectFeed, serveQueryIndex, serveQueryPage, serveRobots, serveSeoAsset, serveSitemap, serveGlossaryIndex, serveComparisonIndex, serveComparisonPage, servePriceIndex, serveAllProjects } from "./services/seo";
 import { canonicalRedirectUrl, DEFAULT_PRODUCTION_BASE_URL } from "../src/lib/public-seo";
 
 export const app = new Hono<AppBindings>();
@@ -180,6 +180,7 @@ app.on(["GET", "HEAD"], "/badges/project/:slug", serveProjectBadge);
 app.on(["GET", "HEAD"], "/queries", serveQueryIndex);
 app.on(["GET", "HEAD"], "/queries/:slug", serveQueryPage);
 app.on(["GET", "HEAD"], "/glossary", serveGlossaryIndex);
+app.on(["GET", "HEAD"], "/all-projects", serveAllProjects);
 app.on(["GET", "HEAD"], "/compared-to", serveComparisonIndex);
 app.on(["GET", "HEAD"], "/compared-to/:slug", serveComparisonPage);
 app.on(["GET", "HEAD"], "/price-index", servePriceIndex);

@@ -78,7 +78,7 @@ export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
     collectRows<{ category: string; updated_at: string }>(c.env.DB, `SELECT category, MAX(updated_at) AS updated_at FROM components WHERE deleted_at IS NULL AND is_demo = 0 GROUP BY category ORDER BY category`),
   ]);
   const entries: SitemapEntry[] = [
-    "", "/projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/finder/actuator", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index",
+    "", "/projects", "/all-projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/finder/actuator", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index",
     ...LEGAL_DOCUMENT_IDS.map((id) => LEGAL_DOCUMENTS[id].path),
   ].map((path) => ({ url: `${base}${path}` }));
   // Only the query pages the catalog can actually answer are advertised. The rest
@@ -388,7 +388,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
       imageUrl: fallbackImage,
       type: "website",
       robots: INDEX_ROBOTS,
-      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
+      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/all-projects">Browse every project</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
       structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: isHome ? "RoboPartPicker" : "Robotics projects", description, url: `${base}${path}`, isPartOf: { "@type": "WebSite", name: "RoboPartPicker", url: base } }),
     };
   }
@@ -772,6 +772,39 @@ ${query.body}
 // ---------------------------------------------------------------------------
 // Glossary + comparison pages (robotics sourcing educational content)
 // ---------------------------------------------------------------------------
+
+export async function serveAllProjects(c: Context<AppBindings>): Promise<Response> {
+  const base = publicBase(c.env, c.req.url);
+  // 2,422 of the catalog's project pages had no inbound internal link: the /projects hub renders 24
+  // and paginates client-side, so a crawler could only reach the rest through the sitemap. This
+  // server-rendered index links every published project exactly once, grouped by robot category.
+  const rows = await collectRows<{ slug: string; name: string; robot_category: string | null; license_spdx: string | null }>(
+    c.env.DB,
+    `SELECT slug, name, robot_category, license_spdx FROM projects
+      WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'
+      ORDER BY COALESCE(robot_category, 'other') COLLATE NOCASE, name COLLATE NOCASE`,
+  );
+  const groups = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const key = row.robot_category || "other";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(row);
+  }
+  const sections = [...groups.entries()].map(([category, items]) =>
+    `<h2>${esc(category)} (${items.length})</h2>\n<ul>${items.map((r) =>
+      `<li><a href="${base}/projects/${encodeURIComponent(r.slug)}">${esc(r.name)}</a>${r.license_spdx ? ` — ${esc(r.license_spdx)}` : ""}</li>`).join("")}</ul>`).join("\n");
+  const body = `<h1>Every robotics project in the catalog</h1>
+<p class="meta">${rows.length.toLocaleString()} published open robotics projects, grouped by robot category. Each entry links to its source, license, technical files and bill-of-materials state.</p>
+${sections}
+<p><a href="${base}/projects">Back to project discovery</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a></p>`;
+  const html = queryShell(
+    "All robotics projects | RoboPartPicker",
+    `Complete index of ${rows.length.toLocaleString()} open robotics projects with source links, licenses, files and bill-of-materials state.`,
+    `${base}/all-projects`, body,
+    JSON.stringify([{ "@context": "https://schema.org", "@type": "CollectionPage", name: "All robotics projects", url: `${base}/all-projects` }]),
+  );
+  return new Response(c.req.method === "HEAD" ? null : html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": QUERY_CACHE_TTL } });
+}
 
 export function serveGlossaryIndex(c: Context<AppBindings>): Response {
   const base = publicBase(c.env, c.req.url);
