@@ -12,6 +12,47 @@ const SOCIAL_IMAGE_PATH = "/robopartpicker-social.png";
 const LOGO_PATH = "/robopartpicker-logo.png";
 const INDEX_ROBOTS = "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1";
 
+// Internal crawl paths from part pages (which Googlebot actually fetches) into the
+// programmatic /queries inventory (which has zero crawl allocation otherwise).
+// The category->query mapping is built once from QUERY_COVERAGE: a query is only
+// linked when the catalog can answer it (ix) and it targets the same part category.
+const QUERY_KW_BY_SLUG: Record<string, string> = {};
+const QUERY_SLUGS_BY_CATEGORY: Record<string, string[]> = {};
+for (const entry of QUERIES) {
+  QUERY_KW_BY_SLUG[entry.slug] = entry.kw;
+  const cov = QUERY_COVERAGE[entry.slug];
+  if (cov?.ix && cov.cat) {
+    (QUERY_SLUGS_BY_CATEGORY[cov.cat] ??= []).push(entry.slug);
+  }
+}
+for (const slugs of Object.values(QUERY_SLUGS_BY_CATEGORY)) {
+  slugs.sort((a, b) => QUERY_KW_BY_SLUG[a].localeCompare(QUERY_KW_BY_SLUG[b]));
+}
+
+export function queryGuideSection(category: string, base: string, seed = ""): string {
+  const all = QUERY_SLUGS_BY_CATEGORY[category] ?? [];
+  if (!all.length) return "";
+  // Rotate the window by page so every guide page in a category gets linked
+  // from somewhere, instead of only the first six alphabetically.
+  const limit = Math.min(6, all.length);
+  const offset = all.length <= limit ? 0 : (hashSeed(seed) % (all.length - limit + 1));
+  const slugs = all.slice(offset, offset + limit);
+  const items = slugs
+    .map((slug) => `<li><a href="${base}/queries/${encodeURIComponent(slug)}">${esc(QUERY_KW_BY_SLUG[slug] ?? slug)}</a></li>`)
+    .join("");
+  return `<h2>Related sourcing guides</h2>RPPGUIDE-V2-MARKER<ul>${items}</ul>`;
+}
+
+// Small deterministic string hash (FNV-1a) to spread link windows per page.
+function hashSeed(value: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = (h * 0x01000193) & 0xffffffff;
+  }
+  return h;
+}
+
 export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> {
   const asset = await c.env.ASSETS.fetch(c.req.raw);
   if (c.req.method !== "GET" || !asset.headers.get("content-type")?.includes("text/html")) return asset;
@@ -244,7 +285,7 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
       const siblingSection = siblingRows.results.length
         ? `<h2>Related components in ${esc(row.category)}</h2><ul>${siblingRows.results.map((c) => `<li><a href="${base}/parts/${encodeURIComponent(c.category)}/${encodeURIComponent(c.slug)}">${esc(c.name)}</a>${c.maker ? ` — ${esc(c.maker)}` : ""}</li>`).join("")}</ul>`
         : "";
-      const bodyHtml = `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}${siblingSection}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
+      const bodyHtml = `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}${siblingSection}${queryGuideSection(row.category, base, slug)}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
       return {
         title: conciseTitle(`${row.name}${row.maker ? ` by ${row.maker}` : ""} | RoboPartPicker`),
         description,
@@ -365,7 +406,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
         imageUrl: fallbackImage,
         type: "website",
         robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(category)} components</h1><p>${esc(description)}</p><h2>Components in this category</h2><ul>${items}</ul><p><a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
+        bodyHtml: `<article><h1>${esc(category)} components</h1><p>${esc(description)}</p><h2>Components in this category</h2><ul>${items}</ul>${queryGuideSection(category, base)}<p><a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: `${category} components`, description, url: `${base}/parts/${encodeURIComponent(category)}` }),
       };
     }

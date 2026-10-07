@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Operator / SEO
+
+- Enabled HSTS at the Cloudflare zone (`strict-transport-security: max-age=15552000`; subdomains and preload intentionally not enabled). The site already redirected all plaintext traffic to HTTPS, but responses carried no HSTS header, a security gap for humans and a failed check in the VerifyMCP directory scan (which auto-listed the public MCP server from the official registry, trust score 65/100). Verified live after the change: header present on apex, `www`, and `/mcp`. Reversible via the same zone setting.
+
 ### Tooling
 
 - Repaired the local build and test toolchain. `NODE_ENV=production` in the shell made npm omit devDependencies, which had pruned `wrangler`, `vitest`, `cross-env` and the Cloudflare/Vite plugins out of `node_modules` and stripped the `dev` flags from `package-lock.json`. Restored the lockfile from git and reinstalled with `npm ci --include=dev`. `tsc -b` is clean, all 677 unit tests and all 72 worker tests pass, and `vite build` produces the real `dist/client` + `dist/robopartpicker` pair again instead of relying on a hand-rolled esbuild bundle.
