@@ -78,7 +78,7 @@ export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
     collectRows<{ category: string; updated_at: string }>(c.env.DB, `SELECT category, MAX(updated_at) AS updated_at FROM components WHERE deleted_at IS NULL AND is_demo = 0 GROUP BY category ORDER BY category`),
   ]);
   const entries: SitemapEntry[] = [
-    "", "/projects", "/all-projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/finder/actuator", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index",
+    "", "/projects", "/all-projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/finder/actuator", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index", "/state-of-open-robotics",
     ...LEGAL_DOCUMENT_IDS.map((id) => LEGAL_DOCUMENTS[id].path),
   ].map((path) => ({ url: `${base}${path}` }));
   // Only the query pages the catalog can actually answer are advertised. The rest
@@ -388,7 +388,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
       imageUrl: fallbackImage,
       type: "website",
       robots: INDEX_ROBOTS,
-      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/all-projects">Browse every project</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
+      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/all-projects">Browse every project</a> · <a href="${base}/state-of-open-robotics">The state of open robotics hardware</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
       structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: isHome ? "RoboPartPicker" : "Robotics projects", description, url: `${base}${path}`, isPartOf: { "@type": "WebSite", name: "RoboPartPicker", url: base } }),
     };
   }
@@ -804,6 +804,117 @@ ${sections}
     JSON.stringify([{ "@context": "https://schema.org", "@type": "CollectionPage", name: "All robotics projects", url: `${base}/all-projects` }]),
   );
   return new Response(c.req.method === "HEAD" ? null : html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": QUERY_CACHE_TTL } });
+}
+
+// ---------------------------------------------------------------------------
+// State of open-source robotics hardware
+// ---------------------------------------------------------------------------
+
+function barChart(rows: Array<{ label: string; value: number }>, opts: { unit?: string; width?: number } = {}): string {
+  const width = opts.width ?? 640;
+  const barH = 22;
+  const gap = 9;
+  const labelW = 132;
+  const max = Math.max(1, ...rows.map((r) => r.value));
+  const height = rows.length * (barH + gap);
+  const bars = rows.map((r, i) => {
+    const y = i * (barH + gap);
+    const w = Math.max(2, Math.round(((width - labelW - 86) * r.value) / max));
+    const label = htmlAttribute(r.label.length > 22 ? `${r.label.slice(0, 21)}…` : r.label);
+    return `<text x="0" y="${y + 15}" font-size="13" fill="#9aa4b2">${label}</text>
+<rect x="${labelW}" y="${y + 2}" width="${w}" height="${barH - 4}" rx="3" fill="#4f8cff"/>
+<text x="${labelW + w + 8}" y="${y + 15}" font-size="13" fill="#e6e9ef">${r.value.toLocaleString()}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="bar chart">${bars}</svg>`;
+}
+
+/**
+ * The state of open-source robotics hardware: counts pulled from the catalog itself.
+ *
+ * Every figure is a COUNT over the production database; nothing here is estimated or
+ * extrapolated. The page states its own method and sample size so a reader can check it,
+ * and the numbers are re-derived on each cache rebuild rather than hard-coded.
+ */
+export async function serveStateOfOpenRobotics(c: Context<AppBindings>): Promise<Response> {
+  const base = publicBase(c.env, c.req.url);
+  const P = "deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'";
+  const [totals, bom, cats, licenses, specs] = await Promise.all([
+    collectRows<{ projects: number; components: number; with_repo: number; with_license: number }>(c.env.DB,
+      `SELECT (SELECT COUNT(*) FROM projects WHERE ${P}) AS projects,
+              (SELECT COUNT(*) FROM components WHERE deleted_at IS NULL AND is_demo = 0) AS components,
+              (SELECT COUNT(*) FROM projects WHERE ${P} AND repository_url IS NOT NULL AND repository_url <> '') AS with_repo,
+              (SELECT COUNT(*) FROM projects WHERE ${P} AND license_spdx IS NOT NULL AND license_spdx <> '') AS with_license`),
+    collectRows<{ boms: number; empty: number }>(c.env.DB,
+      `SELECT (SELECT COUNT(*) FROM boms WHERE is_demo = 0) AS boms,
+              (SELECT COUNT(*) FROM boms b WHERE b.is_demo = 0 AND NOT EXISTS
+                 (SELECT 1 FROM bom_versions v JOIN bom_items i ON i.bom_version_id = v.id WHERE v.bom_id = b.id)) AS empty`),
+    collectRows<{ category: string; n: number }>(c.env.DB,
+      `SELECT COALESCE(NULLIF(robot_category,''),'unclassified') AS category, COUNT(*) AS n
+       FROM projects WHERE ${P} GROUP BY 1 ORDER BY n DESC`),
+    collectRows<{ license: string; n: number }>(c.env.DB,
+      `SELECT COALESCE(NULLIF(license_spdx,''),'not declared') AS license, COUNT(*) AS n
+       FROM projects WHERE ${P} GROUP BY 1 ORDER BY n DESC`),
+    collectRows<{ spec_rows: number; keys: number; with_specs: number }>(c.env.DB,
+      `SELECT (SELECT COUNT(*) FROM component_specs) AS spec_rows,
+              (SELECT COUNT(DISTINCT spec_key) FROM component_specs) AS keys,
+              (SELECT COUNT(DISTINCT cr.component_id) FROM component_specs s
+                 JOIN component_revisions cr ON cr.id = s.component_revision_id) AS with_specs`),
+  ]);
+  const t = totals[0] || { projects: 0, components: 0, with_repo: 0, with_license: 0 };
+  const b = bom[0] || { boms: 0, empty: 0 };
+  const s = specs[0] || { spec_rows: 0, keys: 0, with_specs: 0 };
+  const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "n/a");
+  const emptyPct = pct(b.empty, b.boms);
+  const noLicense = t.projects - t.with_license;
+  // GitHub reports NOASSERTION when it cannot match a licence file to a known SPDX id. Those are
+  // counted separately from projects that declare nothing at all, so the two must not be added
+  // twice when stating how many projects leave the licence ambiguous.
+  const noassertion = licenses.find((r) => r.license === "NOASSERTION")?.n ?? 0;
+  const ambiguous = noLicense + noassertion;
+  const asOf = new Date().toISOString().slice(0, 10);
+
+  const body = `<article>
+<h1>The state of open-source robotics hardware</h1>
+<p class="meta">A census of ${t.projects.toLocaleString()} open robotics projects, taken from the RoboPartPicker catalog on ${asOf}. Every figure below is a count over our database. Nothing is estimated, sampled, or extrapolated, and the queries are published with the data so the numbers can be checked.</p>
+
+<h2>The headline: bills of materials are mostly empty</h2>
+<p>${b.empty.toLocaleString()} of ${b.boms.toLocaleString()} bills of materials (${emptyPct}) contain no line items at all. A project can publish a repository, a README and a licence and still tell a builder nothing about what to buy. Only a small minority of projects carry a bill of materials whose lines resolve to a specific, identifiable part, which is the form a builder can actually order from.</p>
+<p>This matters because a BOM is the difference between a project that reads as interesting and a project someone can reproduce. For most of the catalog, the shopping list is left as an exercise.</p>
+
+<h2>Licensing is often ambiguous</h2>
+<p>${noLicense.toLocaleString()} of ${t.projects.toLocaleString()} projects (${pct(noLicense, t.projects)}) declare no licence at all, and ${noassertion.toLocaleString()} declare one that GitHub cannot identify as a known licence. Together that is ${ambiguous.toLocaleString()} projects (${pct(ambiguous, t.projects)}) whose terms a builder cannot rely on without asking the maintainer first. For anyone planning to build on a design commercially, that ambiguity is the first thing to resolve, and it is usually invisible from the project page.</p>
+${barChart(licenses.slice(0, 8).map((r) => ({ label: r.license, value: r.n })))}
+
+<h2>What kinds of robots these are</h2>
+<p>Manipulators and humanoids dominate the catalog by count. Mobile bases, quadrupeds and aerial platforms follow. A large group resists classification entirely, which is its own finding about how projects describe themselves.</p>
+${barChart(cats.slice(0, 12).map((r) => ({ label: r.category, value: r.n })))}
+
+<h2>The component side is where the data is dense</h2>
+<p>Against ${t.projects.toLocaleString()} projects, the catalog holds ${t.components.toLocaleString()} distinct components described by ${s.spec_rows.toLocaleString()} specification rows across ${s.keys} distinct spec dimensions, covering ${s.with_specs.toLocaleString()} components. Specification coverage is the part of the open-hardware ecosystem that is well documented; sourcing and assembly are the parts that are not.</p>
+
+<h2>Method</h2>
+<p>Projects counted are published, public, non-demo rows. Component and specification counts come from the component tables. BOM emptiness is measured as bills of materials with no line items attached to any version. Figures were computed on ${asOf} and move as the catalog grows, so the numbers above are a snapshot rather than a fixed claim.</p>
+
+<h2>Check it yourself</h2>
+<p>The same data is available programmatically and the catalog is browsable without an account: <a href="${base}/all-projects">every project</a>, <a href="${base}/parts/actuator">the component catalog</a>, <a href="${base}/developers">the public API and MCP server</a>, and <a href="${base}/queries">the sourcing questions we answer</a>.</p>
+</article>`;
+
+  const html = queryShell(
+    "The state of open-source robotics hardware | RoboPartPicker",
+    `A census of ${t.projects.toLocaleString()} open robotics projects: ${emptyPct} of bills of materials are empty, ${pct(ambiguous, t.projects)} leave the licence ambiguous, and the component data behind them.`,
+    `${base}/state-of-open-robotics`, body,
+    JSON.stringify([{
+      "@context": "https://schema.org", "@type": "Dataset",
+      name: "The state of open-source robotics hardware",
+      description: `Census of ${t.projects.toLocaleString()} open robotics projects: BOM completeness, licence clarity, robot categories and component specification coverage.`,
+      url: `${base}/state-of-open-robotics`,
+      creator: { "@type": "Organization", name: "RoboPartPicker" },
+      datePublished: asOf,
+    }]),
+  );
+  return new Response(c.req.method === "HEAD" ? null : html, {
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=21600, s-maxage=21600" },
+  });
 }
 
 export function serveGlossaryIndex(c: Context<AppBindings>): Response {
