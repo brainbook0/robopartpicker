@@ -58,3 +58,6 @@ archive/
 
 __pycache__/
 *.pyc
+
+# cron output: jobs run with this repo as cwd and drop their reports here
+cron-daily-report-*.md
