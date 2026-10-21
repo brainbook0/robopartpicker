@@ -8,6 +8,7 @@ import { GLOSSARY_TERMS } from "../../src/lib/glossary-data";
 import { COMPARISONS } from "../../src/lib/comparisons-data";
 import type { AppBindings, Env } from "../env";
 import { fileContentUrl } from "./file-urls";
+import { isKnownAppRoute } from "./app-routes";
 
 const SOCIAL_IMAGE_PATH = "/robopartpicker-social.png";
 const LOGO_PATH = "/robopartpicker-logo.png";
@@ -61,12 +62,32 @@ export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> 
   const asset = await c.env.ASSETS.fetch(c.req.raw);
   if (c.req.method !== "GET" || !asset.headers.get("content-type")?.includes("text/html")) return asset;
   const base = publicBase(c.env, c.req.url);
-  const document = await resolveSeoDocument(c.env.DB, c.req.path, base);
+  // The built index.html answers every unknown path because Cloudflare serves the SPA
+  // fallback first. Routes the React app really owns keep that 200; everything else gets a
+  // real 404 so crawlers stop treating scanner probes (/google-service-account.json,
+  // /package.json, /wp-admin/...) as pages worth fetching.
+  const knownRoute = isKnownAppRoute(c.req.path);
+  const document = knownRoute
+    ? await resolveSeoDocument(c.env.DB, c.req.path, base)
+    : notFoundDocument(base);
   const headers = new Headers(asset.headers);
   headers.delete("content-length");
   headers.delete("etag");
-  headers.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
-  return new Response(injectSeoHtml(await asset.text(), document), { status: asset.status, headers });
+  headers.set("cache-control", knownRoute ? "public, max-age=300, stale-while-revalidate=3600" : "public, max-age=60");
+  return new Response(injectSeoHtml(await asset.text(), document), { status: knownRoute ? asset.status : 404, headers });
+}
+
+/** Server-rendered body for a URL the app does not own. Real links, no invented content. */
+export function notFoundDocument(base: string): SeoDocument {
+  return {
+    title: "Page not found | RoboPartPicker",
+    description: "This URL is not part of RoboPartPicker. Browse robotics projects, bills of materials, or the component catalogue instead.",
+    canonicalUrl: `${base}/`,
+    imageUrl: `${base}${SOCIAL_IMAGE_PATH}`,
+    type: "website",
+    robots: "noindex,follow",
+    bodyHtml: `<article><h1>Page not found</h1><p>There is no RoboPartPicker page at this address. It may have been renamed, or the link may be wrong.</p><ul><li><a href="${base}/projects">Robotics projects</a></li><li><a href="${base}/boms">Bills of materials</a></li><li><a href="${base}/marketplace">Parts marketplace</a></li><li><a href="${base}/queries">Sourcing guides</a></li><li><a href="${base}/">Home</a></li></ul></article>`,
+  };
 }
 
 export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
