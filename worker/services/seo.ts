@@ -2,7 +2,8 @@ import type { Context } from "hono";
 import { buildSitemapXml, injectSeoHtml, type SeoDocument, type SitemapEntry } from "../../src/lib/server-seo";
 import { LEGAL_DOCUMENT_IDS, LEGAL_DOCUMENTS } from "../../src/lib/legal-documents";
 import { QUERIES, QUERIES_BY_VOLUME } from "../../src/lib/queries-data";
-import { QUERY_COVERAGE, QUERY_INDEXABLE_SLUGS } from "../../src/lib/query-coverage";
+import { QUERY_COVERAGE, QUERY_INDEXABLE_SLUGS, type QueryCoverage } from "../../src/lib/query-coverage";
+import { isQueryIndexable, NON_SOURCING_QUERY_SLUGS } from "../../src/lib/query-exclusions";
 import { GLOSSARY_TERMS } from "../../src/lib/glossary-data";
 import { COMPARISONS } from "../../src/lib/comparisons-data";
 import type { AppBindings, Env } from "../env";
@@ -21,7 +22,7 @@ const QUERY_SLUGS_BY_CATEGORY: Record<string, string[]> = {};
 for (const entry of QUERIES) {
   QUERY_KW_BY_SLUG[entry.slug] = entry.kw;
   const cov = QUERY_COVERAGE[entry.slug];
-  if (cov?.ix && cov.cat) {
+  if (isQueryIndexable(entry.slug, cov) && cov.cat) {
     (QUERY_SLUGS_BY_CATEGORY[cov.cat] ??= []).push(entry.slug);
   }
 }
@@ -40,7 +41,8 @@ export function queryGuideSection(category: string, base: string, seed = ""): st
   const items = slugs
     .map((slug) => `<li><a href="${base}/queries/${encodeURIComponent(slug)}">${esc(QUERY_KW_BY_SLUG[slug] ?? slug)}</a></li>`)
     .join("");
-  return `<h2>Related sourcing guides</h2>RPPGUIDE-V2-MARKER<ul>${items}</ul>`;
+  // The marker is an HTML comment: tests anchor on it, readers must never see it.
+  return `<h2>Related sourcing guides</h2><!--RPPGUIDE-V2-MARKER--><ul>${items}</ul>`;
 }
 
 // Small deterministic string hash (FNV-1a) to spread link windows per page.
@@ -69,27 +71,55 @@ export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> 
 
 export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
   const base = publicBase(c.env, c.req.url);
-  const [projects, components, boms, categories] = await Promise.all([
+  const [projects, components, boms, categories, specComponents, pricedComponents, usedComponents] = await Promise.all([
     collectRows<{ slug: string; updated_at: string }>(c.env.DB, `SELECT slug, updated_at FROM projects WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public' ORDER BY id`),
-    collectRows<{ slug: string; category: string; updated_at: string }>(c.env.DB, `SELECT slug, category, updated_at FROM components WHERE deleted_at IS NULL AND is_demo = 0 ORDER BY id`),
+    collectRows<{ id: string; slug: string; category: string; updated_at: string }>(c.env.DB, `SELECT id, slug, category, updated_at FROM components WHERE deleted_at IS NULL AND is_demo = 0 ORDER BY id`),
     collectRows<{ route_key: string; updated_at: string; lines: number }>(c.env.DB, `SELECT COALESCE(b.slug, b.id) AS route_key, b.updated_at,
         (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) AS lines
       FROM boms b WHERE b.is_demo = 0 AND b.visibility = 'public' ORDER BY b.id`),
     collectRows<{ category: string; updated_at: string }>(c.env.DB, `SELECT category, MAX(updated_at) AS updated_at FROM components WHERE deleted_at IS NULL AND is_demo = 0 GROUP BY category ORDER BY category`),
+    // Substance sets for the component filter below. Three flat DISTINCT scans rather than one
+    // correlated subquery per component: on production D1 the correlated form exceeds the
+    // per-query CPU limit, and this route has to stay cheap enough to serve on every crawl.
+    collectRows<{ id: string }>(c.env.DB, `SELECT DISTINCT r.component_id AS id FROM component_specs s
+      JOIN component_revisions r ON r.id = s.component_revision_id
+      WHERE s.spec_key NOT IN ('category', 'measurement_units', 'manufacturer_slug', 'source')
+        AND s.value_text IS NOT NULL AND TRIM(s.value_text) <> ''`),
+    collectRows<{ id: string }>(c.env.DB, `SELECT DISTINCT component_id AS id FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0`),
+    collectRows<{ id: string }>(c.env.DB, `SELECT DISTINCT bi.component_id AS id FROM bom_items bi
+      JOIN bom_versions bv ON bv.id = bi.bom_version_id
+      JOIN boms b ON b.id = bv.bom_id
+      JOIN projects p ON p.id = b.project_id
+      WHERE b.is_demo = 0 AND p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'`),
   ]);
   const entries: SitemapEntry[] = [
-    "", "/projects", "/all-projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/finder/actuator", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index", "/state-of-open-robotics",
+    "", "/projects", "/all-projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index", "/state-of-open-robotics",
     ...LEGAL_DOCUMENT_IDS.map((id) => LEGAL_DOCUMENTS[id].path),
   ].map((path) => ({ url: `${base}${path}` }));
   // Only the query pages the catalog can actually answer are advertised. The rest
   // are served noindex, so listing them here would just be a duplicate-content
   // invitation with no unique value behind it.
-  const indexable = new Set(QUERY_INDEXABLE_SLUGS);
+  const indexable = new Set(QUERY_INDEXABLE_SLUGS.filter((slug) => isQueryIndexable(slug, QUERY_COVERAGE[slug])));
   entries.push(...QUERIES.filter((query) => indexable.has(query.slug)).map((query) => ({ url: `${base}/queries/${query.slug}` })));
   entries.push(...COMPARISONS.map((comp) => ({ url: `${base}/compared-to/${comp.slug}` })));
   entries.push(...categories.map((row) => ({ url: `${base}/parts/${encodeURIComponent(row.category)}`, lastModified: row.updated_at })));
+  // Guided finder pages exist in the app for these six categories but were never advertised or
+  // server-rendered. Sitemap only carries categories that actually have catalog rows.
+  entries.push(...categories.filter((row) => FINDER_CATEGORIES.includes(row.category))
+    .map((row) => ({ url: `${base}/finder/${encodeURIComponent(row.category)}`, lastModified: row.updated_at })));
   entries.push(...projects.map((row) => ({ url: `${base}/projects/${encodeURIComponent(row.slug)}`, lastModified: row.updated_at })));
-  entries.push(...components.map((row) => ({ url: `${base}/parts/${encodeURIComponent(row.category)}/${encodeURIComponent(row.slug)}`, lastModified: row.updated_at })));
+  // Only components with something a reader can use are advertised: source specifications, an
+  // observed price, or real usage in a published project. 26,000 of the 34,760 catalog components
+  // have none of the three and render a stub that literally says no specifications have been
+  // published — advertising them spent the whole crawl budget (Googlebot: 10-34 requests a day
+  // across 42,231 URLs, 1,860 indexed) on pages that cannot rank. They stay reachable through
+  // category listings and sibling links as noindex,follow, and return here once they gain data.
+  const substantive = new Set<string>([
+    ...specComponents.map((row) => row.id),
+    ...pricedComponents.map((row) => row.id),
+    ...usedComponents.map((row) => row.id),
+  ]);
+  entries.push(...components.filter((row) => substantive.has(row.id)).map((row) => ({ url: `${base}/parts/${encodeURIComponent(row.category)}/${encodeURIComponent(row.slug)}`, lastModified: row.updated_at })));
   // Only BOMs that actually resolved line items are advertised. 2,370 of the 2,408 public
   // BOMs have zero lines, and a page whose whole purpose is a bill of materials that is empty
   // is thin content at scale — the same liability the /queries pages had. Those pages are
@@ -148,7 +178,10 @@ function esc(value: string): string {
   return String(value).replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/"/gu, "&quot;").replace(/'/gu, "&#39;");
 }
 
-async function resolveSeoDocument(db: D1Database, path: string, base: string): Promise<SeoDocument> {
+// Guided finder categories the app actually routes (src/pages/Finder.tsx validCategories).
+const FINDER_CATEGORIES: readonly string[] = ["actuator", "hand", "sensor", "compute", "driver", "reducer"];
+
+export async function resolveSeoDocument(db: D1Database, path: string, base: string): Promise<SeoDocument> {
   const fallbackImage = `${base}${SOCIAL_IMAGE_PATH}`;
   const projectMatch = path.match(/^\/projects\/([^/]+)$/u);
   if (projectMatch) {
@@ -287,6 +320,10 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
       const siblingSection = siblingRows.results.length
         ? `<h2>Related components in ${esc(row.category)}</h2><ul>${siblingRows.results.map((c) => `<li><a href="${base}/parts/${encodeURIComponent(c.category)}/${encodeURIComponent(c.slug)}">${esc(c.name)}</a>${c.maker ? ` — ${esc(c.maker)}` : ""}</li>`).join("")}</ul>`
         : "";
+      // Same substance rule as sitemap.xml: a component page with no source specifications, no
+      // observed price and no published-project usage is a SKU stub. It stays crawlable
+      // (follow) so the catalogue graph remains connected, but it must not be indexed.
+      const substantive = specRows.results.length > 0 || row.price_minor != null || usage.results.length > 0;
       const bodyHtml = `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}${siblingSection}${queryGuideSection(row.category, base, slug)}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
       return {
         title: conciseTitle(`${row.name}${row.maker ? ` by ${row.maker}` : ""} | RoboPartPicker`),
@@ -294,7 +331,7 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
         canonicalUrl,
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "product",
-        robots: INDEX_ROBOTS,
+        robots: substantive ? INDEX_ROBOTS : "noindex,follow",
         bodyHtml,
         structuredData: compact({ "@context": "https://schema.org", "@type": "Product", name: row.name, description, url: canonicalUrl, mpn: row.manufacturer_part_number, manufacturer: row.maker ? { "@type": "Organization", name: row.maker } : undefined, category: row.category, offers: offer, additionalProperty: specRows.results.slice(0, 12).map((s) => ({ "@type": "PropertyValue", name: s.label || titleCase(s.spec_key), value: `${s.value_text ?? ""}${s.unit ? ` ${s.unit}` : ""}`.trim() })) }),
       };
@@ -367,6 +404,50 @@ async function resolveSeoDocument(db: D1Database, path: string, base: string): P
 
 /** Server-rendered content for catalog listing pages (home, projects, parts, boms). */
 async function listingSeo(db: D1Database, path: string, base: string, fallbackImage: string): Promise<SeoDocument | null> {
+  // /finder/:category is a real catalogue page in the app (Guided Finder, src/pages/Finder.tsx) but
+  // had no entry here, so crawlers received the fallback document below: <title>Page not found</title>
+  // with robots noindex,follow, for a URL that sitemap.xml advertises and that /queries, /parts/hand
+  // and the site header all link to. Server-render the same catalogue slice a visitor sees.
+  const finderMatch = path.match(/^\/finder\/([a-z0-9-]+)$/u);
+  if (finderMatch && FINDER_CATEGORIES.includes(safeDecode(finderMatch[1]))) {
+    const category = safeDecode(finderMatch[1]);
+    const label = titleCase(category);
+    const title = conciseTitle(`${label} finder: compare robotics parts and observed prices | RoboPartPicker`);
+    const description = concise(`Filter ${label.toLowerCase()} components from the live RoboPartPicker catalog by observed price, number of supplier offers, open-source status and ROS support.`);
+    const rows = await db.prepare(`SELECT c.name, c.slug, c.category, m.name AS maker,
+        (SELECT COUNT(*) FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0) AS offers,
+        COALESCE((SELECT MIN(so.unit_price_minor) FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0), 0) AS lowest_minor,
+        (SELECT so.currency FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0 ORDER BY so.unit_price_minor LIMIT 1) AS currency
+      FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
+      WHERE c.deleted_at IS NULL AND c.is_demo = 0 AND c.category = ?1
+      ORDER BY offers DESC, c.name LIMIT 40`).bind(category).all<{ name: string; slug: string; category: string; maker: string | null; offers: number; lowest_minor: number; currency: string | null }>();
+    const items = rows.results.map((r) => {
+      const price = Number(r.offers) > 0 && Number(r.lowest_minor) > 0
+        ? ` — from ${esc(r.currency ?? "USD")} ${(Number(r.lowest_minor) / 100).toFixed(2)} (${Number(r.offers)} observed offer${Number(r.offers) === 1 ? "" : "s"})`
+        : " — no observed supplier offers yet";
+      // Relative hrefs match the rest of the prerendered body (and keep the internal-link graph
+      // readable to link auditors that never rewrite absolute same-host URLs).
+      return `<li><a href="/parts/${encodeURIComponent(r.category)}/${encodeURIComponent(r.slug)}">${esc(r.name)}</a>${r.maker ? ` by ${esc(r.maker)}` : ""}${price}</li>`;
+    }).join("");
+    const others = FINDER_CATEGORIES.filter((entry) => entry !== category)
+      .map((entry) => `<a href="/finder/${entry}">${titleCase(entry)} finder</a>`).join(" · ");
+    const finderFooter = `<p><a href="/parts/${encodeURIComponent(category)}">All ${esc(label.toLowerCase())} components</a> · ${others} · <a href="/queries">Sourcing guides</a> · <a href="/developers">API and MCP</a></p>`;
+    return {
+      title,
+      description,
+      canonicalUrl: `${base}/finder/${encodeURIComponent(category)}`,
+      imageUrl: fallbackImage,
+      type: "website",
+      // An empty catalogue slice is thin content: keep it crawlable but out of the index until
+      // the category has real rows (matches the emptyBom pattern above).
+      robots: rows.results.length > 0 ? INDEX_ROBOTS : "noindex,follow",
+      bodyHtml: items
+        ? `<article><h1>Find ${esc(label.toLowerCase())}</h1><p>${esc(description)}</p><h2>${esc(label)} components in the live catalog (${rows.results.length} shown)</h2><ul>${items}</ul>${finderFooter}</article>`
+        : `<article><h1>Find ${esc(label.toLowerCase())}</h1><p>${esc(description)}</p><p>No ${esc(label.toLowerCase())} components are in the catalog yet.</p>${finderFooter}</article>`,
+      structuredData: { "@context": "https://schema.org", "@type": "CollectionPage", name: title, description, url: `${base}/finder/${encodeURIComponent(category)}` },
+    };
+  }
+
   const categoryMatch = path.match(/^\/parts\/([^/]+)$/u);
   if (path === "/" || path === "/projects") {
     const [stats, rows] = await Promise.all([
@@ -630,7 +711,12 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
     const label = titleCase(category);
     const title = `${label} robotics parts and components | RoboPartPicker`;
     const description = `Browse ${label.toLowerCase()} components with manufacturer identity, source-backed prices, product links, specifications and robotics project usage.`;
-    return { title, description, canonicalUrl: `${base}/parts/${encodeURIComponent(category)}`, imageUrl, type: "website", robots: INDEX_ROBOTS, structuredData: { "@context": "https://schema.org", "@type": "CollectionPage", name: title, description, url: `${base}/parts/${encodeURIComponent(category)}` } };
+    // Reaching this branch means listingSeo found no catalogue rows for the category (it returns
+    // first whenever the category exists). Before this, any /parts/<anything> answered 200 with
+    // index,follow and no body at all: an open-ended indexable-empty space that also swallowed
+    // legacy single-segment part URLs. Nothing is being offered to a crawler here, so it is not
+    // advertised: crawlable, noindex, still reachable by link for humans.
+    return { title, description, canonicalUrl: `${base}/parts/${encodeURIComponent(category)}`, imageUrl, type: "website", robots: "noindex,follow", structuredData: { "@context": "https://schema.org", "@type": "CollectionPage", name: title, description, url: `${base}/parts/${encodeURIComponent(category)}` } };
   }
   return null;
 }
@@ -699,8 +785,8 @@ function queryShell(title: string, description: string, canonical: string, body:
 <meta property="og:type" content="article" /><meta property="og:title" content="${htmlAttribute(title)}" />
 <meta property="og:description" content="${htmlAttribute(description)}" /><meta property="og:url" content="${htmlAttribute(canonical)}" />
 <script id="seo-structured-data" type="application/ld+json">${structuredJson}</script>
-<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#0f1214;color:#e8e6e3;line-height:1.6}main{max-width:760px;margin:0 auto;padding:32px 20px 64px}h1{font-size:1.9rem;line-height:1.25;margin:0 0 8px}a{color:#ffd000;text-decoration:none}a:hover{text-decoration:underline}.meta{color:#9aa0a6;font-size:.92rem;margin-bottom:24px}.body p{margin:0 0 16px}ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;list-style:none;padding:0}.tag{display:inline-block;background:#1a1f24;border:1px solid #2a3138;border-radius:20px;padding:4px 12px;margin:3px;font-size:.9rem}nav.top{display:flex;gap:16px;padding:16px 20px;background:#161a1e;flex-wrap:wrap;font-size:.95rem;border-bottom:1px solid #232a31}footer{padding:32px 20px;color:#9aa0a6;font-size:.9rem;border-top:1px solid #232a31}</style></head>
-<body><nav class="top"><a href="/">RoboPartPicker</a><a href="/projects">Projects</a><a href="/parts">Parts</a><a href="/boms">BOMs</a><a href="/queries">Sourcing queries</a><a href="/developers">API</a></nav><main>${body}</main>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#0f1214;color:#e8e6e3;line-height:1.6}main{max-width:760px;margin:0 auto;padding:32px 20px 64px}h1{font-size:1.9rem;line-height:1.25;margin:0 0 8px}a{color:#ffd000;text-decoration:none}a:hover{text-decoration:underline}.meta{color:#9aa0a6;font-size:.92rem;margin-bottom:24px}.body p{margin:0 0 16px}ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;list-style:none;padding:0}table{border-collapse:collapse;width:100%;margin:12px 0 20px}caption{text-align:left;color:#9aa0a6;font-size:.85rem;padding:0 0 6px}th,td{text-align:left;vertical-align:top;padding:7px 9px;border-bottom:1px solid #232a31;font-size:.95rem}th{color:#9aa0a6;font-weight:600}.tag{display:inline-block;background:#1a1f24;border:1px solid #2a3138;border-radius:20px;padding:4px 12px;margin:3px;font-size:.9rem}nav.top{display:flex;gap:16px;padding:16px 20px;background:#161a1e;flex-wrap:wrap;font-size:.95rem;border-bottom:1px solid #232a31}footer{padding:32px 20px;color:#9aa0a6;font-size:.9rem;border-top:1px solid #232a31}</style></head>
+<body><nav class="top"><a href="/">RoboPartPicker</a><a href="/projects">Projects</a><a href="/parts/actuator">Parts</a><a href="/boms">BOMs</a><a href="/queries">Sourcing queries</a><a href="/developers">API</a></nav><main>${body}</main>
 <footer>RoboPartPicker - source-linked robotics projects, bills of materials and sourcing evidence. <a href="/sitemap.xml">Sitemap</a> \u00b7 <a href="/llms.txt">llms.txt</a></footer></body></html>`;
 }
 
@@ -708,7 +794,7 @@ export function serveQueryIndex(c: Context<AppBindings>): Response {
   const base = publicBase(c.env, c.req.url);
   // Only list queries the catalog can actually answer; the rest are served
   // noindex and would be a dead end for a human visitor too.
-  const cards = QUERIES_BY_VOLUME.filter((q) => QUERY_COVERAGE[q.slug]?.ix).slice(0, 300).map((q) =>
+  const cards = QUERIES_BY_VOLUME.filter((q) => isQueryIndexable(q.slug, QUERY_COVERAGE[q.slug])).slice(0, 300).map((q) =>
     `<li><a href="/queries/${q.slug}">${htmlAttribute(q.kw)}</a></li>`).join("");
   const body = `<h1>How to source and build open robotics projects</h1>
 <p class="meta">Answers to common robotics sourcing and BOM questions, generated from live search data. Compare parts, plan builds and see what actually blocks a build.</p>
@@ -722,17 +808,117 @@ export function serveQueryIndex(c: Context<AppBindings>): Response {
   return new Response(c.req.method === "HEAD" ? null : html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": QUERY_CACHE_TTL } });
 }
 
-export function serveQueryPage(c: Context<AppBindings>): Response {
+// ---------------------------------------------------------------------------
+// Query pages: each indexable page carries its own catalogue facts.
+//
+// The 379 indexable /queries pages were template-identical apart from the keyword
+// (measured: token Jaccard 0.69-0.80 between any two of them) even though all of them
+// had been crawlable and linked for weeks. Googlebot fetched them and indexed none of
+// them, so the missing ingredient is per-page substance a solver could not produce
+// anywhere else: the actual matched catalogue rows, their makers, their observed
+// supplier prices and the category mix of the match set.
+// ---------------------------------------------------------------------------
+
+/** Catalog facts for one matched component, keyed by slug + category. */
+export type QueryPartFact = {
+  slug: string; category: string; name: string;
+  maker: string | null; offers: number; lowestMinor: number; currency: string | null;
+};
+
+const OFFER_SUBQUERY = `(SELECT COUNT(*) FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0)`;
+
+/**
+ * Look up the catalogue facts behind a query page's matched components.
+ *
+ * QUERY_COVERAGE.ex is generated from the live catalogue, so these are real component
+ * rows; the lookup only adds fields the generator did not carry. When the lookup returns
+ * nothing the caller falls back to the plain link list rather than inventing anything.
+ */
+async function loadQueryPartFacts(db: D1Database, slugs: string[]): Promise<Map<string, QueryPartFact>> {
+  const facts = new Map<string, QueryPartFact>();
+  const wanted = [...new Set(slugs)].slice(0, 24);
+  if (!wanted.length) return facts;
+  const placeholders = wanted.map((_, index) => `?${index + 1}`).join(", ");
+  const rows = await db.prepare(`SELECT c.slug, c.category, c.name, m.name AS maker,
+      ${OFFER_SUBQUERY} AS offers,
+      COALESCE((SELECT MIN(so.unit_price_minor) FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0), 0) AS lowestMinor,
+      (SELECT so.currency FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0 ORDER BY so.unit_price_minor LIMIT 1) AS currency
+    FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
+    WHERE c.deleted_at IS NULL AND c.is_demo = 0 AND c.slug IN (${placeholders})`)
+    .bind(...wanted)
+    .all<QueryPartFact>();
+  for (const row of rows.results ?? []) facts.set(`${row.slug}\u0000${row.category}`, row);
+  return facts;
+}
+
+function observedPrice(fact: QueryPartFact | undefined): string | null {
+  if (!fact || Number(fact.offers) <= 0 || Number(fact.lowestMinor) <= 0) return null;
+  return `${fact.currency ?? "USD"} ${(Number(fact.lowestMinor) / 100).toFixed(2)}`;
+}
+
+/**
+ * The unique-per-query part of a /queries page. Pure so it can be tested without D1.
+ * Every number and name comes from QUERY_COVERAGE plus the catalogue lookup; nothing is
+ * estimated, and a match with no supplier offers is labelled as such rather than priced.
+ */
+export function queryMatchesSection(coverage: QueryCoverage | undefined, facts: Map<string, QueryPartFact>): string {
+  const components = coverage?.ex ?? [];
+  const projects = coverage?.px ?? [];
+  const count = Number(coverage?.c ?? 0);
+  const projectCount = Number(coverage?.p ?? 0);
+
+  const resolved = components.map((entry) => {
+    const fact = facts.get(`${entry.s}\u0000${entry.t ?? "unknown"}`);
+    const type = fact?.category ?? entry.t ?? "unknown";
+    return { entry, fact, type, name: fact?.name ?? entry.n, price: observedPrice(fact) };
+  });
+
+  const rows = resolved.map(({ entry, fact, type, name, price }) =>
+    `<tr><td><a href="/parts/${encodeURIComponent(type)}/${encodeURIComponent(entry.s)}">${esc(name)}</a></td><td>${esc(type)}</td><td>${fact?.maker ? esc(fact.maker) : "unknown"}</td><td>${price ? `${esc(price)}${Number(fact?.offers ?? 0) > 1 ? ` (${Number(fact?.offers)} offers)` : ""}` : "no observed offers"}</td></tr>`).join("");
+
+  const table = rows
+    ? `<table><caption>Matched catalogue components (${resolved.length} shown)</caption><thead><tr><th>Component</th><th>Type</th><th>Maker</th><th>Observed price</th></tr></thead><tbody>${rows}</tbody></table>`
+    : "";
+
+  const mix = new Map<string, number>();
+  for (const item of resolved) mix.set(item.type, (mix.get(item.type) ?? 0) + 1);
+  const mixText = [...mix.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([type, n]) => `${esc(type)} (${n})`).join(", ");
+
+  const priced = resolved.filter((item) => item.price !== null)
+    .sort((a, b) => Number(a.fact?.lowestMinor ?? 0) - Number(b.fact?.lowestMinor ?? 0));
+
+  const notes: string[] = [];
+  if (mixText) notes.push(`The matches shown span ${mixText}.`);
+  if (resolved.length && priced.length) {
+    notes.push(`Observed supplier prices exist for ${priced.length} of the ${resolved.length} matches shown; the lowest is ${esc(priced[0].name)} at ${esc(priced[0].price ?? "")}.`);
+  } else if (resolved.length) {
+    notes.push(`No supplier offers are recorded for these matches yet, so any price quoted elsewhere is unverified.`);
+  }
+  if (projects.length) {
+    notes.push(`${projects.length} published project${projects.length === 1 ? "" : "s"} in the catalogue build with matching parts, linked below with their own source evidence.`);
+  }
+
+  return `<h2>What the catalog actually has for this query</h2>
+<p>${count.toLocaleString()} component${count === 1 ? "" : "s"} and ${projectCount.toLocaleString()} published project${projectCount === 1 ? "" : "s"} in the live catalog match it.</p>
+${table}
+${projects.length ? `<h3>Projects that use matching parts</h3><ul>${projects.map((p) => `<li><a href="/projects/${encodeURIComponent(p.s)}">${htmlAttribute(p.n)}</a></li>`).join("")}</ul>` : ""}
+${notes.length ? `<h3>Sourcing notes</h3>\n<p>${notes.join(" ")}</p>` : ""}
+<p class="meta">Counts come from the live catalog and change as projects are indexed. Prices shown elsewhere on RoboPartPicker are observed catalog data, not quotes.</p>`;
+}
+
+export async function serveQueryPage(c: Context<AppBindings>): Promise<Response> {
   const slug = safeDecode(c.req.param("slug") ?? "");
   const query = QUERIES.find((entry) => entry.slug === slug);
   if (!query) return new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
   const base = publicBase(c.env, c.req.url);
   const canonical = `${base}/queries/${encodeURIComponent(query.slug)}`;
   const coverage = QUERY_COVERAGE[query.slug];
-  // A page is only worth indexing when the catalog can actually answer it.
-  // Without backing the body would be the same template for every keyword, which
-  // is scaled content rather than a useful page, so it is served noindex.
-  const indexable = Boolean(coverage?.ix);
+  // A page is only worth indexing when the catalog can actually answer it, and when the keyword is
+  // a real parts-sourcing question rather than a coincidental token match (see query-exclusions.ts).
+  // Without backing the body would be the same template for every keyword, which is scaled content
+  // rather than a useful page, so it is served noindex.
+  const indexable = isQueryIndexable(query.slug, coverage);
   const faq = query.faqs.map(([question, answer]) => ({
     "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer },
   }));
@@ -744,13 +930,18 @@ export function serveQueryPage(c: Context<AppBindings>): Response {
     `<h2>${htmlAttribute(question)}</h2><p>${htmlAttribute(answer)}</p>`).join("");
 
   const components = coverage?.ex ?? [];
-  const projects = coverage?.px ?? [];
+  let facts = new Map<string, QueryPartFact>();
+  if (indexable && components.length) {
+    try {
+      facts = await loadQueryPartFacts(c.env.DB, components.map((entry) => entry.s));
+    } catch {
+      // A catalogue lookup failure must not take the page down: the section falls back to
+      // the generated match list without maker/price detail.
+      facts = new Map<string, QueryPartFact>();
+    }
+  }
   const matchesHtml = indexable
-    ? `<h2>What the catalog actually has for this query</h2>
-<p>${Number(coverage?.c ?? 0).toLocaleString()} component${(coverage?.c ?? 0) === 1 ? "" : "s"} and ${Number(coverage?.p ?? 0).toLocaleString()} published project${(coverage?.p ?? 0) === 1 ? "" : "s"} in the live catalog match it.</p>
-${components.length ? `<ul>${components.map((e) => `<li><a href="/parts/${encodeURIComponent(e.t ?? "unknown")}/${encodeURIComponent(e.s)}">${htmlAttribute(e.n)}</a></li>`).join("")}</ul>` : ""}
-${projects.length ? `<h3>Projects that use matching parts</h3><ul>${projects.map((p) => `<li><a href="/projects/${encodeURIComponent(p.s)}">${htmlAttribute(p.n)}</a></li>`).join("")}</ul>` : ""}
-<p class="meta">Counts come from the live catalog and change as projects are indexed. Prices shown elsewhere on RoboPartPicker are observed catalog data, not quotes.</p>`
+    ? queryMatchesSection(coverage, facts)
     : `<p class="meta">The catalog does not have parts that match this query yet, so this page is not offered to search engines. <a href="/projects">Browse robotics projects</a> \u00b7 <a href="/queries">queries the catalog can answer</a>.</p>`;
 
   const body = `<h1>${htmlAttribute(query.kw)}</h1>

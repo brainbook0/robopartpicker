@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { QUERY_COVERAGE, QUERY_INDEXABLE_SLUGS } from "../../src/lib/query-coverage";
-import { queryGuideSection } from "../../worker/services/seo";
+import { queryGuideSection, queryMatchesSection, type QueryPartFact } from "../../worker/services/seo";
 
 const BASE = "https://robopartpicker.com";
+
+function fact(over: Partial<QueryPartFact>): QueryPartFact {
+  return { slug: "s", category: "actuator", name: "Part", maker: null, offers: 0, lowestMinor: 0, currency: null, ...over };
+}
 
 describe("queryGuideSection (crawler internal links to /queries)", () => {
   it("emits the RPPGUIDE-V2-MARKER for a category that has indexable queries", () => {
@@ -69,5 +73,81 @@ describe("queryGuideSection (crawler internal links to /queries)", () => {
       expect(hrefs.length).toBeGreaterThan(0);
       expect(hrefs.length).toBeLessThanOrEqual(6);
     }
+  });
+});
+
+describe("queryMatchesSection (per-query catalogue substance)", () => {
+  const coverage = {
+    c: 18, p: 2, ix: true,
+    ex: [
+      { n: "Micro Servo - MG90D", s: "adafruit-micro-servo-mg90d", t: "actuator" },
+      { n: "Motor Shield", s: "adafruit-motor-shield", t: "ic" },
+    ],
+    px: [{ n: "realteck-ky/OpenRVGHServo", s: "realteck-ky-openrvghservo" }],
+    cat: "actuator",
+  };
+
+  it("renders a real comparison table with maker, price and offer count", () => {
+    const facts = new Map<string, QueryPartFact>([
+      ["adafruit-micro-servo-mg90d\u0000actuator", fact({ slug: "adafruit-micro-servo-mg90d", name: "Micro Servo - MG90D High Torque Metal Gear", maker: "Adafruit", offers: 3, lowestMinor: 1295, currency: "USD" })],
+    ]);
+    const html = queryMatchesSection(coverage, facts);
+    expect(html).toContain("<table>");
+    expect(html).toContain("Adafruit");
+    expect(html).toContain("USD 12.95");
+    expect(html).toContain("(3 offers)");
+    // the component with no catalogue facts is labelled honestly, not priced
+    expect(html).toContain("no observed offers");
+    expect(html).toContain("Micro Servo - MG90D High Torque Metal Gear");
+    expect(html).toContain("18 components and 2 published projects");
+    expect(html).toContain("actuator");
+    expect(html).toContain("Sourcing notes");
+    expect(html).toContain("Observed supplier prices exist for 1 of the 2 matches shown");
+  });
+
+  it("says so when nothing has an observed price instead of inventing one", () => {
+    const html = queryMatchesSection(coverage, new Map());
+    expect(html).not.toMatch(/USD \d/u);
+    expect(html).toContain("No supplier offers are recorded for these matches yet");
+  });
+
+  it("produces different sourcing notes for different match sets", () => {
+    const a = queryMatchesSection(coverage, new Map());
+    const b = queryMatchesSection(
+      { c: 4, p: 0, ix: true, ex: [{ n: "gEDA badge", s: "adafruit-geda-badge", t: "ic" }], px: [], cat: "ic" },
+      new Map(),
+    );
+    expect(a).not.toBe(b);
+    expect(b).toContain("The matches shown span ic (1).");
+  });
+
+  it("escapes catalogue text (names come from imported supplier data)", () => {
+    const facts = new Map<string, QueryPartFact>([
+      ["adafruit-micro-servo-mg90d\u0000actuator", fact({ name: "<script>alert(1)</script>", maker: "A & B", offers: 1, lowestMinor: 100, currency: "USD" })],
+    ]);
+    const html = queryMatchesSection(coverage, facts);
+    expect(html).not.toContain("<script>alert(1)</script>");
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).toContain("A &amp; B");
+  });
+
+  it("handles a coverage entry with no matched components", () => {
+    const html = queryMatchesSection({ c: 0, p: 0, ix: true }, new Map());
+    expect(html).toContain("0 components and 0 published projects");
+    expect(html).not.toContain("<table>");
+    // 12 ix:true pages have c=0 and no ex list; they must not claim to have priced matches.
+    expect(html).not.toContain("No supplier offers are recorded");
+    expect(html).not.toContain("Sourcing notes");
+  });
+
+  it("describes a project-only match set (c=0, ex empty) without inventing component rows", () => {
+    const html = queryMatchesSection(
+      { c: 0, p: 3, ix: true, ex: [], px: [{ n: "UBTECH Walker S2", s: "ubtech-walker-s2" }], cat: null },
+      new Map(),
+    );
+    expect(html).not.toContain("<table>");
+    expect(html).toContain("0 components and 3 published projects");
+    expect(html).toContain("1 published project in the catalogue build with matching parts");
+    expect(html).toContain("ubtech-walker-s2");
   });
 });
