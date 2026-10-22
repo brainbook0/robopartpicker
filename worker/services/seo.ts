@@ -70,6 +70,12 @@ export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> 
   const document = knownRoute
     ? await resolveSeoDocument(c.env.DB, c.req.path, base)
     : notFoundDocument(base);
+  if (document?.redirectTo) {
+    return new Response(null, {
+      status: 301,
+      headers: { location: document.redirectTo, "cache-control": "public, max-age=86400" },
+    });
+  }
   const headers = new Headers(asset.headers);
   headers.delete("content-length");
   headers.delete("etag");
@@ -355,6 +361,24 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         robots: substantive ? INDEX_ROBOTS : "noindex,follow",
         bodyHtml,
         structuredData: compact({ "@context": "https://schema.org", "@type": "Product", name: row.name, description, url: canonicalUrl, mpn: row.manufacturer_part_number, manufacturer: row.maker ? { "@type": "Organization", name: row.maker } : undefined, category: row.category, offers: offer, additionalProperty: specRows.results.slice(0, 12).map((s) => ({ "@type": "PropertyValue", name: s.label || titleCase(s.spec_key), value: `${s.value_text ?? ""}${s.unit ? ` ${s.unit}` : ""}`.trim() })) }),
+      };
+    }
+    // A part's category is a filing decision, not its identity: curation sometimes moves a
+    // component (a mecanum wheel filed under `inductor`) to the category it belongs in, which
+    // changes its URL. Resolve the slug on its own and send the old URL to the canonical path
+    // with a permanent redirect instead of letting it decay into the SPA shell.
+    const moved = await db.prepare(`SELECT category FROM components WHERE slug = ?1 AND deleted_at IS NULL AND is_demo = 0`)
+      .bind(slug).first<{ category: string }>();
+    if (moved && moved.category !== category) {
+      const target = `${base}/parts/${encodeURIComponent(moved.category)}/${encodeURIComponent(slug)}`;
+      return {
+        title: "Redirecting | RoboPartPicker",
+        description: "This part has moved to its correct category.",
+        canonicalUrl: target,
+        imageUrl: fallbackImage,
+        type: "product",
+        robots: "noindex,follow",
+        redirectTo: target,
       };
     }
   }
@@ -868,7 +892,10 @@ async function loadQueryPartFacts(db: D1Database, slugs: string[]): Promise<Map<
     WHERE c.deleted_at IS NULL AND c.is_demo = 0 AND c.slug IN (${placeholders})`)
     .bind(...wanted)
     .all<QueryPartFact>();
-  for (const row of rows.results ?? []) facts.set(`${row.slug}\u0000${row.category}`, row);
+  // Keyed by slug alone: the coverage snapshot carries a `t` (type) captured when it was
+  // built, and a part whose category was later corrected no longer matched, which silently
+  // blanked its maker and kept the stale type. The catalogue row is authoritative.
+  for (const row of rows.results ?? []) facts.set(row.slug, row);
   return facts;
 }
 
@@ -889,7 +916,7 @@ export function queryMatchesSection(coverage: QueryCoverage | undefined, facts: 
   const projectCount = Number(coverage?.p ?? 0);
 
   const resolved = components.map((entry) => {
-    const fact = facts.get(`${entry.s}\u0000${entry.t ?? "unknown"}`);
+    const fact = facts.get(entry.s);
     const type = fact?.category ?? entry.t ?? "unknown";
     return { entry, fact, type, name: fact?.name ?? entry.n, price: observedPrice(fact) };
   });

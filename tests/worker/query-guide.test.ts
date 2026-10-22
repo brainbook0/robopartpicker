@@ -89,7 +89,7 @@ describe("queryMatchesSection (per-query catalogue substance)", () => {
 
   it("renders a real comparison table with maker, price and offer count", () => {
     const facts = new Map<string, QueryPartFact>([
-      ["adafruit-micro-servo-mg90d\u0000actuator", fact({ slug: "adafruit-micro-servo-mg90d", name: "Micro Servo - MG90D High Torque Metal Gear", maker: "Adafruit", offers: 3, lowestMinor: 1295, currency: "USD" })],
+      ["adafruit-micro-servo-mg90d", fact({ slug: "adafruit-micro-servo-mg90d", name: "Micro Servo - MG90D High Torque Metal Gear", maker: "Adafruit", offers: 3, lowestMinor: 1295, currency: "USD" })],
     ]);
     const html = queryMatchesSection(coverage, facts);
     expect(html).toContain("<table>");
@@ -103,6 +103,26 @@ describe("queryMatchesSection (per-query catalogue substance)", () => {
     expect(html).toContain("actuator");
     expect(html).toContain("Sourcing notes");
     expect(html).toContain("Observed supplier prices exist for 1 of the 2 matches shown");
+  });
+
+  it("prefers the live catalogue category over a stale type in the coverage snapshot", () => {
+    // A mecanum wheel was filed under `inductor` when the snapshot was captured and has
+    // since been corrected to `mechanical`. The page must show the catalogue's answer and
+    // link to the canonical URL, not the stale one.
+    const staleCoverage = {
+      c: 16, p: 0, ix: true,
+      ex: [{ n: "Right Mecanum Wheel", s: "mecanum-right", t: "inductor" }],
+      px: [],
+      cat: "mechanical",
+    };
+    const facts = new Map<string, QueryPartFact>([
+      ["mecanum-right", fact({ slug: "mecanum-right", category: "mechanical", name: "Right Mecanum Wheel", maker: "Adafruit" })],
+    ]);
+    const html = queryMatchesSection(staleCoverage, facts);
+    expect(html).toContain("/parts/mechanical/mecanum-right");
+    expect(html).not.toContain("/parts/inductor/");
+    expect(html).toContain("Adafruit");
+    expect(html).toContain("<td>mechanical</td>");
   });
 
   it("says so when nothing has an observed price instead of inventing one", () => {
@@ -123,7 +143,7 @@ describe("queryMatchesSection (per-query catalogue substance)", () => {
 
   it("escapes catalogue text (names come from imported supplier data)", () => {
     const facts = new Map<string, QueryPartFact>([
-      ["adafruit-micro-servo-mg90d\u0000actuator", fact({ name: "<script>alert(1)</script>", maker: "A & B", offers: 1, lowestMinor: 100, currency: "USD" })],
+      ["adafruit-micro-servo-mg90d", fact({ name: "<script>alert(1)</script>", maker: "A & B", offers: 1, lowestMinor: 100, currency: "USD" })],
     ]);
     const html = queryMatchesSection(coverage, facts);
     expect(html).not.toContain("<script>alert(1)</script>");

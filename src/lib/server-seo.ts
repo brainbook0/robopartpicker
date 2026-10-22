@@ -12,6 +12,12 @@ export type SeoDocument = {
    * SPA shell otherwise). React mounts over it for human visitors.
    */
   bodyHtml?: string;
+  /**
+   * Absolute URL the request should be permanently redirected to. Set only when the
+   * same record is reachable at a different canonical path (a part whose category was
+   * corrected), so the old URL keeps resolving instead of degrading to a soft 404.
+   */
+  redirectTo?: string;
 };
 
 export type SitemapEntry = { url: string; lastModified?: string | null };

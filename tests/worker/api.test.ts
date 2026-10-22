@@ -346,7 +346,7 @@ describe("Worker, D1, R2, authentication, and domain invariants", () => {
 
   it("applies the complete schema and searches the D1 FTS index", async () => {
     const migrations = await env.DB.prepare("SELECT COUNT(*) AS value FROM d1_migrations").first<{ value: number }>();
-    expect(Number(migrations?.value)).toBe(33);
+    expect(Number(migrations?.value)).toBe(35);
 
     // Verify the new normalized project profile/price/trend tables exist
     const { results: projectSpecsCols } = await env.DB.prepare("PRAGMA table_info('project_specs')").all<{ name: string }>();
