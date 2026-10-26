@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { AppBindings } from "../env";
 import { BomsRepository, type BomRow } from "../db/repositories/boms";
 import { BuildsRepository } from "../db/repositories/builds";
-import { AppError } from "../http";
+import { AppError, parsePositiveInt } from "../http";
 import { loadAuthSession, requireAuth } from "../middleware/authentication";
 import { assertOrganizationPermission, assertScopedRead, assertScopedWrite, authenticatedUserId, organizationRole } from "../middleware/authorization";
 import { parseJson } from "../validation";
@@ -39,8 +39,22 @@ export const bomRoutes = new Hono<AppBindings>();
 
 bomRoutes.get("/boms", loadAuthSession, async (c) => {
   const userId = c.get("authSession")?.user?.id ?? null;
-  const items = (await new BomsRepository(c.env.DB).list(userId)).filter((item) => item.is_demo !== 1);
-  return c.json({ items, total: items.length, dataMode: "live" });
+  // The catalog holds thousands of BOM records, so the documented public list
+  // paginates like /v1/projects. Returning every row (1.19 MB) made the endpoint
+  // unusable for the agent clients that llms.txt/openapi.json advertise.
+  const limit = parsePositiveInt(c.req.query("limit"), 50, 1000);
+  const page = parsePositiveInt(c.req.query("page"), 1, 10_000);
+  const all = (await new BomsRepository(c.env.DB).list(userId)).filter((item) => item.is_demo !== 1);
+  const total = all.length;
+  const items = all.slice((page - 1) * limit, (page - 1) * limit + limit);
+  return c.json({
+    items,
+    total,
+    page,
+    limit,
+    pages: Math.max(1, Math.ceil(total / limit)),
+    dataMode: "live",
+  });
 });
 
 bomRoutes.get("/boms/:id/export", loadAuthSession, async (c) => {

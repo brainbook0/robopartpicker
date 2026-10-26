@@ -163,7 +163,10 @@ app.on(["GET", "HEAD"], ["/openapi.json", "/.well-known/api-catalog"], (c) => {
             { name: "q", in: "query", schema: { type: "string" } }, { name: "category", in: "query", schema: { type: "string" } },
             { name: "limit", in: "query", schema: { type: "integer", maximum: 100 } }, { name: "page", in: "query", schema: { type: "integer" } } ],
             responses: { "200": { description: "Component list with total" } } } },
-          "/v1/boms": { get: { operationId: "listBoms", summary: "List public bills of materials.", responses: { "200": { description: "BOM list with line counts" } } } },
+          "/v1/boms": { get: { operationId: "listBoms", summary: "List public bills of materials.", parameters: [
+            { name: "limit", in: "query", schema: { type: "integer", default: 50, maximum: 1000 } },
+            { name: "page", in: "query", schema: { type: "integer", default: 1 } } ],
+            responses: { "200": { description: "Paginated BOM list with total, page, limit, pages and per-row line counts" } } } },
           "/v1/marketplace": { get: { operationId: "listMarketplace", summary: "List public marketplace listings.", responses: { "200": { description: "Listing list" } } } },
         },
         "x-mcp": { endpoint: `${origin}/mcp`, discovery: `${origin}/.well-known/mcp.json`, serverCard: `${origin}/.well-known/mcp/server-card.json` },
