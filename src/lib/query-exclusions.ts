@@ -61,8 +61,40 @@ export const NON_SOURCING_QUERY_SLUGS: ReadonlySet<string> = new Set([
 
 /**
  * Whether a /queries page should be offered to search engines.
- * Either the coverage flag says the catalogue answers it, and it is not on the non-sourcing list.
+ *
+ * Three gates, all of which have to pass:
+ *  1. the generated coverage flag (ix) says the catalogue answers it;
+ *  2. the slug is not on the reviewed non-sourcing list;
+ *  3. the answer is a *subset* of the catalogue rather than the whole of it (see below).
+ *
+ * Gate 3 is a guard rather than a reviewed list, because `ix` is produced by token matching and a
+ * token match on a generic phrase binds to almost everything. Measured live 2026-10-23 against the
+ * shipped coverage: /queries/where-to-buy-a-robot and /queries/how-to-buy-a-robot both claimed
+ * "573 components and 537 published projects", /queries/robotics claimed 517 components and 1,668
+ * projects (the catalogue holds 2,445 published projects), while the answered-query distribution is
+ * median 8 components / 1 project and p95 90 components / 33 projects. No single sourcing question
+ * is answered by 1,668 projects, so those pages are not thin versions of an answer — they are the
+ * absence of one, and Google crawls them and refuses to index them. That non-indexation is the
+ * current #1 blocker for the /queries set, so the pages that provably cannot answer are kept out of
+ * the advertised set instead of being argued back in one slug at a time.
+ *
+ * The caps sit far above p95, so a query the catalogue really answers is unaffected; they only catch
+ * a match set that is large enough to be the catalogue itself.
  */
-export function isQueryIndexable(slug: string, coverage: { ix?: boolean } | undefined): boolean {
-  return Boolean(coverage?.ix) && !NON_SOURCING_QUERY_SLUGS.has(slug);
+export const ANSWER_SELECTIVITY_LIMITS = { components: 400, projects: 100 } as const;
+
+/** True when the match set is too broad to be an answer to one sourcing question. */
+export function isOverbroadAnswer(coverage: { c?: number; p?: number } | undefined): boolean {
+  if (!coverage) return false;
+  return (coverage.c ?? 0) > ANSWER_SELECTIVITY_LIMITS.components
+    || (coverage.p ?? 0) > ANSWER_SELECTIVITY_LIMITS.projects;
+}
+
+export function isQueryIndexable(
+  slug: string,
+  coverage: { ix?: boolean; c?: number; p?: number } | undefined,
+): boolean {
+  return Boolean(coverage?.ix)
+    && !NON_SOURCING_QUERY_SLUGS.has(slug)
+    && !isOverbroadAnswer(coverage);
 }

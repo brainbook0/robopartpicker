@@ -18,6 +18,14 @@ export type SeoDocument = {
    * corrected), so the old URL keeps resolving instead of degrading to a soft 404.
    */
   redirectTo?: string;
+  /**
+   * HTTP status the asset handler must answer with. Set to 404 by the not-found
+   * document so a URL whose *shape* matches an app route but whose record does not
+   * exist (a stale project slug, a renamed part) answers with a real 404 instead of
+   * a 200 that carries "Page not found" body text. Crawlers treat those 200s as
+   * valid pages and keep spending crawl budget on them.
+   */
+  httpStatus?: number;
 };
 
 export type SitemapEntry = { url: string; lastModified?: string | null };

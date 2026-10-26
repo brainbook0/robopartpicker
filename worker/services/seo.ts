@@ -13,6 +13,37 @@ import { isKnownAppRoute } from "./app-routes";
 const SOCIAL_IMAGE_PATH = "/robopartpicker-social.png";
 const LOGO_PATH = "/robopartpicker-logo.png";
 const INDEX_ROBOTS = "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1";
+// Project pages used to reach a crawler as a ~70-word stub: title, four facts and "no BOM lines
+// have been resolved yet". The visitor meanwhile gets 3D viewers and a managed-artifacts panel
+// built from the repository files RoboPartPicker actually indexed. Listing those files here gives
+// the page the unique, per-project content a search engine can use, and it is the same evidence a
+// reader sees. Labels are the human names for the `files.kind` enum values.
+const PROJECT_FILE_KIND_LABELS: Record<string, string> = {
+  cad: "CAD model",
+  urdf: "URDF robot description",
+  mjcf: "MuJoCo description",
+  bom: "bill-of-materials file",
+  firmware: "firmware file",
+  configuration: "configuration file",
+  document: "document",
+  test_evidence: "test-evidence file",
+  attachment: "attachment",
+  image: "image",
+  other: "other file",
+};
+// Most useful to a builder first; `image` is last so assembly photos never crowd out CAD and firmware.
+const PROJECT_FILE_KIND_ORDER = ["cad", "urdf", "mjcf", "bom", "firmware", "configuration", "document", "test_evidence", "attachment", "image", "other"];
+
+/** `CAD model` -> `CAD model` (1) / `CAD models` (2). Keeps counts grammatical in headings and summaries. */
+function projectFileKindLabel(kind: string, count: number): string {
+  const base = PROJECT_FILE_KIND_LABELS[kind] ?? PROJECT_FILE_KIND_LABELS.other;
+  return count === 1 ? base : `${base}s`;
+}
+// Date the /queries server-rendered template last changed. Every query page's intro, catalogue
+// table and Q&A block are regenerated from live data on each request, so this is the honest
+// freshness signal for the section — and /queries was the one substantial sitemap section
+// advertised without a <lastmod> at all. Bump it only when the template or its data changes.
+const QUERY_CONTENT_UPDATED = "2026-10-22";
 
 // Internal crawl paths from part pages (which Googlebot actually fetches) into the
 // programmatic /queries inventory (which has zero crawl allocation otherwise).
@@ -79,8 +110,11 @@ export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> 
   const headers = new Headers(asset.headers);
   headers.delete("content-length");
   headers.delete("etag");
-  headers.set("cache-control", knownRoute ? "public, max-age=300, stale-while-revalidate=3600" : "public, max-age=60");
-  return new Response(injectSeoHtml(await asset.text(), document), { status: knownRoute ? asset.status : 404, headers });
+  // A known route that resolved to the not-found document is a dead record, not a page:
+  // 404 it so crawlers drop it instead of re-fetching a 24-word "Page not found" 200.
+  const status = document?.httpStatus ?? (knownRoute ? asset.status : 404);
+  headers.set("cache-control", status === 404 ? "public, max-age=60" : "public, max-age=300, stale-while-revalidate=3600");
+  return new Response(injectSeoHtml(await asset.text(), document), { status, headers });
 }
 
 /** Server-rendered body for a URL the app does not own. Real links, no invented content. */
@@ -92,6 +126,7 @@ export function notFoundDocument(base: string): SeoDocument {
     imageUrl: `${base}${SOCIAL_IMAGE_PATH}`,
     type: "website",
     robots: "noindex,follow",
+    httpStatus: 404,
     bodyHtml: `<article><h1>Page not found</h1><p>There is no RoboPartPicker page at this address. It may have been renamed, or the link may be wrong.</p><ul><li><a href="${base}/projects">Robotics projects</a></li><li><a href="${base}/boms">Bills of materials</a></li><li><a href="${base}/marketplace">Parts marketplace</a></li><li><a href="${base}/queries">Sourcing guides</a></li><li><a href="${base}/">Home</a></li></ul></article>`,
   };
 }
@@ -127,7 +162,7 @@ export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
   // are served noindex, so listing them here would just be a duplicate-content
   // invitation with no unique value behind it.
   const indexable = new Set(QUERY_INDEXABLE_SLUGS.filter((slug) => isQueryIndexable(slug, QUERY_COVERAGE[slug])));
-  entries.push(...QUERIES.filter((query) => indexable.has(query.slug)).map((query) => ({ url: `${base}/queries/${query.slug}` })));
+  entries.push(...QUERIES.filter((query) => indexable.has(query.slug)).map((query) => ({ url: `${base}/queries/${query.slug}`, lastModified: QUERY_CONTENT_UPDATED })));
   entries.push(...COMPARISONS.map((comp) => ({ url: `${base}/compared-to/${comp.slug}` })));
   entries.push(...categories.map((row) => ({ url: `${base}/parts/${encodeURIComponent(row.category)}`, lastModified: row.updated_at })));
   // Guided finder pages exist in the app for these six categories but were never advertised or
@@ -263,6 +298,44 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
       const relatedSection = related.results.length
         ? `<h2>Related robotics projects</h2><ul>${related.results.map((p) => `<li><a href="${base}/projects/${encodeURIComponent(p.slug)}">${esc(p.name)}</a></li>`).join("")}</ul>`
         : "";
+      // The repository files RoboPartPicker indexed for this project. Deliberately capped: this runs
+      // on every project prerender, a few projects carry hundreds of anonymous attachments, and the
+      // cheapest honest page is the one that names the CAD, URDF, firmware and BOM files a builder
+      // would look for plus a count of everything else.
+      const fileRows = await db.prepare(`SELECT f.kind, f.original_name, pf.relative_path
+        FROM project_files pf JOIN files f ON f.id = pf.file_id
+        WHERE pf.project_id = ?1 AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL
+        ORDER BY pf.relative_path LIMIT 200`).bind(row.id).all<{
+          kind: string; original_name: string | null; relative_path: string | null;
+        }>();
+      const filesByKind = new Map<string, string[]>();
+      for (const f of fileRows.results) {
+        const path = (f.relative_path || f.original_name || "").trim();
+        if (!path) continue;
+        const kind = Object.prototype.hasOwnProperty.call(PROJECT_FILE_KIND_LABELS, f.kind) ? f.kind : "other";
+        const bucket = filesByKind.get(kind);
+        if (bucket) bucket.push(path);
+        else filesByKind.set(kind, [path]);
+      }
+      const kindsPresent = PROJECT_FILE_KIND_ORDER.filter((kind) => filesByKind.has(kind));
+      const fileCount = fileRows.results.length;
+      let fileBudget = 36;
+      const fileGroups = kindsPresent
+        .filter((kind) => kind !== "image" && fileBudget > 0)
+        .map((kind) => {
+          const all = filesByKind.get(kind) ?? [];
+          const shown = all.slice(0, Math.min(6, fileBudget));
+          fileBudget -= shown.length;
+          if (!shown.length) return "";
+          const rest = all.length - shown.length;
+          const more = rest > 0 ? `<li>${rest.toLocaleString()} more ${esc(projectFileKindLabel(kind, rest))} are indexed in the catalogue.</li>` : "";
+          return `<h3>${esc(projectFileKindLabel(kind, all.length))} (${all.length.toLocaleString()})</h3><ul>${shown.map((path) => `<li>${esc(path)}</li>`).join("")}${more}</ul>`;
+        })
+        .join("");
+      const fileSummary = kindsPresent.map((kind) => `${(filesByKind.get(kind) ?? []).length.toLocaleString()} ${projectFileKindLabel(kind, (filesByKind.get(kind) ?? []).length)}`).join(", ");
+      const fileSection = fileCount
+        ? `<h2>Repository files indexed (${fileCount.toLocaleString()})</h2><p>${esc(fileSummary)}. Paths are exactly as they appear in the project's repository; RoboPartPicker lists only files it has actually indexed.</p>${fileGroups}`
+        : "<h2>Repository files indexed</h2><p>No repository files have been indexed for this project yet.</p>";
       return {
         title: conciseTitle(`${row.name}: BOM, files and build data | RoboPartPicker`),
         description,
@@ -270,7 +343,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "article",
         robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}<h2>Project facts</h2><ul>${facts}</ul>${bomSection}${relatedSection}<p><a href="${base}/projects">Browse all robotics projects</a> · <a href="${base}/boms/${encodeURIComponent(slug)}-bom">Full bill of materials</a> · <a href="${base}/community">Community evidence</a></p></article>`,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}<h2>Project facts</h2><ul>${facts}</ul>${bomSection}${fileSection}${relatedSection}<p><a href="${base}/projects">Browse all robotics projects</a> · <a href="${base}/boms/${encodeURIComponent(slug)}-bom">Full bill of materials</a> · <a href="${base}/community">Community evidence</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "SoftwareSourceCode", name: row.name, description, url: canonicalUrl, codeRepository: row.repository_url, license: row.license_spdx, programmingLanguage: "Robotics", interactionStatistic: row.github_stars ? { "@type": "InteractionCounter", interactionType: "https://schema.org/LikeAction", userInteractionCount: row.github_stars } : undefined, additionalProperty: { "@type": "PropertyValue", name: "BOM lines", value: Number(row.bom_lines) } }),
       };
     }
@@ -444,7 +517,10 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
 
   const staticDocument = staticSeo(path, base, fallbackImage);
   if (staticDocument) return staticDocument;
-  return { title: "Page not found | RoboPartPicker", description: "The requested RoboPartPicker page could not be found.", canonicalUrl: `${base}${path}`, imageUrl: fallbackImage, type: "website", robots: "noindex,follow" };
+  // A route shape the app owns whose record is gone (stale project slug, renamed part).
+  // Return the shared not-found document so the asset handler answers 404, not a 200
+  // that merely reads "Page not found".
+  return notFoundDocument(base);
 }
 
 /** Server-rendered content for catalog listing pages (home, projects, parts, boms). */
@@ -955,6 +1031,93 @@ ${notes.length ? `<h3>Sourcing notes</h3>\n<p>${notes.join(" ")}</p>` : ""}
 <p class="meta">Counts come from the live catalog and change as projects are indexed. Prices shown elsewhere on RoboPartPicker are observed catalog data, not quotes.</p>`;
 }
 
+/**
+ * Per-page opening paragraph. The generated `QUERIES[].body` was the same four paragraphs on all
+ * 340 advertised pages with only the keyword substituted, which is the duplication Google had
+ * been crawling and refusing to index (measured token Jaccard 0.69-0.80 between any two pages).
+ * This paragraph is built from the page's own resolved match set instead, so no two pages share
+ * it unless their catalogue evidence really is the same. Pure, so it is testable without D1.
+ */
+export function queryIntroSection(coverage: QueryCoverage | undefined, facts: Map<string, QueryPartFact>, kw: string): string {
+  const resolved = (coverage?.ex ?? []).map((entry) => {
+    const fact = facts.get(entry.s);
+    return { name: fact?.name ?? entry.n, type: fact?.category ?? entry.t ?? "unknown" };
+  });
+  const projects = coverage?.px ?? [];
+  if (!resolved.length) {
+    return `<p>No component in the catalogue matches ${esc(kw)} yet. The catalogue grows as projects are indexed and this page rebuilds from live data when it does.</p>`;
+  }
+  const named = resolved.slice(0, 5).map((item) => `${item.name} (${item.type})`);
+  const more = resolved.length - named.length;
+  const projectNote = projects.length
+    ? ` ${projects.length} published project${projects.length === 1 ? "" : "s"} in the catalogue build with components from that set.`
+    : "";
+  return `<p>Searching the live catalogue for ${esc(kw)} resolves to ${resolved.length} component${resolved.length === 1 ? "" : "s"}, starting with ${esc(named.join(", "))}${more > 0 ? ` and ${more} more listed above` : ""}.${projectNote}</p>`;
+}
+
+/**
+ * Data-derived Q&A for one query page. Replaces the shipped `QUERIES[].faqs`, which were the same
+ * three answers for every keyword. Every answer here is computed from this page's match set:
+ * component names and categories, observed supplier prices, and matching published projects.
+ * Where the catalogue has no evidence the answer says so rather than generalising.
+ */
+export function queryFaqPairs(coverage: QueryCoverage | undefined, facts: Map<string, QueryPartFact>, kw: string): Array<[string, string]> {
+  const resolved = (coverage?.ex ?? []).map((entry) => {
+    const fact = facts.get(entry.s);
+    return {
+      name: fact?.name ?? entry.n,
+      type: fact?.category ?? entry.t ?? "unknown",
+      price: observedPrice(fact),
+      offers: Number(fact?.offers ?? 0),
+      lowestMinor: Number(fact?.lowestMinor ?? 0),
+    };
+  });
+  const projects = coverage?.px ?? [];
+  const pairs: Array<[string, string]> = [];
+
+  if (resolved.length) {
+    const named = resolved.slice(0, 6).map((item) => `${item.name} (${item.type})`);
+    pairs.push([
+      `Which parts does the catalogue match for ${kw}?`,
+      `${resolved.length} component${resolved.length === 1 ? "" : "s"} in the live catalogue match${resolved.length === 1 ? "es" : ""} it: ${named.join(", ")}${resolved.length > named.length ? `, among ${resolved.length - named.length} more in the table above` : ""}. Each is linked to its catalogue page with its maker, and with an observed supplier price where an offer exists.`,
+    ]);
+  } else {
+    pairs.push([
+      `Which parts does the catalogue match for ${kw}?`,
+      `None yet. No catalogue component currently answers this query, so this page is not offered to search engines.`,
+    ]);
+  }
+
+  const priced = resolved.filter((item) => item.price !== null)
+    .sort((a, b) => a.lowestMinor - b.lowestMinor);
+  if (priced.length) {
+    pairs.push([
+      `How much do the matched ${kw} parts cost?`,
+      `Observed supplier prices exist for ${priced.length} of ${resolved.length} matches shown. The lowest is ${priced[0].name} at ${priced[0].price}${priced[0].offers > 1 ? ` across ${priced[0].offers} offers` : ""}. These are observed catalogue prices rather than quotes, and they change as suppliers change.`,
+    ]);
+  } else {
+    pairs.push([
+      `How much do the matched ${kw} parts cost?`,
+      `No supplier offer is recorded for any of the ${resolved.length} matches shown yet, so any price quoted elsewhere is unverified. RoboPartPicker states a price only when a live supplier offer backs it.`,
+    ]);
+  }
+
+  if (projects.length) {
+    const names = projects.slice(0, 6).map((project) => project.n);
+    pairs.push([
+      `Which open-source robot projects use ${kw} parts?`,
+      `${projects.length} published project${projects.length === 1 ? "" : "s"} in the catalogue build with components from this match set: ${names.join(", ")}${projects.length > names.length ? ", and more linked above" : ""}. Each project page carries its own bill of materials and source evidence.`,
+    ]);
+  } else {
+    pairs.push([
+      `Which open-source robot projects use ${kw} parts?`,
+      `No published project in the catalogue uses a component from this match set yet. The list updates as projects are indexed.`,
+    ]);
+  }
+
+  return pairs;
+}
+
 export async function serveQueryPage(c: Context<AppBindings>): Promise<Response> {
   const slug = safeDecode(c.req.param("slug") ?? "");
   const query = QUERIES.find((entry) => entry.slug === slug);
@@ -967,16 +1130,6 @@ export async function serveQueryPage(c: Context<AppBindings>): Promise<Response>
   // Without backing the body would be the same template for every keyword, which is scaled content
   // rather than a useful page, so it is served noindex.
   const indexable = isQueryIndexable(query.slug, coverage);
-  const faq = query.faqs.map(([question, answer]) => ({
-    "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer },
-  }));
-  const faqSchema = {
-    "@context": "https://schema.org", "@type": "FAQPage",
-    mainEntity: faq,
-  };
-  const faqHtml = query.faqs.map(([question, answer]) =>
-    `<h2>${htmlAttribute(question)}</h2><p>${htmlAttribute(answer)}</p>`).join("");
-
   const components = coverage?.ex ?? [];
   let facts = new Map<string, QueryPartFact>();
   if (indexable && components.length) {
@@ -992,17 +1145,31 @@ export async function serveQueryPage(c: Context<AppBindings>): Promise<Response>
     ? queryMatchesSection(coverage, facts)
     : `<p class="meta">The catalog does not have parts that match this query yet, so this page is not offered to search engines. <a href="/projects">Browse robotics projects</a> \u00b7 <a href="/queries">queries the catalog can answer</a>.</p>`;
 
+  const faqPairs = queryFaqPairs(coverage, facts, query.kw);
+  const faqHtml = faqPairs.map(([question, answer]) =>
+    `<h2>${htmlAttribute(question)}</h2><p>${htmlAttribute(answer)}</p>`).join("");
+  const faqSchema = indexable
+    ? {
+        "@context": "https://schema.org", "@type": "FAQPage",
+        mainEntity: faqPairs.map(([question, answer]) => ({
+          "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
+      }
+    : { "@context": "https://schema.org", "@type": "WebPage", name: query.kw, url: canonical };
+
   const body = `<h1>${htmlAttribute(query.kw)}</h1>
-<p class="meta">Robotics sourcing guide \u00b7 search volume ${Number(query.vol).toLocaleString()} \u00b7 <a href="/queries">more sourcing queries</a></p>
+<p class="meta">Robotics sourcing guide \u00b7 <a href="/queries">more sourcing queries</a> \u00b7 <a href="/developers">API and MCP</a></p>
 ${matchesHtml}
-${query.body}
+${queryIntroSection(coverage, facts, query.kw)}
+<p>RoboPartPicker treats a robot build like a PC build: discovery, bill of materials, sourcing and planning. Paste a repository URL to get a BOM pulled from BOM files, documentation, CAD metadata and robot-description files, with every line left linked to its source evidence. Unmatched lines stay visible rather than being silently dropped, so the plan is costed against the honest bill of materials.</p>
+<p><a href="/projects">Open project catalog</a> \u00b7 <a href="/parts/actuator">component categories</a> \u00b7 <a href="/boms">BOM index</a> \u00b7 <a href="/all-projects">every project</a>.</p>
 <div class="body"><h2>Related questions</h2>${faqHtml}</div>`;
   const html = queryShell(
     query.title,
     query.desc,
     canonical,
     body,
-    JSON.stringify(indexable ? faqSchema : { "@context": "https://schema.org", "@type": "WebPage", name: query.kw, url: canonical }),
+    JSON.stringify(faqSchema),
     indexable ? "index,follow,max-image-preview:large" : "noindex,follow",
   );
   return new Response(c.req.method === "HEAD" ? null : html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": QUERY_CACHE_TTL } });

@@ -1,6 +1,7 @@
+import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { isKnownAppRoute } from "../../worker/services/app-routes";
-import { notFoundDocument } from "../../worker/services/seo";
+import { notFoundDocument, resolveSeoDocument } from "../../worker/services/seo";
 
 const origin = "https://example.com";
 
@@ -47,6 +48,27 @@ describe("soft-404 fallback", () => {
     expect(isKnownAppRoute("/parts/actuator/sg90/extra")).toBe(false);
     expect(isKnownAppRoute("/nope")).toBe(false);
     expect(isKnownAppRoute("/api/v1/secret")).toBe(false);
+  });
+
+  it("marks the not-found document as a 404 so a dead record is not a 200", () => {
+    expect(notFoundDocument(origin).httpStatus).toBe(404);
+  });
+
+  it("404s a known route shape whose record does not exist", async () => {
+    // /projects/:slug is a route the app owns, but this slug is not in the catalog.
+    // Before the fix resolveSeoDocument returned "Page not found" with no status, so
+    // serveSeoAsset answered 200 and crawlers kept the URL as a valid thin page.
+    const doc = await resolveSeoDocument(env.DB, "/projects/definitely-not-a-real-project-xyz", origin);
+    expect(doc.httpStatus).toBe(404);
+    expect(doc.robots).toBe("noindex,follow");
+  });
+
+  it("does not mark a real route's document as 404", async () => {
+    // /about is served from staticSeo(); /queries has its own router entry and never
+    // reaches resolveSeoDocument, so it is the wrong control for this assertion.
+    const doc = await resolveSeoDocument(env.DB, "/about", origin);
+    expect(doc.httpStatus).toBeUndefined();
+    expect(doc.title).not.toContain("Page not found");
   });
 
   it("normalises trailing slashes and query strings", () => {

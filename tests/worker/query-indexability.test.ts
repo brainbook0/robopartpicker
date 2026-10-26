@@ -1,7 +1,7 @@
 import { exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { QUERY_COVERAGE, QUERY_INDEXABLE_SLUGS } from "../../src/lib/query-coverage";
-import { isQueryIndexable, NON_SOURCING_QUERY_SLUGS } from "../../src/lib/query-exclusions";
+import { isOverbroadAnswer, isQueryIndexable, NON_SOURCING_QUERY_SLUGS } from "../../src/lib/query-exclusions";
 import { staticSeo } from "../../worker/services/seo";
 
 const origin = "https://example.com";
@@ -28,7 +28,12 @@ describe("NON_SOURCING_QUERY_SLUGS", () => {
       expect(isQueryIndexable(slug, QUERY_COVERAGE[slug])).toBe(false);
     }
     const remaining = QUERY_INDEXABLE_SLUGS.filter((slug) => isQueryIndexable(slug, QUERY_COVERAGE[slug]));
-    expect(remaining.length).toBe(QUERY_INDEXABLE_SLUGS.length - NON_SOURCING_QUERY_SLUGS.size);
+    const overbroad = QUERY_INDEXABLE_SLUGS.filter((slug) => isOverbroadAnswer(QUERY_COVERAGE[slug]));
+    // Two independent gates now remove slugs from the advertised set: the reviewed non-sourcing
+    // list, and the overbroad-answer guard. Measured 2026-10-23: 380 ix:true slugs, 41 excluded by
+    // the reviewed list, 16 by the guard (zero overlap), leaving 323.
+    expect(remaining.length).toBe(QUERY_INDEXABLE_SLUGS.length - NON_SOURCING_QUERY_SLUGS.size - overbroad.length);
+    expect(remaining.length).toBe(323);
   });
 
   it("does not exclude any high-volume parts query", () => {
@@ -71,6 +76,49 @@ describe("query pages offered to crawlers", () => {
       expect(html, `${slug} should not be listed`).not.toContain(`/queries/${slug}"`);
     }
     expect(html).toContain("/queries/");
+  });
+});
+
+describe("overbroad answers are not offered to crawlers", () => {
+  // Measured 2026-10-23 against the shipped coverage: two of these claimed "573 components and 537
+  // published projects", and /queries/robotics claimed 1,668 projects out of 2,445 in the catalogue.
+  const OVERBROAD_SAMPLE = ["where-to-buy-a-robot", "robotics", "carbon-robotics"];
+  // Queries the catalogue genuinely answers, well inside p95 (90 components / 33 projects).
+  const ANSWERED_SAMPLE = ["robot-servo-motor", "frc-encoder", "quadruped-robot"];
+
+  it("flags the over-match set and leaves the answered queries alone", () => {
+    for (const slug of OVERBROAD_SAMPLE) {
+      expect(isOverbroadAnswer(QUERY_COVERAGE[slug]), `${slug} should read as overbroad`).toBe(true);
+      expect(isQueryIndexable(slug, QUERY_COVERAGE[slug]), `${slug} must not be indexable`).toBe(false);
+    }
+    for (const slug of ANSWERED_SAMPLE) {
+      expect(isOverbroadAnswer(QUERY_COVERAGE[slug]), `${slug} should stay answerable`).toBe(false);
+      expect(isQueryIndexable(slug, QUERY_COVERAGE[slug])).toBe(true);
+    }
+  });
+
+  it("does not swing at missing or empty coverage", () => {
+    expect(isOverbroadAnswer(undefined)).toBe(false);
+    expect(isOverbroadAnswer({})).toBe(false);
+    expect(isOverbroadAnswer({ c: 400, p: 100 })).toBe(false);
+    expect(isOverbroadAnswer({ c: 401, p: 0 })).toBe(true);
+    expect(isOverbroadAnswer({ c: 0, p: 101 })).toBe(true);
+    expect(isQueryIndexable("anything", undefined)).toBe(false);
+  });
+
+  it("drops them from sitemap.xml and serves them noindex", async () => {
+    const xml = await (await exports.default.fetch(new Request(`${origin}/sitemap.xml`))).text();
+    for (const slug of OVERBROAD_SAMPLE) {
+      expect(xml, `${slug} should not be advertised`).not.toContain(`/queries/${slug}<`);
+    }
+    expect(xml).toContain(`/queries/${ANSWERED_SAMPLE[0]}<`);
+    for (const slug of OVERBROAD_SAMPLE) {
+      const res = await exports.default.fetch(new Request(`${origin}/queries/${slug}`, {
+        headers: { "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
+      }));
+      expect(res.status).toBe(200);
+      expect(await res.text(), `${slug} must be noindex`).toContain('content="noindex,follow"');
+    }
   });
 });
 
