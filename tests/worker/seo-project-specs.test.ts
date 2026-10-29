@@ -31,6 +31,9 @@ beforeAll(async () => {
     insertSpec("s-height", "p-specs", "height", "Height", { number: 1.32, unit: "m" }),
     insertSpec("s-speed", "p-specs", "max_speed", "Maximum running speed", { text: "Approx. 5m/s" }),
     insertPrice("pr-specs", "p-specs", 1350000, 1350000, "USD"),
+    // A second priced project that carries cents, to pin the deterministic money formatting.
+    insertProject("p-eur", "usd-price-robot", "Usd Price Robot"),
+    insertPrice("pr-eur", "p-eur", 350050, 400000, "USD"),
     // A project with no normalized specs or price estimate behind it.
     insertProject("p-nospecs", "plain-robot", "Plain Robot"),
   ]);
@@ -46,6 +49,12 @@ describe("project prerender specs and price", () => {
     expect(doc.bodyHtml).toContain("$13,500");
     expect(doc.bodyHtml).toContain("medium confidence");
     expect(doc.robots).toMatch(/^index,follow/u);
+  });
+
+  it("formats a price range with cents deterministically without edge Intl", async () => {
+    const doc = await resolveSeoDocument(env.DB, "/projects/usd-price-robot", origin);
+    expect(doc.bodyHtml).toContain("$3,500.50–$4,000");
+    expect(doc.bodyHtml).toContain("medium confidence");
   });
 
   it("omits both sections when the project has no specs or price estimate", async () => {

@@ -253,13 +253,21 @@ function esc(value: string): string {
 }
 
 /** Minor units (cents) to a display currency string. Mirrors the app's price label. Falls back to `CODE 123` for unknown codes. */
+// Deterministic formatting: the Cloudflare edge runtime's Intl.NumberFormat(style:"currency")
+// produced a wrong value for the same minor amount that workerd and Node format correctly
+// (1350000 USD rendered as "3,500" instead of "13,500" in production, 2026-10-29). Money on a page
+// that promises honesty must not depend on edge ICU, so group the digits ourselves.
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", JPY: "¥", CNY: "CN¥", CAD: "CA$", AUD: "A$", CHF: "CHF ",
+  INR: "₹", KRW: "₩", SEK: "kr ", NOK: "kr ", DKK: "kr ", NZD: "NZ$", SGD: "S$", HKD: "HK$",
+};
 function formatMoney(minor: number, currency: string): string {
-  const amount = Number(minor) / 100;
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
-  } catch {
-    return `${currency} ${amount.toFixed(0)}`;
-  }
+  const amount = Math.round(Number(minor)) / 100;
+  const [intPart, fracPart] = Math.abs(amount).toFixed(2).split(".");
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/gu, ",");
+  const frac = fracPart === "00" ? "" : `.${fracPart}`;
+  const symbol = CURRENCY_SYMBOLS[currency] ?? `${currency} `;
+  return `${amount < 0 ? "-" : ""}${symbol}${grouped}${frac}`;
 }
 
 // Guided finder categories the app actually routes (src/pages/Finder.tsx validCategories).
