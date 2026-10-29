@@ -91,7 +91,12 @@ app.on(["GET", "HEAD"], "/.well-known/mcp/server-card.json", (c) => {
     version: "1.0.0",
     homepage: `${origin}`,
     documentation: `${origin}/developers`,
-    repository: `${origin}/developers`,
+    // Directories that ingest server cards (Smithery, Glama, mcp.so) key listings off a
+    // real source repository; pointing this at the docs page made the listing unverifiable.
+    // Kept as a plain URL string for compatibility with consumers that parse `repository`
+    // as a string; sourceUrl carries the same value for consumers that look for it.
+    repository: "https://github.com/brainbook0/robopartpicker",
+    sourceUrl: "https://github.com/brainbook0/robopartpicker",
     transport: { type: "streamable-http", url: `${origin}/mcp` },
     endpoint: `${origin}/mcp`,
     authentication: { type: "none", required: false },
@@ -107,6 +112,36 @@ app.on(["GET", "HEAD"], "/.well-known/mcp/server-card.json", (c) => {
     categories: ["robotics", "engineering", "hardware", "data", "developer-tools"],
     license: "Public read-only data; project sources retain their own licenses.",
     contact: "support@robopartpicker.com",
+  };
+  return new Response(c.req.method === "HEAD" ? null : JSON.stringify(card, null, 2), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300, stale-while-revalidate=300" },
+  });
+});
+
+// A2A agent card. Automated agent crawlers requested this path ~46 times in a day and got 404.
+// It describes the same public MCP server in the Agent2Agent discovery shape.
+app.on(["GET", "HEAD"], [".well-known/agent-card.json", "/.well-known/agent.json"], (c) => {
+  const origin = new URL(c.req.url).origin;
+  const card = {
+    protocolVersion: "0.3.0",
+    name: "RoboPartPicker",
+    description: "Public read-only robotics data: source-linked projects, bills of materials, components and RPPS package validation.",
+    url: `${origin}/mcp`,
+    preferredTransport: "JSONRPC",
+    version: "1.0.0",
+    provider: { organization: "RoboPartPicker", url: origin },
+    documentationUrl: `${origin}/developers`,
+    iconUrl: `${origin}/robopartpicker-logo.png`,
+    capabilities: { streaming: false, pushNotifications: false, stateTransitionHistory: false },
+    defaultInputModes: ["application/json", "text/plain"],
+    defaultOutputModes: ["application/json", "text/plain"],
+    skills: [
+      { id: "search_projects", name: "Search robotics projects", description: "Search published public robotics projects by keyword.", tags: ["robotics", "projects", "search"], examples: ["Find open-source quadruped robot projects"] },
+      { id: "get_project", name: "Get a robotics project", description: "Retrieve one project with repository, license, indexed files and BOM summary.", tags: ["robotics", "bom", "repository"], examples: ["Show the BOM summary for TNY-360"] },
+      { id: "search_components", name: "Search components", description: "Search the technical component catalog by name, category or maker.", tags: ["components", "parts", "catalog"], examples: ["Find SG90 micro servos"] },
+      { id: "compare_components", name: "Compare components", description: "Compare two to four components. Same category does not imply drop-in compatibility.", tags: ["components", "comparison"], examples: ["Compare these two servo controllers"] },
+      { id: "validate_rpps", name: "Validate an RPPS package", description: "Validate an RPPS 0.1 Draft manifest and optional lockfile without storing it.", tags: ["rpps", "validation"], examples: ["Validate this RPPS manifest"] },
+    ],
   };
   return new Response(c.req.method === "HEAD" ? null : JSON.stringify(card, null, 2), {
     headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300, stale-while-revalidate=300" },

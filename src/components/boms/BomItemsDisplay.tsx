@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { BomDetail, BomItem } from "@/shared/builds";
 import { bomItemDestination } from "@/lib/bom-item-destination";
 import { PartVisual } from "@/components/parts/PartVisual";
+import { normalizeCatalogText } from "@/lib/catalogText";
 
 export function BomItemsDisplay({ bom, framed = true }: { bom: BomDetail; framed?: boolean }) {
   const currency = bom.version?.currency ?? "USD";
@@ -59,6 +60,15 @@ function BomPartCard({ item, bomId, currency }: { item: BomItem; bomId: string; 
   );
 }
 
+// BOM line descriptions are imported verbatim from repository READMEs and spreadsheets, so they can
+// carry source markup such as the SO-101 README's `<sup>2</sup>` footnote markers. React escapes
+// that markup, which printed the literal characters `<sup>2</sup>` next to the part name on
+// /boms/therobotstudio-so-arm100-bom. Normalise before display.
+function partLabel(item: BomItem): string {
+  const raw = item.componentName ?? item.description;
+  return normalizeCatalogText(raw) || raw;
+}
+
 function DataCell({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return <div className="min-w-0 border-r border-border/70 px-3.5 py-2.5 odd:last:border-r-0"><dt className="section-title">{label}</dt><dd className={`mt-1 truncate ${mono ? "font-mono" : ""}`}>{value}</dd></div>;
 }
@@ -68,7 +78,7 @@ function PartLink({ item, bomId }: { item: BomItem; bomId: string }) {
   return (
     <Link to={href} className="inline-flex max-w-full items-start gap-1.5 font-semibold leading-5 text-foreground underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <PackageSearch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-      <span>{item.componentName ?? item.description}</span>
+      <span>{partLabel(item)}</span>
       <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-60 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
     </Link>
   );
@@ -76,13 +86,13 @@ function PartLink({ item, bomId }: { item: BomItem; bomId: string }) {
 
 function PartThumbnail({ item }: { item: BomItem }) {
   return <PartVisual compact className="h-12 w-16" part={{
-    name: item.componentName ?? item.description,
+    name: partLabel(item),
     category: item.componentCategory ?? "component",
     maker: item.manufacturerName ?? "",
     mpn: item.manufacturerPartNumber,
     files: item.componentImageUrl ? [{
       id: `${item.id}:image`,
-      originalName: `${item.componentName ?? item.description}.webp`,
+      originalName: `${partLabel(item)}.webp`,
       mediaType: "image/webp",
       sizeBytes: 0,
       purpose: "image",
