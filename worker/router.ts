@@ -65,16 +65,43 @@ app.use("/.well-known/*", apiSecurityHeaders);
 app.all("/mcp/private", (c) => handlePrivateMcpRequest(c.req.raw, c.env));
 app.all("/mcp", (c) => handleMcpRequest(c.req.raw, c.env));
 
+// Conforms to the official MCP server schema
+// (https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json) so that
+// crawlers which probe a domain's "conventional" MCP deployment locations recognise the
+// server. mcpi.app and similar directories check this document shape; the previous
+// bespoke shape (name/transport-as-string/endpoint/capabilities) failed their probe with
+// "No MCP endpoint found on robopartpicker.com". `remotes[].type` is the canonical remote
+// transport declaration; the legacy keys (endpoint, documentation, authentication,
+// capabilities, transportType) are retained for consumers written against the old shape.
+const MCP_SERVER_NAME = "com.robopartpicker/robopartpicker";
+const MCP_SERVER_VERSION = "1.0.0";
+const MCP_TOOLS = ["search_projects", "get_project", "search_components", "compare_components", "validate_rpps"];
+
 app.on(["GET", "HEAD"], "/.well-known/mcp.json", (c) => {
   const origin = new URL(c.req.url).origin;
   const metadata = {
-    name: "RoboPartPicker",
-    description: "Public read-only robotics project and technical component data.",
-    transport: "streamable-http",
+    $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    name: MCP_SERVER_NAME,
+    title: "RoboPartPicker",
+    description: "Public read-only robotics data for AI agents: search source-linked open-source robotics projects and components, inspect bills of materials line-by-line, compare components and validate RPPS documents.",
+    version: MCP_SERVER_VERSION,
+    websiteUrl: `${origin}`,
+    repository: { url: "https://github.com/brainbook0/robopartpicker-mcp", source: "github" },
+    remotes: [{ type: "streamable-http", url: `${origin}/mcp` }],
+    serverInfo: { name: "RoboPartPicker", version: MCP_SERVER_VERSION },
+    transport: { type: "streamable-http", url: `${origin}/mcp` },
+    tools: MCP_TOOLS,
+    alternatives: {
+      rest: `${origin}/openapi.json`,
+      a2a: `${origin}/.well-known/agent-card.json`,
+      manifest: `${origin}/.well-known/api-catalog`,
+    },
+    // Legacy shape, kept for back-compat with consumers written before the schema change.
+    transportType: "streamable-http",
     endpoint: `${origin}/mcp`,
     documentation: `${origin}/developers`,
     authentication: { public: "none", privateEndpoint: `${origin}/mcp/private`, private: "oauth2" },
-    capabilities: ["search_projects", "get_project", "search_components", "compare_components", "validate_rpps"],
+    capabilities: MCP_TOOLS,
   };
   return new Response(c.req.method === "HEAD" ? null : JSON.stringify(metadata), {
     headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300, stale-while-revalidate=300" },

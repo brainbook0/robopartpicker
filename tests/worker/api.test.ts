@@ -1754,14 +1754,21 @@ extensions:`);
     const discovery = await call("/.well-known/mcp.json");
     expect(discovery.status).toBe(200);
     expect(discovery.headers.get("content-type")).toContain("application/json");
-    const discoveryBody = await body<{ capabilities: string[] } & Record<string, unknown>>(discovery);
+    const discoveryBody = await body<{ capabilities: string[]; transport: { type: string; url: string }; remotes: Array<{ type: string; url: string }> } & Record<string, unknown>>(discovery);
     expect(discoveryBody).toMatchObject({
-      name: "RoboPartPicker",
-      transport: "streamable-http",
+      name: "com.robopartpicker/robopartpicker",
+      title: "RoboPartPicker",
+      version: "1.0.0",
+      transport: { type: "streamable-http", url: `${origin}/mcp` },
+      remotes: [{ type: "streamable-http", url: `${origin}/mcp` }],
       endpoint: `${origin}/mcp`,
       documentation: `${origin}/developers`,
       capabilities: expect.arrayContaining(["search_projects", "get_project", "search_components", "validate_rpps"]),
     });
+    // Conforms to the official MCP server schema so conventional crawlers recognise it.
+    expect(discoveryBody.$schema).toBe("https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json");
+    expect(discoveryBody).toHaveProperty("serverInfo");
+    expect(discoveryBody).toHaveProperty("repository");
     expect(discoveryBody.capabilities).not.toContain("search_suppliers");
 
     const headers = { accept: "application/json, text/event-stream", "content-type": "application/json" };
