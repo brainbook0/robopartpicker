@@ -900,6 +900,44 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
 <p>A same-origin JSON API under <code>${base}/api/v1</code> powers the site. Its public stability is still evolving, so MCP is the recommended interface for external agents. Implementation notes and the verification procedure are in the <a href="https://github.com/brainbook0/robopartpicker/blob/master/docs/mcp.md">MCP setup guide</a>, and the source is at <a href="https://github.com/brainbook0/robopartpicker">github.com/brainbook0/robopartpicker</a>.</p>
 <p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/rpps">RPPS specification</a> · <a href="${base}/contact">Contact</a></p>
 </article>`;
+  // /about and /marketplace were served by the generic one-sentence exact-page template below,
+  // which made them the two thinnest documents in the sitemap (~34 and ~31 words) while both are
+  // linked site-wide and crawled. /about carries the site's honesty claims and /marketplace is a
+  // nav-linked beta surface, so both get real, verifiable body content instead of a stub.
+  const aboutBody = `<article>
+<h1>About RoboPartPicker</h1>
+<p>RoboPartPicker is a free, source-linked catalogue of open robotics projects and the parts they are built from. It reads public repositories — BOM files, documentation, CAD metadata and URDF — and compiles each project's bill of materials into a list a builder can act on.</p>
+<h2>How the data is produced</h2>
+<p>Every BOM line keeps the locator of the file it came from, such as a CSV row or a spreadsheet cell, together with an evidence state: verified, probable, unresolved or unpriced. A line that cannot be matched to an identifiable part stays in the list and says so, rather than being dropped or guessed at. Prices shown anywhere on the site are observed catalogue data, not quotations from a supplier.</p>
+<h2>What the catalogue holds today</h2>
+<ul>
+<li>2,453 open robotics projects.</li>
+<li>35,146 component records with source-backed identity and technical specifications.</li>
+<li>2,414 public bills of materials — and 2,185 of them (91%) contain no line items at all, because the underlying project publishes a repository, a README and a licence but no parts list. RPP reports that gap instead of hiding it; the write-up with the method and the counts is at <a href="${base}/state-of-open-robotics">${base}/state-of-open-robotics</a>.</li>
+</ul>
+<h2>What it is not</h2>
+<p>RoboPartPicker is not a shop and does not sell parts. It does not treat a shared category as evidence that two parts are interchangeable, and it does not fill in a missing price with an estimate. Supplier coverage is partial, so an absent price means "not observed here", not "unavailable".</p>
+<h2>Corrections and contributions</h2>
+<p>The catalogue improves fastest when the people who have built these robots correct it. Corrections, additional sourcing evidence, removal requests and partnership inquiries are welcome through <a href="${base}/partners">${base}/partners</a> and <a href="${base}/contact">${base}/contact</a>. An open-source project that would rather not be listed can ask and it will be removed.</p>
+<h2>Using the data programmatically</h2>
+<p>The catalogue is published read-only through a public MCP server and a JSON API, documented at <a href="${base}/developers">${base}/developers</a>.</p>
+<p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalogue</a> · <a href="${base}/community">Community</a> · <a href="${base}/queries">Sourcing guides</a> · <a href="${base}/developers">API and MCP</a> · <a href="${base}/contact">Contact</a></p>
+</article>`;
+  const marketplaceBody = `<article>
+<h1>Robotics parts and project marketplace</h1>
+<p>The RoboPartPicker marketplace is a beta surface for publishing and finding source-backed robotics listings: parts, designs, robots, kits, fabrication and services, alongside "wanted" requests.</p>
+<h2>Current state</h2>
+<p>There are no public listings yet. The marketplace is live but empty, and listings will appear here as sellers and makers publish them. RoboPartPicker itself is not a seller and does not stock parts.</p>
+<h2>While it is empty, use these</h2>
+<ul>
+<li><a href="${base}/projects">Robotics projects</a> — 2,453 open designs with repositories, technical files and licences.</li>
+<li><a href="${base}/boms">Bills of materials</a> — 2,414 public BOMs with per-line quantities, part identity and source evidence.</li>
+<li><a href="${base}/parts/actuator">Component catalogue</a> — 35,146 components with source-backed identity, specifications and observed prices where they exist.</li>
+<li><a href="${base}/queries">Sourcing guides</a> — what the catalogue actually holds for a given query, including where it holds nothing.</li>
+</ul>
+<h2>Publishing a listing</h2>
+<p>Sellers and makers can draft a listing at <a href="${base}/marketplace/new">${base}/marketplace/new</a>. Listings are reviewed against their source evidence before they become public.</p>
+</article>`;
   const pages: Record<string, [string, string]> = {
     "/": ["RoboPartPicker | Build real robots from proven designs", "Discover robotics projects, inspect source-linked BOMs, compare parts, preview CAD, and plan reproducible robot builds."],
     "/projects": ["Open robotics projects with BOMs and build files | RoboPartPicker", "Browse open-source robots, hardware projects and robotics software with repositories, technical files, BOMs and build evidence."],
@@ -923,7 +961,7 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
       structuredData["potentialAction"] = { "@type": "SearchAction", target: `${base}/projects?q={search_term_string}`, "query-input": "required name=search_term_string" };
     }
     return { title: exact[0], description: exact[1], canonicalUrl: `${base}${path}`, imageUrl, type: "website", robots: INDEX_ROBOTS,
-      bodyHtml: path === "/developers" ? developersBody : `<article><h1>${esc(exact[0].split(" | ")[0])}</h1><p>${esc(exact[1])}</p><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a> · <a href="${base}/contact">Contact</a></p></article>`,
+      bodyHtml: path === "/developers" ? developersBody : path === "/about" ? aboutBody : path === "/marketplace" ? marketplaceBody : `<article><h1>${esc(exact[0].split(" | ")[0])}</h1><p>${esc(exact[1])}</p><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a> · <a href="${base}/contact">Contact</a></p></article>`,
       structuredData: [
       structuredData,
       { "@context": "https://schema.org", "@type": "WebSite", name: "RoboPartPicker", url: `${base}`, image: logoUrl },
