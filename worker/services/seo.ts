@@ -1386,7 +1386,7 @@ function barChart(rows: Array<{ label: string; value: number }>, opts: { unit?: 
 export async function serveStateOfOpenRobotics(c: Context<AppBindings>): Promise<Response> {
   const base = publicBase(c.env, c.req.url);
   const P = "deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'";
-  const [totals, bom, cats, licenses, specs] = await Promise.all([
+  const [totals, bom, cats, licenses, specs, linesQ] = await Promise.all([
     collectRows<{ projects: number; components: number; with_repo: number; with_license: number }>(c.env.DB,
       `SELECT (SELECT COUNT(*) FROM projects WHERE ${P}) AS projects,
               (SELECT COUNT(*) FROM components WHERE deleted_at IS NULL AND is_demo = 0) AS components,
@@ -1407,10 +1407,30 @@ export async function serveStateOfOpenRobotics(c: Context<AppBindings>): Promise
               (SELECT COUNT(DISTINCT spec_key) FROM component_specs) AS keys,
               (SELECT COUNT(DISTINCT cr.component_id) FROM component_specs s
                  JOIN component_revisions cr ON cr.id = s.component_revision_id) AS with_specs`),
+    // Line-level resolution, restricted to what the catalog actually serves. A bill of materials is
+    // only shown publicly once a version is published (verified or partial); versions still in
+    // 'draft' are stored but never rendered. Counting every stored line would overstate the
+    // ecosystem, so the served figure and the stored figure are reported separately.
+    collectRows<{ published_boms: number; lines: number; resolved: number; evidenced: number; components: number; projects_resolved: number }>(c.env.DB,
+      `SELECT
+         (SELECT COUNT(*) FROM boms b JOIN bom_versions v ON v.id = b.current_version_id
+            WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial')
+              AND EXISTS (SELECT 1 FROM bom_items i WHERE i.bom_version_id = b.current_version_id)) AS published_boms,
+         (SELECT COUNT(*) FROM bom_items i JOIN bom_versions v ON v.id = i.bom_version_id JOIN boms b ON b.id = v.bom_id
+            WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial')) AS lines,
+         (SELECT COUNT(*) FROM bom_items i JOIN bom_versions v ON v.id = i.bom_version_id JOIN boms b ON b.id = v.bom_id
+            WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial') AND i.component_id IS NOT NULL) AS resolved,
+         (SELECT COUNT(*) FROM bom_items i JOIN bom_versions v ON v.id = i.bom_version_id JOIN boms b ON b.id = v.bom_id
+            WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial') AND i.evidence_locator IS NOT NULL AND i.evidence_locator <> '') AS evidenced,
+         (SELECT COUNT(DISTINCT i.component_id) FROM bom_items i JOIN bom_versions v ON v.id = i.bom_version_id JOIN boms b ON b.id = v.bom_id
+            WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial') AND i.component_id IS NOT NULL) AS components,
+         (SELECT COUNT(DISTINCT b.project_id) FROM bom_items i JOIN bom_versions v ON v.id = i.bom_version_id JOIN boms b ON b.id = v.bom_id
+            WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial') AND i.component_id IS NOT NULL) AS projects_resolved`),
   ]);
   const t = totals[0] || { projects: 0, components: 0, with_repo: 0, with_license: 0 };
   const b = bom[0] || { boms: 0, empty: 0 };
   const s = specs[0] || { spec_rows: 0, keys: 0, with_specs: 0 };
+  const l = linesQ[0] || { published_boms: 0, lines: 0, resolved: 0, evidenced: 0, components: 0, projects_resolved: 0 };
   const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "n/a");
   const emptyPct = pct(b.empty, b.boms);
   const noLicense = t.projects - t.with_license;
@@ -1429,6 +1449,10 @@ export async function serveStateOfOpenRobotics(c: Context<AppBindings>): Promise
 <p>${b.empty.toLocaleString()} of ${b.boms.toLocaleString()} bills of materials (${emptyPct}) contain no line items at all. A project can publish a repository, a README and a licence and still tell a builder nothing about what to buy. Only a small minority of projects carry a bill of materials whose lines resolve to a specific, identifiable part, which is the form a builder can actually order from.</p>
 <p>This matters because a BOM is the difference between a project that reads as interesting and a project someone can reproduce. For most of the catalog, the shopping list is left as an exercise.</p>
 
+<h2>Even the lines that exist rarely resolve to something you can order</h2>
+<p>Of the ${(b.boms - b.empty).toLocaleString()} bills of materials that carry line items in any version, only ${l.published_boms.toLocaleString()} carry them in a published version — the remainder hold draft line items the catalog has never published. Those ${l.published_boms.toLocaleString()} published bills contain ${l.lines.toLocaleString()} lines, and just ${l.resolved.toLocaleString()} of them (${pct(l.resolved, l.lines)}) resolve to an identifiable component in the catalog — a part with a name, a page and source-backed specifications. ${l.components.toLocaleString()} distinct components are referenced this way. The remaining lines name something the source did not fully identify; they are kept and labelled by evidence state rather than dropped.</p>
+<p>The practical consequence: only ${l.projects_resolved.toLocaleString()} of ${t.projects.toLocaleString()} projects have a published bill of materials whose lines resolve to at least one identifiable part. Where a line does exist, its provenance is traceable — ${l.evidenced.toLocaleString()} of ${l.lines.toLocaleString()} lines carry an explicit source locator pointing back at the file they came from.</p>
+
 <h2>Licensing is often ambiguous</h2>
 <p>${noLicense.toLocaleString()} of ${t.projects.toLocaleString()} projects (${pct(noLicense, t.projects)}) declare no licence at all, and ${noassertion.toLocaleString()} declare one that GitHub cannot identify as a known licence. Together that is ${ambiguous.toLocaleString()} projects (${pct(ambiguous, t.projects)}) whose terms a builder cannot rely on without asking the maintainer first. For anyone planning to build on a design commercially, that ambiguity is the first thing to resolve, and it is usually invisible from the project page.</p>
 ${barChart(licenses.slice(0, 8).map((r) => ({ label: r.license, value: r.n })))}
@@ -1441,7 +1465,7 @@ ${barChart(cats.slice(0, 12).map((r) => ({ label: r.category, value: r.n })))}
 <p>Against ${t.projects.toLocaleString()} projects, the catalog holds ${t.components.toLocaleString()} distinct components described by ${s.spec_rows.toLocaleString()} specification rows across ${s.keys} distinct spec dimensions, covering ${s.with_specs.toLocaleString()} components. Specification coverage is the part of the open-hardware ecosystem that is well documented; sourcing and assembly are the parts that are not.</p>
 
 <h2>Method</h2>
-<p>Projects counted are published, public, non-demo rows. Component and specification counts come from the component tables. BOM emptiness is measured as bills of materials with no line items attached to any version. Figures were computed on ${asOf} and move as the catalog grows, so the numbers above are a snapshot rather than a fixed claim.</p>
+<p>Projects counted are published, public, non-demo rows. Component and specification counts come from the component tables. BOM emptiness is measured as bills of materials with no line items attached to any version. Published line figures count only bills of materials whose current version is published (verified or partial) — the same rows the catalog actually serves; draft line items are stored but excluded from that figure. Figures were computed on ${asOf} and move as the catalog grows, so the numbers above are a snapshot rather than a fixed claim.</p>
 
 <h2>Check it yourself</h2>
 <p>The same data is available programmatically and the catalog is browsable without an account: <a href="${base}/all-projects">every project</a>, <a href="${base}/parts/actuator">the component catalog</a>, <a href="${base}/developers">the public API and MCP server</a>, and <a href="${base}/queries">the sourcing questions we answer</a>.</p>
@@ -1449,7 +1473,7 @@ ${barChart(cats.slice(0, 12).map((r) => ({ label: r.category, value: r.n })))}
 
   const html = queryShell(
     "The state of open-source robotics hardware | RoboPartPicker",
-    `A census of ${t.projects.toLocaleString()} open robotics projects: ${emptyPct} of bills of materials are empty, ${pct(ambiguous, t.projects)} leave the licence ambiguous, and the component data behind them.`,
+    `A census of ${t.projects.toLocaleString()} open robotics projects: ${emptyPct} of bills of materials are empty, only ${l.projects_resolved.toLocaleString()} have published lines that resolve to an identifiable part, and ${pct(ambiguous, t.projects)} leave the licence ambiguous.`,
     `${base}/state-of-open-robotics`, body,
     JSON.stringify([{
       "@context": "https://schema.org", "@type": "Dataset",

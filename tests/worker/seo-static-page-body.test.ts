@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import { resolveSeoDocument } from "../../worker/services/seo";
+import { resolveSeoDocument, serveStateOfOpenRobotics } from "../../worker/services/seo";
 
 // /about and /marketplace are linked site-wide and advertised in the sitemap, but they were served
 // by the generic one-sentence exact-page template: ~34 and ~31 words of crawler-visible body while
@@ -43,5 +43,24 @@ describe("static page bodies", () => {
     expect(doc).not.toBeNull();
     expect(doc!.bodyHtml).toContain("<h1>Robotics project and data partnerships</h1>");
     expect(countWords(doc!.bodyHtml ?? "")).toBeLessThan(120);
+  });
+
+  // The census page is the catalog's most quotable asset. Its BOM section must state the
+  // resolution gap concretely and keep the "any version" emptiness figure consistent with the
+  // "published version" figure — the two must not read as a contradiction (223 carry lines, but
+  // only 38 of those are served to the public).
+  it("state-of-open-robotics reports the published-line resolution gap without contradiction", async () => {
+    const res = await serveStateOfOpenRobotics({
+      env: { DB: env.DB },
+      req: { url: `${origin}/state-of-open-robotics`, method: "GET" },
+    } as unknown as Parameters<typeof serveStateOfOpenRobotics>[0]);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("resolve to an identifiable");
+    expect(html).toContain("explicit source locator");
+    expect(html).toContain("carry them in a published version");
+    expect(html).toContain("draft line items the catalog has never published");
+    expect(html).toContain("index,follow");
+    expect(countWords(html)).toBeGreaterThan(250);
   });
 });
