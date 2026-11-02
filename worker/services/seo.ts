@@ -308,7 +308,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         license_spdx: string | null; repository_url: string | null; github_stars: number; updated_at: string; image_file_id: string | null; bom_lines: number;
       }>();
     if (row) {
-      const description = concise(row.summary || row.description || `Explore ${row.name}, its source repository, technical files, parts, and bill of materials on RoboPartPicker.`);
+      const description = concise(normalizeCatalogText(row.summary) || normalizeCatalogText(row.description) || `Explore ${row.name}, its source repository, technical files, parts, and bill of materials on RoboPartPicker.`);
       const canonicalUrl = `${base}/projects/${encodeURIComponent(slug)}`;
       const facts = [
         row.robot_category ? `<li>Category: ${esc(row.robot_category)}</li>` : "",
@@ -443,7 +443,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
       }>();
     if (row) {
       const identity = [row.maker, row.manufacturer_part_number ? `MPN ${row.manufacturer_part_number}` : null].filter(Boolean).join(" · ");
-      const description = concise(row.summary || `${row.name}${identity ? ` by ${identity}` : ""}. Compare source-backed specifications, prices, project usage, files and product links.`);
+      const description = concise(normalizeCatalogText(row.summary) || `${row.name}${identity ? ` by ${identity}` : ""}. Compare source-backed specifications, prices, project usage, files and product links.`);
       const canonicalUrl = `${base}/parts/${encodeURIComponent(row.category)}/${encodeURIComponent(slug)}`;
       const offer = row.price_minor != null ? { "@type": "Offer", price: (Number(row.price_minor) / 100).toFixed(2), priceCurrency: row.currency ?? "USD", availability: "https://schema.org/InStock" } : undefined;
       const partFacts = [

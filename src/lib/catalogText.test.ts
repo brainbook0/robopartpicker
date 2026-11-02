@@ -32,4 +32,11 @@ describe("normalizeCatalogText", () => {
     expect(normalizeCatalogText(undefined)).toBe("");
     expect(normalizeCatalogText("<!-- imported --> <div> </div>")).toBe("");
   });
+
+  it("drops a stylesheet imported into a summary instead of prose", () => {
+    expect(normalizeCatalogText('.border { margin-bottom: 10px; border: 1px solid #e6e6e6 ; } .dotLine { width: 100%; height: 1px; }')).toBe("");
+    expect(normalizeCatalogText('.head{font-family:"Open Sans",sans-serif;font-size:30px}')).toBe("");
+    // Prose that merely mentions a CSS selector stays intact.
+    expect(normalizeCatalogText("The .border style is optional on this board.")).toBe("The .border style is optional on this board.");
+  });
 });

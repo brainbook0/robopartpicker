@@ -21,6 +21,13 @@ function decodeEntity(entity: string): string {
   return String.fromCodePoint(numeric);
 }
 
+// A scraped source page's leading <style> block was imported as the summary for a batch of
+// hardware records. Live 2026-11-02: 264 components served the raw stylesheet (`.border {
+// margin-bottom: 10px; ... }`) as their meta description and on-page blurb. A stylesheet is not a
+// description, so a value that opens with a CSS rule is normalised to empty and callers fall back
+// to their generated text exactly as they already do for a missing summary.
+const CSS_STYLESHEET = /^[.#][\w-]+\s*(?:,[^{}]*)?\{[^{}]*[:;][^{}]*\}/u;
+
 export function normalizeCatalogText(value: string | null | undefined): string {
   if (!value?.trim()) return "";
   const withoutMarkup = value
@@ -38,11 +45,12 @@ export function normalizeCatalogText(value: string | null | undefined): string {
     .replace(/\\r\\n|\\n|\\r/gu, "\n")
     .replace(/\r\n?|\u2028|\u2029/gu, "\n");
 
-  return decoded
+  const normalized = decoded
     .split("\n")
     .map((line) => line.replace(/[\t ]+/gu, " ").trim())
     .join("\n")
     .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
     .replace(/(^|\n)[ \t]+/gu, "$1")
     .trim();
+  return CSS_STYLESHEET.test(normalized) ? "" : normalized;
 }
