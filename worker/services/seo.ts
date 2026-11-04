@@ -666,7 +666,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
       imageUrl: fallbackImage,
       type: "website",
       robots: INDEX_ROBOTS,
-      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/all-projects">Browse every project</a> · <a href="${base}/all-parts">Browse every part</a> · <a href="${base}/state-of-open-robotics">The state of open robotics hardware</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
+      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/all-projects">Browse every project</a> · <a href="${base}/all-parts">Browse every part</a> · <a href="${base}/queries">Sourcing guides</a> · <a href="${base}/state-of-open-robotics">The state of open robotics hardware</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
       structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: isHome ? "RoboPartPicker" : "Robotics projects", description, url: `${base}${path}`, isPartOf: { "@type": "WebSite", name: "RoboPartPicker", url: base } }),
     };
   }
