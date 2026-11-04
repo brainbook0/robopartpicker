@@ -174,7 +174,7 @@ export async function serveSitemap(c: Context<AppBindings>): Promise<Response> {
       WHERE b.is_demo = 0 AND p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'`),
   ]);
   const entries: SitemapEntry[] = [
-    "", "/projects", "/all-projects", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index", "/state-of-open-robotics",
+    "", "/projects", "/all-projects", "/all-parts", "/boms", "/marketplace", "/community", "/teardowns", "/about", "/partners", "/developers", "/rpps", "/feed.xml", "/llms.txt", "/queries", "/glossary", "/compared-to", "/price-index", "/state-of-open-robotics",
     ...LEGAL_DOCUMENT_IDS.map((id) => LEGAL_DOCUMENTS[id].path),
   ].map((path) => ({ url: `${base}${path}` }));
   // Only the query pages the catalog can actually answer are advertised. The rest
@@ -235,7 +235,7 @@ export async function serveLlmsText(c: Context<AppBindings>): Promise<Response> 
     WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'
     ORDER BY github_stars DESC, updated_at DESC LIMIT 100`).all<{ slug: string; name: string; summary: string | null }>();
   const projects = rows.results.map((row) => `- [${plain(row.name)}](${base}/projects/${encodeURIComponent(row.slug)}): ${plain(row.summary ?? "Source-linked robotics project.")}`).join("\n");
-  const body = `# RoboPartPicker\n\n> Source-linked robotics projects, bills of materials, parts, CAD and reproducible build evidence.\n\n## Core pages\n\n- [Project catalog](${base}/projects)\n- [Bills of materials](${base}/boms)\n- [Component catalog](${base}/parts/actuator)\n- [Sourcing questions](${base}/queries)\n- [Component price index](${base}/price-index)\n- [Robotics glossary](${base}/glossary)\n- [Comparisons](${base}/compared-to)\n- [RPPS specification](${base}/rpps)\n- [Developer API and MCP](${base}/developers)\n\n## Machine interfaces\n\n- Public API base: ${base}/api/v1\n- Public read-only MCP: ${base}/mcp\n- MCP discovery: ${base}/.well-known/mcp.json\n- Sitemap: ${base}/sitemap.xml\n- RSS feed: ${base}/feed.xml\n\n## Popular robotics projects\n\n${projects}\n`;
+  const body = `# RoboPartPicker\n\n> Source-linked robotics projects, bills of materials, parts, CAD and reproducible build evidence.\n\n## Core pages\n\n- [Project catalog](${base}/projects)\n- [Bills of materials](${base}/boms)\n- [Component catalog](${base}/parts/actuator)\n- [Every robotics part](${base}/all-parts)\n- [Sourcing questions](${base}/queries)\n- [Component price index](${base}/price-index)\n- [Robotics glossary](${base}/glossary)\n- [Comparisons](${base}/compared-to)\n- [RPPS specification](${base}/rpps)\n- [Developer API and MCP](${base}/developers)\n\n## Machine interfaces\n\n- Public API base: ${base}/api/v1\n- Public read-only MCP: ${base}/mcp\n- MCP discovery: ${base}/.well-known/mcp.json\n- Sitemap: ${base}/sitemap.xml\n- RSS feed: ${base}/feed.xml\n\n## Popular robotics projects\n\n${projects}\n`;
   return new Response(c.req.method === "HEAD" ? null : body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600, stale-while-revalidate=86400" } });
 }
 
@@ -666,7 +666,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
       imageUrl: fallbackImage,
       type: "website",
       robots: INDEX_ROBOTS,
-      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/all-projects">Browse every project</a> · <a href="${base}/state-of-open-robotics">The state of open robotics hardware</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
+      bodyHtml: `<article><h1>${isHome ? "Build real robots from proven designs" : "Discover robotics projects"}</h1><p>${esc(description)}</p><h2>Popular robotics projects</h2><ul>${items}</ul><p><a href="${base}/all-projects">Browse every project</a> · <a href="${base}/all-parts">Browse every part</a> · <a href="${base}/state-of-open-robotics">The state of open robotics hardware</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a></p></article>`,
       structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: isHome ? "RoboPartPicker" : "Robotics projects", description, url: `${base}${path}`, isPartOf: { "@type": "WebSite", name: "RoboPartPicker", url: base } }),
     };
   }
@@ -686,7 +686,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
         imageUrl: fallbackImage,
         type: "website",
         robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(category)} components</h1><p>${esc(description)}</p><h2>Components in this category</h2><ul>${items}</ul>${queryGuideSection(category, base)}<p><a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
+        bodyHtml: `<article><h1>${esc(category)} components</h1><p>${esc(description)}</p><h2>Components in this category</h2><ul>${items}</ul>${queryGuideSection(category, base)}<p><a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/all-parts">Every part</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: `${category} components`, description, url: `${base}/parts/${encodeURIComponent(category)}` }),
       };
     }
@@ -1368,6 +1368,58 @@ ${sections}
     `Complete index of ${rows.length.toLocaleString()} open robotics projects with source links, licenses, files and bill-of-materials state.`,
     `${base}/all-projects`, body,
     JSON.stringify([{ "@context": "https://schema.org", "@type": "CollectionPage", name: "All robotics projects", url: `${base}/all-projects` }]),
+  );
+  return new Response(c.req.method === "HEAD" ? null : html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": QUERY_CACHE_TTL } });
+}
+
+// ---------------------------------------------------------------------------
+// Full component index (crawlable HTML sitemap for the parts catalog)
+// ---------------------------------------------------------------------------
+
+export async function serveAllParts(c: Context<AppBindings>): Promise<Response> {
+  const base = publicBase(c.env, c.req.url);
+  // 9,400+ component pages that sitemap.xml advertises had no inbound internal link: /parts/:category
+  // server-renders only its first 24 rows and paginates the rest client-side, so a crawler could reach
+  // the other part pages only through the sitemap. This server-rendered index links every advertised
+  // component exactly once, grouped by category — the same fix /all-projects applies to projects.
+  // Only the sitemap's "substantive" set is listed (source specs, an observed price or real project
+  // usage); the remaining SKU stubs are noindex,follow, so indexing them here would spend crawl budget
+  // on pages that cannot rank.
+  const [components, specComponents, pricedComponents, usedComponents] = await Promise.all([
+    collectRows<{ id: string; slug: string; name: string; category: string }>(c.env.DB,
+      `SELECT id, slug, name, category FROM components WHERE deleted_at IS NULL AND is_demo = 0
+        ORDER BY category COLLATE NOCASE, name COLLATE NOCASE, id`),
+    collectRows<{ id: string }>(c.env.DB, `SELECT DISTINCT r.component_id AS id FROM component_specs s
+      JOIN component_revisions r ON r.id = s.component_revision_id
+      WHERE s.spec_key NOT IN ('category', 'measurement_units', 'manufacturer_slug', 'source')
+        AND s.value_text IS NOT NULL AND TRIM(s.value_text) <> ''`),
+    collectRows<{ id: string }>(c.env.DB, `SELECT DISTINCT component_id AS id FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0`),
+    collectRows<{ id: string }>(c.env.DB, `SELECT DISTINCT bi.component_id AS id FROM bom_items bi
+      JOIN bom_versions bv ON bv.id = bi.bom_version_id
+      JOIN boms b ON b.id = bv.bom_id
+      JOIN projects p ON p.id = b.project_id
+      WHERE b.is_demo = 0 AND p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'`),
+  ]);
+  const substantive = new Set<string>(
+    [...specComponents, ...pricedComponents, ...usedComponents].map((row) => row.id));
+  const rows = components.filter((row) => substantive.has(row.id));
+  const groups = new Map<string, typeof rows>();
+  for (const row of rows) {
+    if (!groups.has(row.category)) groups.set(row.category, []);
+    groups.get(row.category)!.push(row);
+  }
+  const sections = [...groups.entries()].map(([category, items]) =>
+    `<h2>${esc(category)} (${items.length.toLocaleString()})</h2>\n<ul>${items.map((r) =>
+      `<li><a href="${base}/parts/${encodeURIComponent(r.category)}/${encodeURIComponent(r.slug)}">${esc(r.name)}</a></li>`).join("")}</ul>`).join("\n");
+  const body = `<h1>Every robotics part in the catalog</h1>
+<p class="meta">${rows.length.toLocaleString()} components with source specifications, an observed price or real usage in a published project, grouped by category. Each entry links to its identity, technical profile, engineering files and project usage.</p>
+${sections}
+<p><a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/all-projects">Every project</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/queries">Sourcing guides</a></p>`;
+  const html = queryShell(
+    "All robotics parts | RoboPartPicker",
+    `Complete index of ${rows.length.toLocaleString()} robotics parts with source-backed identity, specifications, observed prices and project usage.`,
+    `${base}/all-parts`, body,
+    JSON.stringify([{ "@context": "https://schema.org", "@type": "CollectionPage", name: "All robotics parts", url: `${base}/all-parts` }]),
   );
   return new Response(c.req.method === "HEAD" ? null : html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": QUERY_CACHE_TTL } });
 }
