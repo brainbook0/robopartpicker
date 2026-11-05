@@ -117,21 +117,37 @@ export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> 
   // real 404 so crawlers stop treating scanner probes (/google-service-account.json,
   // /package.json, /wp-admin/...) as pages worth fetching.
   const knownRoute = isKnownAppRoute(c.req.path);
-  const document = knownRoute
-    ? await resolveSeoDocument(c.env.DB, c.req.path, base)
-    : notFoundDocument(base);
-  if (document?.redirectTo) {
+  const headers = new Headers(asset.headers);
+  headers.delete("content-length");
+  headers.delete("etag");
+  let document: SeoDocument;
+  try {
+    document = knownRoute
+      ? await resolveSeoDocument(c.env.DB, c.req.path, base)
+      : notFoundDocument(base);
+  } catch (error) {
+    // D1 reports "D1 DB is overloaded. Too many resources consumed within a 10 second window"
+    // when a crawler burst exceeds its burst budget (the prerender reads the catalogue — see
+    // migration 0041). A 500 is the worst signal to a crawler, so serve the un-prerendered SPA
+    // shell at 200 instead: a human still gets the app, and the crawler re-attempts next fetch.
+    console.error(JSON.stringify({
+      level: "warn",
+      path: c.req.path,
+      event: "seo_prerender_failed",
+      message: error instanceof Error ? error.message : String(error),
+    }));
+    headers.set("cache-control", "public, max-age=60");
+    return new Response(await asset.text(), { status: asset.status, headers });
+  }
+  if (document.redirectTo) {
     return new Response(null, {
       status: 301,
       headers: { location: document.redirectTo, "cache-control": "public, max-age=86400" },
     });
   }
-  const headers = new Headers(asset.headers);
-  headers.delete("content-length");
-  headers.delete("etag");
   // A known route that resolved to the not-found document is a dead record, not a page:
   // 404 it so crawlers drop it instead of re-fetching a 24-word "Page not found" 200.
-  const status = document?.httpStatus ?? (knownRoute ? asset.status : 404);
+  const status = document.httpStatus ?? (knownRoute ? asset.status : 404);
   headers.set("cache-control", status === 404 ? "public, max-age=60" : "public, max-age=300, stale-while-revalidate=3600");
   return new Response(injectSeoHtml(await asset.text(), document), { status, headers });
 }
@@ -434,9 +450,9 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
     const slug = safeDecode(partMatch[2]);
     const row = await db.prepare(`SELECT c.id, c.name, c.summary, c.category, c.manufacturer_id, c.manufacturer_part_number, c.source_url,
         c.updated_at, m.name AS maker,
-        (SELECT f.id FROM component_files cf JOIN files f ON f.id = cf.file_id
-          WHERE cf.component_id = c.id AND cf.purpose = 'image' AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL
-          ORDER BY cf.sort_order LIMIT 1) AS image_file_id,
+        (SELECT f.id FROM files f
+          WHERE f.id = (SELECT cf.file_id FROM component_files cf WHERE cf.component_id = c.id AND cf.purpose = 'image' ORDER BY cf.sort_order LIMIT 1)
+            AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL) AS image_file_id,
         (SELECT MIN(so.unit_price_minor) FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0) AS price_minor,
         (SELECT so.currency FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0 ORDER BY so.unit_price_minor LIMIT 1) AS currency
       FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
@@ -482,20 +498,29 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
             return `<tr><th>${esc(label)}</th><td>${value}</td></tr>`;
           }).join("")}</tbody></table>`
         : "<h2>Source specifications</h2><p>No structured source specifications have been published for this component yet.</p>";
-      const fileRows = await db.prepare(`SELECT f.id, f.original_name, cf.purpose FROM component_files cf JOIN files f ON f.id = cf.file_id
-        WHERE cf.component_id = ?1 AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL
-        ORDER BY cf.sort_order LIMIT 20`).bind(row.id).all<{ id: string; original_name: string | null; purpose: string | null }>();
-      const fileSection = fileRows.results.length
-        ? `<h2>Published files (${fileRows.results.length})</h2><ul>${fileRows.results.map((f) => `<li><a href="${base}${fileContentUrl(f.id)}">${esc(f.original_name || `${row.name} file`)}</a>${f.purpose ? ` (${esc(f.purpose)})` : ""}</li>`).join("")}</ul>`
+      // Driven from component_files (a component owns at most a dozen rows); the `files` lookups are
+      // correlated primary-key probes. The previous `JOIN files … WHERE f.status='ready'` let SQLite
+      // drive from the whole `files` table — 55,951 rows read for every part page (migration 0041).
+      const fileRows = await db.prepare(`SELECT cf.file_id AS id, cf.purpose,
+        (SELECT f.id FROM files f WHERE f.id = cf.file_id AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL) AS published,
+        (SELECT f.original_name FROM files f WHERE f.id = cf.file_id) AS original_name
+        FROM component_files cf WHERE cf.component_id = ?1 ORDER BY cf.sort_order LIMIT 20`)
+        .bind(row.id).all<{ id: string; purpose: string | null; published: string | null; original_name: string | null }>();
+      const publishedFiles = fileRows.results.filter((f) => f.published !== null);
+      const fileSection = publishedFiles.length
+        ? `<h2>Published files (${publishedFiles.length})</h2><ul>${publishedFiles.map((f) => `<li><a href="${base}${fileContentUrl(f.id)}">${esc(f.original_name || `${row.name} file`)}</a>${f.purpose ? ` (${esc(f.purpose)})` : ""}</li>`).join("")}</ul>`
         : "";
       // Crawlable sibling links. Deliberately the cheap same-category lookup rather than the client's
       // scored alternatives CTE: this runs for every one of the 34,760 component pages a crawler may
       // request, and the expensive query would multiply D1 work on the busiest prerender path.
+      // ORDER BY `c.name` (plain BINARY collation) lets SQLite walk components_category_name_idx
+      // (category, name) and stop at 6; a CASE + COLLATE NOCASE prefix forced a temp b-tree over the
+      // whole category — 70,821 rows read for a single electronics page (migration 0041).
       const siblingRows = await db.prepare(`SELECT c.slug, c.name, c.category, m.name AS maker
         FROM components c LEFT JOIN manufacturers m ON m.id = c.manufacturer_id
         WHERE c.category = ?1 AND c.id != ?2 AND c.deleted_at IS NULL AND c.is_demo = 0
-        ORDER BY CASE WHEN c.manufacturer_id = ?3 THEN 0 ELSE 1 END, c.name COLLATE NOCASE LIMIT 6`)
-        .bind(row.category, row.id, row.manufacturer_id ?? "").all<{ slug: string; name: string; category: string; maker: string | null }>();
+        ORDER BY c.name LIMIT 6`)
+        .bind(row.category, row.id).all<{ slug: string; name: string; category: string; maker: string | null }>();
       const siblingSection = siblingRows.results.length
         ? `<h2>Related components in ${esc(row.category)}</h2><ul>${siblingRows.results.map((c) => `<li><a href="${base}/parts/${encodeURIComponent(c.category)}/${encodeURIComponent(c.slug)}">${esc(c.name)}</a>${c.maker ? ` — ${esc(c.maker)}` : ""}</li>`).join("")}</ul>`
         : "";

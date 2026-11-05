@@ -1,0 +1,24 @@
+-- 0041: index the crawler prerender's hottest query path.
+--
+-- Diagnosed 2026-11-05 (growth cron, read-only `wrangler d1 execute --remote` against
+-- production). The server-rendered body that worker/services/seo.ts injects for crawlers
+-- runs five D1 queries per /parts/<category>/<slug> page. For one electronics component the
+-- measured rows_read were:
+--   component facts + image subquery   55,956   (the image subquery drove from `files`,
+--                                                 scanning all 55,951 rows, once per page)
+--   "used in projects"                 24,095   (drove from `projects`, not the component)
+--   published files                    55,952   (drove from `files` again — same scan)
+--   related components                 70,821   (CASE + COLLATE NOCASE forced a temp b-tree
+--                                                 over the whole 23,731-row category)
+--   source specifications                   1
+-- ~207,000 rows read for a single page. A crawler burst therefore trips D1's
+-- "D1 DB is overloaded. Too many resources consumed within a 10 second window", which the
+-- worker's onError turns into a 500 — observed live today: 116 5xx responses across
+-- /parts/* and /projects/*, including 29 on one goBILDA wheel page that Googlebot was
+-- actively fetching.
+--
+-- The query rewrites (drive the file/usage lookups from the component side) and the graceful
+-- degradation ship in the same commit. This migration adds the one missing index those
+-- rewrites rely on: without it the "used in projects" join has no way to start from the
+-- component's bom_items rows and falls back to scanning the project catalogue.
+CREATE INDEX IF NOT EXISTS bom_items_component_idx ON bom_items(component_id);
