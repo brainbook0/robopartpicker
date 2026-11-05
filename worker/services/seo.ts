@@ -302,10 +302,13 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
           WHERE pm.project_id = p.id AND f.status = 'ready' AND f.visibility = 'public' AND f.deleted_at IS NULL
           ORDER BY pm.sort_order LIMIT 1) AS image_file_id,
         (SELECT COUNT(*) FROM boms b JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
-          WHERE b.project_id = p.id AND b.is_demo = 0) AS bom_lines
+          WHERE b.project_id = p.id AND b.is_demo = 0) AS bom_lines,
+        (SELECT COALESCE(b2.slug, b2.id) FROM boms b2
+          WHERE b2.project_id = p.id AND b2.is_demo = 0
+          ORDER BY (SELECT COUNT(*) FROM bom_items bi2 WHERE bi2.bom_version_id = b2.current_version_id) DESC, b2.id LIMIT 1) AS bom_route_key
       FROM projects p WHERE p.slug = ?1 AND p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'`).bind(slug).first<{
         id: string; name: string; summary: string | null; description: string | null; project_kind: string; robot_category: string | null;
-        license_spdx: string | null; repository_url: string | null; github_stars: number; updated_at: string; image_file_id: string | null; bom_lines: number;
+        license_spdx: string | null; repository_url: string | null; github_stars: number; updated_at: string; image_file_id: string | null; bom_lines: number; bom_route_key: string | null;
       }>();
     if (row) {
       const description = concise(normalizeCatalogText(row.summary) || normalizeCatalogText(row.description) || `Explore ${row.name}, its source repository, technical files, parts, and bill of materials on RoboPartPicker.`);
@@ -419,7 +422,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "article",
         robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}${PROJECT_EDITORIAL[slug] ?? ""}<h2>Project facts</h2><ul>${facts}</ul>${specSection}${priceSection}${bomSection}${fileSection}${relatedSection}<p><a href="${base}/projects">Browse all robotics projects</a> · <a href="${base}/boms/${encodeURIComponent(slug)}-bom">Full bill of materials</a> · <a href="${base}/community">Community evidence</a></p></article>`,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}${PROJECT_EDITORIAL[slug] ?? ""}<h2>Project facts</h2><ul>${facts}</ul>${specSection}${priceSection}${bomSection}${fileSection}${relatedSection}<p><a href="${base}/projects">Browse all robotics projects</a> · ${row.bom_route_key ? `<a href="${base}/boms/${encodeURIComponent(row.bom_route_key)}">Full bill of materials</a>` : `<a href="${base}/boms">Bills of materials</a>`} · <a href="${base}/community">Community evidence</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "SoftwareSourceCode", name: row.name, description, url: canonicalUrl, codeRepository: row.repository_url, license: row.license_spdx, programmingLanguage: "Robotics", interactionStatistic: row.github_stars ? { "@type": "InteractionCounter", interactionType: "https://schema.org/LikeAction", userInteractionCount: row.github_stars } : undefined, additionalProperty: [{ "@type": "PropertyValue", name: "BOM lines", value: Number(row.bom_lines) }, ...(price ? [{ "@type": "PropertyValue", name: "Published price estimate", value: `${price.currency} ${price.min_minor / 100}${price.min_minor === price.max_minor ? "" : `-${price.max_minor / 100}`}`, minValue: price.min_minor / 100, maxValue: price.max_minor / 100, unitText: price.currency }] : [])] }),
       };
     }
