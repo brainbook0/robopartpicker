@@ -5,6 +5,7 @@ import { QUERIES, QUERIES_BY_VOLUME } from "../../src/lib/queries-data";
 import { QUERY_COVERAGE, QUERY_INDEXABLE_SLUGS, type QueryCoverage } from "../../src/lib/query-coverage";
 import { isQueryIndexable, NON_SOURCING_QUERY_SLUGS } from "../../src/lib/query-exclusions";
 import { GLOSSARY_TERMS } from "../../src/lib/glossary-data";
+import { projectEditorial, type EditorialInline } from "../../src/lib/project-editorial";
 import { normalizeCatalogText } from "../../src/lib/catalogText";
 import { COMPARISONS } from "../../src/lib/comparisons-data";
 import type { AppBindings, Env } from "../env";
@@ -35,23 +36,30 @@ const PROJECT_FILE_KIND_LABELS: Record<string, string> = {
 // Most useful to a builder first; `image` is last so assembly photos never crowd out CAD and firmware.
 const PROJECT_FILE_KIND_ORDER = ["cad", "urdf", "mjcf", "bom", "firmware", "configuration", "document", "test_evidence", "attachment", "image", "other"];
 
-// Curated, source-backed build notes injected into a project page's crawler/reader body, keyed by
-// project slug. A flat imported BOM (line items + a set of file paths) is thin for the one query
-// class this catalogue already ranks for: people deciding what to buy to build a known arm. The
-// nine pages outranking our SO-101 project page are hands-on build guides, so this states, in the
-// words of the upstream repository's own README, what the arm is, which arm you are building, the
-// motor gearing per arm, the repository's own list cost, the print recipe and where the assembly
-// guide lives. Every number here is quoted from the cited upstream README (retrieved 2026-11-01);
-// none of it is inferred, and the per-part observed catalogue prices stay separate further down.
-const PROJECT_EDITORIAL: Record<string, string> = {
-  "therobotstudio-so-arm100":
-    `<h2>SO-101 at a glance</h2><p>The SO-101 is The RobotStudio's second-generation 6-DOF desktop arm, built with Hugging Face for the open-source LeRobot stack. Against the deprecated SO-100 it improved its wiring, updated the leader-arm motors and assembles without removing servo gears. It is a leader/follower pair: the follower carries the gripper and executes motion, while the leader is the hand-guided arm you move by hand to teleoperate the follower or collect training data.</p><p>Source: <a href="https://github.com/TheRobotStudio/SO-ARM100">TheRobotStudio/SO-ARM100</a> README (Apache-2.0).</p>` +
-    `<h2>Which arm are you building?</h2><ul><li>Leader + follower teleoperation set — 12 servos in total.</li><li>Single follower arm — 6 servos.</li></ul>` +
-    `<h2>Motors by arm and gear</h2><p>Both arms use Feetech STS3215 bus servos, but the gearing differs: the leader only has to sense hand motion, not drive a load.</p><ul><li>Follower arm — 6 × STS3215 7.4 V, 1/345 gear (C001).</li><li>Leader arm — 1 × 1/345 (C001), 2 × 1/191 (C044), 3 × 1/147 (C046); 6 total.</li><li>Leader + follower set — 7 × C001, 2 × C044, 3 × C046; 12 total.</li></ul><p>Torque: the 7.4 V servo is rated 16.5 kg·cm stall at 6 V; a 12 V STS3215 reaches 30 kg·cm. The 7.4 V part is sufficient for both arms and the leader is always 7.4 V. Fitting 12 V servos to the follower also requires a 12 V 5 A+ power supply.</p>` +
-    `<h2>Typical cost (upstream list prices)</h2><p>From the repository's own sourcing tables: one follower arm ≈ US$121.94; the full leader + follower set ≈ US$229.88, so the leader arm adds ≈ US$108. The two-arm set is ≈ €226.3 (EU) or ¥1343.16 (CN). These are the upstream README's figures, not supplier quotes; observed per-part catalogue prices appear separately above.</p>` +
-    `<h2>3D printing the frame</h2><ul><li>Material PLA+, 0.4 mm nozzle at 0.2 mm layer height (or 0.6 mm nozzle at 0.4 mm).</li><li>15% infill; supports everywhere except slopes over 45° and screw holes on horizontal axes.</li><li>Each arm prints as one pre-oriented STL: the Ender profile (220×220 mm bed) or the Prusa/UP profile (205×250 mm).</li><li>Print a gauge (servo or Lego size) first to check dimensional accuracy before committing the full arm.</li></ul>` +
-    `<h2>Assembly</h2><p>The SO-101 is built without removing servo gears, which is the main reason to choose it over the SO-100. The step-by-step build and LeRobot setup live in the <a href="https://huggingface.co/docs/lerobot/so101">LeRobot SO-101 guide</a>. Pre-built arms and part kits are offered by Seeed Studio, WowRobo, RobotEd, Robonine, PartaBot, ForgeMotion Labs and others linked from the repository.</p>`,
-};
+// Project build notes now live in a shared module (src/lib/project-editorial.ts) so the SAME content
+// is rendered by the React app (human visitors actually read it) and by this crawler prerender. A
+// note the crawler could see but a visitor could not would be both a ranking risk and useless to a
+// builder. This just renders that shared data into the prerender's HTML.
+function renderProjectEditorial(slug: string): string {
+  const sections = projectEditorial(slug);
+  if (!sections?.length) return "";
+  return sections
+    .map((section) => {
+      const body = section.blocks
+        .map((block) => {
+          if (block.type === "p") return `<p>${block.segments.map(editorialInline).join("")}</p>`;
+          const items = block.items.map((item) => `<li>${item.map(editorialInline).join("")}</li>`).join("");
+          return `<ul>${items}</ul>`;
+        })
+        .join("");
+      return `<h2>${esc(section.heading)}</h2>${body}`;
+    })
+    .join("");
+}
+
+function editorialInline(segment: EditorialInline): string {
+  return segment.href ? `<a href="${esc(segment.href)}">${esc(segment.text)}</a>` : esc(segment.text);
+}
 
 /** `CAD model` -> `CAD model` (1) / `CAD models` (2). Keeps counts grammatical in headings and summaries. */
 function projectFileKindLabel(kind: string, count: number): string {
@@ -438,7 +446,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "article",
         robots: INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}${PROJECT_EDITORIAL[slug] ?? ""}<h2>Project facts</h2><ul>${facts}</ul>${specSection}${priceSection}${bomSection}${fileSection}${relatedSection}<p><a href="${base}/projects">Browse all robotics projects</a> · ${row.bom_route_key ? `<a href="${base}/boms/${encodeURIComponent(row.bom_route_key)}">Full bill of materials</a>` : `<a href="${base}/boms">Bills of materials</a>`} · <a href="${base}/community">Community evidence</a></p></article>`,
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${repoLink}${renderProjectEditorial(slug)}<h2>Project facts</h2><ul>${facts}</ul>${specSection}${priceSection}${bomSection}${fileSection}${relatedSection}<p><a href="${base}/projects">Browse all robotics projects</a> · ${row.bom_route_key ? `<a href="${base}/boms/${encodeURIComponent(row.bom_route_key)}">Full bill of materials</a>` : `<a href="${base}/boms">Bills of materials</a>`} · <a href="${base}/community">Community evidence</a></p></article>`,
         structuredData: compact({ "@context": "https://schema.org", "@type": "SoftwareSourceCode", name: row.name, description, url: canonicalUrl, codeRepository: row.repository_url, license: row.license_spdx, programmingLanguage: "Robotics", interactionStatistic: row.github_stars ? { "@type": "InteractionCounter", interactionType: "https://schema.org/LikeAction", userInteractionCount: row.github_stars } : undefined, additionalProperty: [{ "@type": "PropertyValue", name: "BOM lines", value: Number(row.bom_lines) }, ...(price ? [{ "@type": "PropertyValue", name: "Published price estimate", value: `${price.currency} ${price.min_minor / 100}${price.min_minor === price.max_minor ? "" : `-${price.max_minor / 100}`}`, minValue: price.min_minor / 100, maxValue: price.max_minor / 100, unitText: price.currency }] : [])] }),
       };
     }

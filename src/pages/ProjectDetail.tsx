@@ -25,6 +25,8 @@ import { PageMeta } from "@/components/PageMeta";
 import { ProjectMedia } from "@/components/projects/ProjectMedia";
 import { ProjectPreviewCard } from "@/components/projects/ProjectPreviewCard";
 import { ProjectMetadataSummary } from "@/components/projects/ProjectMetadataSummary";
+import { ProjectEditorial } from "@/components/projects/ProjectEditorial";
+import { projectEditorial } from "@/lib/project-editorial";
 import { ProjectSpecifications } from "@/components/projects/ProjectSpecifications";
 import { SourcesVerification } from "@/components/projects/SourcesVerification";
 import { ProjectProposalPanel } from "@/components/projects/ProjectProposalPanel";
@@ -367,6 +369,8 @@ export default function ProjectDetail() {
     }
   };
 
+  const editorialSections = projectEditorial(p.slug) ?? [];
+
   return (
     <div className="mx-auto max-w-[1240px] px-4 py-4">
       <PageMeta title={`${p.name}: BOM, files and build data | RoboPartPicker`} description={normalizeCatalogText(p.summary || p.description) || `Explore ${p.name}, its source repository, technical files, parts and bill of materials.`} path={`/projects/${p.slug}`} />
@@ -437,6 +441,12 @@ export default function ProjectDetail() {
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3">
         <div className="space-y-3 min-w-0">
+          {editorialSections.length > 0 && (
+            <Section title="Build guide">
+              <ProjectEditorial sections={editorialSections} />
+            </Section>
+          )}
+
           {canEditRpps && <ProjectTechnicalEditor project={p} onSaved={setP} />}
 
           {urdfIsCompleteAssembly && previewUrdf?.contentUrl ? (

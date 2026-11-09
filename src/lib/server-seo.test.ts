@@ -25,6 +25,23 @@ describe("injectSeoHtml", () => {
     expect(html.match(/rel="canonical"/gu)).toHaveLength(1);
     expect(html.match(/application\/ld\+json/gu)).toHaveLength(1);
   });
+
+  it("injects body content verbatim, keeping literal dollar signs", () => {
+    // Regression: bodyHtml was passed to String.replace as a replacement string, so "$1"–"$9", "$&",
+    // "$`" and "$'" inside the content were read as substitution tokens — "US$121.94" rendered as the
+    // live crawler page's "US21.94". Inject via a replacement function so any "$" survives.
+    const withDollars: SeoDocument = {
+      ...project,
+      bodyHtml: `<p>one follower arm ≈ US$121.94; the set ≈ US$229.88</p><p>line ≈ US$108</p><p>literal: $& $1 $'</p>`,
+    };
+    const html = injectSeoHtml(shell, withDollars);
+    expect(html).toContain("US$121.94");
+    expect(html).toContain("US$229.88");
+    expect(html).toContain("US$108");
+    expect(html).toContain("literal: $& $1 $'");
+    expect(html).not.toContain("US21.94");
+    expect(html).not.toContain("US08");
+  });
 });
 
 describe("buildSitemapXml", () => {

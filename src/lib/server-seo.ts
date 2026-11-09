@@ -48,7 +48,11 @@ export function injectSeoHtml(source: string, document: SeoDocument): string {
   html = html.replace(/<script\s+id=["']seo-structured-data["'][^>]*>[\s\S]*?<\/script>/giu, "");
   if (document.structuredData) {
     const json = JSON.stringify(document.structuredData).replace(/</gu, "\\u003c");
-    html = html.replace(/<\/head>/iu, `<script id="seo-structured-data" type="application/ld+json">${json}</script></head>`);
+    // Replacement FUNCTIONS, not strings: a replacement string lets `$&`, `` $` ``, `$'` and `$1`–`$9`
+    // inside the injected content be read as substitution tokens (a literal "US$121.94" in a build
+    // note lost its "$1" and rendered as "US21.94" on the live crawler page). A function is inserted
+    // verbatim, so any "$" in a price or spec survives.
+    html = html.replace(/<\/head>/iu, () => `<script id="seo-structured-data" type="application/ld+json">${json}</script></head>`);
   }
   // Server-rendered body content for crawlers (no-JS). Injected immediately
   // after <body> so it precedes the SPA root. A small inline script removes it
@@ -57,7 +61,7 @@ export function injectSeoHtml(source: string, document: SeoDocument): string {
   html = html.replace(/<div\s+id=["']seo-prerender["'][\s\S]*?<\/div>\s*(?:<script\s+id=["']seo-prerender-cleanup["'][^>]*>[\s\S]*?<\/script>)?/giu, "");
   if (document.bodyHtml) {
     const cleanup = "<script id=\"seo-prerender-cleanup\">(function(){var p=document.getElementById('seo-prerender');if(!p)return;var n=0;var t=setInterval(function(){n++;var r=document.getElementById('root');if((r&&r.children.length>0)||n>100){clearInterval(t);if(p&&p.parentNode){p.parentNode.removeChild(p);}}},50);})();</script>";
-    html = html.replace(/<body([^>]*)>/iu, `<body$1><div id="seo-prerender">${document.bodyHtml}</div>${cleanup}`);
+    html = html.replace(/<body([^>]*)>/iu, (_match, attrs: string) => `<body${attrs}><div id="seo-prerender">${document.bodyHtml}</div>${cleanup}`);
   }
   return html;
 }
@@ -71,7 +75,9 @@ export function buildSitemapXml(entries: SitemapEntry[]): string {
 }
 
 function replaceOrInsert(source: string, pattern: RegExp, replacement: string): string {
-  return pattern.test(source) ? source.replace(pattern, replacement) : source.replace(/<\/head>/iu, `${replacement}</head>`);
+  return pattern.test(source)
+    ? source.replace(pattern, () => replacement)
+    : source.replace(/<\/head>/iu, () => `${replacement}</head>`);
 }
 
 function meta(attribute: "name" | "property", key: string, value: string): string {
