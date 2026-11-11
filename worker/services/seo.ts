@@ -1655,33 +1655,76 @@ export function serveComparisonPage(c: Context<AppBindings>): Response {
 // /price-index - live component price dataset page (Dataset schema)
 // ---------------------------------------------------------------------------
 
+/** Format integer minor units as a grouped dollar string (avoids Intl-options support questions). */
+function observedMoney(minor: number): string {
+  const [whole, cents] = (Number(minor) / 100).toFixed(2).split(".");
+  return `$${whole.replace(/\B(?=(\d{3})+(?!\d))/gu, ",")}.${cents}`;
+}
+
 export async function servePriceIndex(c: Context<AppBindings>): Promise<Response> {
   const base = publicBase(c.env, c.req.url);
   const stats = await c.env.DB.prepare(`SELECT
       (SELECT COUNT(*) FROM components WHERE deleted_at IS NULL AND is_demo = 0) AS component_count,
       (SELECT COUNT(*) FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0) AS offer_count,
+      (SELECT COUNT(DISTINCT component_id) FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0) AS priced_component_count,
       (SELECT COUNT(DISTINCT category) FROM components WHERE deleted_at IS NULL AND is_demo = 0) AS category_count,
-      (SELECT COUNT(DISTINCT supplier_id) FROM supplier_offers WHERE is_demo = 0) AS supplier_count`).first<{
-        component_count: number; offer_count: number; category_count: number; supplier_count: number;
+      (SELECT COUNT(DISTINCT supplier_id) FROM supplier_offers WHERE is_demo = 0) AS supplier_count,
+      (SELECT MIN(observed_at) FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0) AS first_observed,
+      (SELECT MAX(observed_at) FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0) AS last_observed,
+      (SELECT MIN(unit_price_minor) FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0) AS min_minor,
+      (SELECT MAX(unit_price_minor) FROM supplier_offers WHERE is_demo = 0 AND unit_price_minor > 0) AS max_minor`).first<{
+        component_count: number; offer_count: number; priced_component_count: number; category_count: number; supplier_count: number;
+        first_observed: string | null; last_observed: string | null; min_minor: number | null; max_minor: number | null;
       }>();
-  const categories = await c.env.DB.prepare(`SELECT category,
-      COUNT(*) AS components,
-      (SELECT COUNT(*) FROM supplier_offers so WHERE so.component_id = c.id AND so.is_demo = 0 AND so.unit_price_minor > 0) AS offers
-    FROM components c WHERE c.deleted_at IS NULL AND c.is_demo = 0 GROUP BY category ORDER BY components DESC LIMIT 30`).all<{
-        category: string; components: number; offers: number;
+  // Offers per category. A correlated subquery that references the outer row (`so.component_id = c.id`)
+  // inside a GROUP BY query is evaluated against one arbitrary row of each group on SQLite, so it
+  // reported 0 for categories whose first component held no offer (verified 2026-11-10: electronics
+  // real = 495 offers, correlated form = 0). Aggregate from a JOIN instead of a per-row subquery.
+  const offerStats = await c.env.DB.prepare(`SELECT c.category AS category,
+      COUNT(*) AS offers,
+      MIN(so.unit_price_minor) AS min_minor,
+      MAX(so.unit_price_minor) AS max_minor
+    FROM supplier_offers so JOIN components c ON c.id = so.component_id
+    WHERE so.is_demo = 0 AND so.unit_price_minor > 0 AND c.deleted_at IS NULL AND c.is_demo = 0
+    GROUP BY c.category`).all<{ category: string; offers: number; min_minor: number; max_minor: number }>();
+  const offersByCategory = new Map((offerStats.results || []).map((row) => [row.category, row]));
+  const categories = await c.env.DB.prepare(`SELECT category, COUNT(*) AS components
+    FROM components WHERE deleted_at IS NULL AND is_demo = 0 GROUP BY category ORDER BY components DESC LIMIT 30`).all<{
+        category: string; components: number;
       }>();
-  const catRows = (categories.results || []).map((row) =>
-    `<tr><td><a href="/parts/${encodeURIComponent(row.category)}">${htmlAttribute(row.category)}</a></td><td>${Number(row.components).toLocaleString()}</td><td>${Number(row.offers).toLocaleString()}</td></tr>`).join("");
+  const catRows = (categories.results || []).map((row) => {
+    const offer = offersByCategory.get(row.category);
+    const offers = Number(offer?.offers ?? 0);
+    const range = offers > 0 && offer
+      ? (Number(offer.min_minor) === Number(offer.max_minor)
+        ? observedMoney(Number(offer.min_minor))
+        : `${observedMoney(Number(offer.min_minor))}\u2013${observedMoney(Number(offer.max_minor))}`)
+      : "\u2014";
+    return `<tr><td><a href="/parts/${encodeURIComponent(row.category)}">${htmlAttribute(row.category)}</a></td><td>${Number(row.components).toLocaleString()}</td><td>${offers.toLocaleString()}</td><td>${range}</td></tr>`;
+  }).join("");
+  const componentCount = Number(stats?.component_count ?? 0);
+  const offerCount = Number(stats?.offer_count ?? 0);
+  const pricedCount = Number(stats?.priced_component_count ?? 0);
+  const supplierCount = Number(stats?.supplier_count ?? 0);
+  const pricedPct = componentCount > 0 ? ((pricedCount / componentCount) * 100).toFixed(1) : "0.0";
+  const extremes = offerCount > 0 && stats?.min_minor != null && stats?.max_minor != null
+    ? `, ranging from ${observedMoney(Number(stats.min_minor))} to ${observedMoney(Number(stats.max_minor))}`
+    : "";
+  const window = stats?.first_observed && stats?.last_observed
+    ? ` Observed prices were captured from public supplier listings between ${String(stats.first_observed).slice(0, 10)} and ${String(stats.last_observed).slice(0, 10)}.`
+    : "";
   const body = `<h1>RoboPartPicker component price index</h1>
 <p class="meta">Live catalog statistics and observed supplier offers for open robotics components. Prices are observations, not quotes.</p>
-<div class="body"><p>${Number(stats?.component_count ?? 0).toLocaleString()} components across ${Number(stats?.category_count ?? 0).toLocaleString()} categories, with ${Number(stats?.offer_count ?? 0).toLocaleString()} observed supplier offers from ${Number(stats?.supplier_count ?? 0).toLocaleString()} suppliers.</p>
-<h2>Categories by catalog size</h2>
+<div class="body"><p>The catalogue holds ${componentCount.toLocaleString()} components across ${Number(stats?.category_count ?? 0).toLocaleString()} categories. ${offerCount.toLocaleString()} supplier ${offerCount === 1 ? "offer is" : "offers are"} recorded across ${pricedCount.toLocaleString()} component${pricedCount === 1 ? "" : "s"} (${pricedPct}% of the catalogue), from ${supplierCount.toLocaleString()} supplier${supplierCount === 1 ? "" : "s"}${extremes}.${window} Every figure here is counted from the live catalogue; a component with no recorded offer is shown as unknown rather than estimated.</p>
+<h2>Observed prices by category</h2>
+<p>An offer is an observation of a published price, not a binding quote. Categories with no recorded offer yet are marked as such.</p>
 <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%">
-<thead><tr><th>Category</th><th>Components</th><th>Offers</th></tr></thead>
-<tbody>${catRows}</tbody></table></div>`;
+<thead><tr><th>Category</th><th>Components</th><th>Observed offers</th><th>Observed price range (USD)</th></tr></thead>
+<tbody>${catRows}</tbody></table>
+<p class="meta">Prices are recorded in USD. A component may carry several offers; the range is the lowest to highest observed unit price among that category's components.</p></div>`;
   const html = queryShell(
     "RoboPartPicker component price index",
-    "Live robotics component price index: catalog size, observed supplier offers, and price data for open robotics parts, from RoboPartPicker.",
+    `Live robotics component price index: ${componentCount.toLocaleString()} components, ${offerCount.toLocaleString()} observed supplier offers${extremes}, broken down by category, from RoboPartPicker.`,
     `${base}/price-index`, body,
     JSON.stringify({ "@context": "https://schema.org", "@type": "Dataset", name: "RoboPartPicker component price index", description: "Live robotics component catalog and observed supplier offer statistics.", url: `${base}/price-index`, hasPart: "https://schema.org/Table" }),
   );
