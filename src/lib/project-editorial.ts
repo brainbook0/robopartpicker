@@ -122,6 +122,106 @@ export const PROJECT_EDITORIAL: Record<string, EditorialSection[]> = {
         },
       ],
     },
+    {
+      heading: "Where to buy the parts (by region)",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The repository publishes per-part purchase links for four regions, and the same servo is listed at a different price in each. One STS3215 is about US$13.89, €12.2, ¥97.72 or ¥2,980 depending on where you buy.",
+            },
+          ],
+        },
+        {
+          type: "ul",
+          items: [
+            [{ text: "US — one follower arm ≈ US$121.94; the leader + follower set ≈ US$229.88." }],
+            [{ text: "EU — the leader + follower set ≈ €226.3." }],
+            [{ text: "China — the leader + follower set ≈ ¥1,343.16." }],
+            [{ text: "Japan — the leader + follower set ≈ ¥44,530." }],
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "The full per-part links by region are in the " },
+            { text: "upstream sourcing tables", href: "https://github.com/TheRobotStudio/SO-ARM100#sourcing-parts" },
+            { text: " (Apache-2.0, retrieved 2026-11-14). These are the repository's own list prices, not observed supplier quotes — the per-part catalogue prices further up this page are the observed ones." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Pre-built kits and printed frames",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "If you would rather not source the parts and print the frame yourself, the project links third-party kits that cover different levels of assembly:",
+            },
+          ],
+        },
+        {
+          type: "ul",
+          items: [
+            [{ text: "Seeed Studio — low-cost kit that includes the 3D-printed parts." }],
+            [{ text: "WowRobo — a parts kit and a fully assembled version." }],
+            [{ text: "RobotEd (Switzerland) — printed frame kit, electronics kit, or a complete arm." }],
+            [{ text: "Robonine — a parts kit bundled with a wrist camera and an ArUco cube." }],
+            [{ text: "PartaBot (US) — assembled arms; also sells LeKiwi and Koch robots." }],
+            [{ text: "ForgeMotion Labs (US) — printed frame kit, electronics kit, or a complete arm." }],
+            [{ text: "RoboSEasy (South Korea), NeoBot (China), Autodiscovery (EU) — regional sellers." }],
+            [{ text: "Phospho — an SO-100 follower-arm kit without a leader, aimed at VR-headset teleoperation." }],
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Vendor links are listed in the " },
+            { text: "repository's kits section", href: "https://github.com/TheRobotStudio/SO-ARM100#kits" },
+            { text: "." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Extending the arm",
+      blocks: [
+        {
+          type: "ul",
+          items: [
+            [{ text: "XLeRobot — a dual-arm mobile robot built from 2× SO-101 arms plus a LeKiwi base, a 300 Wh battery, two wrist cameras and a head camera; the project quotes US$660 in total." }],
+            [{ text: "AnySkin tactile sensing — adds touch to the gripper (sold by WOWROBO)." }],
+            [{ text: "Camera mounts — an overhead mount (webcam or 32×32 UVC module) and wrist mounts for 32×32 UVC modules, RealSense D405 and D435/D435i, or a webcam." }],
+            [{ text: "Compliant gripper — a TPU 95A finger on a PLA base for a softer, higher-friction grasp (two extra M3 screws, optional gripper tape)." }],
+            [{ text: "Base mounts — a raised leader base, a 4040 aluminium-profile mount, and a print-alignment jig." }],
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "The optional-hardware STL files and build notes are in the repository's " },
+            { text: "add-ons section", href: "https://github.com/TheRobotStudio/SO-ARM100#optional-hardware" },
+            { text: " (Apache-2.0)." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Checking the servos",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The servos are configured through the LeRobot library, so no separate tool is required to build the arm. For bench debugging, Feetech's own software runs on Windows and the open-source FT_SCServo_Debug_Qt on Ubuntu.",
+            },
+          ],
+        },
+      ],
+    },
   ],
 };
 
