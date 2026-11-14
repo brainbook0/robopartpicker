@@ -571,25 +571,37 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
   const bomMatch = path.match(/^\/boms\/([^/]+)$/u);
   if (bomMatch) {
     const routeKey = safeDecode(bomMatch[1]);
-    const row = await db.prepare(`SELECT b.id, b.slug, b.name, b.updated_at, b.current_version_id, p.name AS project_name,
+    const row = await db.prepare(`SELECT b.id, b.slug, b.name, b.updated_at, b.current_version_id,
+        p.name AS project_name, p.slug AS project_slug,
         bv.currency, bv.confirmed_at,
         COUNT(bi.id) AS line_count, COALESCE(SUM(bi.quantity), 0) AS unit_count,
-        COALESCE(SUM(CASE WHEN bi.evidence_locator IS NOT NULL THEN 1 ELSE 0 END), 0) AS evidence_lines
+        COALESCE(SUM(CASE WHEN bi.evidence_locator IS NOT NULL THEN 1 ELSE 0 END), 0) AS evidence_lines,
+        COALESCE(SUM(CASE WHEN bi.component_id IS NOT NULL AND EXISTS(SELECT 1 FROM supplier_offers so
+          WHERE so.component_id = bi.component_id AND so.is_demo = 0 AND so.unit_price_minor > 0)
+          THEN 1 ELSE 0 END), 0) AS priced_lines
       FROM boms b LEFT JOIN projects p ON p.id = b.project_id LEFT JOIN bom_versions bv ON bv.id = b.current_version_id
       LEFT JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
       WHERE (b.id = ?1 OR b.slug = ?1) AND b.is_demo = 0 AND b.visibility = 'public' GROUP BY b.id`).bind(routeKey).first<{
-        id: string; slug: string | null; name: string; updated_at: string; current_version_id: string | null; project_name: string | null; currency: string | null; confirmed_at: string | null;
-        line_count: number; unit_count: number; evidence_lines: number;
+        id: string; slug: string | null; name: string; updated_at: string; current_version_id: string | null; project_name: string | null; project_slug: string | null; currency: string | null; confirmed_at: string | null;
+        line_count: number; unit_count: number; evidence_lines: number; priced_lines: number;
       }>();
     if (row) {
       const canonicalKey = row.slug ?? row.id;
       const canonicalUrl = `${base}/boms/${encodeURIComponent(canonicalKey)}`;
-      const description = concise(`${row.name} contains ${Number(row.line_count).toLocaleString()} line items and ${Number(row.unit_count).toLocaleString()} total units${row.project_name ? ` for ${row.project_name}` : ""}. Inspect identities, quantities, evidence and observed pricing.`);
+      // Only promise "observed pricing" when at least one line actually carries an observed supplier
+      // price. Claiming it on an unpriced BOM (e.g. the SO-101, whose 14 lines all render "not
+      // available") reads as a hollow promise on a page whose whole point is stated evidence.
+      const pricedLines = Number(row.priced_lines ?? 0);
+      const pricingClause = pricedLines > 0
+        ? "Inspect identities, quantities, evidence and observed pricing."
+        : "Inspect identities, quantities and source evidence.";
+      const description = concise(`${row.name} contains ${Number(row.line_count).toLocaleString()} line items and ${Number(row.unit_count).toLocaleString()} total units${row.project_name ? ` for ${row.project_name}` : ""}. ${pricingClause}`);
       const bomFacts = [
         `<li>Line items: ${Number(row.line_count).toLocaleString()}</li>`,
         `<li>Total units: ${Number(row.unit_count).toLocaleString()}</li>`,
         `<li>Lines with source evidence: ${Number(row.evidence_lines).toLocaleString()}</li>`,
-        row.project_name ? `<li>Project: ${esc(row.project_name)}</li>` : "",
+        row.project_name ? `<li>Project: ${row.project_slug ? `<a href="${base}/projects/${encodeURIComponent(row.project_slug)}">${esc(row.project_name)}</a>` : esc(row.project_name)}</li>` : "",
+        pricedLines > 0 ? `<li>Lines with an observed supplier price: ${pricedLines.toLocaleString()}</li>` : "",
         row.currency ? `<li>Currency: ${esc(row.currency)}</li>` : "",
         row.confirmed_at ? `<li>Confirmed: ${esc(String(row.confirmed_at).slice(0, 10))}</li>` : "<li>Not yet confirmed by a maintainer</li>",
       ].filter(Boolean).join("");
@@ -618,8 +630,8 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         imageUrl: fallbackImage,
         type: "article",
         robots: emptyBom ? "noindex,follow" : INDEX_ROBOTS,
-        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${emptyBom ? `<p>No line items have been resolved for this bill of materials yet, so this page is not offered to search engines. The catalog only indexes BOMs once real lines exist.</p>` : ""}<h2>Bill of materials facts</h2><ul>${bomFacts}</ul>${bomItemSection}<p><a href="${base}/boms">Browse all bills of materials</a> · <a href="${base}/projects">Robotics projects</a></p></article>`,
-        structuredData: compact({ "@context": "https://schema.org", "@type": "Dataset", name: row.name, description, url: canonicalUrl, dateModified: row.updated_at, variableMeasured: ["Part identity", "Quantity", "Source evidence", "Observed price"], size: Number(row.line_count), isBasedOn: row.project_name || undefined }),
+        bodyHtml: `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${emptyBom ? `<p>No line items have been resolved for this bill of materials yet, so this page is not offered to search engines. The catalog only indexes BOMs once real lines exist.</p>` : ""}<h2>Bill of materials facts</h2><ul>${bomFacts}</ul>${bomItemSection}<p><a href="${base}/boms">Browse all bills of materials</a> · <a href="${base}/projects">Robotics projects</a>${row.project_name && row.project_slug ? ` · <a href="${base}/projects/${encodeURIComponent(row.project_slug)}">${esc(row.project_name)} project page</a>` : ""}</p></article>`,
+        structuredData: compact({ "@context": "https://schema.org", "@type": "Dataset", name: row.name, description, url: canonicalUrl, dateModified: row.updated_at, variableMeasured: pricedLines > 0 ? ["Part identity", "Quantity", "Source evidence", "Observed price"] : ["Part identity", "Quantity", "Source evidence"], size: Number(row.line_count), isBasedOn: row.project_name || undefined }),
       };
     }
   }
