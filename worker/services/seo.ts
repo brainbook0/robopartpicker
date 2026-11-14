@@ -1122,8 +1122,12 @@ function queryShell(title: string, description: string, canonical: string, body:
 export function serveQueryIndex(c: Context<AppBindings>): Response {
   const base = publicBase(c.env, c.req.url);
   // Only list queries the catalog can actually answer; the rest are served
-  // noindex and would be a dead end for a human visitor too.
-  const cards = QUERIES_BY_VOLUME.filter((q) => isQueryIndexable(q.slug, QUERY_COVERAGE[q.slug])).slice(0, 300).map((q) =>
+  // noindex and would be a dead end for a human visitor too. Every indexable
+  // query is listed, not the first 300 by search volume: the hub is the one
+  // high-authority node that links the whole advertised /queries set, and
+  // sitemap.xml advertises all of them, so a capped hub silently orphaned the
+  // lowest-volume guides from internal links.
+  const cards = QUERIES_BY_VOLUME.filter((q) => isQueryIndexable(q.slug, QUERY_COVERAGE[q.slug])).map((q) =>
     `<li><a href="/queries/${q.slug}">${htmlAttribute(q.kw)}</a></li>`).join("");
   const body = `<h1>How to source and build open robotics projects</h1>
 <p class="meta">Answers to common robotics sourcing and BOM questions, generated from live search data. Compare parts, plan builds and see what actually blocks a build.</p>
