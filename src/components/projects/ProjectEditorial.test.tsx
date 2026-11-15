@@ -4,6 +4,7 @@ import { ProjectEditorial } from "./ProjectEditorial";
 import { projectEditorial } from "@/lib/project-editorial";
 
 const so101 = projectEditorial("therobotstudio-so-arm100") ?? [];
+const mobileAloha = projectEditorial("mobile-aloha") ?? [];
 
 describe("ProjectEditorial", () => {
   it("renders nothing when the project has no curated notes", () => {
@@ -35,5 +36,17 @@ describe("ProjectEditorial", () => {
     expect(screen.getByText(/US\$660/)).toBeInTheDocument();
     const source = screen.getByRole("link", { name: "upstream sourcing tables" });
     expect(source).toHaveAttribute("href", "https://github.com/TheRobotStudio/SO-ARM100#sourcing-parts");
+  });
+
+  it("renders the source-backed Mobile ALOHA hardware notes", () => {
+    render(<ProjectEditorial sections={mobileAloha} />);
+    expect(screen.getByText("What Mobile ALOHA is")).toBeInTheDocument();
+    expect(screen.getByText("Hardware the project uses (from its README)")).toBeInTheDocument();
+    // Hardware facts quoted from the repository's README.
+    expect(screen.getByText(/XM430-W350/)).toBeInTheDocument();
+    expect(screen.getByText(/AgileX Tracer/)).toBeInTheDocument();
+    expect(screen.getByText(/36 motors/)).toBeInTheDocument();
+    const repo = screen.getByRole("link", { name: "MarkFzp/mobile-aloha README" });
+    expect(repo).toHaveAttribute("href", "https://github.com/MarkFzp/mobile-aloha");
   });
 });

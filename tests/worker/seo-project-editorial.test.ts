@@ -16,6 +16,7 @@ beforeAll(async () => {
     env.DB.prepare(`INSERT INTO "user" (id, name, email, emailVerified, createdAt, updatedAt)
       VALUES ('u-seo-editorial', 'SEO Editorial', 'seo-editorial@example.com', 1, ?1, ?1)`).bind(now),
     insertProject("p-so101", "therobotstudio-so-arm100", "SO-101 Robot Arms"),
+    insertProject("p-mobile-aloha", "mobile-aloha", "Mobile ALOHA"),
     insertProject("p-other", "some-other-robot", "Some Other Robot"),
   ]);
 });
@@ -42,5 +43,15 @@ describe("curated project editorial section", () => {
     const doc = await resolveSeoDocument(env.DB, "/projects/some-other-robot", origin);
     expect(doc.bodyHtml).not.toContain("SO-101 at a glance");
     expect(doc.bodyHtml).toContain("Project facts");
+  });
+
+  it("injects the Mobile ALOHA hardware notes on its project page", async () => {
+    const doc = await resolveSeoDocument(env.DB, "/projects/mobile-aloha", origin);
+    expect(doc.bodyHtml).toContain("What Mobile ALOHA is");
+    expect(doc.bodyHtml).toContain("Hardware the project uses (from its README)");
+    expect(doc.bodyHtml).toContain("XM430-W350");
+    expect(doc.bodyHtml).toContain("AgileX Tracer");
+    expect(doc.bodyHtml).toContain("github.com/MarkFzp/mobile-aloha");
+    expect(doc.robots).toMatch(/^index,follow/u);
   });
 });

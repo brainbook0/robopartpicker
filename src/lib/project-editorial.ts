@@ -223,6 +223,75 @@ export const PROJECT_EDITORIAL: Record<string, EditorialSection[]> = {
       ],
     },
   ],
+  "mobile-aloha": [
+    {
+      heading: "What Mobile ALOHA is",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "Mobile ALOHA is Stanford's low-cost whole-body teleoperation system for bimanual mobile manipulation (Fu, Zhao and Finn, CoRL 2024). It extends the ALOHA system with a wheeled mobile base and a whole-body teleoperation interface, and is used to collect demonstrations for imitation learning — the paper reports that co-training with existing static ALOHA data raises success rates on mobile tasks by up to 90%.",
+            },
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Source: " },
+            { text: "mobile-aloha.github.io", href: "https://mobile-aloha.github.io/" },
+            { text: " and the " },
+            { text: "MarkFzp/mobile-aloha", href: "https://github.com/MarkFzp/mobile-aloha" },
+            { text: " repository." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Hardware the project uses (from its README)",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The public repository documents how to wire and run the hardware, but does not publish a priced parts list. What it states:",
+            },
+          ],
+        },
+        {
+          type: "ul",
+          items: [
+            [{ text: "Two leader (master) arms and two follower (puppet) arms — four Interbotix arms in total, each with 9 Dynamixel motors (36 motors across the four)." }],
+            [{ text: "The follower wrist and gripper motor is a Dynamixel XM430-W350; the README sets its current limit to 300 to protect the gripper." }],
+            [{ text: "Mobile base: an AgileX Tracer, driven over CAN with the pyagxrobots SDK." }],
+            [{ text: "Three cameras: left wrist, right wrist and an overhead (high) view." }],
+            [{ text: "Software: ROS 1 Noetic on Ubuntu 18.04 or 20.04 (ROS 2 support is still in progress)." }],
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Source: " },
+            { text: "MarkFzp/mobile-aloha README", href: "https://github.com/MarkFzp/mobile-aloha" },
+            { text: " (retrieved 2026-11-15)." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Why there is no bill of materials here yet",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "Mobile ALOHA's hardware is assembled from commercial arms and a commercial mobile base rather than a printed kit with a published parts list, and the repository ships the control software and gripper CAD but not a priced BOM. So this entry lists no resolved BOM lines: what the project documents is how to wire and operate the hardware, not what each part costs. Any per-part price should be checked against the component pages and the suppliers themselves.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 export function projectEditorial(slug: string): EditorialSection[] | undefined {
