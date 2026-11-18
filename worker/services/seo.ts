@@ -312,6 +312,25 @@ export async function serveProjectBadge(c: Context<AppBindings>): Promise<Respon
 // `... (C001) <sup>2</sup>` published the literal characters `&lt;sup&gt;2&lt;/sup&gt;` to crawlers
 // and to anyone reading the prerendered body. Strip the markup first, then escape the plain text.
 // Falls back to the raw value only if normalising would empty a non-empty string.
+// A resolved BOM line links to its catalogue part, but the link text stays the bill's own wording.
+// Substituting the catalogue's product name dropped the detail that distinguishes sibling lines: the
+// SO-101's three STS3215 gearings (1/345 C001, 1/191 C044, 1/147 C046) all rendered as the same
+// 200-character product name, so a reader could no longer tell which gearing each line called for,
+// and the bill's own "Motor Control Board" became an unreadable truncated SKU title. The catalogue
+// name is the fallback only for a line whose own description is empty.
+function bomLineLabel(base: string, line: {
+  description: string;
+  component_name: string | null;
+  component_slug: string | null;
+  component_category: string | null;
+}): string {
+  const text = importedText(line.description) || importedText(line.component_name ?? "");
+  const href = line.component_slug && line.component_category
+    ? `${base}/parts/${encodeURIComponent(line.component_category)}/${encodeURIComponent(line.component_slug)}`
+    : null;
+  return href && text ? `<a href="${href}">${esc(text)}</a>` : esc(text);
+}
+
 function importedText(value: string | null | undefined): string {
   const raw = String(value ?? "");
   return normalizeCatalogText(raw) || raw;
@@ -410,9 +429,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
           component_name: string | null; component_slug: string | null; component_category: string | null;
         }>();
       const lineItems = bomLines.results.map((l) => {
-        const label = l.component_name && l.component_slug && l.component_category
-          ? `<a href="${base}/parts/${encodeURIComponent(l.component_category)}/${encodeURIComponent(l.component_slug)}">${esc(importedText(l.component_name))}</a>`
-          : esc(importedText(l.description));
+        const label = bomLineLabel(base, l);
         return `<li>${label} — ${Number(l.quantity)} ${esc(l.unit)}${l.line_classification ? ` (${esc(l.line_classification)}, ${esc(l.completeness)})` : ""}</li>`;
       }).join("");
       const bomSection = lineItems
@@ -640,9 +657,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
           evidence_locator: string | null; component_name: string | null; component_slug: string | null; component_category: string | null;
         }>();
       const bomItemHtml = bomItemRows.results.map((l) => {
-        const label = l.component_name && l.component_slug && l.component_category
-          ? `<a href="${base}/parts/${encodeURIComponent(l.component_category)}/${encodeURIComponent(l.component_slug)}">${esc(importedText(l.component_name))}</a>`
-          : esc(importedText(l.description));
+        const label = bomLineLabel(base, l);
         return `<li>${label} — ${Number(l.quantity)} ${esc(l.unit)} (${esc(l.line_classification)}, ${esc(l.completeness)})${l.evidence_locator ? ` — evidence: ${esc(l.evidence_locator)}` : ""}</li>`;
       }).join("");
       const bomItemSection = bomItemHtml ? `<h2>Line items</h2><ul>${bomItemHtml}</ul>` : "";
