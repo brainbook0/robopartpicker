@@ -253,13 +253,40 @@ export async function serveProjectFeed(c: Context<AppBindings>): Promise<Respons
   return new Response(c.req.method === "HEAD" ? null : body, { headers: { "content-type": "application/rss+xml; charset=utf-8", "cache-control": "public, max-age=900, stale-while-revalidate=3600" } });
 }
 
+// Live catalog census, computed from the same definitions the public /state-of-open-robotics page
+// documents: projects are published, public, non-demo rows; a bill of materials is empty when no
+// version carries line items; resolution counts published-version (verified or partial) lines that
+// point at a catalogued component. Shared by llms.txt, /about and /marketplace so the citable
+// surfaces can never drift from the census as the catalog grows.
+async function censusCounts(db: D1Database): Promise<{ projects: number; components: number; boms: number; emptyBoms: number; projectsResolved: number }> {
+  const row = await db.prepare(`SELECT
+      (SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public') AS projects,
+      (SELECT COUNT(*) FROM components WHERE deleted_at IS NULL AND is_demo = 0) AS components,
+      (SELECT COUNT(*) FROM boms WHERE is_demo = 0) AS boms,
+      (SELECT COUNT(*) FROM boms b WHERE b.is_demo = 0 AND NOT EXISTS
+         (SELECT 1 FROM bom_versions v JOIN bom_items i ON i.bom_version_id = v.id WHERE v.bom_id = b.id)) AS empty_boms,
+      (SELECT COUNT(DISTINCT b.project_id) FROM bom_items i JOIN bom_versions v ON v.id = i.bom_version_id JOIN boms b ON b.id = v.bom_id
+         WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial') AND i.component_id IS NOT NULL) AS projects_resolved`)
+    .first<{ projects: number; components: number; boms: number; empty_boms: number; projects_resolved: number }>();
+  return row
+    ? { projects: row.projects, components: row.components, boms: row.boms, emptyBoms: row.empty_boms, projectsResolved: row.projects_resolved }
+    : { projects: 0, components: 0, boms: 0, emptyBoms: 0, projectsResolved: 0 };
+}
+
 export async function serveLlmsText(c: Context<AppBindings>): Promise<Response> {
   const base = publicBase(c.env, c.req.url);
   const rows = await c.env.DB.prepare(`SELECT slug, name, summary FROM projects
     WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'
     ORDER BY github_stars DESC, updated_at DESC LIMIT 100`).all<{ slug: string; name: string; summary: string | null }>();
   const projects = rows.results.map((row) => `- [${plain(row.name)}](${base}/projects/${encodeURIComponent(row.slug)}): ${plain(row.summary ?? "Source-linked robotics project.")}`).join("\n");
-  const body = `# RoboPartPicker\n\n> Source-linked robotics projects, bills of materials, parts, CAD and reproducible build evidence.\n\n## Core pages\n\n- [Project catalog](${base}/projects)\n- [Bills of materials](${base}/boms)\n- [Component catalog](${base}/parts/actuator)\n- [Every robotics part](${base}/all-parts)\n- [Sourcing questions](${base}/queries)\n- [Component price index](${base}/price-index)\n- [Robotics glossary](${base}/glossary)\n- [Comparisons](${base}/compared-to)\n- [RPPS specification](${base}/rpps)\n- [Developer API and MCP](${base}/developers)\n\n## Machine interfaces\n\n- Public API base: ${base}/api/v1\n- Public read-only MCP: ${base}/mcp\n- MCP discovery: ${base}/.well-known/mcp.json\n- Sitemap: ${base}/sitemap.xml\n- RSS feed: ${base}/feed.xml\n\n## Popular robotics projects\n\n${projects}\n`;
+  // Citable, current census figures. AI answer engines and agents that read llms.txt can only
+  // cite RPP as a source if the file carries the numbers, not just links to them, so the
+  // headline counts are computed live here from the same definitions the census page documents.
+  const cs = await censusCounts(c.env.DB);
+  const emptyPct = cs.boms ? `${((100 * cs.emptyBoms) / cs.boms).toFixed(1)}%` : "n/a";
+  const asOf = new Date().toISOString().slice(0, 10);
+  const stats = `## Key statistics (citable, computed live ${asOf})\n\n- Open robotics projects catalogued: ${cs.projects.toLocaleString()}\n- Bills of materials with no parts listed: ${cs.emptyBoms.toLocaleString()} of ${cs.boms.toLocaleString()} (${emptyPct})\n- Projects whose published bill of materials resolves to at least one identifiable part: ${cs.projectsResolved.toLocaleString()} of ${cs.projects.toLocaleString()}\n- Full census, method and the exact queries: ${base}/state-of-open-robotics\n`;
+  const body = `# RoboPartPicker\n\n> Source-linked robotics projects, bills of materials, parts, CAD and reproducible build evidence.\n\n## Core pages\n\n- [Project catalog](${base}/projects)\n- [Bills of materials](${base}/boms)\n- [Component catalog](${base}/parts/actuator)\n- [Every robotics part](${base}/all-parts)\n- [Sourcing questions](${base}/queries)\n- [Component price index](${base}/price-index)\n- [Robotics glossary](${base}/glossary)\n- [Comparisons](${base}/compared-to)\n- [RPPS specification](${base}/rpps)\n- [State of open robotics (census)](${base}/state-of-open-robotics)\n- [Developer API and MCP](${base}/developers)\n\n## Machine interfaces\n\n- Public API base: ${base}/api/v1\n- Public read-only MCP: ${base}/mcp\n- MCP discovery: ${base}/.well-known/mcp.json\n- Sitemap: ${base}/sitemap.xml\n- RSS feed: ${base}/feed.xml\n\n${stats}\n## Popular robotics projects\n\n${projects}\n`;
   return new Response(c.req.method === "HEAD" ? null : body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600, stale-while-revalidate=86400" } });
 }
 
@@ -639,7 +666,10 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
   const listingDocument = await listingSeo(db, path, base, fallbackImage);
   if (listingDocument) return listingDocument;
 
-  const staticDocument = staticSeo(path, base, fallbackImage);
+  // /about and /marketplace state catalogue counts; supply the live census so the figures are
+  // current (this sync function cannot query the database itself, so it takes them as an argument).
+  const staticStats = path === "/about" || path === "/marketplace" ? await censusCounts(db) : undefined;
+  const staticDocument = staticSeo(path, base, fallbackImage, staticStats);
   if (staticDocument) return staticDocument;
   // A route shape the app owns whose record is gone (stale project slug, renamed part).
   // Return the shared not-found document so the asset handler answers 404, not a 200
@@ -887,7 +917,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
   return null;
 }
 
-export function staticSeo(path: string, base: string, imageUrl: string): SeoDocument | null {
+export function staticSeo(path: string, base: string, imageUrl: string, stats?: { projects: number; components: number; boms: number; emptyBoms: number }): SeoDocument | null {
   const legalDocument = LEGAL_DOCUMENT_IDS.map((id) => LEGAL_DOCUMENTS[id]).find((document) => document.path === path);
   if (legalDocument) {
     return {
@@ -970,6 +1000,22 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
   // which made them the two thinnest documents in the sitemap (~34 and ~31 words) while both are
   // linked site-wide and crawled. /about carries the site's honesty claims and /marketplace is a
   // nav-linked beta surface, so both get real, verifiable body content instead of a stub.
+  // /about and /marketplace quote catalogue counts. They used to be hardcoded and drifted: they
+  // still said 2,453 projects / 35,146 components / 2,414 BOMs after the live census had moved to
+  // 2,445 / 34,760 / 2,408, which is a credibility defect on the two pages whose whole pitch is
+  // stated evidence. resolveSeoDocument supplies the live census for these two paths; when this
+  // synchronous function is called without a database handle the counts are omitted and the reader
+  // is pointed at the census page instead, so no stale figure can ever be served.
+  const aboutCounts = stats
+    ? `<li>${stats.projects.toLocaleString()} open robotics projects.</li>
+<li>${stats.components.toLocaleString()} component records with source-backed identity and technical specifications.</li>
+<li>${stats.boms.toLocaleString()} public bills of materials — and ${stats.emptyBoms.toLocaleString()} of them (${stats.boms ? Math.round((100 * stats.emptyBoms) / stats.boms) : 0}%) contain no line items at all, because the underlying project publishes a repository, a README and a licence but no parts list. RPP reports that gap instead of hiding it; the write-up with the method and the counts is at <a href="${base}/state-of-open-robotics">${base}/state-of-open-robotics</a>.</li>`
+    : `<li>Its live counts — projects, components, bills of materials, and how many hold no parts at all — are published in full, with the method and the queries, at <a href="${base}/state-of-open-robotics">${base}/state-of-open-robotics</a>.</li>`;
+  const marketplaceCounts = stats
+    ? `<li><a href="${base}/projects">Robotics projects</a> — ${stats.projects.toLocaleString()} open designs with repositories, technical files and licences.</li>
+<li><a href="${base}/boms">Bills of materials</a> — ${stats.boms.toLocaleString()} public BOMs with per-line quantities, part identity and source evidence.</li>
+<li><a href="${base}/parts/actuator">Component catalogue</a> — ${stats.components.toLocaleString()} components with source-backed identity, specifications and observed prices where they exist.</li>`
+    : `<li><a href="${base}/projects">Robotics projects</a>, <a href="${base}/boms">bills of materials</a> and the <a href="${base}/parts/actuator">component catalogue</a>; the current catalogue counts are on the <a href="${base}/state-of-open-robotics">census page</a>.</li>`;
   const aboutBody = `<article>
 <h1>About RoboPartPicker</h1>
 <p>RoboPartPicker is a free, source-linked catalogue of open robotics projects and the parts they are built from. It reads public repositories — BOM files, documentation, CAD metadata and URDF — and compiles each project's bill of materials into a list a builder can act on.</p>
@@ -977,9 +1023,7 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
 <p>Every BOM line keeps the locator of the file it came from, such as a CSV row or a spreadsheet cell, together with an evidence state: verified, probable, unresolved or unpriced. A line that cannot be matched to an identifiable part stays in the list and says so, rather than being dropped or guessed at. Prices shown anywhere on the site are observed catalogue data, not quotations from a supplier.</p>
 <h2>What the catalogue holds today</h2>
 <ul>
-<li>2,453 open robotics projects.</li>
-<li>35,146 component records with source-backed identity and technical specifications.</li>
-<li>2,414 public bills of materials — and 2,185 of them (91%) contain no line items at all, because the underlying project publishes a repository, a README and a licence but no parts list. RPP reports that gap instead of hiding it; the write-up with the method and the counts is at <a href="${base}/state-of-open-robotics">${base}/state-of-open-robotics</a>.</li>
+${aboutCounts}
 </ul>
 <h2>What it is not</h2>
 <p>RoboPartPicker is not a shop and does not sell parts. It does not treat a shared category as evidence that two parts are interchangeable, and it does not fill in a missing price with an estimate. Supplier coverage is partial, so an absent price means "not observed here", not "unavailable".</p>
@@ -996,9 +1040,7 @@ export function staticSeo(path: string, base: string, imageUrl: string): SeoDocu
 <p>There are no public listings yet. The marketplace is live but empty, and listings will appear here as sellers and makers publish them. RoboPartPicker itself is not a seller and does not stock parts.</p>
 <h2>While it is empty, use these</h2>
 <ul>
-<li><a href="${base}/projects">Robotics projects</a> — 2,453 open designs with repositories, technical files and licences.</li>
-<li><a href="${base}/boms">Bills of materials</a> — 2,414 public BOMs with per-line quantities, part identity and source evidence.</li>
-<li><a href="${base}/parts/actuator">Component catalogue</a> — 35,146 components with source-backed identity, specifications and observed prices where they exist.</li>
+${marketplaceCounts}
 <li><a href="${base}/queries">Sourcing guides</a> — what the catalogue actually holds for a given query, including where it holds nothing.</li>
 </ul>
 <h2>Publishing a listing</h2>

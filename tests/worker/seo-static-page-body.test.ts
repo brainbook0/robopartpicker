@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import { resolveSeoDocument, serveStateOfOpenRobotics } from "../../worker/services/seo";
+import { resolveSeoDocument, serveLlmsText, serveStateOfOpenRobotics } from "../../worker/services/seo";
 
 // /about and /marketplace are linked site-wide and advertised in the sitemap, but they were served
 // by the generic one-sentence exact-page template: ~34 and ~31 words of crawler-visible body while
@@ -62,5 +62,39 @@ describe("static page bodies", () => {
     expect(html).toContain("draft line items the catalog has never published");
     expect(html).toContain("index,follow");
     expect(countWords(html)).toBeGreaterThan(250);
+  });
+
+  // The two pages that quote catalogue counts must not hardcode them again: they drifted once
+  // (2,453 / 35,146 / 2,414 while the live census read 2,445 / 34,760 / 2,408), and a stale figure
+  // on a page whose pitch is stated evidence is a credibility defect. Both must render exactly the
+  // counts the census query returns for the same database.
+  it("serves live catalogue counts on /about and /marketplace", async () => {
+    const row = await env.DB.prepare(`SELECT
+        (SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public') AS projects,
+        (SELECT COUNT(*) FROM components WHERE deleted_at IS NULL AND is_demo = 0) AS components,
+        (SELECT COUNT(*) FROM boms WHERE is_demo = 0) AS boms`)
+      .first<{ projects: number; components: number; boms: number }>();
+    const about = await resolveSeoDocument(env.DB, "/about", origin);
+    expect(about!.bodyHtml).toContain(`${row!.projects.toLocaleString()} open robotics projects`);
+    expect(about!.bodyHtml).toContain(`${row!.components.toLocaleString()} component records`);
+    expect(about!.bodyHtml).not.toContain("2,453");
+    const marketplace = await resolveSeoDocument(env.DB, "/marketplace", origin);
+    expect(marketplace!.bodyHtml).toContain(`${row!.projects.toLocaleString()} open designs`);
+    expect(marketplace!.bodyHtml).toContain(`${row!.boms.toLocaleString()} public BOMs`);
+    expect(marketplace!.bodyHtml).not.toContain("35,146");
+  });
+
+  // llms.txt is the file AI answer engines and agents read; it can only be cited as a source if it
+  // carries the census numbers, so the citable statistics block must be present and current.
+  it("serves citable live census statistics in llms.txt", async () => {
+    const res = await serveLlmsText({
+      env: { DB: env.DB },
+      req: { url: `${origin}/llms.txt`, method: "GET" },
+    } as unknown as Parameters<typeof serveLlmsText>[0]);
+    expect(res.status).toBe(200);
+    const txt = await res.text();
+    expect(txt).toContain("## Key statistics");
+    expect(txt).toContain("Bills of materials with no parts listed");
+    expect(txt).toContain(`${origin}/state-of-open-robotics`);
   });
 });
