@@ -798,16 +798,34 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
     const items = rows.results.map((r) => `<li><a href="${base}/boms/${encodeURIComponent(r.k)}">${esc(r.name)}</a> — ${Number(r.lines).toLocaleString()} lines</li>`).join("");
     const resolved = Number(stats?.resolved ?? 0).toLocaleString();
     const total = Number(stats?.total ?? 0).toLocaleString();
+    // "robot bill of materials" is a tracked keyword the site answers better than anyone (it compiles
+    // real robot BOMs) yet had no landing page: /boms was a bare 170-word listing. Deepened into the
+    // definitional resource Google and AI answer engines can cite. The project count is read live from
+    // censusCounts so it can never drift into a stale figure the way /about once did.
+    const census = await censusCounts(db);
+    const projects = census.projects.toLocaleString();
     const description = `${resolved} bills of materials with resolved line items and per-line identity, quantity, source evidence and observed pricing. ${total} further BOM records are archived in the catalog; those are published with noindex until their lines are resolved.`;
     return {
-      title: "Versioned bills of materials | RoboPartPicker",
+      title: "Robot bill of materials: open-source BOMs with source evidence | RoboPartPicker",
       description,
       canonicalUrl: `${base}/boms`,
       imageUrl: fallbackImage,
       type: "website",
       robots: INDEX_ROBOTS,
-      bodyHtml: `<article><h1>Versioned bills of materials</h1><p>${esc(description)}</p><h2>Recently updated BOMs</h2><ul>${items}</ul><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalog</a></p></article>`,
-      structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Bills of materials", description, url: `${base}/boms` }),
+      bodyHtml: `<article>
+<h1>Robot bill of materials</h1>
+<p>${esc(description)}</p>
+<h2>What a robot bill of materials is</h2>
+<p>A robot bill of materials (BOM) is the parts list a build needs: one line per item, with a quantity and enough identity to buy or make it — a manufacturer part number, a specification, or the exact wording the original project used. In an open-source robot that list is usually split across a spreadsheet, a parts table in the README and shop links, so two people building the same design often end up with different lists.</p>
+<h2>How each line is labelled</h2>
+<p>Every line here keeps the locator of the file it came from, such as a CSV row or a spreadsheet cell, together with an evidence state: <strong>verified</strong> when it is matched to a known part, <strong>probable</strong> when the match is plausible but unconfirmed, <strong>unresolved</strong> when the source gives a description but no identifiable part, and <strong>unpriced</strong> when a part is identified but no supplier price has been observed. Lines that cannot be resolved stay in the list and say so rather than being dropped or guessed. Prices are observed catalogue data, not quotations from a supplier, and supplier coverage is partial, so an absent price means "not observed here", not "unavailable".</p>
+<h2>How much of open robotics publishes a usable BOM</h2>
+<p>The catalogue indexes ${projects} open robotics projects. Many publish a repository, a README and a licence but no machine-readable parts list, so their BOM record stays empty and is withheld from search engines instead of being shown as a complete bill of materials. The full breakdown, with the method and the live counts, is published at <a href="${base}/state-of-open-robotics">${base}/state-of-open-robotics</a>.</p>
+<h2>Recently updated BOMs</h2>
+<ul>${items}</ul>
+<p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalogue</a> · <a href="${base}/queries">Sourcing guides</a> · <a href="${base}/developers">API and MCP</a></p>
+</article>`,
+      structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Robot bill of materials", description, url: `${base}/boms` }),
     };
   }
   const threadMatch = path.match(/^\/community\/t\/([^/]+)$/u);
