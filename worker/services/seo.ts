@@ -157,7 +157,7 @@ export async function serveSeoAsset(c: Context<AppBindings>): Promise<Response> 
   // 404 it so crawlers drop it instead of re-fetching a 24-word "Page not found" 200.
   const status = document.httpStatus ?? (knownRoute ? asset.status : 404);
   headers.set("cache-control", status === 404 ? "public, max-age=60" : "public, max-age=300, stale-while-revalidate=3600");
-  return new Response(injectSeoHtml(await asset.text(), document), { status, headers });
+  return new Response(injectSeoHtml(await asset.text(), withCrawlerFooter(document, base)), { status, headers });
 }
 
 /** Server-rendered body for a URL the app does not own. Real links, no invented content. */
@@ -1181,6 +1181,38 @@ function htmlAttribute(value: string): string {
   return value.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/"/gu, "&quot;").replace(/'/gu, "&#39;");
 }
 
+// Site-wide internal links appended to every crawler-visible document. These hub
+// pages (/glossary, /price-index, /compared-to, /queries, /state-of-open-robotics,
+// /teardowns) were reachable by sitemap and case-by-case cross-links only — absent
+// from the app nav, the app footer and the crawler footer — so crawlers discovered
+// them late and the classic orphan-page pattern kept them out of the index. The same
+// links are rendered by the React footer (src/components/layout/SiteFooter.tsx), so
+// the crawler HTML matches what a human sees and no content is served to a crawler
+// that is not served to a person.
+const CRAWLER_FOOTER_LINKS: ReadonlyArray<readonly [string, string]> = [
+  ["Robotics projects", "/projects"],
+  ["Bills of materials", "/boms"],
+  ["Sourcing guides", "/queries"],
+  ["Component price index", "/price-index"],
+  ["Robotics glossary", "/glossary"],
+  ["Comparisons", "/compared-to"],
+  ["State of open robotics", "/state-of-open-robotics"],
+  ["Teardowns", "/teardowns"],
+  ["Developer API and MCP", "/developers"],
+];
+
+/** The site-wide `<footer>` block for crawler documents. `base` may be "" for relative links. */
+function crawlerFooter(base: string): string {
+  const links = CRAWLER_FOOTER_LINKS.map(([label, path]) => `<a href="${base}${path}">${esc(label)}</a>`).join(" \u00b7 ");
+  return `<footer>RoboPartPicker - source-linked robotics projects, bills of materials and sourcing evidence. ${links}. <a href="${base}/sitemap.xml">Sitemap</a> \u00b7 <a href="${base}/llms.txt">llms.txt</a></footer>`;
+}
+
+/** Append the site-wide internal-link footer to a document's crawler body (no-op when it has none). */
+export function withCrawlerFooter(document: SeoDocument, base: string): SeoDocument {
+  if (!document.bodyHtml) return document;
+  return { ...document, bodyHtml: `${document.bodyHtml}${crawlerFooter(base)}` };
+}
+
 function queryShell(title: string, description: string, canonical: string, body: string, structuredJson: string, robots = "index,follow,max-image-preview:large"): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${htmlAttribute(title)}</title><meta name="description" content="${htmlAttribute(description)}" />
@@ -1191,7 +1223,7 @@ function queryShell(title: string, description: string, canonical: string, body:
 <script id="seo-structured-data" type="application/ld+json">${structuredJson}</script>
 <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#0f1214;color:#e8e6e3;line-height:1.6}main{max-width:760px;margin:0 auto;padding:32px 20px 64px}h1{font-size:1.9rem;line-height:1.25;margin:0 0 8px}a{color:#ffd000;text-decoration:none}a:hover{text-decoration:underline}.meta{color:#9aa0a6;font-size:.92rem;margin-bottom:24px}.body p{margin:0 0 16px}ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;list-style:none;padding:0}table{border-collapse:collapse;width:100%;margin:12px 0 20px}caption{text-align:left;color:#9aa0a6;font-size:.85rem;padding:0 0 6px}th,td{text-align:left;vertical-align:top;padding:7px 9px;border-bottom:1px solid #232a31;font-size:.95rem}th{color:#9aa0a6;font-weight:600}.tag{display:inline-block;background:#1a1f24;border:1px solid #2a3138;border-radius:20px;padding:4px 12px;margin:3px;font-size:.9rem}nav.top{display:flex;gap:16px;padding:16px 20px;background:#161a1e;flex-wrap:wrap;font-size:.95rem;border-bottom:1px solid #232a31}footer{padding:32px 20px;color:#9aa0a6;font-size:.9rem;border-top:1px solid #232a31}</style></head>
 <body><nav class="top"><a href="/">RoboPartPicker</a><a href="/projects">Projects</a><a href="/parts/actuator">Parts</a><a href="/boms">BOMs</a><a href="/queries">Sourcing queries</a><a href="/developers">API</a></nav><main>${body}</main>
-<footer>RoboPartPicker - source-linked robotics projects, bills of materials and sourcing evidence. <a href="/sitemap.xml">Sitemap</a> \u00b7 <a href="/llms.txt">llms.txt</a></footer></body></html>`;
+${crawlerFooter("")}</body></html>`;
 }
 
 export function serveQueryIndex(c: Context<AppBindings>): Response {

@@ -6,7 +6,7 @@ import { SOCIAL_LINKS } from "@/lib/site-config";
 
 export const SiteFooter = () => (
   <footer className="mt-16 border-t border-border bg-surface">
-    <div className="mx-auto max-w-[1400px] px-4 py-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-6 text-[13px]">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-7 text-[13px]">
       <div className="md:col-span-2">
         <div className="flex items-center gap-2">
           <img src={logoUrl} alt="" className="h-7 w-7 rounded-full" />
@@ -46,6 +46,18 @@ export const SiteFooter = () => (
           <li><Link to="/suppliers" className="hover:text-primary">Completed quote method</Link></li>
           <li><Link to="/developers" className="hover:text-primary">Developers & MCP</Link></li>
           <li><Link to="/marketplace/wanted/new" className="hover:text-primary">Post wanted</Link></li>
+        </ul>
+      </div>
+      <div>
+        <div className="section-title mb-2">Resources</div>
+        <ul className="space-y-1.5">
+          <li><a href="/state-of-open-robotics" className="hover:text-primary">State of open robotics</a></li>
+          <li><a href="/glossary" className="hover:text-primary">Robotics glossary</a></li>
+          <li><a href="/price-index" className="hover:text-primary">Component price index</a></li>
+          <li><a href="/compared-to" className="hover:text-primary">Comparisons</a></li>
+          <li><a href="/queries" className="hover:text-primary">Sourcing guides</a></li>
+          <li><Link to="/teardowns" className="hover:text-primary">Teardowns</Link></li>
+          <li><a href="/all-parts" className="hover:text-primary">Every part</a></li>
         </ul>
       </div>
       <div>
