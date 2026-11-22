@@ -791,10 +791,16 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
           AND (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) > 0) AS resolved`).first<{ total: number; resolved: number }>();
     // Only BOMs with real line items are listed. Most records are referenced archives that have not
     // been resolved yet, and presenting those as complete bills of materials would overstate the data.
+    // Every BOM that resolved line items is linked, not just the most recent handful. The set is
+    // deliberately small (BOMs with real lines are the curated minority; the rest are served
+    // noindex), and the sitemap already advertises all of them — an earlier LIMIT 24 truncated the
+    // list to 24 while 39 BOMs qualified, so 15 of them were reachable only through the sitemap and
+    // collected none of this index page's internal link equity. The high cap only guards against a
+    // pathological future in which thousands of BOMs resolve at once.
     const rows = await db.prepare(`SELECT COALESCE(b.slug, b.id) AS k, b.name, (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) AS lines
       FROM boms b WHERE b.is_demo = 0 AND b.visibility = 'public'
         AND (SELECT COUNT(*) FROM bom_items bi WHERE bi.bom_version_id = b.current_version_id) > 0
-      ORDER BY b.updated_at DESC LIMIT 24`).all<{ k: string; name: string; lines: number }>();
+      ORDER BY b.updated_at DESC LIMIT 1000`).all<{ k: string; name: string; lines: number }>();
     const items = rows.results.map((r) => `<li><a href="${base}/boms/${encodeURIComponent(r.k)}">${esc(r.name)}</a> — ${Number(r.lines).toLocaleString()} lines</li>`).join("");
     const resolved = Number(stats?.resolved ?? 0).toLocaleString();
     const total = Number(stats?.total ?? 0).toLocaleString();
@@ -821,7 +827,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
 <p>Every line here keeps the locator of the file it came from, such as a CSV row or a spreadsheet cell, together with an evidence state: <strong>verified</strong> when it is matched to a known part, <strong>probable</strong> when the match is plausible but unconfirmed, <strong>unresolved</strong> when the source gives a description but no identifiable part, and <strong>unpriced</strong> when a part is identified but no supplier price has been observed. Lines that cannot be resolved stay in the list and say so rather than being dropped or guessed. Prices are observed catalogue data, not quotations from a supplier, and supplier coverage is partial, so an absent price means "not observed here", not "unavailable".</p>
 <h2>How much of open robotics publishes a usable BOM</h2>
 <p>The catalogue indexes ${projects} open robotics projects. Many publish a repository, a README and a licence but no machine-readable parts list, so their BOM record stays empty and is withheld from search engines instead of being shown as a complete bill of materials. The full breakdown, with the method and the live counts, is published at <a href="${base}/state-of-open-robotics">${base}/state-of-open-robotics</a>.</p>
-<h2>Recently updated BOMs</h2>
+<h2>Bills of materials with resolved line items (${resolved})</h2>
 <ul>${items}</ul>
 <p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalogue</a> · <a href="${base}/queries">Sourcing guides</a> · <a href="${base}/developers">API and MCP</a></p>
 </article>`,
