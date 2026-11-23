@@ -252,6 +252,13 @@ app.on(["GET", "HEAD"], "/compared-to", serveComparisonIndex);
 app.on(["GET", "HEAD"], "/compared-to/:slug", serveComparisonPage);
 app.on(["GET", "HEAD"], "/price-index", servePriceIndex);
 
+// Legacy hub URLs. An earlier crawler template linked the bare /parts and /finder paths,
+// so search engines still re-request them; the app has no route there, so they dead-ended
+// at a 404. 301 them to the canonical hub the app itself links ("Parts catalog" and
+// "Guided finder") instead, so any accumulated signal consolidates on a real page.
+app.on(["GET", "HEAD"], "/parts", (c) => c.redirect(`${new URL(c.req.url).origin}/parts/actuator`, 301));
+app.on(["GET", "HEAD"], "/finder", (c) => c.redirect(`${new URL(c.req.url).origin}/finder/actuator`, 301));
+
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
 app.route("/api", healthRoutes);
 app.route("/api/v1", userRoutes);
