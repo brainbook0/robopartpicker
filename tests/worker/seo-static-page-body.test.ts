@@ -97,4 +97,47 @@ describe("static page bodies", () => {
     expect(txt).toContain("Bills of materials with no parts listed");
     expect(txt).toContain(`${origin}/state-of-open-robotics`);
   });
+
+  // /rpps, /teardowns and /compared-to are advertised in sitemap.xml and linked from every page's
+  // footer, but each was served by the generic one-sentence template (86-121 words). A specification
+  // served as an 87-word stub is the worst of them. These tests pin real body content so the three
+  // hubs cannot silently regress to stubs again.
+  it("serves a substantive /rpps specification body, not an 87-word stub", async () => {
+    const doc = await resolveSeoDocument(env.DB, "/rpps", origin);
+    expect(doc).not.toBeNull();
+    expect(doc!.robots).toContain("index,follow");
+    expect(doc!.canonicalUrl).toBe(`${origin}/rpps`);
+    expect(doc!.bodyHtml).toContain("The two files");
+    expect(doc!.bodyHtml).toContain("Conformance profiles");
+    // The two artifacts and the four profiles the human page documents must both be present.
+    expect(doc!.bodyHtml).toContain("rpps.yaml");
+    expect(doc!.bodyHtml).toContain("rpps.lock.yaml");
+    for (const profile of ["Core", "Buildable", "Reproducible", "Collaborative"]) {
+      expect(doc!.bodyHtml).toContain(`<strong>${profile}</strong>`);
+    }
+    expect(doc!.bodyHtml).toContain("Open Know-How");
+    expect(doc!.bodyHtml).toContain(`${origin}/developers`);
+    expect(countWords(doc!.bodyHtml ?? "")).toBeGreaterThan(200);
+  });
+
+  it("serves a substantive /teardowns body that states the evidence standard honestly", async () => {
+    const doc = await resolveSeoDocument(env.DB, "/teardowns", origin);
+    expect(doc).not.toBeNull();
+    expect(doc!.robots).toContain("index,follow");
+    expect(doc!.bodyHtml).toContain("Evidence standard");
+    expect(doc!.bodyHtml).toContain("No reviewed teardowns are published yet");
+    expect(doc!.bodyHtml).toContain(`${origin}/community`);
+    expect(countWords(doc!.bodyHtml ?? "")).toBeGreaterThan(120);
+  });
+
+  it("serves a substantive /compared-to body that links every comparison", async () => {
+    const doc = await resolveSeoDocument(env.DB, "/compared-to", origin);
+    expect(doc).not.toBeNull();
+    expect(doc!.robots).toContain("index,follow");
+    expect(doc!.bodyHtml).toContain("How the sourcing tools differ");
+    expect(doc!.bodyHtml).toContain(`${origin}/state-of-open-robotics`);
+    const links = (doc!.bodyHtml ?? "").match(new RegExp(`href="${origin}/compared-to/`, "g"))?.length ?? 0;
+    expect(links).toBe(5);
+    expect(countWords(doc!.bodyHtml ?? "")).toBeGreaterThan(120);
+  });
 });

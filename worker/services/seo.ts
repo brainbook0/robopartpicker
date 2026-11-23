@@ -904,7 +904,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
       imageUrl: fallbackImage,
       type: "website",
       robots: INDEX_ROBOTS,
-      bodyHtml: `<article><h1>Compare robotics sourcing tools</h1><p>${esc(description)}</p><ul>${items}</ul><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalog</a></p></article>`,
+      bodyHtml: `<article><h1>Compare robotics sourcing tools</h1><p>RoboPartPicker is one of several tools a robotics builder may reach for, and the right one depends on what you already have. These are honest, source-backed comparisons with tools people already use — what each one is good at, and where RoboPartPicker is not the answer.</p><h2>How the sourcing tools differ</h2><p>Distributors such as DigiKey and McMaster-Carr sell parts and hold the inventory, but they do not know which parts a given robot design needs. Component search engines such as Octopart look up a part you have already named. CAD and model repositories such as GrabCAD hold files but not bills of materials or sourcing. RoboPartPicker starts a step earlier: it reads a public robotics repository and derives the bill of materials, then links each line to component records, observed prices and source evidence.</p><ul>${items}</ul><p>Each comparison states where the other tool wins. None of them claim a capability the catalogue does not have: RoboPartPicker does not sell parts, does not treat a shared category as proof that two parts are interchangeable, and labels observed prices as observations rather than supplier quotes.</p><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/state-of-open-robotics">State of open robotics</a></p></article>`,
       structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Robotics sourcing comparisons", description, url: `${base}/compared-to` }),
     };
   }
@@ -1085,6 +1085,44 @@ ${marketplaceCounts}
 <h2>Publishing a listing</h2>
 <p>Sellers and makers can draft a listing at <a href="${base}/marketplace/new">${base}/marketplace/new</a>. Listings are reviewed against their source evidence before they become public.</p>
 </article>`;
+  // /rpps is advertised in the sitemap and linked from every page's footer, but the prerender served
+  // the generic one-sentence template (~87 words) for what is a real, documented specification. The
+  // human page (src/pages/RppsSpec.tsx) documents the manifest, lockfile, profiles and composition;
+  // this body states the same facts for crawlers, with no claim the spec does not make.
+  const rppsBody = `<article>
+<h1>Robotics Project Package Specification (RPPS)</h1>
+<p>RPPS is a vendor-neutral manifest and lockfile for exchanging buildable robotics releases. It describes a release once — project identity, licences, artifacts, components, interfaces, build procedures and evidence — so the same package can be validated, reproduced and compared by people and tools that share none of the underlying formats. RPPS coordinates native CAD, firmware, configuration and BOM files; it does not replace them, and it does not require RoboPartPicker.</p>
+<h2>The two files</h2>
+<p>An RPPS release is a human-edited manifest (<code>rpps.yaml</code>) plus an optional machine-generated lockfile (<code>rpps.lock.yaml</code>). The manifest records intent: what the project is, who authored it, which licences apply, and which artifacts and components it lists. The lockfile records the exact resolution of that intent — artifact digests and component identities with revisions and quantities — so a release can be rebuilt deterministically. The lockfile is optional while drafting and required for a reproducible claim.</p>
+<h2>Conformance profiles</h2>
+<p>A package is scored deterministically against four profiles, in order of increasing rigour:</p>
+<ul>
+<li><strong>Core</strong> — identity, licences, artifacts and a bill of materials.</li>
+<li><strong>Buildable</strong> — build procedures and declared mechanical and electrical interfaces.</li>
+<li><strong>Reproducible</strong> — an exact lock, test coverage and outcome evidence.</li>
+<li><strong>Collaborative</strong> — reusable assemblies and project lineage.</li>
+</ul>
+<p>Scores and findings come from stable rules, not from an AI suggestion: the validator reports the affected objects and rule IDs so a result can be reproduced.</p>
+<h2>Composition, not reinvention</h2>
+<p>RPPS references native engineering artifacts and composes existing identifiers and conventions where they apply — Open Know-How, CycloneDX HBOM, SPDX and ROS REP-103. It is versioned and published as a draft; it does not claim certification.</p>
+<p>A package can be validated, scored and exported against these profiles, and an example package is downloadable, on the RPPS validator page. The catalogue it integrates with is at <a href="${base}/projects">${base}/projects</a>, and the public read-only API and MCP server are documented at <a href="${base}/developers">${base}/developers</a>.</p>
+</article>`;
+  // /teardowns is sitemap-advertised and footer-linked site-wide but served an ~86-word stub (title
+  // plus nav plus footer). The human page (src/pages/Teardowns.tsx) shows an evidence-standard guide
+  // when no teardowns are published; this states the same standard for crawlers. It is honest about
+  // the empty state and does not invent teardown records.
+  const teardownsBody = `<article>
+<h1>Robot teardowns and component evidence</h1>
+<p>A teardown explains what is actually inside a robot, but it only becomes technical evidence when the source, revision, observed part and confidence are explicit. RoboPartPicker records a teardown against the exact system it describes and links its findings to the components and bill-of-materials lines it can correct.</p>
+<h2>Evidence standard</h2>
+<p>No reviewed teardowns are published yet. Staged imports and automated guesses never appear here as canonical evidence. A useful teardown submission records:</p>
+<ul>
+<li><strong>Identify the exact system</strong> — model, hardware revision, source URL, publication date, and whether the unit was modified.</li>
+<li><strong>Capture source-backed findings</strong> — name visible components and fabricated assemblies, but leave obscured or uncertain identities unresolved.</li>
+<li><strong>Link BOM corrections</strong> — connect each finding to a project and BOM line so the teardown can improve a generated build without replacing the primary documentation.</li>
+</ul>
+<p>Teardown evidence is submitted through the <a href="${base}/community">community</a>, and the projects it can correct are in the <a href="${base}/projects">project catalogue</a>; their bills of materials are at <a href="${base}/boms">${base}/boms</a>.</p>
+</article>`;
   const pages: Record<string, [string, string]> = {
     "/": ["RoboPartPicker | Build real robots from proven designs", "Discover robotics projects, inspect source-linked BOMs, compare parts, preview CAD, and plan reproducible robot builds."],
     "/projects": ["Open robotics projects with BOMs and build files | RoboPartPicker", "Browse open-source robots, hardware projects and robotics software with repositories, technical files, BOMs and build evidence."],
@@ -1108,7 +1146,7 @@ ${marketplaceCounts}
       structuredData["potentialAction"] = { "@type": "SearchAction", target: `${base}/projects?q={search_term_string}`, "query-input": "required name=search_term_string" };
     }
     return { title: exact[0], description: exact[1], canonicalUrl: `${base}${path}`, imageUrl, type: "website", robots: INDEX_ROBOTS,
-      bodyHtml: path === "/developers" ? developersBody : path === "/about" ? aboutBody : path === "/marketplace" ? marketplaceBody : `<article><h1>${esc(exact[0].split(" | ")[0])}</h1><p>${esc(exact[1])}</p><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a> · <a href="${base}/contact">Contact</a></p></article>`,
+      bodyHtml: path === "/developers" ? developersBody : path === "/about" ? aboutBody : path === "/marketplace" ? marketplaceBody : path === "/rpps" ? rppsBody : path === "/teardowns" ? teardownsBody : `<article><h1>${esc(exact[0].split(" | ")[0])}</h1><p>${esc(exact[1])}</p><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/boms">Bills of materials</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/community">Community</a> · <a href="${base}/developers">API and MCP</a> · <a href="${base}/contact">Contact</a></p></article>`,
       structuredData: [
       structuredData,
       { "@context": "https://schema.org", "@type": "WebSite", name: "RoboPartPicker", url: `${base}`, image: logoUrl },
