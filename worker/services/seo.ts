@@ -904,7 +904,7 @@ async function listingSeo(db: D1Database, path: string, base: string, fallbackIm
       imageUrl: fallbackImage,
       type: "website",
       robots: INDEX_ROBOTS,
-      bodyHtml: `<article><h1>Compare robotics sourcing tools</h1><p>RoboPartPicker is one of several tools a robotics builder may reach for, and the right one depends on what you already have. These are honest, source-backed comparisons with tools people already use — what each one is good at, and where RoboPartPicker is not the answer.</p><h2>How the sourcing tools differ</h2><p>Distributors such as DigiKey and McMaster-Carr sell parts and hold the inventory, but they do not know which parts a given robot design needs. Component search engines such as Octopart look up a part you have already named. CAD and model repositories such as GrabCAD hold files but not bills of materials or sourcing. RoboPartPicker starts a step earlier: it reads a public robotics repository and derives the bill of materials, then links each line to component records, observed prices and source evidence.</p><ul>${items}</ul><p>Each comparison states where the other tool wins. None of them claim a capability the catalogue does not have: RoboPartPicker does not sell parts, does not treat a shared category as proof that two parts are interchangeable, and labels observed prices as observations rather than supplier quotes.</p><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalog</a> · <a href="${base}/state-of-open-robotics">State of open robotics</a></p></article>`,
+      bodyHtml: `<article><h1>Compare robotics sourcing tools</h1><p>${esc(description)}</p><ul>${items}</ul><p><a href="${base}/projects">Robotics projects</a> · <a href="${base}/parts/actuator">Component catalog</a></p></article>`,
       structuredData: compact({ "@context": "https://schema.org", "@type": "CollectionPage", name: "Robotics sourcing comparisons", description, url: `${base}/compared-to` }),
     };
   }
@@ -1787,7 +1787,11 @@ export function serveComparisonIndex(c: Context<AppBindings>): Response {
     `<li><a href="/compared-to/${comp.slug}">${htmlAttribute(comp.title.replace(" | RoboPartPicker", ""))}</a></li>`).join("");
   const body = `<h1>RoboPartPicker compared to other sourcing and CAD tools</h1>
 <p class="meta">Honest comparisons with the tools robotics builders already use, and where RoboPartPicker fits.</p>
-<ul>${cards}</ul>`;
+<p>RoboPartPicker is one of several tools a robotics builder may reach for, and the right one depends on what you already have. Distributors such as DigiKey and McMaster-Carr sell parts and hold the inventory, but they do not know which parts a given robot design needs. Component search engines such as Octopart look up a part you have already named. CAD and model repositories such as GrabCAD hold files but not bills of materials or sourcing. RoboPartPicker starts a step earlier: it reads a public robotics repository and derives the bill of materials, then links each line to component records, observed prices and source evidence.</p>
+<h2>How the sourcing tools differ</h2>
+<ul>${cards}</ul>
+<p>Each comparison states where the other tool wins. None of them claim a capability this catalogue does not have: RoboPartPicker does not sell parts, does not treat a shared category as proof that two parts are interchangeable, and labels observed prices as observations rather than supplier quotes.</p>
+<p><a href="/projects">Robotics projects</a> &middot; <a href="/parts/actuator">Component catalog</a> &middot; <a href="/state-of-open-robotics">State of open robotics</a></p>`;
   const html = queryShell(
     "RoboPartPicker compared to other robotics sourcing tools",
     "Honest comparisons of RoboPartPicker with Octopart, DigiKey, McMaster-Carr, PCPartPicker, and GrabCAD for robotics sourcing and BOM workflows.",

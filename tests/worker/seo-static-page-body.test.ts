@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import { resolveSeoDocument, serveLlmsText, serveStateOfOpenRobotics } from "../../worker/services/seo";
+import { resolveSeoDocument, serveLlmsText, serveStateOfOpenRobotics, serveComparisonIndex } from "../../worker/services/seo";
 
 // /about and /marketplace are linked site-wide and advertised in the sitemap, but they were served
 // by the generic one-sentence exact-page template: ~34 and ~31 words of crawler-visible body while
@@ -131,13 +131,19 @@ describe("static page bodies", () => {
   });
 
   it("serves a substantive /compared-to body that links every comparison", async () => {
-    const doc = await resolveSeoDocument(env.DB, "/compared-to", origin);
-    expect(doc).not.toBeNull();
-    expect(doc!.robots).toContain("index,follow");
-    expect(doc!.bodyHtml).toContain("How the sourcing tools differ");
-    expect(doc!.bodyHtml).toContain(`${origin}/state-of-open-robotics`);
-    const links = (doc!.bodyHtml ?? "").match(new RegExp(`href="${origin}/compared-to/`, "g"))?.length ?? 0;
+    // /compared-to is served by its own full-SSR handler (worker/router.ts routes it to
+    // serveComparisonIndex), not by resolveSeoDocument — so the test must exercise that handler.
+    const res = serveComparisonIndex({
+      env: { DB: env.DB },
+      req: { url: `${origin}/compared-to`, method: "GET" },
+    } as unknown as Parameters<typeof serveComparisonIndex>[0]);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("index,follow");
+    expect(html).toContain("How the sourcing tools differ");
+    expect(html).toContain("/state-of-open-robotics");
+    const links = html.match(/href="\/compared-to\//g)?.length ?? 0;
     expect(links).toBe(5);
-    expect(countWords(doc!.bodyHtml ?? "")).toBeGreaterThan(120);
+    expect(countWords(html)).toBeGreaterThan(120);
   });
 });
