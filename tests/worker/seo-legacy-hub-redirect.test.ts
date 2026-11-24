@@ -39,3 +39,40 @@ describe("legacy hub URLs redirect to their canonical page", () => {
     }
   });
 });
+
+// Other legacy URLs search engines still request (older SO-101 project/BOM spellings,
+// the common RSS aliases and the pre-rewrite comparison slug) must 301 to the page that
+// now answers them, so crawl signals consolidate on a real page instead of a 404.
+describe("legacy alias URLs redirect to their canonical page", () => {
+  const aliases: Array<[string, string]> = [
+    ["/projects/so-101", "/projects/therobotstudio-so-arm100"],
+    ["/projects/so-arm100", "/projects/therobotstudio-so-arm100"],
+    ["/projects/the-robotstudio-so-arm100", "/projects/therobotstudio-so-arm100"],
+    ["/boms/so-101", "/boms/therobotstudio-so-arm100-bom"],
+    ["/boms/so-arm100", "/boms/therobotstudio-so-arm100-bom"],
+    ["/compared-to/robopartpicker-vs-octopart", "/compared-to/vs-octopart"],
+    ["/feed", "/feed.xml"],
+    ["/rss.xml", "/feed.xml"],
+  ];
+
+  for (const [from, to] of aliases) {
+    it(`301s ${from} to ${to}`, async () => {
+      const res = await exports.default.fetch(new Request(`${origin}${from}`, { redirect: "manual" }));
+      expect(res.status).toBe(301);
+      expect(res.headers.get("location")).toBe(`${origin}${to}`);
+    });
+  }
+
+  it("answers HEAD on a legacy alias without a body", async () => {
+    const res = await exports.default.fetch(new Request(`${origin}/feed`, { method: "HEAD", redirect: "manual" }));
+    expect(res.status).toBe(301);
+    expect(res.headers.get("location")).toBe(`${origin}/feed.xml`);
+    expect(await res.text()).toBe("");
+  });
+
+  it("does not hijack the real feed route", async () => {
+    const res = await exports.default.fetch(new Request(`${origin}/feed.xml`, { redirect: "manual" }));
+    expect(res.status).not.toBe(301);
+    expect(res.headers.get("location")).toBeNull();
+  });
+});

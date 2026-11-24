@@ -248,6 +248,32 @@ app.on(["GET", "HEAD"], "/glossary", serveGlossaryIndex);
 app.on(["GET", "HEAD"], "/all-projects", serveAllProjects);
 app.on(["GET", "HEAD"], "/all-parts", serveAllParts);
 app.on(["GET", "HEAD"], "/state-of-open-robotics", serveStateOfOpenRobotics);
+
+// Other legacy URLs search engines still request (measured 2026-11-24 via Cloudflare GraphQL
+// httpRequestsAdaptiveGroups, Googlebot UA, 14d). Each is an exact-match 301 to the page that
+// now answers it, so accumulated signal consolidates on a real page instead of a 404:
+// - the older SO-101 project/BOM spellings — `/projects/so-101` x4, `/boms/so-101` x3,
+//   `/projects/so-arm100` x2, `/boms/so-arm100` x2, `/projects/the-robotstudio-so-arm100` x1;
+//   the canonical project is `/projects/therobotstudio-so-arm100` and its bill is
+//   `/boms/therobotstudio-so-arm100-bom`.
+// - the two common RSS aliases `/feed` and `/rss.xml` -> `/feed.xml`.
+// - the pre-rewrite comparison slug `/compared-to/robopartpicker-vs-octopart` -> `/compared-to/vs-octopart`.
+// Registered before the parameterised routes they share a prefix with (`/compared-to/:slug`), because
+// Hono matches in registration order — an exact alias must precede the param route or it is shadowed.
+const legacyAliases: ReadonlyArray<readonly [string, string]> = [
+  ["/projects/so-101", "/projects/therobotstudio-so-arm100"],
+  ["/projects/so-arm100", "/projects/therobotstudio-so-arm100"],
+  ["/projects/the-robotstudio-so-arm100", "/projects/therobotstudio-so-arm100"],
+  ["/boms/so-101", "/boms/therobotstudio-so-arm100-bom"],
+  ["/boms/so-arm100", "/boms/therobotstudio-so-arm100-bom"],
+  ["/compared-to/robopartpicker-vs-octopart", "/compared-to/vs-octopart"],
+  ["/feed", "/feed.xml"],
+  ["/rss.xml", "/feed.xml"],
+];
+for (const [from, to] of legacyAliases) {
+  app.on(["GET", "HEAD"], from, (c) => c.redirect(`${new URL(c.req.url).origin}${to}`, 301));
+}
+
 app.on(["GET", "HEAD"], "/compared-to", serveComparisonIndex);
 app.on(["GET", "HEAD"], "/compared-to/:slug", serveComparisonPage);
 app.on(["GET", "HEAD"], "/price-index", servePriceIndex);
