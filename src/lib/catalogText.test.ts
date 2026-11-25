@@ -21,6 +21,17 @@ describe("normalizeCatalogText", () => {
     );
   });
 
+  it("unwinds double-encoded entities from re-escaped scrape pipelines", () => {
+    // Live 2026-11-25: scrape pipelines escaped already-escaped source text, so summaries
+    // carried `&amp;amp;`, `&amp;nbsp;`, `&amp;quot;` and rendered a literal `&amp;` on the page.
+    expect(normalizeCatalogText("60g ultralight, 0.6Nm peak torque &amp;amp; large hollow shaft")).toBe(
+      "60g ultralight, 0.6Nm peak torque & large hollow shaft",
+    );
+    expect(normalizeCatalogText("5V&amp;nbsp;regulator &amp;amp; filter")).toBe("5V regulator & filter");
+    // A reference that does not name an entity is left alone, so the loop terminates.
+    expect(normalizeCatalogText("built for AT&T; hardware")).toBe("built for AT&T; hardware");
+  });
+
   it("normalizes escaped line breaks, whitespace, and repeated blank lines", () => {
     expect(normalizeCatalogText("  First   line\\nnext.\n\n\n  Final   paragraph.  ")).toBe(
       "First line\nnext.\n\nFinal paragraph.",

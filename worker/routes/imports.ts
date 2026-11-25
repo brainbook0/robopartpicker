@@ -8,6 +8,7 @@ import { parseJson } from "../validation";
 import { matchStatements, normalizedName, recordTypes, sha256, stagingStatements, validateParsedData } from "../services/ingestion";
 import { recordAuditEvent } from "../services/audit";
 import { computePublishability, resolveUpstreamIdentity } from "../../src/shared/provenance";
+import { normalizeCatalogText } from "../../src/lib/catalogText";
 
 const httpUrl = z.string().url().max(2_048).refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Only HTTP(S) URLs are allowed.");
 const sourceSchema = z.object({ name: z.string().trim().min(2).max(200), type: z.string().trim().min(2).max(100), baseUrl: httpUrl.nullable().optional(), priority: z.number().int().min(1).max(1_000).default(100), trustWeight: z.number().min(0).max(1).default(0.5) }).strict();
@@ -246,11 +247,11 @@ async function prepareCanonical(db: D1Database, type: string, parsed: Record<str
       (id, slug, manufacturer_id, manufacturer_part_number, name, category, summary, lifecycle_status, source_url,
        provenance_label, freshness_at, is_demo, version, created_at, updated_at)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'unknown', ?8, 'imported; admin-reviewed', ?9, 0, 1, ?9, ?9)`)
-      .bind(id, slug, manufacturerId, parsed.manufacturerPartNumber ?? null, parsed.name, parsed.category, parsed.summary ?? null, context.sourceUrl, context.now));
+      .bind(id, slug, manufacturerId, parsed.manufacturerPartNumber ?? null, normalizeCatalogText(typeof parsed.name === "string" ? parsed.name : "") || String(parsed.name ?? ""), parsed.category, parsed.summary ?? null, context.sourceUrl, context.now));
   } else if (type === "evidence") {
     statements.push(db.prepare(`INSERT INTO evidence
       (id, source_type, source_url, title, retrieved_at, confidence, created_at) VALUES (?1, ?2, ?3, ?4, ?5, 0.5, ?5)`)
-      .bind(id, parsed.sourceType, parsed.sourceUrl ?? context.sourceUrl, parsed.title, context.now));
+      .bind(id, parsed.sourceType, parsed.sourceUrl ?? context.sourceUrl, normalizeCatalogText(typeof parsed.title === "string" ? parsed.title : "") || String(parsed.title ?? ""), context.now));
   } else if (type === "offer") {
     const supplierId = await resolveCanonicalReference(db, context.sourceId, "supplier", parsed.supplierCanonicalId, parsed.supplierExternalId);
     const componentId = await resolveCanonicalReference(db, context.sourceId, "component", parsed.componentCanonicalId, parsed.componentExternalId);

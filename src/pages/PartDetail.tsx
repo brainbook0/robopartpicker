@@ -148,7 +148,11 @@ function SourceSpecifications({ part }: { part: CatalogPart }) {
 export default function PartDetail() {
   const { category, slug } = useParams();
   const componentQuery = useComponent(slug);
-  const part = componentQuery.data?.item;
+  // Imported supplier names can carry HTML entity text (`… Trainer &amp; Glider`) that would otherwise
+  // render literally in the tab title, the h1, breadcrumbs and image alt text. Normalise once here,
+  // exactly as summaries are normalised, so every surface uses the same clean string.
+  const rawPart = componentQuery.data?.item;
+  const part = rawPart ? { ...rawPart, name: normalizeCatalogText(rawPart.name) || rawPart.name } : undefined;
   const alternativesQuery = useComponentAlternatives(part?.id, 5);
 
   const [tick, setTick] = useState(0);

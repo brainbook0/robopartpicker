@@ -513,8 +513,14 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         updated_at: string; maker: string | null; image_file_id: string | null; price_minor: number | null; currency: string | null;
       }>();
     if (row) {
+      // Names are imported from supplier pages, so they can carry the same HTML entity text the
+      // summaries do (`AT2317 … Trainer &amp; Glider`) and — unlike summaries — this is the one
+      // field the renderer used to emit raw, so the entity reached the title, the h1 and
+      // schema.org Product.name verbatim. Normalise through the shared importer, which also
+      // terminates the double-encoding scrape pipelines reintroduced (see catalogText.ts).
+      const name = importedText(row.name);
       const identity = [row.maker, row.manufacturer_part_number ? `MPN ${row.manufacturer_part_number}` : null].filter(Boolean).join(" · ");
-      const description = concise(normalizeCatalogText(row.summary) || `${row.name}${identity ? ` by ${identity}` : ""}. Compare source-backed specifications, prices, project usage, files and product links.`);
+      const description = concise(normalizeCatalogText(row.summary) || `${name}${identity ? ` by ${identity}` : ""}. Compare source-backed specifications, prices, project usage, files and product links.`);
       const canonicalUrl = `${base}/parts/${encodeURIComponent(row.category)}/${encodeURIComponent(slug)}`;
       const offer = row.price_minor != null ? { "@type": "Offer", price: (Number(row.price_minor) / 100).toFixed(2), priceCurrency: row.currency ?? "USD", availability: "https://schema.org/InStock" } : undefined;
       const partFacts = [
@@ -560,7 +566,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         .bind(row.id).all<{ id: string; purpose: string | null; published: string | null; original_name: string | null }>();
       const publishedFiles = fileRows.results.filter((f) => f.published !== null);
       const fileSection = publishedFiles.length
-        ? `<h2>Published files (${publishedFiles.length})</h2><ul>${publishedFiles.map((f) => `<li><a href="${base}${fileContentUrl(f.id)}">${esc(f.original_name || `${row.name} file`)}</a>${f.purpose ? ` (${esc(f.purpose)})` : ""}</li>`).join("")}</ul>`
+        ? `<h2>Published files (${publishedFiles.length})</h2><ul>${publishedFiles.map((f) => `<li><a href="${base}${fileContentUrl(f.id)}">${esc(f.original_name || `${name} file`)}</a>${f.purpose ? ` (${esc(f.purpose)})` : ""}</li>`).join("")}</ul>`
         : "";
       // Crawlable sibling links. Deliberately the cheap same-category lookup rather than the client's
       // scored alternatives CTE: this runs for every one of the 34,760 component pages a crawler may
@@ -574,22 +580,22 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         ORDER BY c.name LIMIT 6`)
         .bind(row.category, row.id).all<{ slug: string; name: string; category: string; maker: string | null }>();
       const siblingSection = siblingRows.results.length
-        ? `<h2>Related components in ${esc(row.category)}</h2><ul>${siblingRows.results.map((c) => `<li><a href="${base}/parts/${encodeURIComponent(c.category)}/${encodeURIComponent(c.slug)}">${esc(c.name)}</a>${c.maker ? ` — ${esc(c.maker)}` : ""}</li>`).join("")}</ul>`
+        ? `<h2>Related components in ${esc(row.category)}</h2><ul>${siblingRows.results.map((c) => `<li><a href="${base}/parts/${encodeURIComponent(c.category)}/${encodeURIComponent(c.slug)}">${esc(importedText(c.name))}</a>${c.maker ? ` — ${esc(c.maker)}` : ""}</li>`).join("")}</ul>`
         : "";
       // Same substance rule as sitemap.xml: a component page with no source specifications, no
       // observed price and no published-project usage is a SKU stub. It stays crawlable
       // (follow) so the catalogue graph remains connected, but it must not be indexed.
       const substantive = specRows.results.length > 0 || row.price_minor != null || usage.results.length > 0;
-      const bodyHtml = `<article><h1>${esc(row.name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}${siblingSection}${queryGuideSection(row.category, base, slug)}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
+      const bodyHtml = `<article><h1>${esc(name)}</h1><p>${esc(description)}</p>${sourceLink}<h2>Component facts</h2><ul>${partFacts}</ul>${specSection}${fileSection}${usageSection}${siblingSection}${queryGuideSection(row.category, base, slug)}<p><a href="${base}/parts/${encodeURIComponent(row.category)}">More ${esc(row.category)} components</a> · <a href="${base}/projects">Robotics projects</a></p></article>`;
       return {
-        title: conciseTitle(`${row.name}${row.maker ? ` by ${row.maker}` : ""} | RoboPartPicker`),
+        title: conciseTitle(`${name}${row.maker ? ` by ${row.maker}` : ""} | RoboPartPicker`),
         description,
         canonicalUrl,
         imageUrl: row.image_file_id ? `${base}${fileContentUrl(row.image_file_id)}` : fallbackImage,
         type: "product",
         robots: substantive ? INDEX_ROBOTS : "noindex,follow",
         bodyHtml,
-        structuredData: compact({ "@context": "https://schema.org", "@type": "Product", name: row.name, description, url: canonicalUrl, mpn: row.manufacturer_part_number, manufacturer: row.maker ? { "@type": "Organization", name: row.maker } : undefined, category: row.category, offers: offer, additionalProperty: specRows.results.slice(0, 12).map((s) => ({ "@type": "PropertyValue", name: s.label || titleCase(s.spec_key), value: `${s.value_text ?? ""}${s.unit ? ` ${s.unit}` : ""}`.trim() })) }),
+        structuredData: compact({ "@context": "https://schema.org", "@type": "Product", name, description, url: canonicalUrl, mpn: row.manufacturer_part_number, manufacturer: row.maker ? { "@type": "Organization", name: row.maker } : undefined, category: row.category, offers: offer, additionalProperty: specRows.results.slice(0, 12).map((s) => ({ "@type": "PropertyValue", name: s.label || titleCase(s.spec_key), value: `${s.value_text ?? ""}${s.unit ? ` ${s.unit}` : ""}`.trim() })) }),
       };
     }
     // A part's category is a filing decision, not its identity: curation sometimes moves a

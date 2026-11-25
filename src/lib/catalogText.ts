@@ -40,8 +40,19 @@ export function normalizeCatalogText(value: string | null | undefined): string {
     .replace(/\[([^\]]+)\]\([^)]*\)/gu, "$1")
     .replace(/```[\s\S]*?```/gu, " ");
 
-  const decoded = withoutMarkup
-    .replace(/&([a-z]+|#\d+|#x[0-9a-f]+);/giu, (_match, entity: string) => decodeEntity(entity))
+  // Decode HTML entities to a fixed point. Supplier scrape pipelines run the source HTML
+  // through an escaper more than once, so live data carries double-encoded references:
+  // `peak torque &amp;amp; large shaft` (31 components, 2026-11-25) renders to a literal
+  // `&amp;` on the page and inside schema.org `Product.description` — a visible defect on a
+  // site that promises honesty. A single pass only unwinds one level, so loop until stable
+  // (a reference that does not decode, like `AT&T;`, is returned unchanged and terminates).
+  let decoded = withoutMarkup;
+  for (let pass = 0; pass < 4; pass += 1) {
+    const next = decoded.replace(/&([a-z]+|#\d+|#x[0-9a-f]+);/giu, (_match, entity: string) => decodeEntity(entity));
+    if (next === decoded) break;
+    decoded = next;
+  }
+  decoded = decoded
     .replace(/\\r\\n|\\n|\\r/gu, "\n")
     .replace(/\r\n?|\u2028|\u2029/gu, "\n");
 
