@@ -1004,6 +1004,13 @@ export function staticSeo(path: string, base: string, imageUrl: string, stats?: 
 <li>Discovery documents: <a href="${base}/.well-known/mcp.json">${base}/.well-known/mcp.json</a>, <a href="${base}/.well-known/mcp/server-card.json">${base}/.well-known/mcp/server-card.json</a>, <a href="${base}/.well-known/api-catalog">${base}/.well-known/api-catalog</a>, <a href="${base}/openapi.json">${base}/openapi.json</a> and <a href="${base}/llms.txt">${base}/llms.txt</a>.</li>
 </ul>
 <p>A plain browser navigation to the endpoint opens the event stream and shows no content, because a GET is not a JSON-RPC call. Use an MCP client, or POST JSON-RPC with an <code>Accept</code> header that includes <code>application/json, text/event-stream</code>. The server answers <code>initialize</code> by echoing the protocol version the client requested.</p>
+<h2>Where to find this server</h2>
+<p>The public server is listed in the MCP directories that clients and agents discover servers through. Any directory or listing should link to the canonical documentation page <a href="${base}/developers">${base}/developers</a>.</p>
+<ul>
+<li>Glama connector — <a href="https://glama.ai/mcp/connectors/com.robopartpicker/robopartpicker">com.robopartpicker/robopartpicker</a>.</li>
+<li>Glama server — <a href="https://glama.ai/mcp/servers/brainbook0/robopartpicker-mcp">brainbook0/robopartpicker-mcp</a>.</li>
+<li>Official MCP Registry — <code>com.robopartpicker/robopartpicker</code>, streamable HTTP at <code>${base}/mcp</code>.</li>
+</ul>
 <h2>Client configuration</h2>
 <pre>{ "mcpServers": { "robopartpicker": { "url": "${base}/mcp" } } }</pre>
 <h2>Tools</h2>

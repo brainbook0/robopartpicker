@@ -59,5 +59,10 @@ describe("agent discovery documents", () => {
     // Honesty constraint: the docs must keep stating that prices are observations, not quotes.
     expect(body.toLowerCase()).toContain("not quotes");
     expect(body.toLowerCase()).toContain("untrusted data");
+    // The page must point at the directories the server is listed in (maintainer requirement on
+    // the punkpeye list PRs: link the Glama listing from the site, not just the repo README).
+    expect(body).toContain("Where to find this server");
+    expect(body).toContain("https://glama.ai/mcp/connectors/com.robopartpicker/robopartpicker");
+    expect(body).toContain("https://glama.ai/mcp/servers/brainbook0/robopartpicker-mcp");
   });
 });
