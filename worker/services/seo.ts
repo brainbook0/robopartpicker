@@ -286,7 +286,7 @@ export async function serveLlmsText(c: Context<AppBindings>): Promise<Response> 
   const emptyPct = cs.boms ? `${((100 * cs.emptyBoms) / cs.boms).toFixed(1)}%` : "n/a";
   const asOf = new Date().toISOString().slice(0, 10);
   const stats = `## Key statistics (citable, computed live ${asOf})\n\n- Open robotics projects catalogued: ${cs.projects.toLocaleString()}\n- Bills of materials with no parts listed: ${cs.emptyBoms.toLocaleString()} of ${cs.boms.toLocaleString()} (${emptyPct})\n- Projects whose published bill of materials resolves to at least one identifiable part: ${cs.projectsResolved.toLocaleString()} of ${cs.projects.toLocaleString()}\n- Full census, method and the exact queries: ${base}/state-of-open-robotics\n`;
-  const body = `# RoboPartPicker\n\n> Source-linked robotics projects, bills of materials, parts, CAD and reproducible build evidence.\n\n## Core pages\n\n- [Project catalog](${base}/projects)\n- [Bills of materials](${base}/boms)\n- [Component catalog](${base}/parts/actuator)\n- [Every robotics part](${base}/all-parts)\n- [Sourcing questions](${base}/queries)\n- [Component price index](${base}/price-index)\n- [Robotics glossary](${base}/glossary)\n- [Comparisons](${base}/compared-to)\n- [RPPS specification](${base}/rpps)\n- [State of open robotics (census)](${base}/state-of-open-robotics)\n- [Developer API and MCP](${base}/developers)\n\n## Machine interfaces\n\n- Public API base: ${base}/api/v1\n- Public read-only MCP: ${base}/mcp\n- MCP discovery: ${base}/.well-known/mcp.json\n- Sitemap: ${base}/sitemap.xml\n- RSS feed: ${base}/feed.xml\n\n${stats}\n## Popular robotics projects\n\n${projects}\n`;
+  const body = `# RoboPartPicker\n\n> Source-linked robotics projects, bills of materials, parts, CAD and reproducible build evidence.\n\n## Core pages\n\n- [Project catalog](${base}/projects)\n- [Bills of materials](${base}/boms)\n- [Component catalog](${base}/parts/actuator)\n- [Every robotics part](${base}/all-parts)\n- [Sourcing questions](${base}/queries)\n- [Component price index](${base}/price-index)\n- [Robotics glossary](${base}/glossary)\n- [Comparisons](${base}/compared-to)\n- [RPPS specification](${base}/rpps)\n- [State of open robotics (census)](${base}/state-of-open-robotics)\n- [Developer API and MCP](${base}/developers)\n\n## Machine interfaces\n\n- Public API base: ${base}/api/v1\n- Public read-only MCP: ${base}/mcp\n- MCP discovery: ${base}/.well-known/mcp.json\n- Sitemap: ${base}/sitemap.xml\n- RSS feed: ${base}/feed.xml\n- Census data (JSON): ${base}/state-of-open-robotics.json\n\n${stats}\n## Popular robotics projects\n\n${projects}\n`;
   return new Response(c.req.method === "HEAD" ? null : body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600, stale-while-revalidate=86400" } });
 }
 
@@ -1658,24 +1658,45 @@ function barChart(rows: Array<{ label: string; value: number }>, opts: { unit?: 
  */
 export async function serveStateOfOpenRobotics(c: Context<AppBindings>): Promise<Response> {
   const base = publicBase(c.env, c.req.url);
+  const { t, b, s, l, cats, licenses, emptyPct, noLicense, noassertion, ambiguous, asOf } = await censusReport(c.env.DB);
+  const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "n/a");
+  return renderStateOfOpenRobotics(c, base, { t, b, s, l, cats, licenses, emptyPct, noLicense, noassertion, ambiguous, asOf, pct });
+}
+
+// The single census computation, shared by the human page (/state-of-open-robotics) and its
+// machine-readable twin (/state-of-open-robotics.json). Both surfaces must report the same
+// numbers, so the queries live in one place and neither can drift from the other.
+async function censusReport(db: D1Database): Promise<{
+  t: { projects: number; components: number; with_repo: number; with_license: number };
+  b: { boms: number; empty: number };
+  s: { spec_rows: number; keys: number; with_specs: number };
+  l: { published_boms: number; lines: number; resolved: number; evidenced: number; components: number; projects_resolved: number };
+  cats: Array<{ category: string; n: number }>;
+  licenses: Array<{ license: string; n: number }>;
+  emptyPct: string;
+  noLicense: number;
+  noassertion: number;
+  ambiguous: number;
+  asOf: string;
+}> {
   const P = "deleted_at IS NULL AND is_demo = 0 AND status = 'published' AND visibility = 'public'";
   const [totals, bom, cats, licenses, specs, linesQ] = await Promise.all([
-    collectRows<{ projects: number; components: number; with_repo: number; with_license: number }>(c.env.DB,
+    collectRows<{ projects: number; components: number; with_repo: number; with_license: number }>(db,
       `SELECT (SELECT COUNT(*) FROM projects WHERE ${P}) AS projects,
               (SELECT COUNT(*) FROM components WHERE deleted_at IS NULL AND is_demo = 0) AS components,
               (SELECT COUNT(*) FROM projects WHERE ${P} AND repository_url IS NOT NULL AND repository_url <> '') AS with_repo,
               (SELECT COUNT(*) FROM projects WHERE ${P} AND license_spdx IS NOT NULL AND license_spdx <> '') AS with_license`),
-    collectRows<{ boms: number; empty: number }>(c.env.DB,
+    collectRows<{ boms: number; empty: number }>(db,
       `SELECT (SELECT COUNT(*) FROM boms WHERE is_demo = 0) AS boms,
               (SELECT COUNT(*) FROM boms b WHERE b.is_demo = 0 AND NOT EXISTS
                  (SELECT 1 FROM bom_versions v JOIN bom_items i ON i.bom_version_id = v.id WHERE v.bom_id = b.id)) AS empty`),
-    collectRows<{ category: string; n: number }>(c.env.DB,
+    collectRows<{ category: string; n: number }>(db,
       `SELECT COALESCE(NULLIF(robot_category,''),'unclassified') AS category, COUNT(*) AS n
        FROM projects WHERE ${P} GROUP BY 1 ORDER BY n DESC`),
-    collectRows<{ license: string; n: number }>(c.env.DB,
+    collectRows<{ license: string; n: number }>(db,
       `SELECT COALESCE(NULLIF(license_spdx,''),'not declared') AS license, COUNT(*) AS n
        FROM projects WHERE ${P} GROUP BY 1 ORDER BY n DESC`),
-    collectRows<{ spec_rows: number; keys: number; with_specs: number }>(c.env.DB,
+    collectRows<{ spec_rows: number; keys: number; with_specs: number }>(db,
       `SELECT (SELECT COUNT(*) FROM component_specs) AS spec_rows,
               (SELECT COUNT(DISTINCT spec_key) FROM component_specs) AS keys,
               (SELECT COUNT(DISTINCT cr.component_id) FROM component_specs s
@@ -1684,7 +1705,7 @@ export async function serveStateOfOpenRobotics(c: Context<AppBindings>): Promise
     // only shown publicly once a version is published (verified or partial); versions still in
     // 'draft' are stored but never rendered. Counting every stored line would overstate the
     // ecosystem, so the served figure and the stored figure are reported separately.
-    collectRows<{ published_boms: number; lines: number; resolved: number; evidenced: number; components: number; projects_resolved: number }>(c.env.DB,
+    collectRows<{ published_boms: number; lines: number; resolved: number; evidenced: number; components: number; projects_resolved: number }>(db,
       `SELECT
          (SELECT COUNT(*) FROM boms b JOIN bom_versions v ON v.id = b.current_version_id
             WHERE b.is_demo = 0 AND v.publication_state IN ('verified','partial')
@@ -1714,6 +1735,30 @@ export async function serveStateOfOpenRobotics(c: Context<AppBindings>): Promise
   const ambiguous = noLicense + noassertion;
   const asOf = new Date().toISOString().slice(0, 10);
 
+  return { t, b, s, l, cats, licenses, emptyPct, noLicense, noassertion, ambiguous, asOf };
+}
+
+// Renders the human-facing census page from a prepared census report. Kept separate from the
+// computation so the machine-readable twin (/state-of-open-robotics.json) serves the same numbers.
+function renderStateOfOpenRobotics(
+  c: Context<AppBindings>,
+  base: string,
+  d: {
+    t: { projects: number; components: number; with_repo: number; with_license: number };
+    b: { boms: number; empty: number };
+    s: { spec_rows: number; keys: number; with_specs: number };
+    l: { published_boms: number; lines: number; resolved: number; evidenced: number; components: number; projects_resolved: number };
+    cats: Array<{ category: string; n: number }>;
+    licenses: Array<{ license: string; n: number }>;
+    emptyPct: string;
+    noLicense: number;
+    noassertion: number;
+    ambiguous: number;
+    asOf: string;
+    pct: (n: number, d: number) => string;
+  },
+): Response {
+  const { t, b, s, l, cats, licenses, emptyPct, noLicense, noassertion, ambiguous, asOf, pct } = d;
   const body = `<article>
 <h1>The state of open-source robotics hardware</h1>
 <p class="meta">A census of ${t.projects.toLocaleString()} open robotics projects, taken from the RoboPartPicker catalog on ${asOf}. Every figure below is a count over our database. Nothing is estimated, sampled, or extrapolated, and the queries are published with the data so the numbers can be checked.</p>
@@ -1741,7 +1786,7 @@ ${barChart(cats.slice(0, 12).map((r) => ({ label: r.category, value: r.n })))}
 <p>Projects counted are published, public, non-demo rows. Component and specification counts come from the component tables. BOM emptiness is measured as bills of materials with no line items attached to any version. Published line figures count only bills of materials whose current version is published (verified or partial) — the same rows the catalog actually serves; draft line items are stored but excluded from that figure. Figures were computed on ${asOf} and move as the catalog grows, so the numbers above are a snapshot rather than a fixed claim.</p>
 
 <h2>Check it yourself</h2>
-<p>The same data is available programmatically and the catalog is browsable without an account: <a href="${base}/all-projects">every project</a>, <a href="${base}/parts/actuator">the component catalog</a>, <a href="${base}/developers">the public API and MCP server</a>, and <a href="${base}/queries">the sourcing questions we answer</a>.</p>
+<p>The same data is available programmatically and the catalog is browsable without an account: <a href="${base}/all-projects">every project</a>, <a href="${base}/parts/actuator">the component catalog</a>, <a href="${base}/developers">the public API and MCP server</a>, and <a href="${base}/queries">the sourcing questions we answer</a>. The census figures on this page are also served as machine-readable JSON at <a href="${base}/state-of-open-robotics.json">${base}/state-of-open-robotics.json</a>, so anyone can re-check or cite them directly.</p>
 </article>`;
 
   const html = queryShell(
@@ -1759,6 +1804,39 @@ ${barChart(cats.slice(0, 12).map((r) => ({ label: r.category, value: r.n })))}
   );
   return new Response(c.req.method === "HEAD" ? null : html, {
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=21600, s-maxage=21600" },
+  });
+}
+
+// Machine-readable twin of the census page: the same live counts as JSON, so a journalist, agent
+// or crawler can cite the figures without scraping the HTML. Googlebot already probes this path
+// (it was a 404); serving it makes the page's "available programmatically" claim literally true.
+export async function serveStateOfOpenRoboticsJson(c: Context<AppBindings>): Promise<Response> {
+  const base = publicBase(c.env, c.req.url);
+  const { t, b, s, l, cats, licenses, noLicense, noassertion, ambiguous, asOf } = await censusReport(c.env.DB);
+  const pct = (n: number, d: number) => (d ? Number(((100 * n) / d).toFixed(1)) : null);
+  const report = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: "The state of open-source robotics hardware",
+    description: `Live census of ${t.projects} open robotics projects: bills-of-materials completeness, licence clarity, robot categories and component-specification coverage. Every figure is a count over the RoboPartPicker catalog; nothing is estimated, sampled or extrapolated.`,
+    url: `${base}/state-of-open-robotics`,
+    creator: { "@type": "Organization", name: "RoboPartPicker", url: base },
+    isAccessibleForFree: true,
+    datePublished: asOf,
+    dateModified: new Date().toISOString(),
+    method: "Projects are published, public, non-demo rows. Component and specification counts come from the component tables. BOM emptiness is measured as bills of materials with no line items attached to any version. Published line figures count only bills of materials whose current version is published (verified or partial).",
+    counts: {
+      projects: { total: t.projects, with_repository: t.with_repo, with_license: t.with_license, no_license: noLicense, ambiguous_license: ambiguous, ambiguous_license_pct: pct(ambiguous, t.projects) },
+      bills_of_materials: { total: b.boms, empty: b.empty, empty_pct: pct(b.empty, b.boms), published_with_lines: l.published_boms },
+      bom_lines: { total: l.lines, resolved: l.resolved, resolved_pct: pct(l.resolved, l.lines), evidenced: l.evidenced, distinct_components: l.components, projects_resolved: l.projects_resolved },
+      components: { total: t.components, with_specs: s.with_specs, spec_rows: s.spec_rows, spec_dimensions: s.keys },
+    },
+    robot_categories: cats.map((r) => ({ category: r.category, projects: r.n })),
+    licenses: licenses.map((r) => ({ license: r.license, projects: r.n })),
+    citation: `RoboPartPicker, "The state of open-source robotics hardware", ${base}/state-of-open-robotics (retrieved ${asOf}).`,
+  };
+  return new Response(c.req.method === "HEAD" ? null : JSON.stringify(report, null, 2), {
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=3600, stale-while-revalidate=86400" },
   });
 }
 

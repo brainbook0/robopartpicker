@@ -37,7 +37,7 @@ import { analyticsRoutes } from "./routes/analytics";
 import { apiRateLimit } from "./middleware/rate-limit";
 import { handleMcpRequest } from "./mcp";
 import { handlePrivateMcpRequest, privateMcpResourceMetadata } from "./mcp-private";
-import { serveLlmsText, serveProjectBadge, serveProjectFeed, serveQueryIndex, serveQueryPage, serveRobots, serveSeoAsset, serveSitemap, serveGlossaryIndex, serveComparisonIndex, serveComparisonPage, servePriceIndex, serveAllProjects, serveAllParts, serveStateOfOpenRobotics } from "./services/seo";
+import { serveLlmsText, serveProjectBadge, serveProjectFeed, serveQueryIndex, serveQueryPage, serveRobots, serveSeoAsset, serveSitemap, serveGlossaryIndex, serveComparisonIndex, serveComparisonPage, servePriceIndex, serveAllProjects, serveAllParts, serveStateOfOpenRobotics, serveStateOfOpenRoboticsJson } from "./services/seo";
 import { canonicalRedirectUrl, DEFAULT_PRODUCTION_BASE_URL } from "../src/lib/public-seo";
 
 export const app = new Hono<AppBindings>();
@@ -230,6 +230,7 @@ app.on(["GET", "HEAD"], ["/openapi.json", "/.well-known/api-catalog"], (c) => {
             { name: "page", in: "query", schema: { type: "integer", default: 1 } } ],
             responses: { "200": { description: "Paginated BOM list with total, page, limit, pages and per-row line counts" } } } },
           "/v1/marketplace": { get: { operationId: "listMarketplace", summary: "List public marketplace listings.", responses: { "200": { description: "Listing list" } } } },
+          "/v1/state-of-open-robotics": { get: { operationId: "getOpenRoboticsCensus", summary: "The state of open-source robotics hardware: a live census of projects, bills-of-materials completeness, BOM-line resolution, licence clarity, robot categories and component-specification coverage.", responses: { "200": { description: "Census dataset as JSON (schema.org Dataset with a counts object)" } } } },
         },
         "x-mcp": { endpoint: `${origin}/mcp`, discovery: `${origin}/.well-known/mcp.json`, serverCard: `${origin}/.well-known/mcp/server-card.json` },
       };
@@ -248,6 +249,9 @@ app.on(["GET", "HEAD"], "/glossary", serveGlossaryIndex);
 app.on(["GET", "HEAD"], "/all-projects", serveAllProjects);
 app.on(["GET", "HEAD"], "/all-parts", serveAllParts);
 app.on(["GET", "HEAD"], "/state-of-open-robotics", serveStateOfOpenRobotics);
+app.on(["GET", "HEAD"], "/state-of-open-robotics.json", serveStateOfOpenRoboticsJson);
+// The API-consistent path for the same dataset, so agents that work under /api/v1 can fetch it.
+app.on(["GET", "HEAD"], "/api/v1/state-of-open-robotics", serveStateOfOpenRoboticsJson);
 
 // Other legacy URLs search engines still request (measured 2026-11-24 via Cloudflare GraphQL
 // httpRequestsAdaptiveGroups, Googlebot UA, 14d). Each is an exact-match 301 to the page that
