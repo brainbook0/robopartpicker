@@ -6,6 +6,7 @@ import { projectEditorial } from "@/lib/project-editorial";
 const so101 = projectEditorial("therobotstudio-so-arm100") ?? [];
 const mobileAloha = projectEditorial("mobile-aloha") ?? [];
 const xlerobot = projectEditorial("xlerobot") ?? [];
+const osr = projectEditorial("nasa-jpl-open-source-rover") ?? [];
 
 describe("ProjectEditorial", () => {
   it("renders nothing when the project has no curated notes", () => {
@@ -61,5 +62,17 @@ describe("ProjectEditorial", () => {
     expect(screen.getByText(/US\$579/)).toBeInTheDocument();
     const docs = screen.getByRole("link", { name: "XLeRobot documentation" });
     expect(docs).toHaveAttribute("href", "https://xlerobot.readthedocs.io/en/latest/index.html");
+  });
+
+  it("renders the source-backed JPL Open Source Rover build notes", () => {
+    render(<ProjectEditorial sections={osr} />);
+    expect(screen.getByText("The JPL Open Source Rover at a glance")).toBeInTheDocument();
+    expect(screen.getByText("How it drives")).toBeInTheDocument();
+    expect(screen.getByText("Build roadmap and effort")).toBeInTheDocument();
+    // The project's own cost figure, as written upstream.
+    expect(screen.getByText(/US\$1,600/)).toBeInTheDocument();
+    expect(screen.getByText(/100 person-hours/)).toBeInTheDocument();
+    const code = screen.getByRole("link", { name: "osr-rover-code" });
+    expect(code).toHaveAttribute("href", "https://github.com/nasa-jpl/osr-rover-code");
   });
 });
