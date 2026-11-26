@@ -5,6 +5,7 @@ import { projectEditorial } from "@/lib/project-editorial";
 
 const so101 = projectEditorial("therobotstudio-so-arm100") ?? [];
 const mobileAloha = projectEditorial("mobile-aloha") ?? [];
+const xlerobot = projectEditorial("xlerobot") ?? [];
 
 describe("ProjectEditorial", () => {
   it("renders nothing when the project has no curated notes", () => {
@@ -48,5 +49,17 @@ describe("ProjectEditorial", () => {
     expect(screen.getByText(/36 motors/)).toBeInTheDocument();
     const repo = screen.getByRole("link", { name: "MarkFzp/mobile-aloha README" });
     expect(repo).toHaveAttribute("href", "https://github.com/MarkFzp/mobile-aloha");
+  });
+
+  it("renders the XLeRobot cost and kit notes from the upstream README", () => {
+    render(<ProjectEditorial sections={xlerobot} />);
+    expect(screen.getByText("XLeRobot at a glance")).toBeInTheDocument();
+    expect(screen.getByText("What the project says it costs")).toBeInTheDocument();
+    expect(screen.getByText("Kits and documentation")).toBeInTheDocument();
+    // Costs as written upstream.
+    expect(screen.getAllByText(/US\$660/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/US\$579/)).toBeInTheDocument();
+    const docs = screen.getByRole("link", { name: "XLeRobot documentation" });
+    expect(docs).toHaveAttribute("href", "https://xlerobot.readthedocs.io/en/latest/index.html");
   });
 });

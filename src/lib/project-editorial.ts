@@ -292,6 +292,87 @@ export const PROJECT_EDITORIAL: Record<string, EditorialSection[]> = {
       ],
     },
   ],
+  "xlerobot": [
+    {
+      heading: "XLeRobot at a glance",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "XLeRobot is a low-cost dual-arm mobile household robot from Gaotian (Vector) Wang's RobotPi Lab at Rice University, built as a personal project to give anyone a cheap platform for embodied AI. It stands on four other open projects: the two arms are SO-100/SO-101 arms from The RobotStudio, the wheeled base follows LeKiwi, and the low-cost electronics follow Bambot; the whole thing runs on Hugging Face's LeRobot stack. The current design is XLeRobot 0.2.0, described by the author as the first version fully capable of autonomous household tasks.",
+            },
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Source: " },
+            { text: "Vector-Wangel/XLeRobot README", href: "https://github.com/Vector-Wangel/XLeRobot" },
+            { text: " (Apache-2.0, retrieved 2026-11-26)." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "What the project says it costs",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "These are the repository's own figures for buying the parts yourself. They exclude 3D printing, tools, shipping and taxes, and they are the project's numbers, not supplier quotes; the observed per-part catalogue prices appear separately on this page.",
+            },
+          ],
+        },
+        {
+          type: "ul",
+          items: [
+            [{ text: "Basic build — use your own laptop and a single RGB head camera: about US$660 / €680 / ¥3,999 / ₹87,000." }],
+            [{ text: "Add a stereo dual-eye RGB head camera: +US$30." }],
+            [{ text: "Add a Raspberry Pi: +US$79." }],
+            [{ text: "Add an Intel RealSense RGBD head camera: +US$220." }],
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Kits and documentation",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "A developer assembly kit (excluding the battery and the IKEA cart base) is offered in collaboration with WowRobo: around US$579 worldwide or ¥3,699 in China. The author states the project is non-profit and that he earns nothing from kit sales.",
+            },
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Build order, printing files and software are in the " },
+            { text: "XLeRobot documentation", href: "https://xlerobot.readthedocs.io/en/latest/index.html" },
+            {
+              text: ": buy the parts from the materials list, print the frame, assemble (the author quotes under four hours in total), then run the LeRobot software. A dual-wheel base was released in December 2025 as a more stable and cheaper alternative to the default base.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Simulation and teleoperation",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The project ships URDFs and control scripts for simulation and teleoperation — keyboard, Xbox controller, Switch Joy-Con or Quest 3 VR — alongside a MuJoCo plus 3D Gaussian Splatting demo that runs in the browser.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 export function projectEditorial(slug: string): EditorialSection[] | undefined {
