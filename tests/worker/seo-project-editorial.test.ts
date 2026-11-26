@@ -17,6 +17,7 @@ beforeAll(async () => {
       VALUES ('u-seo-editorial', 'SEO Editorial', 'seo-editorial@example.com', 1, ?1, ?1)`).bind(now),
     insertProject("p-so101", "therobotstudio-so-arm100", "SO-101 Robot Arms"),
     insertProject("p-mobile-aloha", "mobile-aloha", "Mobile ALOHA"),
+    insertProject("p-osr", "nasa-jpl-open-source-rover", "JPL Open Source Rover"),
     insertProject("p-other", "some-other-robot", "Some Other Robot"),
   ]);
 });
@@ -52,6 +53,16 @@ describe("curated project editorial section", () => {
     expect(doc.bodyHtml).toContain("XM430-W350");
     expect(doc.bodyHtml).toContain("AgileX Tracer");
     expect(doc.bodyHtml).toContain("github.com/MarkFzp/mobile-aloha");
+    expect(doc.robots).toMatch(/^index,follow/u);
+  });
+
+  it("injects the JPL Open Source Rover build notes on its project page", async () => {
+    const doc = await resolveSeoDocument(env.DB, "/projects/nasa-jpl-open-source-rover", origin);
+    expect(doc.bodyHtml).toContain("The JPL Open Source Rover at a glance");
+    expect(doc.bodyHtml).toContain("Rocker-Bogie suspension");
+    expect(doc.bodyHtml).toContain("US$1,600");
+    expect(doc.bodyHtml).toContain("no less than 100 person-hours");
+    expect(doc.bodyHtml).toContain("github.com/nasa-jpl/osr-rover-code");
     expect(doc.robots).toMatch(/^index,follow/u);
   });
 });

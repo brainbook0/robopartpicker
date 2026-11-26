@@ -292,6 +292,178 @@ export const PROJECT_EDITORIAL: Record<string, EditorialSection[]> = {
       ],
     },
   ],
+  "nasa-jpl-open-source-rover": [
+    {
+      heading: "The JPL Open Source Rover at a glance",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The Open Source Rover (OSR) is NASA JPL's build-it-yourself, scaled-down version of the six-wheel rover design JPL uses on Mars. It has been public since 2017 and is built entirely from consumer off-the-shelf (COTS) parts — the base build needs no metal machining. JPL frames it as a teaching and learning platform for mechanical engineering, electronics, software and robotics that doubles as a research platform for rugged terrain; no prior skills are assumed. It is Apache-2.0 licensed and Open Source Hardware certified (US002551).",
+            },
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Source: " },
+            { text: "nasa-jpl/open-source-rover", href: "https://github.com/nasa-jpl/open-source-rover" },
+            { text: " README (Apache-2.0, retrieved 2026-11-26)." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "The specs the project publishes",
+      blocks: [
+        {
+          type: "ul",
+          items: [
+            [{ text: "Top speed — about 1.6 m/s (a slow run; it varies with the motor you choose)." }],
+            [{ text: "Motors — 10." }],
+            [{ text: "Structural material — aluminium." }],
+            [
+              {
+                text: "Total cost — the project's own figure is about US$1,600, which it notes is roughly the cost of a TurtleBot 3 Waffle.",
+              },
+            ],
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            {
+              text: "Those are the repository's figures, not supplier quotes; the observed per-part catalogue prices appear separately above.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "How it drives",
+      blocks: [
+        {
+          type: "ul",
+          items: [
+            [
+              {
+                text: "Rocker-Bogie suspension — keeps all six wheels in contact with the ground while climbing obstacles.",
+              },
+            ],
+            [
+              {
+                text: "Differential pivot — mechanically offloads weight from one side of the rover to the other while climbing.",
+              },
+            ],
+            [
+              {
+                text: "Six-wheel Ackermann steering — sets where the wheels point and how fast each one turns.",
+              },
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Parts and cost",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            { text: "The mechanical assembly is built mostly from " },
+            { text: "GoBilda", href: "https://www.gobilda.com" },
+            { text: " parts; the full parts list lives in the repository's " },
+            {
+              text: "parts_list",
+              href: "https://github.com/nasa-jpl/open-source-rover/tree/master/parts_list",
+            },
+            {
+              text: ". Educational builders can apply through the repository for a 15% GoBilda discount. You can fit higher-RPM motors for more speed at the cost of stall torque — the README points at the GoBilda 5203 series — and the design accommodates different wheel sizes.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Build roadmap and effort",
+      blocks: [
+        {
+          type: "ul",
+          items: [
+            [{ text: "Stage 1 — order the parts (the README starts here because lead times are long)." }],
+            [{ text: "Stage 2 — build the wiring, which has to exist before the mechanical assemblies." }],
+            [{ text: "Stage 3 — make (solder) the electronics and the printed circuit board." }],
+            [
+              {
+                text: "Stage 4 — build the mechanical assemblies: body, two rocker-bogies, and the drive and corner motor assemblies.",
+              },
+            ],
+            [{ text: "Stage 5 — set up the operating system and the rover code on the Raspberry Pi." }],
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            {
+              text: "JPL's own estimate is no less than 100 person-hours to build, and the repository says the base version needs no metal machining — only basic fabrication skills for the optional expansions.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Tools you will need",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "Mandatory: metric hex keys, pliers, wire snips and strippers, a soldering iron, solder and a digital multimeter. Optional: a 3D printer, a laser cutter (the body plates can also be ordered cut), a benchtop power supply for testing without the battery, and the usual Raspberry Pi peripherals.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "The brain, the code and the battery",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "A Raspberry Pi is the rover's brain, chosen so it is easy to add, change and upgrade — any method of talking to a Pi (Bluetooth, WiFi, USB) can be wired into the control system, and the rover runs ROS. The software lives in the separate ",
+            },
+            { text: "osr-rover-code", href: "https://github.com/nasa-jpl/osr-rover-code" },
+            {
+              text: " repository, with step-by-step setup. On a 7.2 Ah battery the project reports at least three hours of driving on rough terrain; the rover shuts down when the pack falls below about 13–14 V, and you can extend range with a bigger or swappable battery.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Community, CAD and alternatives",
+      blocks: [
+        {
+          type: "ul",
+          items: [
+            [
+              {
+                text: "A community Slack group for builders and modifications — run by the public, with JPL and Caltech noting no official affiliation.",
+              },
+            ],
+            [{ text: "A live 3D model of the latest rover, viewable in a browser on OnShape." }],
+            [
+              {
+                text: "Cheaper Mars-rover replicas the project links to: Sawppy Rover, ESA ExoMy, and a 3D-printed Curiosity/Perseverance-inspired rover.",
+              },
+            ],
+          ],
+        },
+      ],
+    },
+  ],
   "xlerobot": [
     {
       heading: "XLeRobot at a glance",
