@@ -324,7 +324,7 @@ function bomLineLabel(base: string, line: {
   component_slug: string | null;
   component_category: string | null;
 }): string {
-  const text = importedText(line.description) || importedText(line.component_name ?? "");
+  const text = importedText(line.description) || importedText(line.component_name ?? "") || "Unspecified part";
   const href = line.component_slug && line.component_category
     ? `${base}/parts/${encodeURIComponent(line.component_category)}/${encodeURIComponent(line.component_slug)}`
     : null;
@@ -333,7 +333,21 @@ function bomLineLabel(base: string, line: {
 
 function importedText(value: string | null | undefined): string {
   const raw = String(value ?? "");
-  return normalizeCatalogText(raw) || raw;
+  if (!raw.trim()) return "";
+  const normalized = normalizeCatalogText(raw);
+  if (normalized) return normalized;
+  // Raw normalised to empty. Only resurface it if it is real text: a value whose entire content is
+  // markup (a BOM line whose source cell was only `<img src="…">`) must not be published as literal
+  // tags, so return empty and let the caller fall back to a real name or a neutral label.
+  return /[<>]/u.test(raw) ? "" : raw;
+}
+
+// Imported spec values carry source markup: `<br />` between the voltage rows of a motor table, and
+// `**…**` around the highlighted rating. esc() escapes that into literal characters
+// (`…&lt;br /&gt;…`) on the part page, which visibly breaks a page that is server-rendered for
+// crawlers. Normalise first, then render the source line breaks as a separator.
+function specValueText(value: string | null | undefined): string {
+  return importedText(value).replace(/\s*\n+\s*/gu, " · ");
 }
 
 function esc(value: string): string {
@@ -406,7 +420,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         const value = s.value_number !== null && s.value_number !== undefined ? String(s.value_number) : (s.value_text ?? "");
         const unit = s.unit ? ` ${s.unit}` : "";
         const checked = String(s.observed_at ?? "").slice(0, 10);
-        return `<li>${esc(importedText(s.label))}: ${esc(value)}${esc(unit)} (source-backed, checked ${esc(checked)})</li>`;
+        return `<li>${esc(importedText(s.label))}: ${esc(specValueText(value))}${esc(unit)} (source-backed, checked ${esc(checked)})</li>`;
       }).join("");
       const specSection = specRows.results.length
         ? `<h2>Technical specifications (${specRows.results.length.toLocaleString()})</h2><p>Values published by the manufacturer or another cited project source.</p><ul>${specItems}</ul>`
@@ -552,7 +566,7 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
       const specSection = specRows.results.length
         ? `<h2>Source specifications (${specRows.results.length})</h2><table><tbody>${specRows.results.map((s) => {
             const label = s.label || titleCase(s.spec_key);
-            const value = `${esc(String(s.value_text ?? ""))}${s.unit ? ` ${esc(s.unit)}` : ""}`.trim();
+            const value = `${esc(specValueText(s.value_text))}${s.unit ? ` ${esc(s.unit)}` : ""}`.trim();
             return `<tr><th>${esc(label)}</th><td>${value}</td></tr>`;
           }).join("")}</tbody></table>`
         : "<h2>Source specifications</h2><p>No structured source specifications have been published for this component yet.</p>";

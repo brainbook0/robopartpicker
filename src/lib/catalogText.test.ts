@@ -38,6 +38,15 @@ describe("normalizeCatalogText", () => {
     );
   });
 
+  it("strips markdown emphasis so imported spec values render as plain text", () => {
+    // Live 2026-11-27: motor spec tables bold the highlighted rating, so a part page published
+    // `**64 [rev/min] (at 12.0 [V])**` verbatim to crawlers. Paired markers only — a stray `*`
+    // (a multiplication sign, `M3*0.5`) is real text and must survive.
+    expect(normalizeCatalogText("**64 [rev/min] (at 12.0 [V])**")).toBe("64 [rev/min] (at 12.0 [V])");
+    expect(normalizeCatalogText("__approx__ 5 m/s")).toBe("approx 5 m/s");
+    expect(normalizeCatalogText("M3*0.5 thread, 2*2 header")).toBe("M3*0.5 thread, 2*2 header");
+  });
+
   it("returns an empty string for missing or markup-only values", () => {
     expect(normalizeCatalogText(null)).toBe("");
     expect(normalizeCatalogText(undefined)).toBe("");

@@ -38,7 +38,12 @@ export function normalizeCatalogText(value: string | null | undefined): string {
     .replace(/<[^>]+>/gu, " ")
     .replace(/!\[[^\]]*\]\([^)]*\)/gu, " ")
     .replace(/\[([^\]]+)\]\([^)]*\)/gu, "$1")
-    .replace(/```[\s\S]*?```/gu, " ");
+    .replace(/```[\s\S]*?```/gu, " ")
+    // Markdown emphasis: imported spec tables bold the highlighted row (`**64 [rev/min]**`), and
+    // esc() published the asterisks verbatim on the part page. Strip paired markers only, so a
+    // stray `*` in real text (`M3*0.5 thread`, a multiplication sign) survives untouched.
+    .replace(/\*\*([^*\n]+)\*\*/gu, "$1")
+    .replace(/__([^_\n]+)__/gu, "$1");
 
   // Decode HTML entities to a fixed point. Supplier scrape pipelines run the source HTML
   // through an escaper more than once, so live data carries double-encoded references:

@@ -130,6 +130,12 @@ function renderSpecValue(key: string, value: unknown, unit?: string | null): str
   }
   if (typeof value === "boolean") return value ? "yes" : "no";
   if (Array.isArray(value)) return fmtList(value);
+  if (typeof value === "string") {
+    // Imported spec tables carry source markup (`<br />` between voltage rows, `**` on the
+    // highlighted rating). Normalise once so the panel and dialog show plain text, not literal tags.
+    const cleaned = normalizeCatalogText(value) || fmtText(value);
+    return cleaned.replace(/\s*\n+\s*/gu, " · ");
+  }
   return fmtText(value);
 }
 
