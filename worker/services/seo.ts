@@ -629,7 +629,14 @@ export async function resolveSeoDocument(db: D1Database, path: string, base: str
         COALESCE(SUM(CASE WHEN bi.component_id IS NOT NULL AND EXISTS(SELECT 1 FROM supplier_offers so
           WHERE so.component_id = bi.component_id AND so.is_demo = 0 AND so.unit_price_minor > 0)
           THEN 1 ELSE 0 END), 0) AS priced_lines
-      FROM boms b LEFT JOIN projects p ON p.id = b.project_id LEFT JOIN bom_versions bv ON bv.id = b.current_version_id
+      -- Project liveness belongs in the JOIN, not a WHERE: a BOM can outlive its project when a
+      -- duplicate project is soft-deleted during a merge (the raw open-source-rover project folded
+      -- into nasa-jpl-open-source-rover). A WHERE filter would drop the BOM page entirely; keeping
+      -- the predicate here leaves the BOM row intact but makes the joined project columns NULL, so
+      -- the page never emits an internal link to a /projects/<slug> that now 404s.
+      FROM boms b LEFT JOIN projects p ON p.id = b.project_id
+        AND p.deleted_at IS NULL AND p.is_demo = 0 AND p.status = 'published' AND p.visibility = 'public'
+      LEFT JOIN bom_versions bv ON bv.id = b.current_version_id
       LEFT JOIN bom_items bi ON bi.bom_version_id = b.current_version_id
       WHERE (b.id = ?1 OR b.slug = ?1) AND b.is_demo = 0 AND b.visibility = 'public' GROUP BY b.id`).bind(routeKey).first<{
         id: string; slug: string | null; name: string; updated_at: string; current_version_id: string | null; project_name: string | null; project_slug: string | null; currency: string | null; confirmed_at: string | null;
