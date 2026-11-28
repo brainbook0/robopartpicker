@@ -7,6 +7,7 @@ const so101 = projectEditorial("therobotstudio-so-arm100") ?? [];
 const mobileAloha = projectEditorial("mobile-aloha") ?? [];
 const xlerobot = projectEditorial("xlerobot") ?? [];
 const osr = projectEditorial("nasa-jpl-open-source-rover") ?? [];
+const openbot = projectEditorial("openbot") ?? [];
 
 describe("ProjectEditorial", () => {
   it("renders nothing when the project has no curated notes", () => {
@@ -74,5 +75,18 @@ describe("ProjectEditorial", () => {
     expect(screen.getByText(/100 person-hours/)).toBeInTheDocument();
     const code = screen.getByRole("link", { name: "osr-rover-code" });
     expect(code).toHaveAttribute("href", "https://github.com/nasa-jpl/osr-rover-code");
+  });
+
+  it("renders the source-backed OpenBot build notes", () => {
+    render(<ProjectEditorial sections={openbot} />);
+    expect(screen.getByText("OpenBot at a glance")).toBeInTheDocument();
+    expect(screen.getByText("The body options")).toBeInTheDocument();
+    expect(screen.getByText("The software stack")).toBeInTheDocument();
+    // The project's own body-cost figure, as written upstream.
+    expect(screen.getByText(/about US\$50/)).toBeInTheDocument();
+    // The repo link is cited in two sections, so allow >1 match; all point at the same repo.
+    const repos = screen.getAllByRole("link", { name: "ob-f/OpenBot" });
+    expect(repos.length).toBeGreaterThan(0);
+    expect(repos[0]).toHaveAttribute("href", "https://github.com/ob-f/OpenBot");
   });
 });

@@ -545,6 +545,128 @@ export const PROJECT_EDITORIAL: Record<string, EditorialSection[]> = {
       ],
     },
   ],
+  "openbot": [
+    {
+      heading: "OpenBot at a glance",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "OpenBot makes a smartphone the brain of a small, low-cost wheeled robot. The project supplies a 3D-printable robot body, microcontroller firmware and an app, so the phone does the sensing, compute and control while the printed body supplies the motors and drivetrain. It started at Intel's Intelligent Systems Lab and is now maintained by the OpenBot organisation under the MIT licence; it was published at ICRA 2021 by Matthias Müller and Vladlen Koltun.",
+            },
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Source: " },
+            { text: "ob-f/OpenBot", href: "https://github.com/ob-f/OpenBot" },
+            { text: " README (MIT, retrieved 2026-11-28)." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "What the project says it costs",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The repository states the robot body costs about US$50 in parts and is assembled from low-cost, readily available hobby hardware around a microcontroller such as an Arduino Nano. That is the project's own figure for the body only: the phone, tools and printing your own parts are separate, and the observed per-part catalogue prices on this page are supplier offers, not the project's estimate.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "The body options",
+      blocks: [
+        {
+          type: "ul",
+          items: [
+            [{ text: "DIY: the original 3D-printed wheeled body, built on low-cost hobby hardware." }],
+            [{ text: "Lite: a smaller, simplified variant developed for education." }],
+            [
+              {
+                text: "Compact: a compact 3D-printed body for an ESP32 with an L298N motor driver; every part prints on a 180 mm printer and the lid is LEGO-compatible.",
+              },
+            ],
+            [{ text: "RC-Truck: a 3D-printed body that drops onto an off-the-shelf 1:16 RC truck." }],
+            [{ text: "Multi-Terrain Vehicle: blueprints for a general-purpose outdoor platform using the same framework." }],
+            [{ text: "Ready-to-run: the RTR-TT and RTR-520 bodies are sold assembled for builders who would rather not print." }],
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            {
+              text: "Any wheeled body built around a compatible microcontroller can run the OpenBot stack, so the printed designs are starting points rather than the only option.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "The software stack",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The robot app runs on the phone (or computer) that sits on the robot. It talks to the body over a serial or Bluetooth link, streams video to a controller, and runs the driving policies.",
+            },
+          ],
+        },
+        {
+          type: "ul",
+          items: [
+            [{ text: "Android: install the APK from the latest release, or build it in Android Studio." }],
+            [{ text: "iOS: a beta built with Xcode; it is not on the App Store yet." }],
+            [{ text: "Linux: a Python version for a Linux computer with a camera." }],
+            [{ text: "Firmware: flash the Arduino sketch to the body's microcontroller." }],
+            [{ text: "Playground: program the robot directly from the app." }],
+            [
+              {
+                text: "Driving policy: train your own; the project warns this needs a high-end machine with a dedicated GPU and a good deal of patience.",
+              },
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      heading: "What it can do",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The app supports advanced robotics workloads such as person following and real-time autonomous navigation, and the body can be driven manually from a game controller. The project also keeps a Slack channel and a list of community builds.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Source and citation",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            { text: "Repository: " },
+            { text: "ob-f/OpenBot", href: "https://github.com/ob-f/OpenBot" },
+            {
+              text: " (MIT). Paper: Müller & Koltun, OpenBot: Turning Smartphones into Robots, ICRA 2021. Project site: ",
+            },
+            { text: "openbot.org", href: "https://www.openbot.org/" },
+            { text: "." },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 export function projectEditorial(slug: string): EditorialSection[] | undefined {
