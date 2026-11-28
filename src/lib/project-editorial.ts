@@ -667,6 +667,170 @@ export const PROJECT_EDITORIAL: Record<string, EditorialSection[]> = {
       ],
     },
   ],
+  "openmower": [
+    {
+      heading: "OpenMower at a glance",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "OpenMower is a community project that turns cheap off-the-shelf robotic mowers into RTK-GPS-guided, map-aware, app-controlled mowing robots. It began by disassembling the YardForce Classic 500 and replacing its factory brain with custom open-source hardware and software, to replace the random-walk navigation most mowers use with GPS-guided mapping. New builders are pointed at openmower.de rather than this repository, which is the project's central entry point.",
+            },
+          ],
+        },
+        {
+          type: "p",
+          segments: [
+            { text: "Source: " },
+            {
+              text: "ClemensElflein/OpenMower",
+              href: "https://github.com/ClemensElflein/OpenMower",
+            },
+            {
+              text: " README (retrieved 2026-11-28). The repository documentation is licensed CC BY-NC-SA 4.0; the project as a whole is recorded as NOASSERTION because licences differ per repository.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "What the project sets out to do",
+      blocks: [
+        {
+          type: "ul",
+          items: [
+            [{ text: "Autonomous lawn mowing." }],
+            [{ text: "Good safety — an emergency stop if the mower is lifted or crashes." }],
+            [{ text: "No perimeter wire — flexible support for multiple mowing areas." }],
+            [{ text: "Low cost — the project aims to come in cheaper than a mid-range off-the-shelf product." }],
+            [{ text: "Open — share the knowledge so others can build their own." }],
+            [{ text: "Presentable — it should not be embarrassing to have one mowing your lawn." }],
+            [
+              {
+                text: "Obstacle detection and avoidance, plus rain detection that pauses mowing until conditions improve.",
+              },
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      heading: "How it works",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The build takes a compatible mower, removes its factory electronics and fits OpenMower's own mainboard, which runs the open_mower_ros ROS stack. RTK GPS gives the mower outdoor positioning, mowing areas are recorded and stored on maps, and a phone app is used to control the machine and manage those areas. No boundary wire is needed: instead of driving until it hits a border, the mower knows where it is and where the lawn edges are.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "What it costs",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The project's build guide lists a hardware shopping list of about €700. That figure excludes the donor mower and the RTK base station, which are bought separately, so the real total depends on which compatible mower and base station you choose. These are the project's own numbers, not supplier quotes.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Skills and effort",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "The project says the build needs intermediate electronics, Linux and mechanical skills, and that converting a YardForce-class mower typically takes a weekend. It carries an explicit safety warning: if you are not certain what you are doing, do not attempt it — ask in the project Discord first.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Which mowers are compatible",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "Many robotic mowers share the same SUMEC-manufactured hardware, sold under brands such as YardForce and Herkules, so upgrading one of them opens up a large pool of donor machines. The project asks builders to check compatibility on the ",
+            },
+            {
+              text: "OpenMower website",
+              href: "https://openmower.de/latest/docs/getting-started/",
+            },
+            { text: " before buying anything." },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "The repositories",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            {
+              text: "OpenMower is split across purpose-specific repositories, pulled in as submodules — clone everything at once with ",
+            },
+            {
+              text: "git clone --recursive",
+              href: "https://github.com/ClemensElflein/OpenMower",
+            },
+            { text: "." },
+          ],
+        },
+        {
+          type: "ul",
+          items: [
+            [
+              {
+                text: "Software — open_mower_ros (ROS navigation, planning and state machine), openmower-app (mobile and web app), OpenMowerOS (operating-system image).",
+              },
+            ],
+            [
+              {
+                text: "Firmware — fw-openmower-v2 (mainboard motor control, sensors and hardware abstraction) and xesc_firmware (xESC motor-controller firmware).",
+              },
+            ],
+            [
+              {
+                text: "Hardware — mainboard designs for a universal build, a YardForce-specific build and a Sabo / John Deere build.",
+              },
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Where to start and the community",
+      blocks: [
+        {
+          type: "p",
+          segments: [
+            { text: "The full documentation and step-by-step build guide live at " },
+            { text: "openmower.de", href: "https://openmower.de" },
+            {
+              text: ". The project asks new builders to read the system-architecture overview and the step-by-step guide before buying anything, and hosts an active ",
+            },
+            {
+              text: "Discord server",
+              href: "https://discord.gg/jE7QNaSxW7",
+            },
+            { text: " with 2000+ members." },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 export function projectEditorial(slug: string): EditorialSection[] | undefined {

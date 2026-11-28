@@ -8,6 +8,7 @@ const mobileAloha = projectEditorial("mobile-aloha") ?? [];
 const xlerobot = projectEditorial("xlerobot") ?? [];
 const osr = projectEditorial("nasa-jpl-open-source-rover") ?? [];
 const openbot = projectEditorial("openbot") ?? [];
+const openmower = projectEditorial("openmower") ?? [];
 
 describe("ProjectEditorial", () => {
   it("renders nothing when the project has no curated notes", () => {
@@ -88,5 +89,18 @@ describe("ProjectEditorial", () => {
     const repos = screen.getAllByRole("link", { name: "ob-f/OpenBot" });
     expect(repos.length).toBeGreaterThan(0);
     expect(repos[0]).toHaveAttribute("href", "https://github.com/ob-f/OpenBot");
+  });
+
+  it("renders the source-backed OpenMower build notes", () => {
+    render(<ProjectEditorial sections={openmower} />);
+    expect(screen.getByText("OpenMower at a glance")).toBeInTheDocument();
+    expect(screen.getByText("How it works")).toBeInTheDocument();
+    expect(screen.getByText("The repositories")).toBeInTheDocument();
+    // The project's own build-guide figure, as written upstream.
+    expect(screen.getByText(/€700/)).toBeInTheDocument();
+    // The repo link is cited in two sections, so allow >1 match; all point at the same repo.
+    const repos = screen.getAllByRole("link", { name: "ClemensElflein/OpenMower" });
+    expect(repos.length).toBeGreaterThan(0);
+    expect(repos[0]).toHaveAttribute("href", "https://github.com/ClemensElflein/OpenMower");
   });
 });

@@ -19,6 +19,7 @@ beforeAll(async () => {
     insertProject("p-mobile-aloha", "mobile-aloha", "Mobile ALOHA"),
     insertProject("p-osr", "nasa-jpl-open-source-rover", "JPL Open Source Rover"),
     insertProject("p-openbot", "openbot", "OpenBot"),
+    insertProject("p-openmower", "openmower", "OpenMower"),
     insertProject("p-other", "some-other-robot", "Some Other Robot"),
   ]);
 });
@@ -74,6 +75,17 @@ describe("curated project editorial section", () => {
     expect(doc.bodyHtml).toContain("The software stack");
     expect(doc.bodyHtml).toContain("about US$50");
     expect(doc.bodyHtml).toContain("github.com/ob-f/OpenBot");
+    expect(doc.robots).toMatch(/^index,follow/u);
+  });
+
+  it("injects the OpenMower build notes on its project page", async () => {
+    const doc = await resolveSeoDocument(env.DB, "/projects/openmower", origin);
+    expect(doc.bodyHtml).toContain("OpenMower at a glance");
+    expect(doc.bodyHtml).toContain("How it works");
+    expect(doc.bodyHtml).toContain("The repositories");
+    // The project's own build-guide figure, as written upstream.
+    expect(doc.bodyHtml).toContain("€700");
+    expect(doc.bodyHtml).toContain("github.com/ClemensElflein/OpenMower");
     expect(doc.robots).toMatch(/^index,follow/u);
   });
 });
